@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.forge/
+coverage/
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.vscode/
+.idea/
+*.log

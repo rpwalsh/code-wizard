@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/execution" },
+    { "path": "./packages/exercises" },
+    { "path": "./languages/python" },
+    { "path": "./packages/cli" }
+  ]
+}
