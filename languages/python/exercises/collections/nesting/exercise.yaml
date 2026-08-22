@@ -1,0 +1,72 @@
+id: python.collections.nesting
+version: 1
+language: python
+title: Collections inside collections
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 300
+timeoutMs: 15000
+
+skills:
+  - python.collections.nested
+
+prerequisites:
+  - python.collections.dict-mutation
+  - python.collections.list
+
+learningObjectives:
+  - Read the shape of nested data before writing anything that touches it.
+  - Reach through several levels where any of them might be missing.
+  - Recognise that copying the outer collection still shares the inner ones.
+
+prompt: |
+  Real data is dictionaries inside lists inside dictionaries, and any level may
+  be absent.
+
+  - `city_of(record)` returns `record["address"]["city"]`, or `None` if either
+    the address or the city is missing. No exceptions escape.
+  - `all_tags(posts)` takes a list of post dictionaries, each possibly having a
+    `"tags"` list, and returns every tag as one flat sorted list without
+    duplicates.
+  - `group_by_city(people)` takes a list of `{"name": ..., "city": ...}` and
+    returns `{city: [name, ...]}`, keeping the original order within each city.
+  - `deep_copy_grid(grid)` takes a list of lists and returns a copy where
+    changing a row of the copy does **not** change the original.
+
+  The last one is where `list(grid)` and `grid[:]` both fail, and the failure
+  is silent.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_nesting.py
+    visibility: visible
+    concept: python.collections.nested
+  - path: tests/test_sharing.py
+    visibility: edge
+    concept: python.collections.nested
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.nested
+
+hints:
+  - level: conceptual
+    text: Copying a list of lists copies the outer list. The inner lists are the same objects.
+  - level: structural
+    text: A missing level and a present-but-empty level are different, and both must not raise.
+  - level: language
+    text: '`.get(key, {})` lets you chain another lookup safely. `setdefault` starts a list on first sight.'
+  - level: syntax
+    text: '`record.get("address", {}).get("city")`.'
+  - level: explicit
+    text: 'For the grid, build a new list of new rows: `[list(row) for row in grid]`.'
+
+explanation: |
+  Shallow copying is the quiet one. `grid[:]` gives you a new outer list whose
+  entries are the very same row objects, so appending to `copy[0]` also appends
+  to `original[0]`. Every test that only checks the outer list passes. The bug
+  surfaces later, somewhere else, as data that changed on its own.
+
+  `.get(key, {})` chaining is worth having in your fingers because the
+  alternative is a pyramid of `if` statements that grows with each level, and
+  each level is another place to get the check slightly wrong.

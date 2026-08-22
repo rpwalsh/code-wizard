@@ -1,0 +1,69 @@
+id: python.collections.dictionaries
+version: 1
+language: python
+title: Keys, values, and changing them
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 240
+timeoutMs: 10000
+
+skills:
+  - python.collections.dict
+  - python.collections.dict-mutation
+
+prerequisites:
+  - python.collections.dict-lookup
+
+learningObjectives:
+  - Loop over a dictionary getting keys and values together.
+  - Build a count with a dictionary, handling the first sighting of a key.
+  - Recall which mutating methods return something and which return None.
+
+prompt: |
+  - `invert(mapping)` returns a new dictionary with keys and values swapped.
+  - `count_letters(text)` returns a dictionary of letter to how many times it
+    appears. Ignore spaces.
+  - `add_score(scores, name, points)` adds `points` to `name`'s existing score,
+    starting from zero if the name is new. It changes the dictionary it was
+    given and returns None.
+  - `busiest(counts)` returns the key with the largest value. On an empty
+    dictionary, return None.
+
+  `count_letters` is the one worth slowing down for: the first time you see a
+  letter there is nothing to add to.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_dictionaries.py
+    visibility: visible
+    concept: python.collections.dict
+  - path: tests/test_mutation.py
+    visibility: edge
+    concept: python.collections.dict-mutation
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.dict
+
+hints:
+  - level: conceptual
+    text: Looping over a dictionary gives you keys. There is a method that gives you both.
+  - level: structural
+    text: For counting, you need a value to start from the first time a key appears.
+  - level: language
+    text: '`.items()` yields key/value pairs. `.get(key, 0)` supplies a default rather than raising.'
+  - level: syntax
+    text: '`counts[letter] = counts.get(letter, 0) + 1`.'
+  - level: explicit
+    text: '`busiest` is `max(counts, key=counts.get)` when the dictionary is not empty.'
+
+explanation: |
+  `counts.get(key, 0) + 1` is the whole counting idiom, and it is worth being
+  able to write without thinking, because the alternative — checking whether the
+  key is there first — is three lines that do the same thing and one of them is
+  usually wrong the first time.
+
+  The mutating methods are deliberately inconsistent about return values and
+  that catches everyone: `.update()` returns None, `.pop()` returns the value it
+  removed, and `.setdefault()` returns the value that ended up there. A function
+  ending in `return scores.update(...)` returns None and looks like it worked.

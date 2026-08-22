@@ -1,0 +1,68 @@
+id: python.collections.tuples
+version: 1
+language: python
+title: Tuples and unpacking
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 180
+timeoutMs: 10000
+
+skills:
+  - python.collections.tuple
+
+prerequisites:
+  - python.collections.list
+
+learningObjectives:
+  - Return more than one value from a function without inventing a wrapper type.
+  - Destructure a tuple in an assignment and in a loop header.
+  - Use star-unpacking to split a sequence into a head and a tail.
+
+prompt: |
+  A tuple is a list that cannot change. That single restriction is why it can
+  be a dictionary key, and why returning one is safe.
+
+  - `minmax(values)` returns `(smallest, largest)` as a tuple.
+  - `split_first(values)` returns `(first, rest)` where `rest` is a **list** of
+    everything else. On an empty sequence, return `(None, [])`.
+  - `totals(pairs)` takes a list of `(name, amount)` tuples and returns the sum
+    of the amounts. Unpack in the loop header, not with indexes.
+  - `rotate(triple)` takes a three-element tuple and returns it rotated left by
+    one: `(1, 2, 3)` becomes `(2, 3, 1)`. One line, no indexing.
+
+  If you write `pair[0]` and `pair[1]` anywhere, there is a nicer way.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_tuples.py
+    visibility: visible
+    concept: python.collections.tuple
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.collections.tuple
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.tuple
+
+hints:
+  - level: conceptual
+    text: An assignment can have several names on the left, matching the shape on the right.
+  - level: structural
+    text: A star on one name in an unpacking makes it collect everything left over, as a list.
+  - level: language
+    text: '`first, *rest = values` splits a sequence. `for name, amount in pairs:` unpacks each item.'
+  - level: syntax
+    text: '`a, b, c = triple` then `return b, c, a`.'
+  - level: explicit
+    text: '`minmax` is `return min(values), max(values)` — the parentheses are optional.'
+
+explanation: |
+  Returning a tuple is how Python avoids the little wrapper classes other
+  languages need for "two things". The comma makes the tuple, not the
+  parentheses: `return a, b` and `return (a, b)` are the same statement.
+
+  Star-unpacking is the part worth having in your fingers. `first, *rest =
+  values` works on any sequence, cannot go out of range the way `values[0]` and
+  `values[1:]` can be got wrong separately, and says what it means. Note that
+  `rest` comes back as a list even when you unpacked a tuple.

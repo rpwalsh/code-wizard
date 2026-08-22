@@ -1,0 +1,70 @@
+id: python.collections.sets
+version: 1
+language: python
+title: Sets, and the loops they delete
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 210
+timeoutMs: 15000
+
+skills:
+  - python.collections.set
+
+prerequisites:
+  - python.collections.list
+
+learningObjectives:
+  - Replace a nested membership loop with a set operation.
+  - Keep order while removing duplicates, which a set alone cannot do.
+  - Recall that a set is unordered and holds only hashable values.
+
+prompt: |
+  A set answers one question very fast — "is this in here?" — and gives up
+  order to do it.
+
+  - `unique(items)` returns the distinct items, **in the order they first
+    appeared**. A set alone will not do this.
+  - `shared(first, second)` returns the values in both, as a sorted list.
+  - `only_in_first(first, second)` returns the values in the first and not the
+    second, as a sorted list.
+  - `has_duplicates(items)` returns True when any item appears more than once.
+    One line, no loop.
+
+  Two of these replace a nested loop entirely. The first one is the trap: the
+  obvious answer loses the ordering.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_sets.py
+    visibility: visible
+    concept: python.collections.set
+  - path: tests/test_order.py
+    visibility: edge
+    concept: python.collections.set
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.set
+
+hints:
+  - level: conceptual
+    text: A set knows what it has seen. A list knows what order it saw them in. You may need both.
+  - level: structural
+    text: If two collections have the same number of distinct values as one has items, nothing repeated.
+  - level: language
+    text: '`&` is intersection, `-` is difference, and `len(set(items))` counts the distinct ones.'
+  - level: syntax
+    text: '`sorted(set(first) & set(second))`.'
+  - level: explicit
+    text: '`has_duplicates` is `len(set(items)) != len(items)`.'
+
+explanation: |
+  `unique` is the one worth remembering, because `list(set(items))` looks right,
+  passes a careless test, and quietly reorders the data. Keeping a set for the
+  membership question and a list for the order is the standard answer, and it is
+  one pass rather than the nested loop most people write first.
+
+  `shared` and `only_in_first` replace a loop inside a loop. That matters more
+  than it looks: the nested version does len(first) x len(second) comparisons,
+  and the set version does len(first) lookups. On a thousand items each, that is
+  a million against a thousand.
