@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    // DOM types are needed for the IndexedDB backend. They are types only, and
+    // the node-only entry point never imports it.
+    "lib": ["ES2023", "DOM"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],

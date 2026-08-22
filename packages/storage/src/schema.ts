@@ -1,5 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 
+import { LATEST_VERSION } from './version.ts';
+
 export interface Migration {
   readonly version: number;
   readonly name: string;
@@ -64,7 +66,14 @@ export const migrations: readonly Migration[] = [
   },
 ];
 
-export const LATEST_VERSION = migrations.at(-1)?.version ?? 0;
+// The migration list and the declared version must not drift apart.
+if (migrations.at(-1)?.version !== LATEST_VERSION) {
+  throw new Error(
+    `LATEST_VERSION is ${LATEST_VERSION} but the last migration is ${String(migrations.at(-1)?.version)}.`,
+  );
+}
+
+export { LATEST_VERSION };
 
 export class SchemaTooNewError extends Error {
   constructor(found: number, supported: number) {

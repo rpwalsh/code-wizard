@@ -6,21 +6,9 @@ import type { MasteryVector, SkillMastery, TrainingMode } from '@forge/core';
 import { makeMastery, masteryDimensions } from '@forge/core';
 import type { Attempt, AttemptEvent, AttemptOutcome } from '@forge/learning';
 
+import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
+import { assertImportable, SNAPSHOT_FORMAT } from './progress-store.ts';
 import { LATEST_VERSION, migrate } from './schema.ts';
-
-/**
- * Spaced-repetition state as stored. Structurally identical to the curriculum
- * package's `ReviewState`, but declared here so storage does not depend on the
- * scheduler — the two evolve for different reasons.
- */
-export interface StoredReview {
-  readonly skillId: string;
-  readonly lastReviewedAt: string;
-  readonly dueAt: string;
-  readonly intervalDays: number;
-  readonly streak: number;
-  readonly lapses: number;
-}
 
 export interface StoreOptions {
   /** Path to the database file, or `:memory:` for a throwaway store. */
@@ -28,12 +16,16 @@ export interface StoreOptions {
 }
 
 /**
- * Local persistence for learner state (spec §26).
+ * Local persistence for the desktop build (spec §26).
  *
  * Exercise *content* is version-controlled and lives on disk; only what the
  * learner did lives here. Nothing in this database is sent anywhere (§34).
+ *
+ * The methods are async to satisfy `ProgressStore`, not because SQLite is:
+ * the web build's IndexedDB backend genuinely is, and the application above
+ * must not be able to tell the difference.
  */
-export class ForgeStore {
+export class SqliteProgressStore implements ProgressStore {
   readonly #database: DatabaseSync;
   readonly schemaVersion: number;
   #transactionDepth = 0;
@@ -43,13 +35,13 @@ export class ForgeStore {
     this.schemaVersion = schemaVersion;
   }
 
-  static open(options: StoreOptions): ForgeStore {
+  static open(options: StoreOptions): SqliteProgressStore {
     if (options.location !== ':memory:') {
       fs.mkdirSync(path.dirname(path.resolve(options.location)), { recursive: true });
     }
     const database = new DatabaseSync(options.location);
     try {
-      return new ForgeStore(database, migrate(database));
+      return new SqliteProgressStore(database, migrate(database));
     } catch (error) {
       // A refused or failed migration must not leave the file handle open;
       // on Windows that keeps the database locked against every later attempt.
@@ -58,11 +50,11 @@ export class ForgeStore {
     }
   }
 
-  static openInMemory(): ForgeStore {
-    return ForgeStore.open({ location: ':memory:' });
+  static openInMemory(): SqliteProgressStore {
+    return SqliteProgressStore.open({ location: ':memory:' });
   }
 
-  close(): void {
+  async close(): Promise<void> {
     this.#database.close();
   }
 
@@ -94,13 +86,17 @@ export class ForgeStore {
 
   // -- settings -----------------------------------------------------------
 
-  getSetting(key: string): string | null {
+  async getSetting(key: string): Promise<string | null> {
     const row = this.#database.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
       { value: string } | undefined;
     return row?.value ?? null;
   }
 
-  setSetting(key: string, value: string): void {
+  async setSetting(key: string, value: string): Promise<void> {
+    this.#writeSetting(key, value);
+  }
+
+  #writeSetting(key: string, value: string): void {
     this.#database
       .prepare(
         'INSERT INTO settings (key, value) VALUES (?, ?) ' +
@@ -111,7 +107,11 @@ export class ForgeStore {
 
   // -- mastery ------------------------------------------------------------
 
-  saveMastery(mastery: SkillMastery): void {
+  async saveMastery(mastery: SkillMastery): Promise<void> {
+    this.#writeMastery(mastery);
+  }
+
+  #writeMastery(mastery: SkillMastery): void {
     this.#database
       .prepare(
         'INSERT INTO mastery (skill_id, vector, observations, last_practiced_at) ' +
@@ -127,20 +127,24 @@ export class ForgeStore {
       );
   }
 
-  getMastery(skillId: string): SkillMastery | null {
+  async getMastery(skillId: string): Promise<SkillMastery | null> {
     const row = this.#database.prepare('SELECT * FROM mastery WHERE skill_id = ?').get(skillId) as
       MasteryRow | undefined;
     return row ? toMastery(row) : null;
   }
 
-  allMastery(): Map<string, SkillMastery> {
+  async allMastery(): Promise<Map<string, SkillMastery>> {
     const rows = this.#database.prepare('SELECT * FROM mastery').all() as unknown as MasteryRow[];
     return new Map(rows.map((row) => [row.skill_id, toMastery(row)]));
   }
 
   // -- reviews ------------------------------------------------------------
 
-  saveReview(review: StoredReview): void {
+  async saveReview(review: StoredReview): Promise<void> {
+    this.#writeReview(review);
+  }
+
+  #writeReview(review: StoredReview): void {
     this.#database
       .prepare(
         'INSERT INTO reviews (skill_id, last_reviewed_at, due_at, interval_days, streak, lapses) ' +
@@ -159,13 +163,12 @@ export class ForgeStore {
       );
   }
 
-  allReviews(): Map<string, StoredReview> {
+  async allReviews(): Promise<Map<string, StoredReview>> {
     const rows = this.#database.prepare('SELECT * FROM reviews').all() as unknown as ReviewRow[];
     return new Map(rows.map((row) => [row.skill_id, toReview(row)]));
   }
 
-  /** Reviews due at or before `at`, most overdue first. */
-  dueReviews(at: Date): StoredReview[] {
+  async dueReviews(at: Date): Promise<StoredReview[]> {
     const rows = this.#database
       .prepare('SELECT * FROM reviews WHERE due_at <= ? ORDER BY due_at ASC')
       .all(at.toISOString()) as unknown as ReviewRow[];
@@ -178,7 +181,11 @@ export class ForgeStore {
    * Write an attempt and its events atomically. An attempt whose events were
    * only half written would silently change the metrics derived from it.
    */
-  saveAttempt(attempt: Attempt): void {
+  async saveAttempt(attempt: Attempt): Promise<void> {
+    this.#writeAttempt(attempt);
+  }
+
+  #writeAttempt(attempt: Attempt): void {
     this.transaction(() => {
       this.#database
         .prepare(
@@ -212,27 +219,27 @@ export class ForgeStore {
     });
   }
 
-  getAttempt(id: string): Attempt | null {
+  async getAttempt(id: string): Promise<Attempt | null> {
     const row = this.#database.prepare('SELECT * FROM attempts WHERE id = ?').get(id) as
       AttemptRow | undefined;
     return row ? this.#hydrate(row) : null;
   }
 
-  attemptsFor(exerciseId: string): Attempt[] {
+  async attemptsFor(exerciseId: string): Promise<Attempt[]> {
     const rows = this.#database
       .prepare('SELECT * FROM attempts WHERE exercise_id = ? ORDER BY started_at ASC')
       .all(exerciseId) as unknown as AttemptRow[];
     return rows.map((row) => this.#hydrate(row));
   }
 
-  allAttempts(): Attempt[] {
+  async allAttempts(): Promise<Attempt[]> {
     const rows = this.#database
       .prepare('SELECT * FROM attempts ORDER BY started_at ASC')
       .all() as unknown as AttemptRow[];
     return rows.map((row) => this.#hydrate(row));
   }
 
-  countAttempts(): number {
+  async countAttempts(): Promise<number> {
     const row = this.#database.prepare('SELECT COUNT(*) AS n FROM attempts').get() as { n: number };
     return row.n;
   }
@@ -240,7 +247,7 @@ export class ForgeStore {
   #hydrate(row: AttemptRow): Attempt {
     const events = this.#database
       .prepare('SELECT type, at, payload FROM attempt_events WHERE attempt_id = ? ORDER BY seq ASC')
-      .all(row.id) as { type: string; at: string; payload: string }[];
+      .all(row.id) as unknown as { type: string; at: string; payload: string }[];
 
     return {
       id: row.id,
@@ -266,57 +273,39 @@ export class ForgeStore {
 
   // -- portability (spec §42) ---------------------------------------------
 
-  exportAll(): ForgeExport {
+  async exportAll(): Promise<ProgressSnapshot> {
+    const settings = this.#database.prepare('SELECT key, value FROM settings').all() as unknown as {
+      key: string;
+      value: string;
+    }[];
+
     return {
-      format: 'forge-progress',
+      format: SNAPSHOT_FORMAT,
       schemaVersion: this.schemaVersion,
       exportedAt: new Date().toISOString(),
-      settings: Object.fromEntries(
-        (
-          this.#database.prepare('SELECT key, value FROM settings').all() as {
-            key: string;
-            value: string;
-          }[]
-        ).map((row) => [row.key, row.value]),
-      ),
-      mastery: [...this.allMastery().values()],
-      reviews: [...this.allReviews().values()],
-      attempts: this.allAttempts(),
+      settings: Object.fromEntries(settings.map((row) => [row.key, row.value])),
+      mastery: [...(await this.allMastery()).values()],
+      reviews: [...(await this.allReviews()).values()],
+      attempts: await this.allAttempts(),
     };
   }
 
-  /** Replace everything in this store with an exported snapshot. */
-  importAll(data: ForgeExport): void {
-    if (data.format !== 'forge-progress') {
-      throw new Error(`Not a Forge progress export (format: ${String(data.format)}).`);
-    }
-    if (data.schemaVersion > LATEST_VERSION) {
-      throw new Error(
-        `Export is from schema version ${data.schemaVersion}; this build understands ${LATEST_VERSION}.`,
-      );
-    }
+  async importAll(snapshot: ProgressSnapshot): Promise<void> {
+    assertImportable(snapshot, LATEST_VERSION);
 
     this.transaction(() => {
       this.#database.exec(
         'DELETE FROM attempt_events; DELETE FROM attempts; DELETE FROM reviews; ' +
           'DELETE FROM mastery; DELETE FROM settings;',
       );
-      for (const [key, value] of Object.entries(data.settings)) this.setSetting(key, value);
-      for (const mastery of data.mastery) this.saveMastery(mastery);
-      for (const review of data.reviews) this.saveReview(review);
-      for (const attempt of data.attempts) this.saveAttempt(attempt);
+      for (const [key, value] of Object.entries(snapshot.settings)) {
+        this.#writeSetting(key, value);
+      }
+      for (const mastery of snapshot.mastery) this.#writeMastery(mastery);
+      for (const review of snapshot.reviews) this.#writeReview(review);
+      for (const attempt of snapshot.attempts) this.#writeAttempt(attempt);
     });
   }
-}
-
-export interface ForgeExport {
-  readonly format: string;
-  readonly schemaVersion: number;
-  readonly exportedAt: string;
-  readonly settings: Readonly<Record<string, string>>;
-  readonly mastery: readonly SkillMastery[];
-  readonly reviews: readonly StoredReview[];
-  readonly attempts: readonly Attempt[];
 }
 
 interface MasteryRow {

@@ -2,6 +2,7 @@
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
+import { runContentCommand } from './commands/content.ts';
 import { runCurriculumCommand } from './commands/curriculum.ts';
 import { runExerciseCommand } from './commands/exercise.ts';
 import { runPlanCommand } from './commands/plan.ts';
@@ -21,6 +22,7 @@ ${style.bold('Usage')}
   forge plan session [--level <id>]          Build today's training session
   forge plan next [--level <id>]             Explain what to practise next
   forge plan diagnostic                      Show the onboarding diagnostic
+  forge content bundle [--out <path>]        Emit the curriculum as static JSON
 
 ${style.bold('Options')}
   --help, -h        Show this message
@@ -43,6 +45,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       language: { type: 'string' },
       level: { type: 'string' },
       limit: { type: 'string' },
+      out: { type: 'string' },
       fast: { type: 'boolean' },
       solution: { type: 'boolean' },
     },
@@ -70,6 +73,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         return await runCurriculumCommand(rest, values);
       case 'plan':
         return await runPlanCommand(rest, values);
+      case 'content':
+        return await runContentCommand(rest, values);
       case undefined:
         console.log(USAGE);
         return 0;
