@@ -1,0 +1,70 @@
+id: python.control.counting
+version: 1
+language: python
+title: Counting, positions and pairs
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 150
+timeoutMs: 10000
+
+skills:
+  - python.control.range-enumerate-zip
+
+prerequisites:
+  - python.control.for
+  - python.collections.list
+
+learningObjectives:
+  - Recall the three forms of range without checking which end is included.
+  - Use enumerate instead of maintaining an index by hand.
+  - Predict what zip does with sequences of different lengths.
+
+prompt: |
+  Four functions. None of them needs a manual counter variable.
+
+  - `countdown(start)` returns a list from `start` down to 1. `countdown(3)` is
+    `[3, 2, 1]`.
+  - `every_other(items)` returns the items at positions 0, 2, 4 and so on.
+  - `numbered(items)` returns a list of `"1. apple"` style strings, numbered
+    from one.
+  - `pair_up(names, scores)` returns a list of `(name, score)` tuples. If one
+    list is longer, the extra entries are dropped.
+
+  If you find yourself writing `i = 0` anywhere, there is a built-in for what
+  you are doing.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_counting.py
+    visibility: visible
+    concept: python.control.range-enumerate-zip
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.control.range-enumerate-zip
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.control.range-enumerate-zip
+
+hints:
+  - level: conceptual
+    text: Ranges stop before their end value, which is why the count and the last number differ.
+  - level: structural
+    text: One built-in hands you the position alongside the item; another walks two sequences together.
+  - level: language
+    text: '`range(start, stop, step)` — step may be negative. `enumerate(items, start=1)` numbers from one.'
+  - level: syntax
+    text: '`range(start, 0, -1)` counts down to 1. `items[::2]` takes every other.'
+  - level: explicit
+    text: '`pair_up` is `list(zip(names, scores))`.'
+
+explanation: |
+  Every one of these replaces a hand-written counter, and hand-written counters
+  are where off-by-one lives. `range` stopping *before* its end is the single
+  most useful thing to have in your fingers: `range(5)` yields five values and
+  the last is 4, so `range(len(items))` is always exactly the valid indices.
+
+  `zip` stopping at the shortest is a decision, not an accident, and it is
+  silent. Two lists that should have been the same length quietly produce a
+  short result rather than an error, which is worth knowing before it happens
+  to real data.

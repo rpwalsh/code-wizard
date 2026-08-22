@@ -86,6 +86,15 @@ export interface MutationException {
   readonly path: string;
   /** The operator whose mutant is expected to survive. */
   readonly operator: string;
+  /**
+   * The line it sits on, when only one line is genuinely unkillable.
+   *
+   * Without this an exception covers every mutant that operator makes in the
+   * file, so excusing one equivalent comparison would also excuse a real gap
+   * in three other functions — and the gate would go quiet exactly where it
+   * was still needed.
+   */
+  readonly line?: number;
   /** Why no test can kill it. Not optional. */
   readonly why: string;
 }

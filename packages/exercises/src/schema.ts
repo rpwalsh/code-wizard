@@ -74,6 +74,7 @@ export const exerciseManifestSchema = z
           .object({
             path: relativePath,
             operator: z.string().min(1),
+            line: z.number().int().positive().optional(),
             // Long enough that it has to be a sentence, not a shrug.
             why: z.string().min(20),
           })

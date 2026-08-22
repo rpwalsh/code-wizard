@@ -320,7 +320,9 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
       (survivor) =>
         !excused.some(
           (exception) =>
-            exception.path === survivor.path && exception.operator === survivor.operator,
+            exception.path === survivor.path &&
+            exception.operator === survivor.operator &&
+            (exception.line === undefined || exception.line === survivor.line),
         ),
     );
 
@@ -328,7 +330,9 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
       console.log(
         indent(
           style.grey(
-            `${symbol.skip} ${exception.path} — ${exception.operator} mutants excused: ${exception.why}`,
+            `${symbol.skip} ${exception.path}${
+              exception.line === undefined ? '' : `:${exception.line}`
+            } — ${exception.operator} excused: ${exception.why}`,
           ),
         ),
       );

@@ -6,7 +6,7 @@ import {
   pythonExercisesDir,
   pythonSkills,
 } from '@code-retrainer/python';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 /**
  * The content gate (spec §38). Every shipped exercise is loaded, schema-checked,
@@ -21,14 +21,10 @@ const runtime = new PythonRuntime();
 const interpreter = await discoverPython().catch(() => null);
 const canExecute = interpreter?.hasPytest === true;
 
-let catalog: ExerciseCatalog;
-let failures: readonly { directory: string; message: string }[];
-
-beforeAll(async () => {
-  const report = await ExerciseCatalog.load([pythonExercisesDir]);
-  catalog = report.catalog;
-  failures = report.failures;
-});
+// Loaded at module level rather than in a hook, because the runtime test
+// derives its timeout from how many exercises there are, and a hook has not
+// run by the time that argument is evaluated.
+const { catalog, failures } = await ExerciseCatalog.load([pythonExercisesDir]);
 
 describe('shipped curriculum', () => {
   it('loads every exercise directory without error', () => {
@@ -59,21 +55,29 @@ describe('shipped curriculum', () => {
 });
 
 describe.skipIf(!canExecute)('exercise validation', () => {
-  it('validates every exercise against the real runtime', async () => {
-    const problems: string[] = [];
+  // Every exercise is executed twice against a real interpreter, so the time
+  // this takes grows with the curriculum. Deriving the allowance from the
+  // catalogue size means adding content never silently turns a real failure
+  // into a timeout that looks like one.
+  it(
+    'validates every exercise against the real runtime',
+    async () => {
+      const problems: string[] = [];
 
-    for (const exercise of catalog.all()) {
-      const report = await validateExercise(exercise, {
-        skillGraph,
-        catalog,
-        runtime,
-      });
-      for (const issue of report.issues) {
-        if (issue.severity !== 'error') continue;
-        problems.push(`${issue.exerciseId} [${issue.check}] ${issue.message}`);
+      for (const exercise of catalog.all()) {
+        const report = await validateExercise(exercise, {
+          skillGraph,
+          catalog,
+          runtime,
+        });
+        for (const issue of report.issues) {
+          if (issue.severity !== 'error') continue;
+          problems.push(`${issue.exerciseId} [${issue.check}] ${issue.message}`);
+        }
       }
-    }
 
-    expect(problems).toEqual([]);
-  });
+      expect(problems).toEqual([]);
+    },
+    30_000 + catalog.size * 8_000,
+  );
 });

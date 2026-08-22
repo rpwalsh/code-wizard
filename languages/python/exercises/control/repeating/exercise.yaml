@@ -1,0 +1,83 @@
+id: python.control.repeating
+version: 1
+language: python
+title: Repeating until you are done
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 210
+timeoutMs: 10000
+
+skills:
+  - python.control.while
+  - python.control.loop-control
+
+prerequisites:
+  - python.control.for
+  - python.control.conditionals
+
+learningObjectives:
+  - Write a while loop whose condition is guaranteed to become false.
+  - Use break to leave a loop and continue to skip one turn.
+  - Recall what the else clause on a loop actually means.
+
+prompt: |
+  A `for` loop knows how many turns it will take. A `while` loop does not, and
+  that is the whole difference — and the whole danger, because a loop whose
+  condition never changes never ends.
+
+  - `halve_until_small(number)` repeatedly halves `number` (integer division)
+    until it is below 1, and returns how many halvings that took.
+  - `first_negative(values)` returns the first negative value, or `None`.
+    Leave the loop as soon as you find one.
+  - `sum_ignoring_negatives(values)` adds up the values, skipping any negative
+    one.
+  - `all_below(values, limit)` returns True when every value is below `limit`.
+    Return False the moment one is not.
+
+  Each test has a short timeout. A loop that does not end will be stopped and
+  reported, which is the intended way to find out.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_repeating.py
+    visibility: visible
+    concept: python.control.while
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.control.loop-control
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.control.while
+
+hints:
+  - level: conceptual
+    text: Something inside a while loop must change what the condition looks at.
+  - level: structural
+    text: '`break` stops the loop entirely; `continue` skips the rest of this turn only.'
+  - level: language
+    text: 'A loop can have an `else`, which runs when the loop finished without breaking.'
+  - level: syntax
+    text: '`while number >= 1:` then `number = number // 2` inside.'
+  - level: explicit
+    text: 'For `all_below`, return False inside the loop and True after it.'
+
+explanation: |
+  The infinite loop is not a beginner mistake; it is a shape. It happens
+  whenever the thing the condition tests is not the thing the body changes, and
+  it happens to everyone. Meeting it here, with a timeout to catch it, is much
+  cheaper than meeting it in something that holds a lock.
+
+  `for ... else` reads wrongly to almost everybody. The `else` runs when the
+  loop finished *without* breaking — it is "no break" rather than "otherwise",
+  and that is why it is used so rarely and misread so often.
+
+mutationExceptions:
+  - path: main.py
+    operator: comparison
+    line: 25
+    why: >-
+      Skipping a value of exactly zero and adding a value of exactly zero
+      produce the same total, so no input can distinguish `value < 0` from
+      `value <= 0` here. The mutant is equivalent rather than uncaught, and the
+      neighbouring off-by-one is caught by the fractional case.
