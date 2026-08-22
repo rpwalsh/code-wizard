@@ -84,7 +84,11 @@ class ForgeReporter:
             # A failure outside the call phase is an error, not a failed
             # assertion: the learner's code never got to be judged.
             record["status"] = "failed" if report.when == "call" else "errored"
-            record.setdefault("message", _shorten(_longrepr_text(report)))
+            # The rendered traceback is the fallback. When the assertion
+            # already told us what was expected and what arrived, repeating it
+            # as a stack trace only adds noise.
+            if "expected" not in record and "received" not in record:
+                record.setdefault("message", _shorten(_longrepr_text(report)))
         elif report.skipped and record["status"] == "passed":
             record["status"] = "skipped"
             record.setdefault("message", _shorten(_longrepr_text(report)))
@@ -97,8 +101,9 @@ class ForgeReporter:
     ) -> None:
         """Capture structured expectation data straight off the exception.
 
-        This runs before ``logreport`` for the same node, which is why the
-        message written here wins over the rendered traceback.
+        pytest calls this *after* ``logreport`` for the same node, so by now a
+        rendered traceback may already be sitting in ``message``. Structured
+        expectations supersede it.
         """
         if call.excinfo is None or not isinstance(node, pytest.Item):
             return
@@ -184,6 +189,10 @@ def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
     forge_message = getattr(error, "forge_message", None)
     if forge_message:
         record["message"] = str(forge_message)
+    elif expected is not None or received is not None:
+        # The expected/received pair says everything the traceback would, and
+        # says it in the learner's terms. Drop whatever logreport left behind.
+        record.pop("message", None)
     else:
         record["message"] = _shorten(_describe(error))
 

@@ -1,0 +1,75 @@
+id: python.collections.comprehensions
+version: 1
+language: python
+title: Filter and reshape a list of records
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 240
+timeoutMs: 15000
+
+skills:
+  - python.collections.comprehensions
+
+prerequisites:
+  - python.collections.list
+  - python.collections.dict
+  - python.control.for
+
+learningObjectives:
+  - Write a list comprehension that filters and projects in one expression.
+  - Write a dict comprehension.
+  - Recognise when a comprehension is clearer than an explicit loop.
+
+prompt: |
+  Each user is a dictionary with `"name"`, `"email"` and `"active"` keys.
+
+  `active_names(users)` returns a list of the names of the active users, in
+  the order they appear.
+
+  `email_index(users)` returns a dictionary mapping each *active* user's
+  email to their name.
+
+  `domains(users)` returns the set of email domains (the part after `@`) for
+  active users. Each domain appears once.
+
+  Write all three as comprehensions rather than as loops with `.append`.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_comprehensions.py
+    visibility: visible
+    concept: python.collections.comprehensions
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.collections.comprehensions
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.comprehensions
+
+hints:
+  - level: conceptual
+    text: Each function is "for every record, if it qualifies, produce something".
+  - level: structural
+    text: >-
+      That shape is exactly what a comprehension expresses: an output
+      expression, a `for`, and a trailing `if`.
+  - level: language
+    text: >-
+      Python has three bracket forms — `[...]` builds a list, `{k: v for ...}`
+      a dict, and `{...}` a set.
+  - level: syntax
+    text: '`[user["name"] for user in users if user["active"]]`'
+  - level: explicit
+    text: >-
+      For domains, split each email on "@" and take the last part:
+      `{user["email"].split("@")[-1] for user in users if user["active"]}`.
+
+explanation: |
+  A comprehension is not just shorter than the loop-and-append version — it
+  says something the loop does not. `[... for ... if ...]` announces up front
+  that the result is one item per qualifying input, with no accumulation, no
+  early exit, and no mutation. A reader can stop worrying about those cases.
+
+  Choose the bracket by the result you want, not by habit: a set comprehension
+  is how you say "duplicates are not meaningful here".

@@ -39,13 +39,17 @@ class ForgeAssertionError(AssertionError):
 
     def __init__(
         self,
-        message: str,
+        message: str | None,
         *,
+        summary: str,
         expected: str | None = None,
         received: str | None = None,
         concept: str | None = None,
     ) -> None:
-        super().__init__(message)
+        # `summary` is what a plain traceback shows; `message` is the note the
+        # author wrote. Keeping them apart lets the test panel stay quiet when
+        # the author had nothing to add beyond the expected/received pair.
+        super().__init__(message or summary)
         self.forge_message = message
         self.forge_expected = expected
         self.forge_received = received
@@ -60,13 +64,18 @@ def _render(value: Any) -> str:
 
 
 def _fail(
-    message: str,
+    message: str | None,
+    summary: str,
     expected: str | None,
     received: str | None,
     concept: str | None,
 ) -> NoReturn:
     raise ForgeAssertionError(
-        message, expected=expected, received=received, concept=concept
+        message,
+        summary=summary,
+        expected=expected,
+        received=received,
+        concept=concept,
     )
 
 
@@ -76,12 +85,7 @@ def expect_equal(
     """Assert ``received == expected``, reporting both sides separately."""
     if received == expected:
         return
-    _fail(
-        message or "values are not equal",
-        _render(expected),
-        _render(received),
-        concept,
-    )
+    _fail(message, "values are not equal", _render(expected), _render(received), concept)
 
 
 def expect_true(
@@ -89,7 +93,7 @@ def expect_true(
 ) -> None:
     if received:
         return
-    _fail(message or "expected a truthy value", "truthy", _render(received), concept)
+    _fail(message, "expected a truthy value", "truthy", _render(received), concept)
 
 
 def expect_false(
@@ -97,7 +101,7 @@ def expect_false(
 ) -> None:
     if not received:
         return
-    _fail(message or "expected a falsy value", "falsy", _render(received), concept)
+    _fail(message, "expected a falsy value", "falsy", _render(received), concept)
 
 
 def expect_close(
@@ -111,7 +115,8 @@ def expect_close(
     if abs(received - expected) <= tolerance:
         return
     _fail(
-        message or f"values differ by more than {tolerance}",
+        message,
+        f"values differ by more than {tolerance}",
         _render(expected),
         _render(received),
         concept,
@@ -137,13 +142,15 @@ def expect_raises(
         return error
     except BaseException as error:  # noqa: B902
         _fail(
-            message or f"expected {names}",
+            message,
+            f"expected {names}",
             f"{names} to be raised",
             f"{type(error).__name__}: {error}",
             concept,
         )
     _fail(
-        message or f"expected {names}",
+        message,
+        f"expected {names}",
         f"{names} to be raised",
         f"returned {_render(result)} without raising",
         concept,

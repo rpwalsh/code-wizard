@@ -1,0 +1,109 @@
+id: python.modeling.ledger-2
+version: 1
+language: python
+title: Ledger, stage 2 — transfers and history
+kind: progressive-stage
+continues: python.modeling.ledger-1
+difficulty: 4
+estimatedSeconds: 1200
+timeoutMs: 20000
+
+skills:
+  - python.modeling.state
+  - python.errors.exceptions
+
+prerequisites:
+  - python.modeling.classes
+  - python.errors.validation
+  - python.collections.nested
+
+learningObjectives:
+  - Extend a working system without breaking the contract it already honours.
+  - Make a multi-step operation atomic — it fully happens, or not at all.
+  - Record an audit trail as a side effect of state changes, not instead of them.
+
+prompt: |
+  You are picking up the Ledger from stage 1. Everything it already does must
+  keep working: those tests are still running, and they are marked as
+  regressions.
+
+  Add two capabilities.
+
+  transfer(source, target, amount)
+      Moves amount from one account to the other and returns nothing. Raises
+      KeyError if either account is unknown, and ValueError if amount is not
+      positive, if source and target are the same account, or if source holds
+      less than amount.
+
+      A failed transfer must leave BOTH balances exactly as they were. Half a
+      transfer is worse than no transfer.
+
+  history(account_id)
+      Returns the list of operations that affected this account, oldest first.
+      Each entry is a dictionary:
+
+          {"kind": "deposit",    "amount": 250,  "balance": 250}
+          {"kind": "withdrawal", "amount": 100,  "balance": 150}
+          {"kind": "transfer-out", "amount": 50, "balance": 100, "other": "bob"}
+          {"kind": "transfer-in",  "amount": 50, "balance": 50,  "other": "alice"}
+
+      "balance" is the account's balance immediately after the operation.
+      Opening an account records nothing. A rejected operation records nothing.
+      Raises KeyError for an unknown account.
+
+      A transfer records two entries: transfer-out on the source and
+      transfer-in on the target.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_transfer.py
+    visibility: visible
+    concept: python.modeling.state
+  - path: tests/test_history.py
+    visibility: visible
+    concept: python.modeling.state
+  - path: tests/test_atomicity.py
+    visibility: edge
+    concept: python.errors.exceptions
+  - path: tests/test_stage1_regression.py
+    visibility: regression
+    concept: python.modeling.state
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.modeling.state
+
+hints:
+  - level: conceptual
+    text: >-
+      A transfer is a withdrawal and a deposit that must succeed or fail
+      together. Decide what happens if the second one raises.
+  - level: structural
+    text: >-
+      The easiest way to be atomic is to validate everything first, then
+      perform every mutation with no further chance of failure.
+  - level: language
+    text: >-
+      You already have the validation logic inside withdraw and deposit.
+      Extracting the checks into helpers lets transfer reuse them without
+      also triggering their history entries.
+  - level: syntax
+    text: >-
+      Give history its own store, self._history = {}, keyed the same way as
+      balances, and append to it from one private _record helper.
+  - level: explicit
+    text: >-
+      Structure transfer as: require both accounts, require a positive amount,
+      reject a self-transfer, reject insufficient funds, and only then apply
+      both balance changes and append both history entries.
+
+explanation: |
+  This is the stage where "validate before you mutate" stops being style
+  advice. If transfer subtracts from the source and then discovers a problem
+  with the target, the money is gone. The fix is not a try/except that puts it
+  back — that is a second chance to be wrong — but an ordering where nothing
+  has changed yet at the moment you decide to refuse.
+
+  The regression tests are the other lesson. Stage 1's contract did not become
+  optional when the requirements grew, and the cheapest way to discover you
+  broke it is to still be running its tests.

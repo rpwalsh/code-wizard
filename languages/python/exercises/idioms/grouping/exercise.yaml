@@ -1,0 +1,80 @@
+id: python.idioms.grouping
+version: 1
+language: python
+title: Group transactions by account
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 15000
+
+skills:
+  - python.idioms.grouping
+  - python.stdlib.collections
+
+prerequisites:
+  - python.collections.dict-mutation
+  - python.control.for
+  - python.syntax.imports
+
+learningObjectives:
+  - Accumulate into a dictionary whose values are collections.
+  - Use setdefault or defaultdict instead of a "has this key yet?" branch.
+  - Keep grouping and aggregation as two separate, composable steps.
+
+prompt: |
+  A transaction is a dictionary with "account", "amount" (whole cents, which
+  may be negative) and "kind".
+
+  `group_by_account(transactions)` returns a dictionary mapping each account
+  id to the list of its transactions, in the order they appeared.
+
+  `balances(transactions)` returns a dictionary mapping each account id to the
+  sum of its amounts.
+
+  `busiest_account(transactions)` returns the id of the account with the most
+  transactions, or `None` when there are no transactions at all. If two
+  accounts tie, return whichever appeared first.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_grouping.py
+    visibility: visible
+    concept: python.idioms.grouping
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.idioms.grouping
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.idioms.grouping
+
+hints:
+  - level: conceptual
+    text: >-
+      For each transaction you need the bucket for its account, creating that
+      bucket the first time you see the account.
+  - level: structural
+    text: >-
+      "Create it if absent, then use it" is one operation, not an
+      "if key in result" branch wrapped around two.
+  - level: language
+    text: >-
+      dict.setdefault returns the existing value, or inserts and returns a
+      default. collections.defaultdict(list) does the same thing implicitly.
+  - level: syntax
+    text: 'result.setdefault(transaction["account"], []).append(transaction)'
+  - level: explicit
+    text: >-
+      For the tie-break, iterate the grouped dictionary. Since Python 3.7 it
+      preserves insertion order, so the first account holding the maximum count
+      is also the one that appeared first.
+
+explanation: |
+  setdefault and defaultdict say the same thing in different places.
+  setdefault keeps the default at the call site, which is clearer when you
+  return the dictionary to a caller who should not have to know it was ever a
+  defaultdict. defaultdict is better when you accumulate in many places.
+
+  busiest_account needs no sorting. max() over the grouped dictionary with a
+  key function finds the answer in one pass, and the tie-break falls out for
+  free: max keeps the first maximum it sees.

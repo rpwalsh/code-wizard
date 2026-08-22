@@ -1,0 +1,95 @@
+id: python.modeling.ledger-1
+version: 1
+language: python
+title: Ledger, stage 1 — accounts and balances
+kind: stateful-problem
+difficulty: 3
+estimatedSeconds: 900
+timeoutMs: 20000
+
+skills:
+  - python.modeling.classes
+  - python.modeling.state
+  - python.errors.validation
+
+prerequisites:
+  - python.collections.dict-mutation
+  - python.functions.arguments
+
+learningObjectives:
+  - Hold mutable state on an instance rather than in module-level globals.
+  - Validate arguments at the boundary and raise rather than return a sentinel.
+  - Choose the exception type that matches the kind of mistake the caller made.
+
+prompt: |
+  Implement a Ledger that tracks account balances in whole cents.
+
+  open_account(account_id, opening_balance=0)
+      Registers a new account. Raises ValueError if the account already
+      exists, or if opening_balance is negative.
+
+  balance(account_id)
+      Returns the current balance. Raises KeyError for an unknown account.
+
+  deposit(account_id, amount)
+      Adds amount and returns the new balance. Raises ValueError if amount is
+      not positive, and KeyError for an unknown account.
+
+  withdraw(account_id, amount)
+      Subtracts amount and returns the new balance. Raises ValueError if
+      amount is not positive or if the account holds less than amount, and
+      KeyError for an unknown account.
+
+  accounts()
+      Returns the account ids in the order they were opened.
+
+  A rejected operation must leave every balance exactly as it was.
+
+  This is stage 1 of a system you will keep extending, so leave the internals
+  somewhere a later stage can build on.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_ledger.py
+    visibility: visible
+    concept: python.modeling.state
+  - path: tests/test_validation.py
+    visibility: edge
+    concept: python.errors.validation
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.modeling.state
+
+hints:
+  - level: conceptual
+    text: >-
+      The ledger owns a mapping from account id to balance, and every method is
+      a guarded read or write of that mapping.
+  - level: structural
+    text: >-
+      Check the arguments before you touch any state. Once a method has started
+      mutating, an exception raised halfway leaves the ledger inconsistent.
+  - level: language
+    text: >-
+      Two different exception types are asked for on purpose. KeyError says
+      "no such thing"; ValueError says "that thing exists, but not like that".
+  - level: syntax
+    text: >-
+      Create the store in __init__ with self._balances = {}, never as a class
+      attribute — a class attribute is shared by every Ledger you create.
+  - level: explicit
+    text: >-
+      Give yourself a private helper that raises KeyError when an account is
+      missing, and call it first in balance, deposit and withdraw.
+
+explanation: |
+  The instruction to validate before mutating is the whole exercise. A method
+  that subtracts first and checks the balance afterwards has already corrupted
+  the ledger by the time it raises, and the caller's except block cannot undo
+  it. Stage 2 makes this bite: a transfer touches two accounts, and the second
+  one can fail.
+
+  The KeyError/ValueError split is a real API decision, not a formality. It
+  tells the caller whether to fix the account id or fix the amount, and it is
+  what lets a caller write two different except clauses.

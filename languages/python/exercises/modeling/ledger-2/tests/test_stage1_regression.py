@@ -1,0 +1,82 @@
+"""Stage 1 contract. These must keep passing while stage 2 is added."""
+
+import pytest
+
+from forge_expect import expect_equal, expect_raises
+from main import Ledger
+
+
+@pytest.fixture
+def ledger():
+    book = Ledger()
+    book.open_account("alice", 1000)
+    book.open_account("bob")
+    return book
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_opens_accounts_with_and_without_an_opening_balance(ledger):
+    expect_equal(ledger.balance("alice"), 1000)
+    expect_equal(ledger.balance("bob"), 0)
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_lists_accounts_in_the_order_they_were_opened(ledger):
+    expect_equal(ledger.accounts(), ["alice", "bob"])
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_deposit_returns_the_new_balance(ledger):
+    expect_equal(ledger.deposit("bob", 250), 250)
+    expect_equal(ledger.balance("bob"), 250)
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_withdraw_returns_the_new_balance(ledger):
+    expect_equal(ledger.withdraw("alice", 400), 600)
+    expect_equal(ledger.balance("alice"), 600)
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_withdrawing_the_whole_balance_is_allowed(ledger):
+    expect_equal(ledger.withdraw("alice", 1000), 0)
+
+
+@pytest.mark.concept("python.modeling.state")
+def test_unknown_accounts_raise_key_error(ledger):
+    expect_raises(KeyError, lambda: ledger.balance("nobody"))
+    expect_raises(KeyError, lambda: ledger.deposit("nobody", 10))
+    expect_raises(KeyError, lambda: ledger.withdraw("nobody", 10))
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_cannot_open_the_same_account_twice(ledger):
+    expect_raises(ValueError, lambda: ledger.open_account("alice"))
+    expect_equal(ledger.balance("alice"), 1000)
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_cannot_open_an_account_in_debt(ledger):
+    expect_raises(ValueError, lambda: ledger.open_account("carol", -1))
+    expect_equal(ledger.accounts(), ["alice", "bob"])
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_amounts_must_be_positive(ledger):
+    expect_raises(ValueError, lambda: ledger.deposit("alice", 0))
+    expect_raises(ValueError, lambda: ledger.deposit("alice", -5))
+    expect_raises(ValueError, lambda: ledger.withdraw("alice", 0))
+    expect_raises(ValueError, lambda: ledger.withdraw("alice", -5))
+    expect_equal(ledger.balance("alice"), 1000)
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_overdraft_is_refused_and_changes_nothing(ledger):
+    expect_raises(ValueError, lambda: ledger.withdraw("alice", 1001))
+    expect_equal(ledger.balance("alice"), 1000)
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_a_failed_deposit_on_an_unknown_account_creates_nothing(ledger):
+    expect_raises(KeyError, lambda: ledger.deposit("ghost", 100))
+    expect_equal(ledger.accounts(), ["alice", "bob"])

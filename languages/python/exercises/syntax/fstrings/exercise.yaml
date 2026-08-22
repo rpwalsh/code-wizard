@@ -1,0 +1,54 @@
+id: python.syntax.fstrings
+version: 1
+language: python
+title: Format a value into a string
+kind: syntax-drill
+difficulty: 1
+estimatedSeconds: 60
+timeoutMs: 10000
+
+skills:
+  - python.syntax.strings
+
+prerequisites:
+  - python.syntax.variables
+
+learningObjectives:
+  - Interpolate a variable into a string with an f-string.
+  - Apply a format specification to control decimal places.
+
+prompt: |
+  Two one-line functions. Both should use f-strings.
+
+  `describe(name, age)` returns `"Ada is 36 years old"` for `("Ada", 36)`.
+
+  `money(cents)` returns a dollar amount with exactly two decimal places:
+  `1234` becomes `"$12.34"`, and `5` becomes `"$0.05"`.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_format.py
+    visibility: visible
+    concept: python.syntax.strings
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.syntax.strings
+
+hints:
+  - level: conceptual
+    text: You need to put the value of a variable inside a piece of text.
+  - level: structural
+    text: Python can build the string in one expression; no concatenation needed.
+  - level: language
+    text: An f-string evaluates `{expressions}` inline, and can format the result.
+  - level: syntax
+    text: '`f"{value}"` interpolates; `f"{value:.2f}"` rounds to two decimals.'
+  - level: explicit
+    text: 'For money: `return f"${cents / 100:.2f}"`.'
+
+explanation: |
+  The format specification after the colon is the part most people forget.
+  `:.2f` is not decoration — without it `5 / 100` renders as `0.05`, but
+  `250 / 100` renders as `2.5` rather than `2.50`, and a column of prices
+  stops lining up.

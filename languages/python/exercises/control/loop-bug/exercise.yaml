@@ -1,0 +1,74 @@
+id: python.control.loop-bug
+version: 1
+language: python
+title: Fix the expiry sweep
+kind: bug-fix
+difficulty: 2
+estimatedSeconds: 300
+timeoutMs: 15000
+
+skills:
+  - python.control.for
+  - python.collections.list
+
+prerequisites:
+  - python.control.loop-control
+
+learningObjectives:
+  - Recognise the failure mode of mutating a list while iterating over it.
+  - Recognise that `range(len(...))` plus mutation shifts the indices.
+  - Repair a loop without rewriting the whole function.
+
+prompt: |
+  `sweep_expired(sessions, now)` should remove every session whose `expires_at`
+  is at or before `now`, and return the ids of the sessions it removed. It must
+  modify the list it is given, in place.
+
+  It nearly works. On some inputs it silently leaves an expired session behind.
+
+  Find the bug and fix it. Do not rewrite the function from scratch — the
+  point is to see why the existing loop misbehaves.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_sweep.py
+    visibility: visible
+    concept: python.control.for
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.control.for
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.control.for
+
+hints:
+  - level: conceptual
+    text: >-
+      The loop and the list disagree about how long the list is. Ask what
+      happens to the positions of later items when an earlier one is removed.
+  - level: structural
+    text: >-
+      Removing an element shifts everything after it down one index, but the
+      loop counter still moves forward — so one element is skipped.
+  - level: language
+    text: >-
+      Either iterate over a copy and remove from the original, or build the
+      survivors and assign them back with a slice.
+  - level: syntax
+    text: >-
+      `sessions[:] = [...]` replaces the contents of the list in place, unlike
+      `sessions = [...]` which only rebinds the local name.
+  - level: explicit
+    text: >-
+      Collect the expired ids first, then do
+      `sessions[:] = [s for s in sessions if s["expires_at"] > now]`.
+
+explanation: |
+  Two adjacent expired sessions expose the bug: removing the first shifts the
+  second into the index the loop has already passed.
+
+  The `sessions[:] = ...` form matters as much as the fix itself. The caller
+  holds a reference to that list, so rebinding the local name `sessions` would
+  leave the caller's list untouched and the function would appear to do
+  nothing at all.
