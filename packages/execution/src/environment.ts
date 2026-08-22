@@ -18,6 +18,9 @@ const ALLOWED_KEYS_WINDOWS = [
   'PROCESSOR_ARCHITECTURE',
   'USERPROFILE',
   'LOCALAPPDATA',
+  // Windows resolves the per-user site-packages directory from APPDATA.
+  // Dropping it silently hides everything installed with `pip install --user`.
+  'APPDATA',
 ] as const;
 
 const ALLOWED_KEYS_POSIX = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'SHELL', 'TERM'] as const;

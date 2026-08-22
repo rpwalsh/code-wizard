@@ -32,11 +32,15 @@ const DIAGNOSTIC_PATH = '.forge/diagnostics.json';
 /**
  * Flags applied to every interpreter launch:
  *   -u  unbuffered, so output arrives in real time and survives a kill
- *   -s  ignore the user site directory, so the learner's global packages
- *       cannot silently change what an exercise means
  *   -B  no .pyc files, keeping the sandbox byte-identical between runs
+ *
+ * Notably absent is `-s`. Ignoring the user site directory would be better
+ * isolation, but `pip install --user` is the default on Windows and for many
+ * managed Python installs, so `-s` hides the learner's own pytest. The real
+ * grading risk — a stray plugin changing how tests run — is closed by
+ * PYTEST_DISABLE_PLUGIN_AUTOLOAD instead.
  */
-const BASE_FLAGS = ['-u', '-s', '-B'] as const;
+const BASE_FLAGS = ['-u', '-B'] as const;
 
 export interface PythonRuntimeOptions {
   /** Override interpreter discovery (tests, or a pinned virtualenv). */

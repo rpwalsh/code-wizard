@@ -1,0 +1,70 @@
+id: python.collections.dict-lookup
+version: 1
+language: python
+title: Safe account lookup
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 180
+timeoutMs: 15000
+
+skills:
+  - python.collections.dict-lookup
+
+prerequisites:
+  - python.collections.dict
+  - python.control.conditionals
+
+learningObjectives:
+  - Read a value out of a dictionary without assuming the key exists.
+  - Return a caller-supplied default instead of raising KeyError.
+  - Recognise that `in` and `dict.get` solve different halves of the problem.
+
+prompt: |
+  `accounts` maps an account id to its balance in whole cents.
+
+  Implement `get_balance(accounts, account_id, default=0)` so that it returns
+  the balance for `account_id`, or `default` when the account does not exist.
+
+  Implement `total_balance(accounts, account_ids)` so that it returns the sum
+  of the balances for every id in `account_ids`, treating a missing account as
+  a balance of zero.
+
+  Neither function may raise `KeyError`, and neither may modify `accounts`.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_lookup.py
+    visibility: visible
+    concept: python.collections.dict-lookup
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.collections.dict-lookup
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.dict-lookup
+
+hints:
+  - level: conceptual
+    text: You need to ask whether the account exists before you can use its balance.
+  - level: structural
+    text: >-
+      `accounts` is a dictionary. Indexing it with a missing key raises
+      KeyError, so indexing cannot be your first move.
+  - level: language
+    text: Python dictionaries have a lookup that already takes a fallback value.
+  - level: syntax
+    text: "`dict.get(key, default)` returns `default` instead of raising."
+  - level: explicit
+    text: "`return accounts.get(account_id, default)`."
+
+explanation: |
+  `accounts[account_id]` asserts that the key is present. `accounts.get(...)`
+  asks whether it is. Reaching for `get` is the difference between code that
+  works on your test data and code that survives a missing record.
+
+  `total_balance` is the same idea one level up: summing lookups that each
+  default to zero avoids a special case for the empty result.
+
+  Note that `accounts.get(id, 0)` and `accounts[id] if id in accounts else 0`
+  are equivalent here, but the first performs one lookup instead of two.

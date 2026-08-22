@@ -163,6 +163,14 @@ class ForgeReporter:
         self._concepts = concepts
 
 
+def _describe(error: BaseException) -> str:
+    """`NotImplementedError` reads better than `NotImplementedError: ` when the
+    exception carries no message of its own."""
+    text = str(error).strip()
+    name = type(error).__name__
+    return f"{name}: {text}" if text else name
+
+
 def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
     record["exceptionType"] = type(error).__name__
 
@@ -177,7 +185,7 @@ def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
     if forge_message:
         record["message"] = str(forge_message)
     else:
-        record["message"] = _shorten(f"{type(error).__name__}: {error}".strip())
+        record["message"] = _shorten(_describe(error))
 
     concept = getattr(error, "forge_concept", None)
     if concept:
@@ -185,7 +193,7 @@ def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
 
     if not isinstance(error, AssertionError) and "received" not in record:
         # For a raw exception the type and message are the whole story.
-        record["received"] = _shorten(f"{type(error).__name__}: {error}")
+        record["received"] = _shorten(_describe(error))
 
 
 def _longrepr_text(report: Any) -> str:
