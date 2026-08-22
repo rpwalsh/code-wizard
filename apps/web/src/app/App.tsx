@@ -1,27 +1,42 @@
 import type { TrainingMode } from '@forge/core';
+import { trainingModes } from '@forge/core';
 import type { Exercise } from '@forge/exercises';
-import type { Dashboard } from '@forge/session';
+import type { Constraint, Dashboard, SkillMap } from '@forge/session';
 import { ProgressService } from '@forge/session';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import type { Command } from '../components/Palette.tsx';
+import { Palette, usePaletteShortcut } from '../components/Palette.tsx';
 import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
 import { Home } from './Home.tsx';
+import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
 
-type Screen = { kind: 'home' } | { kind: 'workspace'; exercise: Exercise };
+type Screen =
+  | { readonly kind: 'home' }
+  | { readonly kind: 'map' }
+  | { readonly kind: 'workspace'; readonly exercise: Exercise; readonly nonce: number };
 
 export function App() {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [progress, setProgress] = useState<PlatformProgress>({
     stage: 'catalog',
-    message: 'Starting…',
+    message: 'Starting',
   });
   const [failure, setFailure] = useState<string | null>(null);
+
   const [screen, setScreen] = useState<Screen>({ kind: 'home' });
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [skillMap, setSkillMap] = useState<SkillMap | null>(null);
+  const [constraints, setConstraints] = useState<Record<string, readonly Constraint[]>>({});
   const [mode, setMode] = useState<TrainingMode>('practice');
   const [fontSize, setFontSize] = useState(14);
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [screenCommands, setScreenCommands] = useState<readonly Command[]>([]);
+
+  usePaletteShortcut(useCallback(() => setPaletteOpen(true), []));
 
   useEffect(() => {
     let cancelled = false;
@@ -36,9 +51,9 @@ export function App() {
 
         // Boot the interpreter in the background. The dashboard is usable
         // while it downloads; only pressing Run has to wait.
-        void created.warmUp?.().catch(() => {});
-      } catch (error) {
-        if (!cancelled) setFailure(error instanceof Error ? error.message : String(error));
+        void created.warmUp?.().catch(() => undefined);
+      } catch (caught) {
+        if (!cancelled) setFailure(caught instanceof Error ? caught.message : String(caught));
       }
     })();
 
@@ -55,29 +70,78 @@ export function App() {
 
   const refresh = useCallback(async () => {
     if (!service) return;
-    setDashboard(await service.dashboard());
+    const [next, map] = await Promise.all([service.dashboard(), service.skillMap()]);
+    setDashboard(next);
+    setSkillMap(map);
   }, [service]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  const open = useCallback((exercise: Exercise) => {
+    setScreen({ kind: 'workspace', exercise, nonce: Date.now() });
+  }, []);
+
+  const leave = useCallback(() => {
+    setScreen({ kind: 'home' });
+    void refresh();
+  }, [refresh]);
+
+  const constraintsFor = useCallback(
+    (skillId: string): readonly Constraint[] => {
+      if (!service) return [];
+      if (!(skillId in constraints)) {
+        void service.constraints(skillId).then((found) => {
+          setConstraints((current) => ({ ...current, [skillId]: found }));
+        });
+        return [];
+      }
+      return constraints[skillId] ?? [];
+    },
+    [service, constraints],
+  );
+
+  const commands = useMemo<readonly Command[]>(() => {
+    const navigation: Command[] = [
+      { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
+      { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
+      ...trainingModes.map((candidate) => ({
+        id: `mode-${candidate}`,
+        name: `Switch to ${candidate} mode`,
+        disabled: candidate === mode,
+        run: () => setMode(candidate),
+      })),
+      {
+        id: 'font-up',
+        name: 'Increase editor font size',
+        run: () => setFontSize((size) => Math.min(28, size + 1)),
+      },
+      {
+        id: 'font-down',
+        name: 'Decrease editor font size',
+        run: () => setFontSize((size) => Math.max(10, size - 1)),
+      },
+    ];
+    return [...screenCommands, ...navigation];
+  }, [screenCommands, mode]);
+
   if (failure) {
     return (
-      <main className="boot boot--failed">
-        <h1>Forge</h1>
-        <p className="run-problem" role="alert">
+      <main className="boot">
+        <p className="boot__mark">Forge</p>
+        <p className="notice notice--error" role="alert">
           {failure}
         </p>
       </main>
     );
   }
 
-  if (!platform || !dashboard) {
+  if (!platform || !dashboard || !skillMap) {
     return (
       <main className="boot" aria-busy="true">
-        <h1>Forge</h1>
-        <p className="muted" role="status" aria-live="polite">
+        <p className="boot__mark">Forge</p>
+        <p className="boot__status" role="status" aria-live="polite">
           {progress.message}
         </p>
       </main>
@@ -90,61 +154,97 @@ export function App() {
         Skip to content
       </a>
 
-      <header className="app__bar">
-        <h1 className="brand">Forge</h1>
-        <p className="muted brand__tagline">Write it yourself.</p>
+      <header className="topbar">
+        <span className="wordmark">Forge</span>
 
-        <div className="app__bar-actions">
-          <label className="font-size">
-            <span className="visually-hidden">Editor font size</span>
-            <button
-              type="button"
-              className="button button--quiet"
-              onClick={() => setFontSize((size) => Math.max(10, size - 1))}
-              aria-label="Decrease editor font size"
+        <nav className="topbar__nav" aria-label="Sections">
+          <button
+            type="button"
+            className="navlink"
+            aria-current={screen.kind === 'home' ? 'true' : undefined}
+            onClick={() => setScreen({ kind: 'home' })}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            className="navlink"
+            aria-current={screen.kind === 'map' ? 'true' : undefined}
+            onClick={() => setScreen({ kind: 'map' })}
+          >
+            Skill map
+          </button>
+        </nav>
+
+        <span className="topbar__spacer" />
+
+        <button
+          type="button"
+          className="button button--bare"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Open commands"
+        >
+          <kbd>Ctrl K</kbd>
+        </button>
+
+        <span className="mode-indicator" data-mode={mode}>
+          <span className="mode-indicator__dot" aria-hidden="true" />
+          <label>
+            <span className="visually-hidden">Training mode</span>
+            <select
+              className="mode-select"
+              value={mode}
+              onChange={(event) => setMode(event.target.value as TrainingMode)}
             >
-              A−
-            </button>
-            <button
-              type="button"
-              className="button button--quiet"
-              onClick={() => setFontSize((size) => Math.min(28, size + 1))}
-              aria-label="Increase editor font size"
-            >
-              A+
-            </button>
+              {trainingModes.map((candidate) => (
+                <option key={candidate} value={candidate}>
+                  {candidate}
+                </option>
+              ))}
+            </select>
           </label>
-          <span className="muted platform-badge">
-            {platform.kind === 'desktop' ? 'Desktop' : 'In your browser'}
-          </span>
-        </div>
+        </span>
       </header>
 
-      <div id="main">
-        {screen.kind === 'home' ? (
-          <Home
-            platform={platform}
-            dashboard={dashboard}
-            mode={mode}
-            onModeChange={setMode}
-            onOpen={(exercise) => setScreen({ kind: 'workspace', exercise })}
+      {!platform.persistent ? (
+        <p className="notice" role="alert" style={{ margin: 12 }}>
+          {platform.storageNote ?? 'Progress will not be saved in this browser.'}
+        </p>
+      ) : null}
+
+      <div id="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        {screen.kind === 'home' ? <Home dashboard={dashboard} onOpen={open} /> : null}
+
+        {screen.kind === 'map' ? (
+          <SkillMapView
+            map={skillMap}
+            constraintsFor={constraintsFor}
+            exerciseCountFor={(skillId) => platform.catalog.forSkill(skillId).length}
+            onPractise={(skillId) => {
+              const candidate = platform.catalog.forSkill(skillId)[0];
+              if (candidate) open(candidate);
+            }}
           />
-        ) : (
+        ) : null}
+
+        {screen.kind === 'workspace' ? (
           <Workspace
-            // Remounting per exercise and mode is deliberate: a session is one
-            // sitting, and reusing one across exercises would blur the attempt.
-            key={`${screen.exercise.id}:${mode}`}
+            // A session is one sitting. Remounting per exercise, per mode and
+            // per retry keeps attempts from blurring into each other — and the
+            // nonce is what makes "try it again" a genuinely fresh attempt.
+            key={`${screen.exercise.id}:${mode}:${screen.nonce}`}
             platform={platform}
             exercise={screen.exercise}
             mode={mode}
             fontSize={fontSize}
-            onLeave={() => {
-              setScreen({ kind: 'home' });
-              void refresh();
-            }}
+            onLeave={leave}
+            onAgain={() => open(screen.exercise)}
+            onCommands={setScreenCommands}
           />
-        )}
+        ) : null}
       </div>
+
+      <Palette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

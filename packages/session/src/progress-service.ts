@@ -7,6 +7,12 @@ import type { Attempt } from '@forge/learning';
 import { buildHistory, computeMetrics, independentCompletionRate } from '@forge/learning';
 import type { ProgressStore, StoredReview } from '@forge/storage';
 
+import type { Constraint, FluencyReading, SkillMap, TrajectoryPoint } from './analytics.ts';
+import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';
+
+/** The window the home screen reports change over. */
+const TRAJECTORY_DAYS = 30;
+
 export interface DashboardSkill {
   readonly skillId: string;
   readonly name: string;
@@ -23,6 +29,9 @@ export interface RecentImprovement {
 }
 
 export interface Dashboard {
+  /** The headline instrument reading. */
+  readonly fluency: FluencyReading;
+  readonly trajectory: readonly TrajectoryPoint[];
   readonly plan: SessionPlan;
   readonly recommendations: readonly Recommendation[];
   /** Skills below the weakness threshold, weakest first. */
@@ -63,6 +72,20 @@ export class ProgressService {
     };
   }
 
+  /** The skill graph with measured mastery on it, for the map screen. */
+  async skillMap(): Promise<SkillMap> {
+    const [mastery, reviews] = await Promise.all([
+      this.store.allMastery(),
+      this.store.allReviews(),
+    ]);
+    return buildSkillMap(this.skillGraph, mastery, reviews, this.catalog);
+  }
+
+  /** What is structurally holding one skill back. */
+  async constraints(skillId: string): Promise<Constraint[]> {
+    return findConstraints(this.skillGraph, await this.store.allMastery(), skillId);
+  }
+
   async dashboard(now = new Date()): Promise<Dashboard> {
     const state = await this.learnerState(now);
     const attempts = await this.store.allAttempts();
@@ -75,7 +98,14 @@ export class ProgressService {
         .map((review) => review.skillId),
     );
 
+    const trajectory = replayTrajectory(attempts, this.catalog, {
+      days: TRAJECTORY_DAYS,
+      now,
+    });
+
     return {
+      fluency: readFluency(state.mastery, trajectory, TRAJECTORY_DAYS),
+      trajectory,
       plan: planSession(recommendations, { dueSkills }),
       recommendations,
       weaknesses: this.#weaknesses(state.mastery),
