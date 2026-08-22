@@ -270,8 +270,6 @@ only alternative TypeScript offers is `any`.
 
 ## 10. The interface is an instrument
 
-The visual brief is stated in the design itself, but the two decisions worth recording:
-
 **The layout follows the activity.** Writing gives the editor everything; running opens the output;
 a failing test opens the diagnostics wider. Panel dividers are a way of making the user do the
 application's job.
@@ -281,16 +279,53 @@ direction, not XP or a streak. The trajectory is replayed from the attempt log o
 than snapshotted, so a change to the grading rules moves the chart and the numbers beside it
 together — a stored snapshot would freeze history against whatever the rules were that day.
 
+**Surfaces are glass over a drawn landscape, in two themes.** The scene is vector, authored in
+`apps/web/src/components/Backdrop.tsx`, because a photograph would need a licence trail that cannot
+be verified from inside the repository and would be the one thing in the product that has to be
+fetched. Every colour is a custom property, so one geometry serves both themes.
+
+Glass costs contrast, and contrast is what makes dense information readable for hours, so the
+regions that are read for minutes at a time — editor, test output, trace, terminal — opt out and sit
+on opaque surfaces. Appearance has three states, not two: light, dark, and following the system,
+which is the default. Monaco cannot read custom properties, so the editor watches both the media
+query and the root attribute rather than being told once at startup.
+
+**Screenshots are generated from the production bundle.** `npm run screenshots` drives the real
+build with Playwright and writes `docs/images`. A documentation image made by hand drifts the first
+time anything moves and nobody notices, because nobody re-renders a picture.
+
 ---
 
-## 11. Deliberately not done yet
+## 11. Content is a graded artefact, not a folder
+
+Exercises are checked four ways, and each gate exists because of a specific failure this kind of
+project has.
+
+`validate` executes every exercise: the reference solution must pass and the starter must fail.
+`mutate` breaks the reference solution on purpose and requires the tests to notice, because a suite
+that accepts a wrong answer tells the learner they were right and every mastery number downstream
+inherits that. The cross-runtime test requires both interpreters to reach identical verdicts on the
+whole curriculum. And the syllabus check reports the gap between the planned course and what has
+actually been written, counting a lesson only when _every_ skill it names has content — an earlier
+version counted a lesson done when one of its three skills was covered and cheerfully reported 37%
+when ten exercises existed.
+
+Faults that no input can detect are recorded in the exercise manifest with a required reason and an
+optional line number. Without somewhere to record them the score can never reach 100%, the gate
+stays permanently red, and people stop reading it.
+
+---
+
+## 12. Deliberately not done yet
 
 - **Packaged installers.** The desktop app runs; signing and notarisation are not set up.
 - **Accounts and sync.** Local-only, with export/import as the transfer mechanism. The shape if it
   is ever wanted is in [deploying.md](deploying.md): opt-in, OAuth rather than passwords, snapshots
   rather than a live connection.
-- **A second language.** The runtime abstraction is now tested by two Python runtimes, which is a
-  real test of the boundary but not the same as a second language.
+- **A second language.** The runtime abstraction is tested by two Python runtimes, which exercises
+  the boundary hard but is not the same as a second language. Everything language-specific already
+  lives behind `LanguageRuntime`; what is missing is an implementation of it for anything else, and
+  for compiled languages that means a toolchain, which is a different problem from a curriculum.
 - **Recognition grading.** Nothing currently produces evidence for it; it is seeded by the
   onboarding prior and otherwise left alone rather than inferred from unrelated signals. Knowledge
   used to be in the same position and is now earned by prediction.
