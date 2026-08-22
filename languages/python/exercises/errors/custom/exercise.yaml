@@ -1,0 +1,79 @@
+id: python.errors.custom
+version: 1
+language: python
+title: Exceptions of your own
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 360
+timeoutMs: 15000
+
+skills:
+  - python.errors.custom
+
+prerequisites:
+  - python.errors.exceptions
+  - python.modeling.classes
+
+learningObjectives:
+  - Build an exception hierarchy a caller can catch selectively.
+  - Carry structured data on an exception rather than only a message.
+  - Re-raise with context instead of swallowing the original cause.
+
+prompt: |
+  A caller who has to read your error message to decide what to do has no
+  interface. An exception type is the interface.
+
+  - `AccountError` is the base, subclassing `Exception`.
+  - `UnknownAccount` and `InsufficientFunds` both subclass it.
+    `UnknownAccount` carries an `account_id`. `InsufficientFunds` carries
+    `requested` and `available`, and its `shortfall` property returns the
+    difference.
+  - `withdraw(balances, account_id, amount)` raises the right one, or returns
+    the new balance.
+  - `withdraw_all(balances, requests)` takes `(account_id, amount)` pairs and
+    returns `(succeeded, failed)` where `failed` is a list of
+    `(account_id, reason)` and reason is the **class name** of what went wrong.
+    It must not stop at the first failure.
+
+  Catching `AccountError` must catch both kinds, and catching
+  `InsufficientFunds` must not catch the other.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_custom.py
+    visibility: visible
+    concept: python.errors.custom
+  - path: tests/test_hierarchy.py
+    visibility: edge
+    concept: python.errors.custom
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.errors.custom
+
+hints:
+  - level: conceptual
+    text: A shared base class is what lets a caller say "any of these" without listing them.
+  - level: structural
+    text: Data belongs on the exception object, not embedded in a string the caller has to parse.
+  - level: language
+    text: 'Call `super().__init__(...)` so the message still works, then set your own attributes.'
+  - level: syntax
+    text: '`type(error).__name__` gives the class name of a caught exception.'
+  - level: explicit
+    text: 'Collect failures in a loop with try/except around each request.'
+
+explanation: |
+  The hierarchy is the point. With a shared base, a caller that does not care
+  which kind of account problem occurred writes one `except AccountError`, and
+  a caller that cares writes the specific one — without either of them parsing
+  a message or checking a string code.
+
+  Putting `requested` and `available` on the exception means the handler can
+  decide, log, or retry with a different amount. Formatting them into a message
+  and nothing else throws that away, and the handler ends up doing string
+  surgery to get back what the raiser already had.
+
+  Continuing past a failure is a separate decision from reporting it. A loop
+  that lets the first exception escape reports one problem out of ten, and the
+  caller fixes it and runs again to find the next.

@@ -1,0 +1,80 @@
+id: python.engineering.files
+version: 1
+language: python
+title: Reading and writing, without losing anything
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - python.engineering.files
+  - python.stdlib.pathlib
+  - python.stdlib.json
+
+prerequisites:
+  - python.advanced.context-managers
+  - python.errors.validation
+
+learningObjectives:
+  - Build paths without string concatenation.
+  - Read a file line by line and handle the last line having no newline.
+  - Round-trip JSON, and know which types do not survive the trip.
+
+prompt: |
+  All paths here are relative to the working directory, and the tests create
+  and clean up their own files.
+
+  - `write_lines(path, lines)` writes each line followed by a newline, creating
+    any missing parent directories.
+  - `read_lines(path)` returns the lines with their trailing newlines removed.
+    A file that does not exist gives `[]` rather than raising. A trailing blank
+    line in the file is not a line.
+  - `save_records(path, records)` writes a list of dictionaries as JSON.
+  - `load_records(path)` reads it back. A missing file gives `[]`; a file that
+    is not valid JSON raises `ValueError`.
+
+  Use `pathlib`, not string concatenation, and use a `with` block for every
+  open. The tests check that a file left half-written by a failure has not
+  replaced a good one.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_files.py
+    visibility: visible
+    concept: python.engineering.files
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.stdlib.json
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.engineering.files
+
+hints:
+  - level: conceptual
+    text: A missing file is an ordinary situation for a reader and an error for nobody.
+  - level: structural
+    text: Writing every line with a newline after it means the file ends with one, and splitting then gives a final empty piece.
+  - level: language
+    text: '`Path(path).parent.mkdir(parents=True, exist_ok=True)` creates the directories.'
+  - level: syntax
+    text: '`text.splitlines()` handles the trailing newline correctly where `split("\n")` does not.'
+  - level: explicit
+    text: '`json.loads` raises JSONDecodeError, which is a subclass of ValueError.'
+
+explanation: |
+  `splitlines()` versus `split("\n")` is the whole trailing-newline problem in
+  one choice. A file written with a newline after every line ends with one, and
+  splitting on the character gives a final empty string that is not a line.
+  Nearly every "why is there a blank row at the end" bug is this.
+
+  Encoding is worth being explicit about. The default depends on the platform,
+  so a file written on one machine and read on another can differ — and it
+  fails on the one character that is not plain ASCII, which is never in your
+  test data and always in real data.
+
+  JSON does not round-trip Python. Tuples come back as lists, dictionary keys
+  come back as strings, and sets do not go in at all. None of that is a
+  surprise once you have seen it; all of it is a surprise the first time, in
+  production, when a key that was `1` comes back as `"1"`.

@@ -1,0 +1,79 @@
+id: python.advanced.lazy
+version: 1
+language: python
+title: Lazy, wrapped, and cleaned up
+kind: focused-problem
+difficulty: 5
+estimatedSeconds: 540
+timeoutMs: 15000
+
+skills:
+  - python.advanced.generators
+  - python.advanced.context-managers
+  - python.advanced.decorators
+
+prerequisites:
+  - python.functions.scope
+  - python.errors.exceptions
+
+learningObjectives:
+  - Write a generator that produces values without building a list.
+  - Take only what you need from a sequence that never ends.
+  - Write a decorator that preserves what the caller sees, and a context manager that cleans up on failure.
+
+prompt: |
+  Three features that look like syntax and are really about control: who
+  decides when work happens, who wraps it, and who cleans up after it.
+
+  - `evens_up_to(limit)` yields the even numbers below `limit`, one at a time.
+  - `counting_from(start)` yields `start`, `start + 1`, and never stops.
+  - `first(iterable, count)` returns the first `count` values as a list, and
+    must work on something infinite.
+  - `counted(function)` is a decorator that returns a wrapper counting its
+    calls on `wrapper.calls`, and keeping the original `__name__`.
+  - `collecting()` is a context manager yielding a list, which records
+    `"entered"` when it starts and appends `"cleaned"` on the way out —
+    **whether or not** the body raised.
+
+  Import what you need from the standard library. `first` must not exhaust
+  anything it was not asked to.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_lazy.py
+    visibility: visible
+    concept: python.advanced.generators
+  - path: tests/test_cleanup.py
+    visibility: edge
+    concept: python.advanced.context-managers
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.advanced.decorators
+
+hints:
+  - level: conceptual
+    text: A generator does no work until something asks it for the next value.
+  - level: structural
+    text: Cleanup that must happen even on failure belongs in a finally.
+  - level: language
+    text: '`functools.wraps` copies the name and docstring onto a wrapper; `contextlib.contextmanager` turns a generator into a with-block.'
+  - level: syntax
+    text: 'A context manager yields exactly once, and the code after the yield runs on the way out.'
+  - level: explicit
+    text: 'Take values with a loop that breaks after count, rather than converting to a list first.'
+
+explanation: |
+  Laziness is the whole difference between a generator and a list. `list(...)`
+  on something infinite never returns, and the same code with a generator and a
+  break finishes immediately, so "produce everything then take three" and "take
+  three" stop being the same program.
+
+  A decorator without `functools.wraps` replaces the function's name and
+  docstring with the wrapper's. Nothing breaks immediately, and then something
+  that introspects — a test framework, a router, a documentation tool — sees
+  twelve functions all called `wrapper`.
+
+  The `finally` in a context manager is the reason to write one at all. Cleanup
+  placed after the yield without a `finally` is skipped when the body raises,
+  which is precisely the case the context manager existed to handle.

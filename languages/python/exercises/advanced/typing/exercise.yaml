@@ -1,0 +1,78 @@
+id: python.advanced.typing
+version: 1
+language: python
+title: Saying what you meant
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 300
+timeoutMs: 15000
+
+skills:
+  - python.advanced.typing
+
+prerequisites:
+  - python.functions.arguments
+  - python.collections.nested
+
+learningObjectives:
+  - Annotate a signature so the shape of the data is readable from it.
+  - Treat an optional return as a design decision rather than an accident.
+  - Read annotations back at runtime and see that they are not enforced.
+
+prompt: |
+  Annotations are documentation the tools can read. Python does not enforce
+  them, and one of the tests below proves it — which is worth seeing, because
+  people assume otherwise and then trust them too far.
+
+  Annotate every function fully, including the return type.
+
+  - `initials(names: list[str]) -> str` joins the first letter of each name.
+  - `lookup(records: dict[str, int], key: str) -> int | None` returns the value
+    or None.
+  - `totals(rows: list[dict[str, int]]) -> dict[str, int]` sums each column
+    across the rows.
+  - `describe_signature(function) -> list[str]` returns the annotation names of
+    the given function's parameters, in order, by reading `__annotations__`.
+
+  For `describe_signature`, render a plain class as its `__name__` and
+  anything else as `str(annotation)`. Note that `list[str]` has a `__name__`
+  of just `list`, which throws away the part worth reading.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_typing.py
+    visibility: visible
+    concept: python.advanced.typing
+  - path: tests/test_runtime.py
+    visibility: edge
+    concept: python.advanced.typing
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.advanced.typing
+
+hints:
+  - level: conceptual
+    text: An annotation describes the shape of the value, not merely its container.
+  - level: structural
+    text: A function that can return nothing should say so in its type.
+  - level: language
+    text: '`list[str]`, `dict[str, int]`, and `int | None` need no imports on a modern Python.'
+  - level: syntax
+    text: '`__annotations__` is a dict of parameter name to annotation, with the return under "return".'
+  - level: explicit
+    text: 'Exclude the "return" key, and check whether `str(annotation)` starts with "<class" to tell a plain class from a generic.'
+
+explanation: |
+  `list[str]` says vastly more than `list`. The difference shows up the moment
+  someone has to use your function without reading its body, which is every
+  time after the week you wrote it.
+
+  `int | None` is the honest signature for a lookup that can miss. Writing
+  `-> int` and returning None anyway is the kind of lie a checker catches and a
+  reader does not, and it is how None ends up somewhere arithmetic happens.
+
+  Annotations are not checked at runtime. Passing a string where the signature
+  says int works fine and fails somewhere else later. That is not a flaw to work
+  around; it is the deal — they exist for readers and for tools, and the tool
+  has to actually be run.

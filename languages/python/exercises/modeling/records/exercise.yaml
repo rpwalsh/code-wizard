@@ -1,0 +1,79 @@
+id: python.modeling.records
+version: 1
+language: python
+title: Records, and things built from other things
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 15000
+
+skills:
+  - python.modeling.dataclasses
+  - python.modeling.composition
+  - python.syntax.imports
+
+prerequisites:
+  - python.modeling.classes
+
+learningObjectives:
+  - Use a dataclass where the class body would only have been assignments.
+  - Build a changed copy of an immutable record instead of mutating it.
+  - Delegate to a held object rather than inheriting from it.
+
+prompt: |
+  Most classes are a constructor, a repr and an equality check, all of which
+  can be generated. A dataclass is what is left once they are.
+
+  - `Point` is a frozen dataclass with `x` and `y`. Frozen means assigning to a
+    field raises.
+  - `moved(point, dx, dy)` returns a **new** Point shifted by the offsets.
+  - `Basket` holds a list of `(name, price)` lines. It must offer `add(name,
+    price)`, `total()`, and `count()` — and it must **hold** a list rather than
+    inherit from `list`, so that `Basket` has no `append` of its own.
+  - `merge(first, second)` returns a new Basket with the lines of both, in
+    order.
+
+  Import `dataclass` and `field` from the standard library. The default for a
+  dataclass field that is a list needs `field(default_factory=list)`, and the
+  reason is the same mutable-default problem from the functions stage.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_records.py
+    visibility: visible
+    concept: python.modeling.dataclasses
+  - path: tests/test_composition.py
+    visibility: edge
+    concept: python.modeling.composition
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.modeling.dataclasses
+
+hints:
+  - level: conceptual
+    text: A frozen record cannot change, so anything that looks like a change must return a new one.
+  - level: structural
+    text: Holding a list means the class exposes only the operations it chose to.
+  - level: language
+    text: '`@dataclass(frozen=True)` generates the constructor, the repr and equality, and blocks assignment.'
+  - level: syntax
+    text: '`field(default_factory=list)` gives each instance its own list.'
+  - level: explicit
+    text: '`moved` is `Point(point.x + dx, point.y + dy)`.'
+
+explanation: |
+  A dataclass whose fields default to a shared mutable object would give every
+  instance the same list — the mutable-default bug, one layer up. That is why
+  the language refuses a plain `= []` default and makes you say
+  `default_factory`, and it is one of the few places Python stops you from
+  making the mistake rather than letting you find it later.
+
+  Composition over inheritance is easy to say and this makes it concrete. A
+  `Basket` that inherits from `list` gets `append`, `sort`, `pop`, `clear` and
+  everything else, whether or not those make sense for a basket — and every one
+  of them can put the object into a state its own methods never intended.
+  Holding a list exposes exactly what you chose.
+
+  Frozen records also become usable as dictionary keys and set members, because
+  equality and hashing are generated together and neither can go stale.

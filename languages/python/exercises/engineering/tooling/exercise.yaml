@@ -1,0 +1,82 @@
+id: python.engineering.tooling
+version: 1
+language: python
+title: Dates, streams and a command line
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - python.stdlib.datetime
+  - python.stdlib.itertools
+  - python.engineering.cli
+  - python.engineering.testing
+
+prerequisites:
+  - python.stdlib.collections
+  - python.errors.validation
+
+learningObjectives:
+  - Do date arithmetic without inventing a calendar.
+  - Group consecutive runs, and know why the input must be sorted first.
+  - Turn a list of arguments into a decision, reporting failure by exit code.
+
+prompt: |
+  Four small pieces of the everyday toolkit. All of them are deterministic —
+  nothing here reads the clock, because a test that depends on today passes
+  until it does not.
+
+  - `days_between(first, last)` takes two `"YYYY-MM-DD"` strings and returns
+    the whole days from the first to the second. Later dates give a negative
+    number.
+  - `add_days(date_text, days)` returns a `"YYYY-MM-DD"` string that many days
+    on, crossing months and years correctly.
+  - `runs(values)` groups **consecutive** equal values into `(value, count)`
+    pairs, in order. `runs("aabca")` gives four pairs, not three.
+  - `parse_arguments(argv)` accepts `["--name", "x"]` and optional
+    `["--verbose"]`, returning `(name, verbose)`. A missing or unknown flag
+    raises `SystemExit` with a non-zero code.
+
+  `runs` groups what is next to what, not what is equal. That is the thing
+  people get wrong about it, and the reason it needs a sort first if you wanted
+  the other behaviour.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_tooling.py
+    visibility: visible
+    concept: python.stdlib.datetime
+  - path: tests/test_boundaries.py
+    visibility: edge
+    concept: python.stdlib.itertools
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.engineering.cli
+
+hints:
+  - level: conceptual
+    text: Subtracting two dates gives a duration, not a number.
+  - level: structural
+    text: Grouping consecutive values starts a new group whenever the value changes.
+  - level: language
+    text: '`date.fromisoformat`, `timedelta(days=...)`, and `itertools.groupby` for runs.'
+  - level: syntax
+    text: '`(a - b).days` is the whole-day difference.'
+  - level: explicit
+    text: '`raise SystemExit(2)` reports a usage error the way a shell can detect.'
+
+explanation: |
+  Date arithmetic by hand is how leap years get forgotten. `timedelta` knows
+  about the calendar; adding 86400 seconds does not, and the difference shows up
+  once a year on a machine that is not yours.
+
+  `groupby` groups *runs*, not values, and the standard mistake is to expect
+  the other thing. It is not a flaw: grouping runs is what streaming data
+  needs, and the fix when you wanted values is one sort, which is also the
+  thing that makes the operation possible in one pass.
+
+  Reporting a usage error through the exit code rather than a printed message
+  is what makes a program usable from a script. A shell can test a number; it
+  cannot reliably test prose.

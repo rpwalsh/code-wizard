@@ -1,0 +1,93 @@
+id: python.algorithms.backtracking
+version: 1
+language: python
+title: Choose, recurse, undo
+kind: focused-problem
+difficulty: 5
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.algorithms.backtracking
+
+prerequisites:
+  - python.recursion.tree
+  - python.collections.list
+
+learningObjectives:
+  - Build every arrangement by choosing, recursing, and undoing the choice.
+  - Record a snapshot rather than the working list that is still being changed.
+  - Abandon a branch the moment it cannot lead to an answer.
+
+prompt: |
+  Backtracking is three lines in a loop: make a choice, recurse, take the
+  choice back. The taking back is what people forget, and the bug it causes
+  looks like the recursion is broken.
+
+  - `subsets(values)` returns every subset, each as a list, sorted by length
+    then by contents. `subsets([])` is `[[]]`.
+  - `permutations(values)` returns every ordering, sorted.
+  - `combinations_summing(candidates, target)` returns every combination of
+    candidates summing to `target`, each candidate usable any number of times,
+    each combination sorted ascending and the whole result sorted. Abandon a
+    branch as soon as the running total passes the target.
+  - `queens(n)` returns the number of ways to place `n` queens on an `n` by `n`
+    board with none attacking another.
+
+  When you record a result, record a copy. The list you are building is about
+  to change again, and appending it directly stores something that will not be
+  what you thought.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_backtracking.py
+    visibility: visible
+    concept: python.algorithms.backtracking
+  - path: tests/test_undo.py
+    visibility: edge
+    concept: python.algorithms.backtracking
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.backtracking
+
+hints:
+  - level: conceptual
+    text: At each step, try every remaining option in turn, and put the world back before trying the next.
+  - level: structural
+    text: The working list is shared by every branch, so what you store must be a copy of it.
+  - level: language
+    text: '`chosen.append(x)`, recurse, then `chosen.pop()` — that pop is the undo.'
+  - level: syntax
+    text: 'Two queens attack when they share a column or when the difference of rows equals the difference of columns.'
+  - level: explicit
+    text: 'For combinations, pass the index you are allowed to start from so results do not repeat in a different order.'
+
+explanation: |
+  The two classic bugs are the same bug. Forgetting to undo leaves choices from
+  one branch visible in the next, and storing the working list instead of a copy
+  leaves every stored result pointing at the same list — which ends up empty
+  when the recursion finally unwinds. Both produce output that looks like the
+  algorithm is subtly wrong rather than like a mistake in bookkeeping.
+
+  Pruning is what makes backtracking usable rather than merely correct.
+  Abandoning a branch when the running total already exceeds the target does not
+  change any answer, and on a real input it is the difference between finishing
+  and not.
+
+  The n-queens board needs no grid. One list of column positions, indexed by
+  row, holds the whole state — which is worth noticing, because the obvious
+  two-dimensional board makes the attack check four times harder to write.
+
+mutationExceptions:
+  - path: main.py
+    operator: empty-return
+    line: 75
+    why: >-
+      The caller tests the result for truthiness, and None is as falsy as
+      False, so no input can distinguish the two.
+  - path: main.py
+    operator: empty-return
+    line: 77
+    why: >-
+      The same truthiness equivalence on the diagonal check.

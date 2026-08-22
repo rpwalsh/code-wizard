@@ -1,0 +1,88 @@
+id: python.structures.trie
+version: 1
+language: python
+title: A tree of prefixes
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 420
+timeoutMs: 15000
+
+skills:
+  - python.structures.trie
+
+prerequisites:
+  - python.structures.tree
+  - python.collections.dict-mutation
+
+learningObjectives:
+  - Build a nested-dictionary trie and walk it one character at a time.
+  - Distinguish a word that ends here from a prefix that merely passes through.
+  - Answer prefix questions without scanning every stored word.
+
+prompt: |
+  A trie is a dictionary whose values are dictionaries, one level per
+  character. It answers "does anything start with this?" without looking at
+  anything that does not.
+
+  Represent a node as a plain dictionary. Use the key `"$"` to mark that a word
+  ends at that node — that marker is the whole difference between storing
+  `"car"` and storing a path that happens to pass through it on the way to
+  `"cart"`.
+
+  - `build(words)` returns the trie containing every word.
+  - `contains(trie, word)` returns True only when the exact word was stored.
+  - `starts_with(trie, prefix)` returns True when any stored word begins with
+    the prefix. The empty prefix is a prefix of everything.
+  - `with_prefix(trie, prefix)` returns every stored word beginning with the
+    prefix, sorted.
+
+  `contains("car")` must be False when only `"cart"` was stored. That is the
+  test that separates a trie from a nested dictionary.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_trie.py
+    visibility: visible
+    concept: python.structures.trie
+  - path: tests/test_markers.py
+    visibility: edge
+    concept: python.structures.trie
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.trie
+
+hints:
+  - level: conceptual
+    text: Walking a word means stepping one level down per character, failing if a step is missing.
+  - level: structural
+    text: Reaching the end of a word is not the same as that word having been stored.
+  - level: language
+    text: '`node = node.setdefault(character, {})` both creates and descends in one line.'
+  - level: syntax
+    text: 'Collect words by walking every branch below the prefix node, carrying the characters so far.'
+  - level: explicit
+    text: 'Stop and record whenever the node holds the end marker.'
+
+explanation: |
+  The end marker is the entire idea. Without it a trie can only answer prefix
+  questions, because there is no way to tell a stored word from a waypoint —
+  and the failure is silent: `contains("car")` returns True when only `"cart"`
+  was stored, which looks fine until someone stores both.
+
+  A trie earns its space when prefixes are the question. Answering "what starts
+  with `un`" against a list means examining every word; against a trie it means
+  walking two levels and then reading only the branch that is actually there.
+
+  Collecting the words below a node is ordinary tree recursion, which is why
+  this exercise comes after trees rather than before: it is a tree whose
+  branching factor is the alphabet.
+
+mutationExceptions:
+  - path: main.py
+    operator: constant
+    line: 13
+    why: >-
+      Only the presence of the end marker is ever tested, never its value, so
+      storing False marks a word exactly as well as storing True. Reading the
+      value instead would be a worse design, not a better test.
