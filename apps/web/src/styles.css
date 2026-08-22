@@ -905,6 +905,11 @@ kbd {
   --brief-width: 0px;
   --aside-width: 480px;
 }
+/* Inspecting a recording needs the most room of any activity. */
+.workspace[data-focus='inspect'] {
+  --brief-width: 0px;
+  --aside-width: 520px;
+}
 .workspace[data-focus='zen'] {
   --brief-width: 0px;
   --aside-width: 0px;
@@ -922,6 +927,7 @@ kbd {
 .workspace__body > .brief:not(:has(*)),
 .workspace[data-focus='run'] .brief,
 .workspace[data-focus='diagnose'] .brief,
+.workspace[data-focus='inspect'] .brief,
 .workspace[data-focus='zen'] .brief {
   border-right-color: transparent;
 }
@@ -1393,6 +1399,7 @@ kbd {
   .workspace[data-focus='write'] .aside,
   .workspace[data-focus='run'] .brief,
   .workspace[data-focus='diagnose'] .brief,
+  .workspace[data-focus='inspect'] .brief,
   .workspace[data-focus='zen'] .brief,
   .workspace[data-focus='zen'] .aside {
     display: none;
@@ -1521,4 +1528,126 @@ kbd {
 }
 .catalogue + .empty {
   margin-top: var(--space-3);
+}
+
+/* ── trace scope ──────────────────────────────────────────────────────── */
+
+.scope {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/*
+ * The source with an execution count in the gutter. The count is often the
+ * whole answer: a loop body that ran three times when the learner expected
+ * four is visible without stepping at all.
+ */
+.scope__source {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-inset);
+  overflow-x: auto;
+  padding: var(--space-2) 0;
+}
+.scope__line {
+  display: grid;
+  grid-template-columns: 28px 34px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+  padding: 1px var(--space-2);
+  font-size: var(--step-0);
+  line-height: 1.7;
+  border-left: 2px solid transparent;
+}
+.scope__line--current {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-left-color: var(--accent);
+}
+.scope__gutter {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  text-align: right;
+}
+.scope__runs {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  opacity: 0.75;
+  text-align: right;
+}
+.scope__line--current .scope__runs {
+  opacity: 1;
+}
+.scope__code {
+  font-family: var(--font-mono);
+  color: var(--text);
+  white-space: pre;
+}
+
+.scope__transport {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.scope__slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+  height: 2px;
+}
+.scope__where {
+  font-size: var(--step-0);
+  color: var(--text-faint);
+}
+
+.scope__state {
+  display: grid;
+  gap: 1px;
+  margin-top: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--line);
+  overflow: hidden;
+}
+.scope__binding {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-3);
+  padding: 5px var(--space-3);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+}
+/* The thing that just moved is the thing the learner is looking for. */
+.scope__binding--changed {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.scope__name {
+  color: var(--text-dim);
+}
+.scope__value {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.scope__binding--changed .scope__value {
+  color: var(--accent);
+}
+
+.scope__output {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-radius: 6px;
+  background: var(--surface-inset);
+  font-size: var(--step-0);
+  white-space: pre-wrap;
+}
+
+/* The same marker, mirrored into Monaco. */
+.traced-line {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.traced-line__margin {
+  background: var(--accent);
+  width: 2px !important;
+  margin-left: 3px;
 }

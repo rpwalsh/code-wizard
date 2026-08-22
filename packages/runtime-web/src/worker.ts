@@ -114,6 +114,10 @@ export async function startWorker(loader: PyodideLoader = loadPyodideModule): Pr
             succeed(request.id, requireEngine(engine).diagnose(request));
             return;
           }
+          case 'trace': {
+            succeed(request.id, requireEngine(engine).trace(request));
+            return;
+          }
         }
       } catch (caught) {
         // Errors cross the boundary as text: an exception object does not

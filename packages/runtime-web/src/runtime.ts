@@ -15,6 +15,8 @@ import type {
   TestResult,
   TestRunOutcome,
   TestVisibility,
+  TraceRequest,
+  TraceResult,
   Workspace,
 } from '@forge/core';
 import {
@@ -24,8 +26,8 @@ import {
   summarise,
   WorkspacePathError,
 } from '@forge/core';
-import { parseReport, toTestCases } from '@forge/python/report';
-import { FORGE_EXPECT_PY, FORGE_REPORT_PY } from '@forge/python/support';
+import { parseReport, parseTrace, toTestCases } from '@forge/python/report';
+import { FORGE_EXPECT_PY, FORGE_REPORT_PY, FORGE_TRACE_PY } from '@forge/python/support';
 
 import type { WorkerChannel } from './channel.ts';
 import { WorkerClient, WorkerTerminatedError } from './channel.ts';
@@ -77,6 +79,7 @@ export class PyodideRuntime implements LanguageRuntime {
       editorLanguage: 'python',
       fileExtension: '.py',
       commentPrefix: '#',
+      tracing: true,
     };
   }
 
@@ -121,6 +124,7 @@ export class PyodideRuntime implements LanguageRuntime {
           supportModules: {
             'forge_report.py': FORGE_REPORT_PY,
             'forge_expect.py': FORGE_EXPECT_PY,
+            'forge_trace.py': FORGE_TRACE_PY,
           },
         },
       }),
@@ -268,6 +272,63 @@ export class PyodideRuntime implements LanguageRuntime {
       hadCollectionError && redacted.length === 0 ? 'collection-error' : 'completed';
 
     return { ...base, ...summarise(redacted), outcome, cases: redacted };
+  }
+
+  // -- tracing -------------------------------------------------------------
+
+  /**
+   * Record what the program actually did, inside the worker.
+   *
+   * The same `forge_trace` module the desktop runtime spawns a process for, so
+   * a learner stepping through a loop in a browser sees exactly what they
+   * would see in the app. Tracing is roughly an order of magnitude slower than
+   * running, so the deadline is generous — and still enforced by killing the
+   * worker, like everything else.
+   */
+  async trace(request: TraceRequest): Promise<TraceResult> {
+    const limits = clampLimits(request.limits, { timeoutMs: 45_000, maxOutputBytes: 512 * 1024 });
+    const entryPoint = request.entryPoint ?? request.workspace.entryPoint;
+    const startedAt = now();
+
+    if (!entryPoint && !request.test) {
+      return failedTrace('internal-error', 'Nothing to trace: no test and no entry point.', 0);
+    }
+
+    try {
+      const raw = await this.#guarded(
+        (client) =>
+          client.call({
+            kind: 'trace',
+            files: toFileMap(request.workspace),
+            test: request.test ?? null,
+            entryPoint: entryPoint ?? '',
+            stdin: request.stdin ?? '',
+            maxSteps: request.maxSteps ?? 4000,
+            maxOutputBytes: limits.maxOutputBytes,
+          }),
+        limits.timeoutMs,
+      );
+
+      const document = parseTrace(raw.document);
+      return {
+        outcome: 'completed',
+        steps: document.steps,
+        truncated: document.truncated,
+        maxSteps: document.maxSteps,
+        exitCode: document.exitCode,
+        stdout: document.stdout,
+        stderr: document.stderr,
+        error: document.error,
+        durationMs: Math.round(now() - startedAt),
+      };
+    } catch (caught) {
+      const outcome = outcomeFor(toError(caught));
+      return failedTrace(
+        outcome === 'completed' ? 'internal-error' : outcome,
+        toError(caught).message,
+        Math.round(now() - startedAt),
+      );
+    }
   }
 
   // -- diagnostics --------------------------------------------------------
@@ -492,6 +553,24 @@ function failedTestRun(outcome: TestRunOutcome, message: string, durationMs: num
     stdout: '',
     stderr: message,
     truncated: false,
+  };
+}
+
+function failedTrace(
+  outcome: TraceResult['outcome'],
+  message: string,
+  durationMs: number,
+): TraceResult {
+  return {
+    outcome,
+    steps: [],
+    truncated: false,
+    maxSteps: 0,
+    exitCode: null,
+    stdout: '',
+    stderr: message,
+    error: null,
+    durationMs,
   };
 }
 

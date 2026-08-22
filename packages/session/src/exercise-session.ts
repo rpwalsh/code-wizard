@@ -3,6 +3,7 @@ import type {
   LanguageRuntime,
   SkillGraph,
   TestResult,
+  TraceResult,
   TrainingMode,
 } from '@forge/core';
 import { affordancesFor, isGreen } from '@forge/core';
@@ -39,7 +40,7 @@ export interface SessionFile {
   readonly hidden: boolean;
 }
 
-export type SessionActivity = 'idle' | 'running' | 'testing';
+export type SessionActivity = 'idle' | 'running' | 'testing' | 'tracing';
 
 export interface CompletionReport {
   readonly solved: boolean;
@@ -59,6 +60,9 @@ export interface SessionState {
   readonly activity: SessionActivity;
   readonly lastRun: ExecutionResult | null;
   readonly lastTests: TestResult | null;
+  readonly lastTrace: TraceResult | null;
+  /** False when the language runtime cannot record a trace at all. */
+  readonly tracingAvailable: boolean;
   /** Hints the learner has chosen to reveal, in order. */
   readonly revealedHints: readonly Hint[];
   readonly remainingHints: number;
@@ -91,6 +95,7 @@ export class ExerciseSession {
   #activity: SessionActivity = 'idle';
   #lastRun: ExecutionResult | null = null;
   #lastTests: TestResult | null = null;
+  #lastTrace: TraceResult | null = null;
   #revealed = 0;
   #completion: CompletionReport | null = null;
 
@@ -152,6 +157,8 @@ export class ExerciseSession {
       activity: this.#activity,
       lastRun: this.#lastRun,
       lastTests: this.#lastTests,
+      lastTrace: this.#lastTrace,
+      tracingAvailable: this.#deps.runtime.trace !== undefined,
       revealedHints: this.#hints.slice(0, this.#revealed),
       remainingHints: affordances.hints ? this.#hints.length - this.#revealed : 0,
       solved: this.#attempt.outcome === 'solved',
@@ -275,6 +282,32 @@ export class ExerciseSession {
       if (green) await this.#finish();
       else await this.#persist();
 
+      return result;
+    });
+  }
+
+  /**
+   * Record what the program actually did.
+   *
+   * Deliberately not counted as assistance. A hint tells the learner what to
+   * write; a trace shows them what their own code did, which is the thing the
+   * platform is trying to teach them to do for themselves. Charging for it
+   * would push them back toward guessing.
+   */
+  async trace(target?: { test?: string }): Promise<TraceResult> {
+    const runtime = this.#deps.runtime;
+    if (!runtime.trace) {
+      throw new Error(`${runtime.metadata().displayName} cannot record a trace.`);
+    }
+
+    return this.#busy('tracing', async () => {
+      const result = await runtime.trace!({
+        workspace: this.#workspace(),
+        ...(target?.test ? { test: target.test } : {}),
+        ...(this.exercise.timeoutMs ? { limits: { timeoutMs: this.exercise.timeoutMs * 3 } } : {}),
+      });
+      this.#lastTrace = result;
+      this.#record({ type: 'trace', at: this.#now() });
       return result;
     });
   }

@@ -17,6 +17,8 @@ import type {
   TestResult,
   TestRunOutcome,
   TestVisibility,
+  TraceRequest,
+  TraceResult,
 } from '@forge/core';
 import { redactHiddenTests, summarise } from '@forge/core';
 import type { ProcessOutcome, Sandbox } from '@forge/execution';
@@ -25,10 +27,12 @@ import { buildSandboxEnvironment, resolveLimits, runProcess, withSandbox } from 
 import type { PythonInterpreter } from './discovery.ts';
 import { discoverPython, MINIMUM_PYTHON, PythonNotFoundError } from './discovery.ts';
 import { parseReport, toTestCases } from './report.ts';
+import { parseTrace } from './trace-report.ts';
 import { pythonDocumentationDir, pythonSupportDir } from './paths.ts';
 
 const REPORT_PATH = '.forge/report.json';
 const DIAGNOSTIC_PATH = '.forge/diagnostics.json';
+const TRACE_PATH = '.forge/trace.json';
 
 /**
  * Flags applied to every interpreter launch:
@@ -67,6 +71,7 @@ export class PythonRuntime implements LanguageRuntime {
       fileExtension: '.py',
       commentPrefix: '#',
       documentationRoot: pythonDocumentationDir,
+      tracing: true,
     };
   }
 
@@ -369,6 +374,96 @@ export class PythonRuntime implements LanguageRuntime {
     return { ...base, ...counts, outcome: runOutcome, cases: redacted };
   }
 
+  // -- tracing -------------------------------------------------------------
+
+  /**
+   * Record what the program actually did.
+   *
+   * Runs in its own process like everything else, so a traced program that
+   * refuses to terminate is killed exactly the way an untraced one is.
+   * Tracing costs roughly an order of magnitude in speed, so the default
+   * timeout is generous relative to a plain run.
+   */
+  async trace(request: TraceRequest): Promise<TraceResult> {
+    const limits = resolveLimits(request.limits, { timeoutMs: 30_000, maxOutputBytes: 512 * 1024 });
+    const entryPoint = request.entryPoint ?? request.workspace.entryPoint;
+    const startedAt = performance.now();
+
+    if (!entryPoint && !request.test) {
+      return failedTrace('internal-error', 'Nothing to trace: no test and no entry point.');
+    }
+
+    let interpreter: PythonInterpreter;
+    try {
+      interpreter = await this.#interpreter();
+    } catch (error) {
+      return failedTrace('runtime-unavailable', String(error));
+    }
+
+    return withSandbox(
+      request.workspace,
+      async (sandbox) => {
+        // One driver for both shapes: tracing a test and tracing a program
+        // differ only in which recorder entry point is called.
+        const driver = [
+          'import os, sys',
+          'sys.path.insert(0, os.environ["FORGE_SUPPORT"])',
+          'from forge_trace import trace_program, trace_test',
+          'target, steps, limit, report = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]',
+          'if os.environ.get("FORGE_TRACE_TEST"):',
+          '    document = trace_test(os.getcwd(), os.environ["FORGE_TRACE_TEST"], steps, limit)',
+          'else:',
+          '    document = trace_program(os.getcwd(), target, steps, limit, sys.stdin.read())',
+          'os.makedirs(os.path.dirname(report), exist_ok=True)',
+          'open(report, "w", encoding="utf-8").write(document)',
+        ].join('\n');
+
+        const outcome = await runProcess({
+          command: interpreter.command,
+          args: [
+            ...interpreter.prefixArgs,
+            ...BASE_FLAGS,
+            '-c',
+            driver,
+            entryPoint ?? '',
+            String(request.maxSteps ?? 4000),
+            String(limits.maxOutputBytes),
+            TRACE_PATH,
+          ],
+          cwd: sandbox.root,
+          env: {
+            ...this.#environment(sandbox),
+            FORGE_SUPPORT: this.#supportDir(),
+            ...(request.test ? { FORGE_TRACE_TEST: request.test } : {}),
+          },
+          timeoutMs: limits.timeoutMs,
+          maxOutputBytes: limits.maxOutputBytes,
+          stdin: request.stdin ?? '',
+        });
+
+        const durationMs = Math.round(performance.now() - startedAt);
+
+        if (outcome.timedOut) {
+          return { ...failedTrace('timeout', 'Tracing exceeded its time limit.'), durationMs };
+        }
+        if (!(await sandbox.exists(TRACE_PATH))) {
+          return {
+            ...failedTrace('internal-error', outcome.stderr || 'The tracer produced no output.'),
+            durationMs,
+          };
+        }
+
+        try {
+          const document = parseTrace(await sandbox.readFile(TRACE_PATH));
+          return { ...toTraceResult(document), durationMs };
+        } catch (error) {
+          return { ...failedTrace('internal-error', String(error)), durationMs };
+        }
+      },
+      this.#sandboxOptions('trace'),
+    );
+  }
+
   // -- formatting and linting ----------------------------------------------
 
   async format(request: FormatRequest): Promise<FormatResult> {
@@ -597,6 +692,34 @@ function failedTestRun(outcome: TestRunOutcome, message: string): TestResult {
     stdout: '',
     stderr: message,
     truncated: false,
+  };
+}
+
+function toTraceResult(document: ReturnType<typeof parseTrace>): TraceResult {
+  return {
+    outcome: 'completed',
+    steps: document.steps,
+    truncated: document.truncated,
+    maxSteps: document.maxSteps,
+    exitCode: document.exitCode,
+    stdout: document.stdout,
+    stderr: document.stderr,
+    error: document.error,
+    durationMs: 0,
+  };
+}
+
+function failedTrace(outcome: TraceResult['outcome'], message: string): TraceResult {
+  return {
+    outcome,
+    steps: [],
+    truncated: false,
+    maxSteps: 0,
+    exitCode: null,
+    stdout: '',
+    stderr: message,
+    error: null,
+    durationMs: 0,
   };
 }
 

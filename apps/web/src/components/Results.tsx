@@ -4,6 +4,8 @@ import { useState } from 'react';
 interface ResultsProps {
   readonly result: TestResult | null;
   readonly busy: boolean;
+  /** Absent when the runtime cannot trace, in which case nothing is offered. */
+  readonly onWatch?: (testId: string) => void;
 }
 
 const MARK: Record<TestCaseResult['status'], string> = {
@@ -27,7 +29,7 @@ const STATUS_WORD: Record<TestCaseResult['status'], string> = {
  * was expected, what arrived, and which skill the test was probing. That last
  * line is the useful one: it turns a red test into somewhere to go.
  */
-export function Results({ result, busy }: ResultsProps) {
+export function Results({ result, busy, onWatch }: ResultsProps) {
   const [open, setOpen] = useState<string | null>(null);
 
   if (busy) {
@@ -97,7 +99,12 @@ export function Results({ result, busy }: ResultsProps) {
                 )}
               </button>
 
-              {failed && expanded ? <Diagnosis testCase={testCase} /> : null}
+              {failed && expanded ? (
+                <Diagnosis
+                  testCase={testCase}
+                  {...(onWatch ? { onWatch: () => onWatch(testCase.id) } : {})}
+                />
+              ) : null}
             </li>
           );
         })}
@@ -106,7 +113,13 @@ export function Results({ result, busy }: ResultsProps) {
   );
 }
 
-function Diagnosis({ testCase }: { readonly testCase: TestCaseResult }) {
+function Diagnosis({
+  testCase,
+  onWatch,
+}: {
+  readonly testCase: TestCaseResult;
+  readonly onWatch?: () => void;
+}) {
   const hasExpectation = testCase.expected !== undefined || testCase.received !== undefined;
 
   return (
@@ -136,6 +149,17 @@ function Diagnosis({ testCase }: { readonly testCase: TestCaseResult }) {
         <p className="diagnosis__skill">
           Likely skill: <code>{testCase.concept}</code>
         </p>
+      ) : null}
+
+      {/*
+        The product's answer to "why did this fail?" is an instrument, not a
+        longer sentence — and it traces *this* test, which is the one the
+        learner is looking at.
+      */}
+      {onWatch && testCase.visibility !== 'hidden' ? (
+        <button type="button" className="button" onClick={onWatch}>
+          Watch it run
+        </button>
       ) : null}
     </div>
   );

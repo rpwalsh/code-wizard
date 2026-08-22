@@ -85,6 +85,18 @@ export function fakeRuntime(): FakeRuntime {
       };
     },
 
+    trace: async () => ({
+      outcome: 'completed' as const,
+      steps: [{ event: 'line' as const, file: 'main.py', line: 1, function: '<module>', depth: 0 }],
+      truncated: false,
+      maxSteps: 100,
+      exitCode: 0,
+      stdout: '',
+      stderr: '',
+      error: null,
+      durationMs: 3,
+    }),
+
     format: async () => ({ formatted: [], available: false }),
     lint: async () => ({ diagnostics: [], available: false }),
     diagnose: async () => [],

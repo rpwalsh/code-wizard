@@ -26,6 +26,14 @@ export type AttemptEvent =
       readonly green: boolean;
     }
   | { readonly type: 'hint'; readonly at: string; readonly level: HintLevel }
+  /**
+   * The learner recorded an execution trace.
+   *
+   * Kept in the log because it says something real about how they work, but
+   * it is not assistance: reaching for an instrument is the behaviour the
+   * product wants, so metrics do not discount it.
+   */
+  | { readonly type: 'trace'; readonly at: string }
   | { readonly type: 'documentation'; readonly at: string; readonly query: string }
   /** The learner gave up and read the reference solution. */
   | { readonly type: 'solution-revealed'; readonly at: string }

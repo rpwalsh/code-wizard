@@ -12,6 +12,7 @@ import { Editor } from '../components/Editor.tsx';
 import { Hints } from '../components/Hints.tsx';
 import type { Command } from '../components/Palette.tsx';
 import { Results } from '../components/Results.tsx';
+import { TraceScope } from '../components/TraceScope.tsx';
 import type { Platform } from '../platform/index.ts';
 
 /**
@@ -21,7 +22,7 @@ import type { Platform } from '../platform/index.ts';
  * gives the editor everything, running opens the output, a failure opens the
  * diagnostics wider, and focus mode takes the chrome away entirely.
  */
-type Focus = 'write' | 'run' | 'diagnose' | 'zen';
+type Focus = 'write' | 'run' | 'diagnose' | 'inspect' | 'zen';
 
 interface WorkspaceProps {
   readonly platform: Platform;
@@ -62,6 +63,14 @@ export function Workspace({
   const affordances = affordancesFor(mode);
   const activeFile = state.files.find((file) => file.path === activePath) ?? state.files[0] ?? null;
   const busy = state.activity !== 'idle';
+  const [traced, setTraced] = useState<{ file: string; line: number } | null>(null);
+
+  // Hoisted, not inlined into the conditionally-rendered scope: a hook inside
+  // a branch changes the hook count between renders.
+  const highlightTraced = useCallback(
+    (file: string, line: number) => setTraced({ file, line }),
+    [],
+  );
 
   const guard = useCallback(async <T,>(body: () => Promise<T>) => {
     setError(null);
@@ -85,6 +94,14 @@ export function Workspace({
     setFocus('run');
     void guard(() => session.run());
   }, [guard, session]);
+
+  const recordTrace = useCallback(
+    (testId?: string) => {
+      setFocus('inspect');
+      void guard(() => session.trace(testId ? { test: testId } : undefined));
+    },
+    [guard, session],
+  );
 
   // Once solved, load the history behind the "you got faster" comparison.
   useEffect(() => {
@@ -110,6 +127,12 @@ export function Workspace({
       { id: 'run-tests', name: 'Run tests', shortcut: 'Ctrl ↵', run: runTests },
       { id: 'run', name: 'Run code', run },
       {
+        id: 'trace',
+        name: 'Trace execution — watch it run line by line',
+        disabled: !state.tracingAvailable,
+        run: () => recordTrace(),
+      },
+      {
         id: 'hint',
         name: 'Reveal next hint',
         disabled: !state.hintsAllowed || state.remainingHints === 0,
@@ -127,6 +150,8 @@ export function Workspace({
     onCommands,
     runTests,
     run,
+    recordTrace,
+    state.tracingAvailable,
     guard,
     session,
     state.hintsAllowed,
@@ -165,6 +190,17 @@ export function Workspace({
         <button type="button" className="button" onClick={run} disabled={busy}>
           Run
         </button>
+        {state.tracingAvailable ? (
+          <button
+            type="button"
+            className="button"
+            onClick={() => recordTrace()}
+            disabled={busy}
+            title="Watch the program run one line at a time"
+          >
+            Trace
+          </button>
+        ) : null}
         <button type="button" className="button button--primary" onClick={runTests} disabled={busy}>
           Test <kbd>Ctrl ↵</kbd>
         </button>
@@ -222,6 +258,8 @@ export function Workspace({
                 fontSize={fontSize}
                 onChange={(next) => session.updateFile(activeFile.path, next)}
                 onRunTests={runTests}
+                // Only mark the file the step is actually in.
+                highlightLine={traced?.file === activeFile.path ? traced.line : null}
               />
             ) : null}
           </div>
@@ -232,7 +270,15 @@ export function Workspace({
           aria-label="Diagnostics"
           hidden={focus === 'write' || focus === 'zen'}
         >
-          {state.completion ? (
+          {focus === 'inspect' ? (
+            <TraceScope
+              trace={state.lastTrace}
+              busy={state.activity === 'tracing'}
+              files={state.files}
+              onRun={() => recordTrace()}
+              onHighlight={highlightTraced}
+            />
+          ) : state.completion ? (
             <Complete
               report={state.completion}
               exercise={exercise}
@@ -242,7 +288,11 @@ export function Workspace({
             />
           ) : (
             <>
-              <Results result={state.lastTests} busy={state.activity === 'testing'} />
+              <Results
+                result={state.lastTests}
+                busy={state.activity === 'testing'}
+                {...(state.tracingAvailable ? { onWatch: recordTrace } : {})}
+              />
               {state.lastRun ? <Terminal state={state} /> : null}
               <Hints
                 revealed={state.revealedHints}

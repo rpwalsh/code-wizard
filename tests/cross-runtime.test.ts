@@ -147,3 +147,66 @@ describe.skipIf(!canCompare)('desktop and browser runtimes agree', () => {
     }
   }, 300_000);
 });
+
+/**
+ * Tracing has to agree too, and more strictly than testing does.
+ *
+ * A verdict only has to match on pass or fail. A trace is a claim about what
+ * the machine did, step by step — if the two runtimes disagree about that,
+ * then the instrument is lying to one set of learners about the thing the
+ * whole product exists to make observable.
+ */
+describe.skipIf(!canCompare)('both runtimes trace identically', () => {
+  const workspace = {
+    files: [
+      {
+        path: 'main.py',
+        contents: [
+          'prices = [12, 8, 17, 4]',
+          'total = 0',
+          'for price in prices:',
+          '    total += price',
+          'print(total)',
+          '',
+        ].join('\n'),
+      },
+    ],
+    entryPoint: 'main.py',
+  };
+
+  it('records the same steps, lines and value changes', async () => {
+    const [fromNative, fromWeb] = await Promise.all([
+      native.trace?.({ workspace }),
+      web.trace({ workspace }),
+    ]);
+
+    expect(fromNative?.outcome).toBe('completed');
+    expect(fromWeb.outcome).toBe('completed');
+    expect(fromWeb.steps).toEqual(fromNative?.steps);
+    expect(fromWeb.stdout.trim()).toBe('41');
+    expect(fromWeb.stdout).toBe(fromNative?.stdout);
+  }, 300_000);
+
+  it('shows the accumulation the learner came to see', async () => {
+    const trace = await web.trace({ workspace });
+
+    // The point of the instrument: total visibly becoming 12, 20, 37, 41.
+    const totals = trace.steps
+      .map((step) => step.changes?.total)
+      .filter((value): value is string => value !== undefined);
+    expect(totals).toEqual(['0', '12', '20', '37', '41']);
+  }, 300_000);
+
+  it('stops at the step budget rather than running forever', async () => {
+    const trace = await web.trace({
+      workspace: {
+        files: [{ path: 'main.py', contents: 'n = 0\nwhile True:\n    n += 1\n' }],
+        entryPoint: 'main.py',
+      },
+      maxSteps: 200,
+    });
+
+    expect(trace.truncated).toBe(true);
+    expect(trace.steps.length).toBeLessThanOrEqual(200);
+  }, 300_000);
+});

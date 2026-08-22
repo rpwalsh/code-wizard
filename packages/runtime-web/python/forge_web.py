@@ -31,6 +31,8 @@ __all__ = [
     "write_files",
     "run_program",
     "run_tests",
+    "trace",
+    "trace_test_case",
     "diagnose",
 ]
 
@@ -227,6 +229,27 @@ def run_tests(targets_json: str, report_path: str, limit: int) -> str:
             "report": report,
         }
     )
+
+
+def trace(entry_point: str, stdin_text: str, max_steps: int, limit: int) -> str:
+    """Record an execution trace.
+
+    The tracer itself is the same ``forge_trace`` module the desktop runtime
+    runs in a subprocess — only the host differs, so a learner stepping through
+    a loop in the browser sees exactly what they would see on the desktop.
+    """
+    _purge_workspace_modules()
+    from forge_trace import trace_program
+
+    return trace_program(WORKSPACE, entry_point, max_steps, limit, stdin_text)
+
+
+def trace_test_case(node_id: str, max_steps: int, limit: int) -> str:
+    """Record one test running, so a red test can be watched rather than read."""
+    _purge_workspace_modules()
+    from forge_trace import trace_test
+
+    return trace_test(WORKSPACE, node_id, max_steps, limit)
 
 
 def diagnose(paths_json: str) -> str:

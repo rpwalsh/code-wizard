@@ -53,6 +53,17 @@ export type WorkerRequest =
       readonly kind: 'diagnose';
       readonly files: Readonly<Record<string, string>>;
       readonly paths: readonly string[];
+    }
+  | {
+      readonly id: number;
+      readonly kind: 'trace';
+      readonly files: Readonly<Record<string, string>>;
+      /** A pytest node id, when tracing a test rather than a program. */
+      readonly test: string | null;
+      readonly entryPoint: string;
+      readonly stdin: string;
+      readonly maxSteps: number;
+      readonly maxOutputBytes: number;
     };
 
 export interface BootResult {
@@ -81,12 +92,18 @@ export interface DiagnoseResult {
   readonly diagnostics: readonly Diagnostic[];
 }
 
+/** The raw trace JSON, narrowed on the page rather than in the worker. */
+export interface TraceRunResult {
+  readonly document: string;
+}
+
 /** Which result each request kind produces. */
 export interface WorkerResultMap {
   readonly boot: BootResult;
   readonly execute: ExecuteResult;
   readonly test: TestRunResult;
   readonly diagnose: DiagnoseResult;
+  readonly trace: TraceRunResult;
 }
 
 export type WorkerKind = WorkerRequest['kind'];

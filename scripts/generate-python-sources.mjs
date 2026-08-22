@@ -29,6 +29,7 @@ const targets = [
     files: [
       { constant: 'FORGE_REPORT_PY', source: 'languages/python/runtime/forge_report.py' },
       { constant: 'FORGE_EXPECT_PY', source: 'languages/python/runtime/forge_expect.py' },
+      { constant: 'FORGE_TRACE_PY', source: 'languages/python/runtime/forge_trace.py' },
     ],
   },
   {

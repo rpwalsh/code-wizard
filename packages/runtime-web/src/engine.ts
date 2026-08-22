@@ -7,6 +7,7 @@ import type {
   DiagnoseResult,
   ExecuteResult,
   TestRunResult,
+  TraceRunResult,
 } from './protocol.ts';
 import { toDiagnoseResult, toExecuteResult, toTestRunResult } from './results.ts';
 
@@ -173,6 +174,32 @@ _forge_pytest_version
       'import forge_web\nforge_web.run_tests(_forge_targets, _forge_report_path, _forge_limit)',
       toTestRunResult,
     );
+  }
+
+  trace(request: {
+    files: Readonly<Record<string, string>>;
+    test: string | null;
+    entryPoint: string;
+    stdin: string;
+    maxSteps: number;
+    maxOutputBytes: number;
+  }): TraceRunResult {
+    this.#materialise(request.files);
+    this.pyodide.globals.set('_forge_entry', request.entryPoint);
+    this.pyodide.globals.set('_forge_stdin', request.stdin);
+    this.pyodide.globals.set('_forge_max_steps', request.maxSteps);
+    this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
+    this.pyodide.globals.set('_forge_test', request.test ?? '');
+
+    const raw = this.pyodide.runPython(
+      request.test
+        ? 'import forge_web\nforge_web.trace_test_case(_forge_test, _forge_max_steps, _forge_limit)'
+        : 'import forge_web\nforge_web.trace(_forge_entry, _forge_stdin, _forge_max_steps, _forge_limit)',
+    );
+    if (typeof raw !== 'string') {
+      throw new Error(`Expected a trace document from Python, received ${typeof raw}.`);
+    }
+    return { document: raw };
   }
 
   diagnose(request: {

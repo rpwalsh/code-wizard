@@ -6,6 +6,7 @@ import type {
   FormatResult,
 } from './execution.ts';
 import type { TestRequest, TestResult } from './testing.ts';
+import type { TraceRequest, TraceResult } from './tracing.ts';
 
 /** Stable identifier for a language, e.g. `python`, `javascript`, `go`. */
 export type LanguageId = string;
@@ -19,6 +20,8 @@ export interface LanguageMetadata {
   readonly commentPrefix: string;
   /** Documentation set shipped alongside this runtime (spec §11). */
   readonly documentationRoot?: string;
+  /** Whether this runtime can record an execution trace. */
+  readonly tracing?: boolean;
 }
 
 export type CapabilityLevel = 'unavailable' | 'degraded' | 'ready';
@@ -62,6 +65,16 @@ export interface LanguageRuntime {
    * and expected to run on save.
    */
   diagnose(request: LintRequest): Promise<readonly Diagnostic[]>;
+
+  /**
+   * Record what the program actually did, step by step.
+   *
+   * Optional, because it genuinely cannot be universal: a language that
+   * compiles to a stripped binary has nothing to hook. A runtime that offers
+   * it advertises `tracing: true` in its metadata, and the interface hides the
+   * instrument rather than showing one that does nothing.
+   */
+  trace?(request: TraceRequest): Promise<TraceResult>;
 }
 
 export class LanguageRegistry {
