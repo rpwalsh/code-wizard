@@ -1,3 +1,13 @@
 dist/
 node_modules/
 *.tsbuildinfo
+
+# Owned by scripts/generate-python-sources.mjs. Formatting them would leave the
+# checked-in copy disagreeing with the generator, which the drift check treats
+# as a real difference — correctly, because it cannot tell the two apart.
+*.generated.ts
+
+# Build output copied into the desktop app.
+apps/desktop/renderer/
+apps/desktop/content/
+apps/web/public/content/
