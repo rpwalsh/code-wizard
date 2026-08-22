@@ -1,63 +1,101 @@
 # Forge
 
-**A code fluency training platform.** Not an AI coding assistant, and not primarily an assessment
-platform — a place to practise writing code yourself, in a real environment, against real tests.
+**A code fluency trainer.** Not an AI assistant, not a quiz app — a place to
+practise writing code yourself, in a real environment, against real tests.
 
-The first supported language is Python. The architecture is language-agnostic from the start.
+Runs two ways from one codebase: **in a browser**, on any free static host, and
+as a **desktop app** using your real Python interpreter.
 
 ---
 
 ## The problem
 
-Most programming education asks _"do you understand this concept?"_. Most assessments ask
-_"can you solve this problem?"_. AI tools ask _"can the system produce working code for you?"_.
+Most programming education asks _"do you understand this concept?"_. Assessments
+ask _"can you solve this problem?"_. AI tools ask _"can the system produce
+working code for you?"_.
 
-Forge asks a different question:
+Forge asks:
 
 > **Can you independently produce working code in this language?**
 
-An engineer can understand dictionaries, loops, classes and algorithms perfectly, and still be
-unable to write idiomatic Python quickly without help. That gap is a measurable skill of its own,
-and it is what this trains.
+An engineer can understand dictionaries, loops and classes perfectly and still
+be unable to write idiomatic Python without looking things up. That gap is a
+measurable skill of its own, and it is what this trains.
 
-There is no LLM in the learner experience. No generative hints, no AI autocomplete, no
-conversational assistant, no external AI dependency.
+There is no LLM in the learner experience. No generated hints, no AI
+autocomplete, no chatbot, no external AI dependency.
+
+---
+
+## Hosting it costs nothing
+
+The web version is static files. Python runs as WebAssembly **in the visitor's
+browser**; their progress lives in **their** IndexedDB. No server executes
+learner code, stores learner data, or scales with usage.
+
+That is not a compromise — it is the strongest possible answer to the security
+requirements, because a hosted deployment has no execution surface at all.
+
+See [docs/deploying.md](docs/deploying.md) for GitHub Pages, Cloudflare Pages
+and GitLab Pages.
 
 ---
 
 ## Status
 
-Working today, all driven from the CLI:
+|                                                                             |             |
+| --------------------------------------------------------------------------- | ----------- |
+| Language runtime contract, registry                                         | Done        |
+| Native Python runtime (process, pytest, timeouts, process-tree kill)        | Done        |
+| WebAssembly Python runtime (Pyodide, worker termination)                    | Done        |
+| Both runtimes verified to agree on the whole curriculum                     | Done        |
+| Exercise format, loader, catalogue, executing validator                     | Done        |
+| Learning engine: attempts, fluency metrics, eight-dimension mastery         | Done        |
+| Curriculum engine: spaced repetition, explainable recommendations, sessions | Done        |
+| Persistence: SQLite and IndexedDB behind one contract                       | Done        |
+| Web app: dashboard, skill map, adaptive workspace, command palette          | Done        |
+| Desktop app (Electron)                                                      | Done        |
+| Packaged installers, accounts, sync                                         | Not started |
+| Second language                                                             | Not started |
 
-| Area                                                                                | State       |
-| ----------------------------------------------------------------------------------- | ----------- |
-| Language runtime contract and registry                                              | Done        |
-| Python runtime: execute, test, format, lint, diagnose, doctor                       | Done        |
-| Execution sandbox: timeouts, output caps, process-tree kill, env allowlist          | Done        |
-| Exercise format, loader, catalogue, content validator                               | Done        |
-| Learning engine: attempts, fluency metrics, eight-dimension mastery                 | Done        |
-| Curriculum engine: spaced repetition, explainable recommendations, session planning | Done        |
-| Local persistence, export/import                                                    | Done        |
-| Desktop IDE (Electron, Monaco, terminal, test panel)                                | Not started |
-| Second language runtime                                                             | Not started |
-
-7 exercises, 45 Python skills, 233 tests.
+7 exercises · 45 Python skills · 341 tests
 
 ---
 
-## Try it
+## Run it
 
-Requires Node 22+, and Python 3.10+ with pytest for the Python runtime.
+Node 22+. Python 3.10+ with pytest for the desktop runtime; the web version
+needs neither.
 
 ```bash
 npm install
-npm run build
+npm run verify        # generate-check, lint, build, test
+```
 
+### The website
+
+```bash
+npm run web           # build packages, bundle curriculum, build site
+npx vite preview --root apps/web
+```
+
+### The desktop app
+
+```bash
+npm run web
+npm run build --workspace @forge/desktop
+cd apps/desktop && npx electron .
+```
+
+### The toolkit
+
+```bash
 node packages/cli/dist/main.js runtime doctor
 ```
 
-The doctor does not just report versions — it executes code in a sandbox, trips a timeout, and
-overflows an output buffer, so a pass means the isolation actually works on your machine.
+The doctor does not report versions — it executes code in a sandbox, trips a
+timeout, and overflows an output buffer, so a pass means the isolation actually
+works on your machine.
 
 ```text
 Forge Runtime Diagnostics — Python
@@ -72,88 +110,86 @@ Forge Runtime Diagnostics — Python
 Environment ready.
 ```
 
-Then:
-
 ```bash
-# What is in the catalogue
 node packages/cli/dist/main.js exercise list
-
-# Read one, hints and all
-node packages/cli/dist/main.js exercise show python.collections.dict-lookup
-
-# Run its tests against the starter code, then against the reference solution
 node packages/cli/dist/main.js exercise run python.collections.dict-lookup
-node packages/cli/dist/main.js exercise run python.collections.dict-lookup --solution
-
-# Validate every exercise: solution must pass, starter must fail
-node packages/cli/dist/main.js exercise validate
-
-# Skill graph health and curriculum coverage
-node packages/cli/dist/main.js curriculum check
-
-# What to practise next, and the arithmetic behind it
-node packages/cli/dist/main.js plan next --level rusty
-node packages/cli/dist/main.js plan session
+node packages/cli/dist/main.js exercise validate     # solution passes, starter fails
+node packages/cli/dist/main.js curriculum check      # graph health and coverage
+node packages/cli/dist/main.js plan next             # and the arithmetic behind it
+node packages/cli/dist/main.js content bundle        # curriculum as static JSON
 ```
 
 ---
 
-## What test failures look like
+## What a failing test looks like
 
 Test output is a teaching surface, not a log:
 
 ```text
-✗ removes two adjacent expired sessions
-    Expected:  ['a', 'b']
-    Received:  ['a']
-    Relevant concept: python.control.for
+✕ removes two adjacent expired sessions
+    Expected   ['a', 'b']
+    Received   ['a']
+    Likely skill: python.control.for
 ```
 
-Hidden tests report only that they failed. Their assertions, expected values and locations never
-leave the runtime boundary.
+Hidden tests report only that they failed. Their assertions, values and
+locations never leave the runtime boundary.
 
 ---
 
 ## Architecture
 
-The single most important boundary in the system:
-
 ```text
-LANGUAGE → Language Runtime → Coding Workspace → Exercise Engine → Learning Engine → Skill Graph
+LANGUAGE → Language Runtime → Workspace → Exercise Engine → Learning Engine → Skill Graph
 ```
 
-The learning engine does not know whether the learner wrote Python or Rust. The workspace does not
-know how mastery is calculated. The Python runtime does not know which exercise invoked it.
+The learning engine does not know whether the learner wrote Python or Rust. The
+workspace does not know how mastery is calculated. The runtime does not know
+which exercise invoked it.
+
+That boundary is what let the browser version exist: it is a second runtime
+adapter, not a port. `tests/cross-runtime.test.ts` runs the entire curriculum
+through both and requires identical verdicts — same outcomes, same
+expected/received pairs, same hidden-test redaction — because a learner on the
+website and a learner on the desktop have to be measured by the same ruler.
 
 ```text
 packages/
   core/         Language-neutral contracts. Nothing here knows Python exists.
-  execution/    The security boundary: sandboxes, limits, process control.
-  exercises/    Exercises as data — schema, loader, catalogue, validator.
+  execution/    The native security boundary: sandboxes, limits, process control.
+  exercises/    Exercises as data — schema, loader, catalogue, validator, bundling.
   learning/     Attempts, fluency metrics, the mastery model.
   curriculum/   Spaced repetition, recommendations, session planning.
-  storage/      Local SQLite persistence and export/import.
+  session/      The application layer, and the analytics behind the dashboard.
+  storage/      SQLite, IndexedDB and memory behind one contract.
+  runtime-web/  CPython in WebAssembly.
   cli/          Developer and authoring tooling.
 
-languages/
-  python/       The first runtime adapter, its skill graph, and its exercises.
+languages/python/   The native adapter, the skill graph, the exercises.
+apps/web/           The interface. Built once, shipped twice.
+apps/desktop/       Electron shell around the same interface.
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the reasoning, and
-[docs/authoring.md](docs/authoring.md) for how to write an exercise.
+[docs/architecture.md](docs/architecture.md) — why it is shaped this way.
+[docs/authoring.md](docs/authoring.md) — how to write an exercise.
+[docs/deploying.md](docs/deploying.md) — how to host it for free.
 
 ---
 
 ## Development
 
 ```bash
-npm run verify      # lint, build, test
-npm test            # 233 tests
-npm run lint
-npm run format
+npm run verify      # everything
+npm test            # 341 tests
+npm run generate    # re-inline the Python support files after editing them
 ```
 
-The test suite includes security tests that run real processes: runaway loops, SIGINT-proof
-processes, output floods, process trees, path traversal, and environment leakage. It also includes
-a content gate that executes every shipped exercise — the reference solution must pass and the
-starter must fail — because a broken exercise is worse than no exercise.
+`any` and `unknown` are lint errors. Trust boundaries — JSON, IPC, SQL rows —
+use precise unions and typed channel maps and validate on the way in, so a
+malformed input names the field it failed on instead of producing something
+that looks fine and behaves strangely.
+
+The suite includes security tests that run real processes (runaway loops,
+SIGINT-proof processes, output floods, process trees, path traversal,
+environment leakage) and a content gate that executes every shipped exercise —
+the reference solution must pass and the starter must fail.

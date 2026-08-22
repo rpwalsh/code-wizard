@@ -33,12 +33,26 @@ see the [README](../README.md).
 ```
 
 Everything above `LanguageRuntime` is language-agnostic. There is no `if (language === 'python')`
-anywhere outside `languages/` and the one registry call in the CLI that names the concrete runtimes.
+anywhere outside `languages/` and the one registry call that names the concrete runtimes.
 
-This is not aesthetic. Adding JavaScript should mean writing a runtime adapter and authoring
-content, not touching the learning engine. Until a second language exists that claim is untested,
-so the boundary is enforced by dependency direction: `@forge/core` depends on nothing,
-`@forge/learning` and `@forge/curriculum` depend on `core` and never on `languages/python`.
+This is not aesthetic, and it is no longer untested. There are two runtimes now: one spawns a real
+interpreter, one runs CPython compiled to WebAssembly. They share the entire Python support layer —
+`forge_report.py` and `forge_expect.py` run unmodified in both and emit identical structured JSON —
+and `tests/cross-runtime.test.ts` puts the whole curriculum through both and requires identical
+verdicts. If they ever disagreed, a learner on the website and a learner on the desktop would be
+measured by different rulers, and every mastery number from either would be meaningless.
+
+Isolation maps across without changing the contract:
+
+|              | Native                                    | Browser                                        |
+| ------------ | ----------------------------------------- | ---------------------------------------------- |
+| Cancellation | process tree + `taskkill` / process group | `Worker.terminate()`                           |
+| Output cap   | bounded pipe buffer                       | bounded writer inside the interpreter          |
+| Workspace    | disposable temp directory                 | in-memory FS, wiped and modules purged per run |
+| Path guard   | the same guard                            | the same guard                                 |
+
+The same boundary carries storage: `ProgressStore` has SQLite, IndexedDB and memory
+implementations behind one async interface, all held to one conformance suite.
 
 ---
 
@@ -189,11 +203,57 @@ robustness is preferred to strictness at the read boundary.
 
 ---
 
-## 9. Deliberately not done yet
+## 9. Types at the boundaries
 
-- **The desktop IDE.** Everything above is exercised through the CLI. The IDE is presentation over
-  contracts that already exist and are tested.
-- **A second language.** The abstraction is untested until one exists. That is the point of Phase 8.
+`any` and `unknown` are lint errors, not conventions.
+
+That is a stronger constraint than it first appears, because `unknown` is where deferred typing
+hides, and deferred typing has a habit of never happening. Removing it meant replacing assertions
+with validation at every boundary — parsed JSON, IPC payloads, SQL rows, the WASM bridge — and in
+every case the result was better than what it replaced. A truncated content bundle now says
+`exercise "python.x".version: expected a number` instead of yielding a catalogue that looks fine
+and behaves strangely.
+
+The mechanisms:
+
+- **`JsonValue`** — a precise union for parsed data. `JSON.parse` is declared as returning `any`,
+  which silently switches off checking for everything downstream.
+- **Typed channel maps** — one contract shared by Electron's preload, main process and renderer.
+  The preload's whitelist is generated from it, so a channel cannot be called before it is allowed.
+- **Result maps** — the worker protocol keys results by request kind, so no caller declares what it
+  expects.
+- **Column readers** — SQL rows are read field by field, so a schema that drifts names the column.
+
+The one exception is `toError()`, because a `catch` binding is `unknown` by language rule and the
+only alternative TypeScript offers is `any`.
+
+---
+
+## 10. The interface is an instrument
+
+The visual brief is stated in the design itself, but the two decisions worth recording:
+
+**The layout follows the activity.** Writing gives the editor everything; running opens the output;
+a failing test opens the diagnostics wider. Panel dividers are a way of making the user do the
+application's job.
+
+**Every number answers a question about ability.** The home screen shows independent fluency and its
+direction, not XP or a streak. The trajectory is replayed from the attempt log on each render rather
+than snapshotted, so a change to the grading rules moves the chart and the numbers beside it
+together — a stored snapshot would freeze history against whatever the rules were that day.
+
+---
+
+## 11. Deliberately not done yet
+
+- **Packaged installers.** The desktop app runs; signing and notarisation are not set up.
+- **Accounts and sync.** Local-only, with export/import as the transfer mechanism. The shape if it
+  is ever wanted is in [deploying.md](deploying.md): opt-in, OAuth rather than passwords, snapshots
+  rather than a live connection.
+- **A second language.** The runtime abstraction is now tested by two Python runtimes, which is a
+  real test of the boundary but not the same as a second language.
 - **Knowledge and recognition grading.** Nothing currently produces evidence for those two
   dimensions; they are seeded by the onboarding prior and otherwise left alone rather than inferred
   from unrelated signals.
+- **Browser end-to-end tests.** The runtime is tested against a real interpreter under Node, and the
+  UI is typechecked and built, but no headless browser drives the actual screens yet.
