@@ -1,0 +1,80 @@
+id: python.complexity.counting
+version: 1
+language: python
+title: Count it, do not estimate it
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 300
+timeoutMs: 15000
+
+skills:
+  - python.complexity.counting
+  - python.complexity.growth
+
+prerequisites:
+  - python.control.for
+  - python.collections.list
+
+learningObjectives:
+  - Instrument code to count the work it actually does.
+  - Recognise linear and quadratic growth from measured counts, not from a guess.
+  - Find a nested loop that is hidden behind a helper call.
+
+prompt: |
+  Nobody can reliably eyeball how much work a function does. So count it.
+
+  Each function returns **the number of comparisons it performed**, not the
+  answer to the underlying question. That is the measurement.
+
+  - `scan_count(values, target)` counts one comparison per item examined,
+    stopping as soon as it finds the target.
+  - `pair_count(values)` counts one comparison for every distinct pair of
+    positions — `(0,1)`, `(0,2)`, `(1,2)` and so on. Never compare an item with
+    itself and never count a pair twice.
+  - `duplicate_count_slow(values)` counts one comparison for each membership
+    test against a **list** that grows as it goes.
+  - `duplicate_count_fast(values)` does the same job with a **set**, counting
+    one comparison per item.
+
+  The last two answer the same question. The counts they return will not be
+  close, and that difference is the lesson.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_counting.py
+    visibility: visible
+    concept: python.complexity.counting
+  - path: tests/test_growth.py
+    visibility: edge
+    concept: python.complexity.growth
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.complexity.counting
+
+hints:
+  - level: conceptual
+    text: Add a counter and increase it exactly where the work happens.
+  - level: structural
+    text: For distinct pairs, the inner loop starts after the outer one rather than at zero.
+  - level: language
+    text: '`for j in range(i + 1, len(values))` gives each pair once.'
+  - level: syntax
+    text: 'A membership test against a growing list costs one comparison per item already in it.'
+  - level: explicit
+    text: 'For n items, `pair_count` returns n * (n - 1) // 2.'
+
+explanation: |
+  The number of distinct pairs among n items is n(n-1)/2. For 10 items that is
+  45; for 1000 it is 499,500. Nothing about reading the code tells you that, and
+  everything about counting it does.
+
+  The two duplicate finders are the point. They are the same algorithm to look
+  at — walk the list, ask whether you have seen this before, remember it — and
+  the only difference is what "have I seen this" is asked of. Against a list
+  that question costs one comparison per item already stored; against a set it
+  costs one. On a thousand items, that is roughly half a million against a
+  thousand.
+
+  This is why "choose the right data structure" is not style advice. It is the
+  difference between a function that works on real data and one that does not.

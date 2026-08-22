@@ -1,0 +1,76 @@
+id: python.recursion.basics
+version: 1
+language: python
+title: The base case, and the call you have not written yet
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 300
+timeoutMs: 10000
+
+skills:
+  - python.recursion.base-case
+  - python.recursion.linear
+
+prerequisites:
+  - python.functions.definition
+  - python.collections.slicing
+
+learningObjectives:
+  - Write the stopping condition before writing the step.
+  - Reduce a sequence to one item and the rest, and trust the call on the rest.
+  - Recognise a missing base case by the error it produces.
+
+prompt: |
+  Recursion is two decisions: when to stop, and how to make the problem
+  smaller. Write the first one first, every time.
+
+  All four must be recursive. No `for`, no `while`.
+
+  - `countdown(n)` returns `[n, n-1, ..., 1]`. `countdown(0)` is `[]`.
+  - `total(values)` returns the sum. The sum of nothing is 0.
+  - `reverse(text)` returns the string backwards. No slicing tricks — one
+    character and the rest.
+  - `position(values, target)` returns the index of the first `target`, or
+    `-1`. You may pass extra arguments with defaults if you need them.
+
+  Write the base case, then write the step assuming the call on the smaller
+  problem already works. It does — you are about to finish writing it.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_recursion.py
+    visibility: visible
+    concept: python.recursion.linear
+  - path: tests/test_base_cases.py
+    visibility: edge
+    concept: python.recursion.base-case
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.recursion.linear
+
+hints:
+  - level: conceptual
+    text: Ask what the answer is for the smallest possible input, and write that line first.
+  - level: structural
+    text: '`values[0]` is the head and `values[1:]` is the rest, which is a smaller version of the same problem.'
+  - level: language
+    text: 'A missing or unreachable base case shows up as RecursionError, not as a wrong answer.'
+  - level: syntax
+    text: '`if not values: return 0` then `return values[0] + total(values[1:])`.'
+  - level: explicit
+    text: 'For position, carry the index: `def position(values, target, index=0)`.'
+
+explanation: |
+  The hard part of recursion is never the recursive call. It is believing the
+  call works before you have finished writing it — which feels like cheating and
+  is the entire technique.
+
+  Write the base case first for a practical reason as well as a conceptual one:
+  a missing base case does not give a wrong answer, it gives `RecursionError`
+  after a thousand frames, and the traceback shows you a thousand identical
+  lines that say nothing about which case you forgot.
+
+  `position` needs something the others do not: information carried *down* the
+  recursion rather than built up on the way back. A default argument is the
+  usual way, and it is the same mechanism as the accumulator pattern.

@@ -1,0 +1,80 @@
+id: python.recursion.branching
+version: 1
+language: python
+title: Recursion that branches
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 420
+timeoutMs: 15000
+
+skills:
+  - python.recursion.tree
+  - python.recursion.accumulator
+
+prerequisites:
+  - python.recursion.linear
+  - python.collections.nested
+
+learningObjectives:
+  - Recurse into a structure of unknown depth and shape.
+  - Combine the results of several recursive calls in one frame.
+  - Carry a result down the recursion instead of building it on the way back.
+
+prompt: |
+  Linear recursion has one call per frame. These have as many as the data does,
+  and that is the only difference — but it changes what the base case has to
+  cover, because now there are two kinds of thing to stop on.
+
+  A "nested list" here means a list whose items are either plain values or more
+  nested lists, to any depth.
+
+  - `flatten(nested)` returns one flat list of the values, in order.
+  - `deepest(nested)` returns how many levels there are. `deepest([])` is 1,
+    `deepest([1, [2]])` is 2.
+  - `count_values(nested)` returns how many non-list values there are.
+  - `running_totals(values)` returns the cumulative sums:
+    `[1, 2, 3]` gives `[1, 3, 6]`. Write it recursively, carrying the running
+    total down as an argument rather than adding things up on the way back.
+
+  The first three all have the same shape. Write one and the others follow.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_branching.py
+    visibility: visible
+    concept: python.recursion.tree
+  - path: tests/test_shapes.py
+    visibility: edge
+    concept: python.recursion.tree
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.recursion.accumulator
+
+hints:
+  - level: conceptual
+    text: Each item is either a value or another list, and those are the two cases.
+  - level: structural
+    text: Recurse on each item and combine what comes back, rather than recursing once.
+  - level: language
+    text: '`isinstance(item, list)` distinguishes the two kinds of item.'
+  - level: syntax
+    text: 'Depth is 1 plus the largest depth among the nested items, or 1 when there are none.'
+  - level: explicit
+    text: 'For running totals, pass the total so far: `def running_totals(values, so_far=0)`.'
+
+explanation: |
+  The base case is the part that changes. In linear recursion there is one way
+  to be small — the empty sequence. Here there are two: an empty list, and an
+  item that is not a list at all. Missing the second is the usual bug, and it
+  shows up as `TypeError: object is not iterable` rather than as a wrong
+  answer.
+
+  `deepest` needs `max` over the recursive results, and `max` of nothing
+  raises — so the empty case needs handling before the combine step, not
+  inside it. That ordering catches people who write the general case first.
+
+  The accumulator in `running_totals` carries the answer *down*. Everything
+  before it built results on the way back up. Both work here; the accumulator
+  version is the one that survives being converted to a loop later, which is
+  why it is worth having written at least once.
