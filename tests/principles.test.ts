@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { JsonObject } from '@forge/core';
-import { isJsonObject, parseJson } from '@forge/core';
+import type { JsonObject } from '@code-retrainer/core';
+import { isJsonObject, parseJson } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -154,6 +154,42 @@ describe('free forever, as an architectural constraint', () => {
     }
 
     expect(offences).toEqual([]);
+  });
+});
+
+describe('the terms are stated, not implied', () => {
+  it('ships both licences and the notice that there is no support', async () => {
+    // An unlicensed repository means all rights reserved, which would quietly
+    // contradict every sentence in PRINCIPLES.md about what a learner may do.
+    for (const file of ['LICENSE.md', 'CONTENT-LICENSE.md', 'CONTRIBUTING.md']) {
+      const contents = await readFile(path.join(root, file), 'utf8');
+      expect(contents.trim().length, `${file} is empty`).toBeGreaterThan(200);
+    }
+  });
+
+  it('points every manifest at the licence rather than leaving it blank', async () => {
+    const unlicensed: string[] = [];
+
+    for (const manifest of MANIFESTS) {
+      const declared = (await readJson(manifest))['license'];
+      if (typeof declared !== 'string' || !declared.includes('LICENSE.md')) {
+        unlicensed.push(manifest);
+      }
+    }
+
+    expect(unlicensed).toEqual([]);
+  });
+
+  it('keeps the curriculum terms separate from the software terms', async () => {
+    // The split is the whole point: the software is permissive for
+    // noncommercial use and the curriculum is not. A single licence file
+    // covering both would erase the distinction the content licence exists for.
+    const software = await readFile(path.join(root, 'LICENSE.md'), 'utf8');
+    expect(software).toMatch(/CONTENT-LICENSE\.md/);
+    expect(software).toMatch(/PolyForm Noncommercial License 1\.0\.0/);
+
+    const content = await readFile(path.join(root, 'CONTENT-LICENSE.md'), 'utf8');
+    expect(content).toMatch(/languages\/\*\/exercises/);
   });
 });
 

@@ -46,6 +46,12 @@ lesson, and stating it in prose would rob them of finding it.
 Hints exist, and they are ordered from least to most explicit, and taking one
 is recorded. That is a deliberate cost, quietly stated — not a punishment.
 
+The same idea runs the other way in the prediction panel. Before running, the
+learner can say what the machine will do. Nothing forces it and nothing nags,
+but committing to an answer first turns pressing Run from a lookup into a test
+of their own model — and a wrong prediction is coloured as information, never
+as a failure, because being wrong there is the measurement working.
+
 ---
 
 ## 3. Free forever, as an architectural constraint
@@ -89,9 +95,39 @@ against their own dependence on assistance.
 
 An experienced engineer can score high on conceptual knowledge and low on
 recall, and the two are not in tension — that gap _is_ the product's subject
-matter. So mastery is a vector, never a single percentage, and a declared
-prior at onboarding seeds knowledge and recognition while leaving recall,
-speed and independence at zero to be earned.
+matter. So mastery is a vector of ten dimensions, never a single percentage.
+
+A declared prior at onboarding may only touch the three in
+`claimableDimensions`: knowledge, recognition and application. Recall,
+composition, debugging, transfer, speed, retention and independence start at
+zero however senior the learner is, because they are the subject matter, and
+a test asserts it.
+
+Even knowledge is only _seeded_ by a claim. The one place it is ever earned is
+a prediction made before running — which is also the only way a claim can be
+corrected downward by reality.
+
+---
+
+## 6a. Assistance is withdrawn, never restored
+
+The training modes are a ladder, and it only ever goes one way:
+
+| Rung           | Withdraws                                  |
+| -------------- | ------------------------------------------ |
+| **Learn**      | nothing                                    |
+| **Practice**   | the solution                               |
+| **Fluency**    | hints, documentation, autocomplete         |
+| **Blank page** | the starter code — an empty file and tests |
+| **Simulation** | the tests; you decide when it is right     |
+
+A test asserts that no rung offers anything the rung below it does not. If one
+ever did, "further up" would stop meaning "less help", and the dependency
+measurement underneath it would stop meaning anything.
+
+This is also why full recall requires an empty file. A skeleton answers half
+the question before it is asked — which shape, which signature, which imports
+— so completing one is capped below the top of that dimension.
 
 ---
 
@@ -126,10 +162,23 @@ measured by the same ruler.
 
 ---
 
-## 10. Content is data, and open
+## 10. Content is data, and readable
 
-Exercises, skills, prerequisites and tests are declarative files, not code.
-Anyone can read them, fork them, mirror them, translate them, or run the whole
-thing on an air-gapped machine.
+Exercises, skills, prerequisites, hints and tests are declarative files, not
+code. Anyone can read exactly how they are being taught and exactly how they
+are being measured, and run the whole thing on an air-gapped machine.
 
-The goal is not to capture users. It is to make the capability ordinary.
+Readable is not the same as open, and this is the one place the two come
+apart deliberately. The software is licensed permissively for noncommercial
+use ([LICENSE.md](LICENSE.md)); the curriculum is not
+([CONTENT-LICENSE.md](CONTENT-LICENSE.md)). The exercises, the skill graph and
+the mastery model are one calibrated instrument, and a fork that changes the
+exercises while keeping the scoring produces numbers that look comparable and
+are not.
+
+What a learner can do is unchanged and unconditional: read all of it, run all
+of it, offline, for free, forever, without asking anyone. What needs
+permission is selling it or reshaping it — and neither of those is learning.
+
+The goal is not to capture users. It is to make the capability ordinary while
+keeping the measurement worth something.

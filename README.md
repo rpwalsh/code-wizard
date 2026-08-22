@@ -1,4 +1,4 @@
-# Forge
+# Code Retrainer
 
 **A code fluency trainer.** Not an AI assistant, not a quiz app — a place to
 practise writing code yourself, in a real environment, against real tests.
@@ -14,7 +14,7 @@ Most programming education asks _"do you understand this concept?"_. Assessments
 ask _"can you solve this problem?"_. AI tools ask _"can the system produce
 working code for you?"_.
 
-Forge asks:
+Code Retrainer asks:
 
 > **Can you independently produce working code in this language?**
 
@@ -50,7 +50,8 @@ and GitLab Pages.
 | WebAssembly Python runtime (Pyodide, worker termination)                    | Done        |
 | Both runtimes verified to agree on the whole curriculum                     | Done        |
 | Exercise format, loader, catalogue, executing validator                     | Done        |
-| Learning engine: attempts, fluency metrics, eight-dimension mastery         | Done        |
+| Learning engine: attempts, fluency metrics, ten-dimension mastery           | Done        |
+| Withdrawal ladder: learn → practice → fluency → blank page → simulation     | Done        |
 | Curriculum engine: spaced repetition, explainable recommendations, sessions | Done        |
 | Persistence: SQLite and IndexedDB behind one contract                       | Done        |
 | Web app: dashboard, skill map, adaptive workspace, command palette          | Done        |
@@ -83,7 +84,7 @@ npx vite preview --root apps/web
 
 ```bash
 npm run web
-npm run build --workspace @forge/desktop
+npm run build --workspace @code-retrainer/desktop
 cd apps/desktop && npx electron .
 ```
 
@@ -98,7 +99,7 @@ timeout, and overflows an output buffer, so a pass means the isolation actually
 works on your machine.
 
 ```text
-Forge Runtime Diagnostics — Python
+Code Retrainer Runtime Diagnostics — Python
 ──────────────────────────────────
 ✓ Python interpreter   C:\Python314\python.exe (py -3)
 ✓ Python version       3.14.0
@@ -180,7 +181,7 @@ apps/desktop/       Electron shell around the same interface.
 
 ```bash
 npm run verify      # everything
-npm test            # 341 tests
+npm test            # 393 tests
 npm run generate    # re-inline the Python support files after editing them
 ```
 
@@ -193,3 +194,39 @@ The suite includes security tests that run real processes (runaway loops,
 SIGINT-proof processes, output floods, process trees, path traversal,
 environment leakage) and a content gate that executes every shipped exercise —
 the reference solution must pass and the starter must fail.
+
+---
+
+## Status
+
+Single maintainer, no support, no contributions, no warranty. Nothing here is
+guaranteed to be correct, to keep working, or to keep existing. Use it at your
+own risk and read [CONTRIBUTING.md](CONTRIBUTING.md) before opening anything.
+
+What _is_ guaranteed is the part that matters: it stays free for learners,
+it runs offline, it never phones home, and there is no AI in it.
+
+---
+
+## Licence
+
+Two licences, protecting different things.
+
+**The software** — `packages/`, `apps/`, `languages/*/src`, `languages/*/runtime`,
+`scripts/`, `tests/` — is under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). Personal use, research,
+schools, universities, public research bodies and government are all covered.
+Commercial use needs a separate written licence.
+
+**The curriculum** — the exercises, skills, prompts, hints and tests under
+`languages/*/exercises` — is [licensed separately](CONTENT-LICENSE.md) and is
+not open content. You may read all of it and learn from all of it, offline and
+free and without asking anyone. Copying, modifying, translating or selling it
+needs permission.
+
+The reasoning is in [PRINCIPLES.md](PRINCIPLES.md) §10: the exercises, the skill
+graph and the mastery model are one calibrated instrument, and a fork that
+changes the exercises while keeping the scoring produces numbers that look
+comparable and are not.
+
+**Nothing here restricts a learner.** That is the point of the split.

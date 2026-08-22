@@ -1,5 +1,12 @@
 # Authoring an exercise
 
+> **This documents the format, not an invitation.** The curriculum is not open
+> content and contributions are not accepted — see
+> [CONTENT-LICENSE.md](../CONTENT-LICENSE.md) and
+> [CONTRIBUTING.md](../CONTRIBUTING.md). This file exists so that anyone can
+> read exactly how an exercise is defined, graded and gated, which is the whole
+> reason the content is data rather than code.
+
 An exercise is a directory. Nothing about adding one requires changing application code.
 
 ```text
@@ -84,12 +91,12 @@ reach the learner.
 
 ## Writing tests
 
-Use `forge_expect` rather than bare `assert` where the learner benefits from seeing both sides:
+Use `retrainer.expect` rather than bare `assert` where the learner benefits from seeing both sides:
 
 ```python
 import pytest
 
-from forge_expect import expect_equal, expect_raises
+from retrainer.expect import expect_equal, expect_raises
 from main import get_balance
 
 
@@ -117,7 +124,7 @@ unnecessary message just repeats the panel.
 
 ## Rules the validator enforces
 
-Run `forge exercise validate <id>` before committing. It executes the content:
+Run `code-retrainer exercise validate <id>` before committing. It executes the content:
 
 - **The reference solution must pass every test.**
 - **The starter must fail at least one.** An exercise whose starter is already green asks the
