@@ -1,0 +1,92 @@
+id: python.algorithms.binary-search
+version: 1
+language: python
+title: Halving, correctly
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 15000
+
+skills:
+  - python.algorithms.binary-search
+
+prerequisites:
+  - python.algorithms.linear-search
+  - python.complexity.growth
+
+learningObjectives:
+  - Write binary search from its loop invariant rather than from memory.
+  - Find a boundary rather than an exact value.
+  - Recognise binary search where there is no array at all.
+
+prompt: |
+  Binary search is eight lines and almost everybody gets it wrong the first
+  time. The cure is to say the invariant out loud before writing anything: *if
+  the target is anywhere, it is between `low` and `high` inclusive.* Every line
+  must keep that true.
+
+  - `find(values, target)` returns the index of `target` in a sorted list, or
+    `-1`.
+  - `first_at_least(values, target)` returns the index of the first value that
+    is greater than or equal to `target`, or `len(values)` if there is none.
+    This is the useful one — `find` is a special case of it.
+  - `search_rotated(values, target)` searches a sorted list that has been
+    rotated: `[4, 5, 6, 0, 1, 2]`. Returns the index or `-1`. No duplicates.
+  - `smallest_capacity(weights, days)` finds the smallest daily capacity that
+    lets you ship `weights` in order within `days` days. The answer is a
+    number, not a position — there is no array to search.
+
+  The last one is the point of the lesson. Binary search is not a thing you do
+  to arrays; it is a thing you do to any range where you can ask "is this
+  enough?".
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_search.py
+    visibility: visible
+    concept: python.algorithms.binary-search
+  - path: tests/test_bounds.py
+    visibility: edge
+    concept: python.algorithms.binary-search
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.binary-search
+
+hints:
+  - level: conceptual
+    text: Say what must remain true of low and high after every iteration, then keep it true.
+  - level: structural
+    text: For a boundary search, never discard the middle when it satisfies the condition — it might be the answer.
+  - level: language
+    text: '`(low + high) // 2` floors, which is why the loop can stall if you move the wrong bound.'
+  - level: syntax
+    text: 'For a rotated list, compare the middle with the left end to see which half is sorted.'
+  - level: explicit
+    text: 'For the capacity, binary search between max(weights) and sum(weights), testing each candidate.'
+
+explanation: |
+  The four classic errors are all invariant violations. `while low < high`
+  versus `<=` decides whether the last single candidate is ever examined.
+  Setting `high = middle` where you meant `middle - 1` loops forever. Setting
+  `low = middle` instead of `middle + 1` does the same. And computing the
+  middle before checking that the range is non-empty reads past the end.
+
+  `first_at_least` is worth having in your fingers because so many questions
+  are it in disguise: how many are below x, where does x go, is x present at
+  all. Writing it once and deriving the rest is far less error-prone than
+  writing each one fresh.
+
+  The capacity problem is the shape that generalises. Whenever the answer is a
+  number, larger answers are always feasible if smaller ones are, and you can
+  test one candidate cheaply, you can halve the range instead of walking it —
+  and the array everybody associates with binary search is nowhere in sight.
+
+mutationExceptions:
+  - path: main.py
+    operator: comparison
+    line: 12
+    why: >-
+      The equality case returns on the line above, so by the time this
+      comparison runs the two values cannot be equal and `<` cannot be
+      distinguished from `<=` by any input.

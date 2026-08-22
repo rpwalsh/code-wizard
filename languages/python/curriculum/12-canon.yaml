@@ -1,0 +1,191 @@
+# Stage 12 — The interview canon (lessons 201–228)
+#
+# A different purpose from everything before it. The first eleven stages build
+# the ability to write code; this one drills the twenty or so problem shapes
+# that technical interviews at large companies are assembled from, because
+# knowing how to program and being ready for that specific hour are not the
+# same skill and pretending otherwise wastes people's time.
+#
+# Grouped by *pattern* rather than by problem, deliberately. There are not two
+# hundred interview questions; there are roughly fifteen patterns and a great
+# many dressings of them. A learner who can recognise "this is a sliding
+# window" has done the hard part, and one who has memorised forty solutions
+# has not.
+#
+# Every prompt here is written from scratch. The underlying problems are
+# standard computer science and belong to nobody; the wordings used by any
+# particular practice site are that site's own text and are not reproduced.
+
+stage: canon
+title: The interview canon
+lessons:
+  - id: py.201
+    title: The lookup that removes a loop
+    focus: A dictionary of what you have already seen turns a nested scan into one pass.
+    skills: [python.collections.dict-mutation, python.complexity.growth]
+    difficulty: 3
+
+  - id: py.202
+    title: Anagrams and canonical forms
+    focus: Grouping by a computed key, where the key is the whole insight.
+    skills: [python.idioms.grouping, python.syntax.strings]
+    difficulty: 3
+
+  - id: py.203
+    title: Running best
+    focus: Buy low and sell high in one pass, tracking the best so far.
+    skills: [python.idioms.aggregation, python.control.for]
+    difficulty: 3
+
+  - id: py.204
+    title: The largest sum in a row
+    focus: Kadane's algorithm, and why restarting beats extending.
+    skills: [python.idioms.aggregation, python.complexity.growth]
+    difficulty: 4
+
+  - id: py.205
+    title: Everything except me
+    focus: Prefix and suffix products, and doing it without division.
+    skills: [python.collections.list, python.complexity.growth]
+    difficulty: 4
+
+  - id: py.206
+    title: Two pointers from both ends
+    focus: A sorted array, one pointer at each end, and the pair that sums to a target.
+    skills: [python.algorithms.two-pointer]
+    difficulty: 3
+
+  - id: py.207
+    title: Two pointers in step
+    focus: Removing duplicates and partitioning in place, with a read and a write index.
+    skills: [python.algorithms.two-pointer]
+    difficulty: 4
+
+  - id: py.208
+    title: A window that grows and shrinks
+    focus: The longest stretch with no repeat, and updating instead of recomputing.
+    skills: [python.algorithms.two-pointer, python.collections.set]
+    difficulty: 4
+
+  - id: py.209
+    title: Halving, correctly
+    focus: Binary search from the invariant, and the four ways to get the bounds wrong.
+    skills: [python.algorithms.binary-search]
+    difficulty: 4
+
+  - id: py.210
+    title: Searching what has been rotated
+    focus: One half is always sorted. Deciding which is the whole problem.
+    skills: [python.algorithms.binary-search]
+    difficulty: 5
+
+  - id: py.211
+    title: Binary search on the answer
+    focus: When the thing you are searching is not an array but a range of possible answers.
+    skills: [python.algorithms.binary-search, python.complexity.growth]
+    difficulty: 5
+
+  - id: py.212
+    title: Reversing a chain
+    focus: Three pointers and one loop, on a linked list you built yourself.
+    skills: [python.structures.linked]
+    difficulty: 4
+
+  - id: py.213
+    title: The tortoise and the hare
+    focus: Detecting a cycle with two speeds, and finding where it starts.
+    skills: [python.structures.linked, python.algorithms.two-pointer]
+    difficulty: 5
+
+  - id: py.214
+    title: Merging sorted things
+    focus: Two sorted lists into one, then k of them with a heap.
+    skills: [python.structures.linked, python.structures.heap]
+    difficulty: 4
+
+  - id: py.215
+    title: Walking a tree, four ways
+    focus: The three depth-first orders and the breadth-first one, and what each is for.
+    skills: [python.structures.tree, python.recursion.tree]
+    difficulty: 4
+
+  - id: py.216
+    title: Is this actually a search tree?
+    focus: Checking against a range carried down, not against the immediate children.
+    skills: [python.structures.tree, python.recursion.accumulator]
+    difficulty: 5
+
+  - id: py.217
+    title: The lowest common ancestor
+    focus: One traversal that answers on the way back up.
+    skills: [python.structures.tree, python.recursion.tree]
+    difficulty: 5
+
+  - id: py.218
+    title: The k largest, without sorting everything
+    focus: A heap of size k, and why that beats sorting when k is small.
+    skills: [python.structures.heap, python.complexity.growth]
+    difficulty: 4
+
+  - id: py.219
+    title: A tree of prefixes
+    focus: Building a trie, and the terminal marker everyone forgets.
+    skills: [python.structures.trie]
+    difficulty: 4
+
+  - id: py.220
+    title: Counting islands
+    focus: A grid is a graph. Traversal from every unvisited cell.
+    skills: [python.algorithms.traversal, python.collections.nested]
+    difficulty: 4
+
+  - id: py.221
+    title: Can this schedule be satisfied?
+    focus: Course prerequisites as a graph, and the cycle that makes it impossible.
+    skills: [python.algorithms.topological]
+    difficulty: 5
+
+  - id: py.222
+    title: Cheapest route
+    focus: Dijkstra with a priority queue, and skipping the stale entries.
+    skills: [python.algorithms.shortest-path]
+    difficulty: 5
+
+  - id: py.223
+    title: Choose, recurse, undo
+    focus: Subsets and permutations, and the undo step that makes backtracking work.
+    skills: [python.algorithms.backtracking]
+    difficulty: 4
+
+  - id: py.224
+    title: Backtracking with a constraint
+    focus: Combination sum and n-queens — pruning a branch the moment it cannot work.
+    skills: [python.algorithms.backtracking]
+    difficulty: 5
+
+  - id: py.225
+    title: Climbing, robbing, and one row of state
+    focus: The one-dimensional recurrences, bottom-up, in constant space.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 4
+
+  - id: py.226
+    title: Coins and subsequences
+    focus: Unbounded choice, and the longest increasing subsequence two ways.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 5
+
+  - id: py.227
+    title: Overlapping ranges
+    focus: Merging intervals and inserting into them — a sort and then one pass.
+    skills: [python.algorithms.intervals]
+    difficulty: 4
+
+  - id: py.228
+    title: A whole interview, timed
+    focus: >-
+      One unseen problem at interview length, closed book, with the clock
+      visible. Then the same problem again a week later, to find out whether
+      you solved it or remembered it.
+    skills: [python.algorithms.two-pointer, python.algorithms.dynamic-programming]
+    difficulty: 5

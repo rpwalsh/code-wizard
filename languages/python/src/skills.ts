@@ -467,6 +467,27 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
   // moving is a different mental model from looping a fixed number of times,
   // and it is where "it runs" and "it is correct" finally come apart.
   {
+    id: 'python.algorithms.backtracking',
+    name: 'Backtracking',
+    category: 'Algorithms',
+    prerequisites: ['python.recursion.tree', 'python.collections.list'],
+    description: 'Choose, recurse, and undo the choice. The undo is the part people forget.',
+  },
+  {
+    id: 'python.algorithms.intervals',
+    name: 'Intervals',
+    category: 'Algorithms',
+    prerequisites: ['python.idioms.sorting'],
+    description: 'Overlap, merge and insertion — almost always a sort followed by one pass.',
+  },
+  {
+    id: 'python.structures.trie',
+    name: 'Prefix trees',
+    category: 'Data Structures',
+    prerequisites: ['python.structures.tree', 'python.collections.dict-mutation'],
+  },
+
+  {
     id: 'python.numerical.floats',
     name: 'Floating point behaviour',
     category: 'Numerical',

@@ -1,0 +1,89 @@
+id: python.algorithms.two-pointer
+version: 1
+language: python
+title: Two pointers, and a window that breathes
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 15000
+
+skills:
+  - python.algorithms.two-pointer
+
+prerequisites:
+  - python.algorithms.linear-search
+  - python.collections.set
+
+learningObjectives:
+  - Replace a nested scan with two indices moving toward each other.
+  - Rewrite a list in place with a read index and a write index.
+  - Maintain a window by updating what changed rather than recomputing it.
+
+prompt: |
+  Two pointers is what you reach for when the obvious answer is a loop inside a
+  loop and the data has some order you can exploit.
+
+  - `pair_summing(values, target)` takes a **sorted** list and returns the
+    `(low_index, high_index)` of a pair summing to `target`, or `None`. Start
+    at both ends.
+  - `remove_duplicates(values)` takes a sorted list, rewrites it **in place** so
+    the distinct values come first in order, and returns how many there are.
+    The list object the caller holds must be the one that changes.
+  - `longest_unique(text)` returns the length of the longest stretch with no
+    repeated character.
+  - `max_window_sum(values, width)` returns the largest sum of any `width`
+    consecutive values, updating the running total rather than re-adding.
+
+  For the last one, adding up each window from scratch is width times more work
+  than adding the entering value and subtracting the leaving one.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_pointers.py
+    visibility: visible
+    concept: python.algorithms.two-pointer
+  - path: tests/test_windows.py
+    visibility: edge
+    concept: python.algorithms.two-pointer
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.two-pointer
+
+hints:
+  - level: conceptual
+    text: If the sum is too small the only way to grow it is to move the low end up.
+  - level: structural
+    text: In-place rewriting needs two indices — where you are reading and where you are writing.
+  - level: language
+    text: "Assigning to `values[i]` changes the caller's list; rebinding `values` does not."
+  - level: syntax
+    text: 'A growing window advances its end; when the window becomes invalid, advance its start until it is valid again.'
+  - level: explicit
+    text: 'For the window sum: `total += values[end] - values[end - width]`.'
+
+explanation: |
+  The sorted-pair search works because of a fact worth stating: if the sum is
+  too small, no pair involving the current low index can ever work, so that
+  index can be discarded permanently. Each pointer only moves forward, so the
+  whole scan is one pass rather than n².
+
+  In-place rewriting is where people quietly cheat by building a new list and
+  assigning it to the parameter. That rebinds a local name and the caller never
+  sees it, which is the same lesson as the very first exercise about names and
+  objects — reappearing four hundred lines of curriculum later, in a context
+  where it is much harder to spot.
+
+  The window is the general shape: keep a summary of the current window, and
+  when the window moves, update the summary by what entered and what left.
+  Recomputing from scratch turns a linear algorithm quadratic and looks
+  perfectly reasonable while doing so.
+
+mutationExceptions:
+  - path: main.py
+    operator: comparison
+    line: 12
+    why: >-
+      The equality case returns on the line above, so by the time this
+      comparison runs the two values cannot be equal and `<` cannot be
+      distinguished from `<=` by any input.
