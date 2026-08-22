@@ -1,0 +1,74 @@
+id: python.functions.closures
+version: 1
+language: python
+title: What a function can see
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 300
+timeoutMs: 10000
+
+skills:
+  - python.functions.scope
+
+prerequisites:
+  - python.functions.definition
+
+learningObjectives:
+  - Predict which name a function body is reading, and which it is creating.
+  - Pass a function as an argument and return one from a function.
+  - Recognise the late-binding trap when functions are built in a loop.
+
+prompt: |
+  A function body can read names from outside it. Assigning to one, however,
+  creates a new local name instead — and that asymmetry is where the confusion
+  lives.
+
+  - `make_adder(amount)` returns a **function** that adds `amount` to whatever
+    it is given. `make_adder(3)(4)` is `7`.
+  - `apply_twice(function, value)` returns `function(function(value))`.
+  - `counter()` returns a function that returns 1, then 2, then 3, and so on.
+    Each call to `counter()` starts a fresh count.
+  - `make_adders(amounts)` returns a **list** of adder functions, one per
+    amount. `make_adders([1, 2])[0](10)` must be `11`.
+
+  The last one is the trap. Built carelessly, every function in the list ends
+  up using the same amount — the last one.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_closures.py
+    visibility: visible
+    concept: python.functions.scope
+  - path: tests/test_binding.py
+    visibility: edge
+    concept: python.functions.scope
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.functions.scope
+
+hints:
+  - level: conceptual
+    text: A function built inside another can still see the outer function's names after it returns.
+  - level: structural
+    text: A closure captures the variable, not its value at the moment of capture.
+  - level: language
+    text: '`nonlocal` lets an inner function rebind a name in the enclosing scope rather than shadowing it.'
+  - level: syntax
+    text: 'A default argument is evaluated when the function is defined, which pins the value.'
+  - level: explicit
+    text: 'For the list, use a default: `lambda value, amount=amount: value + amount`.'
+
+explanation: |
+  A closure captures the *variable*, not the value it had when the closure was
+  made. Build functions in a loop over `amounts` and every one of them looks up
+  `amount` when it is finally called — by which time the loop has finished and
+  `amount` holds the last value. All of them agree, and all of them are wrong.
+
+  The fix is to force the value to be evaluated at definition time, which is
+  exactly what a default argument does. That is the one legitimate use of the
+  mutable-default machinery that otherwise causes so much trouble.
+
+  `counter` needs the opposite: a name that genuinely persists and changes
+  between calls, which is what `nonlocal` is for. Without it, `count = count +
+  1` creates a local name and raises for reading it before assignment.

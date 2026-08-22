@@ -1,0 +1,73 @@
+id: python.functions.defining
+version: 1
+language: python
+title: Returning, not printing
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 180
+timeoutMs: 10000
+
+skills:
+  - python.functions.definition
+  - python.functions.arguments
+
+prerequisites:
+  - python.control.conditionals
+
+learningObjectives:
+  - Distinguish returning a value from printing one, and know why it matters.
+  - Use a guard clause to remove a level of nesting.
+  - Recall that a function with no return statement still returns something.
+
+prompt: |
+  A function that prints is a dead end: nothing can test it, and nothing can
+  use its answer. A function that returns can do both.
+
+  - `initials(full_name)` returns `"A. T."` for `"Alan Turing"`. Two words,
+    always.
+  - `safe_divide(top, bottom)` returns the division, or `None` when `bottom` is
+    zero. Use a guard clause — check the bad case and leave, rather than
+    wrapping the good case in an `else`.
+  - `label(count, noun)` returns `"1 file"` or `"3 files"`, pluralising by
+    adding an `s`.
+  - `announce(message)` prints the message and returns nothing at all. Do not
+    write a `return` statement in it.
+
+  The last one exists so the tests can show you what a function without a
+  `return` actually gives back.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_defining.py
+    visibility: visible
+    concept: python.functions.definition
+  - path: tests/test_returning.py
+    visibility: edge
+    concept: python.functions.definition
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.functions.arguments
+
+hints:
+  - level: conceptual
+    text: Printing puts characters on a screen. Returning hands a value back to whoever called you.
+  - level: structural
+    text: A guard clause handles the exceptional case first and returns, leaving the body unindented.
+  - level: language
+    text: 'A function that falls off its end returns `None`, whether or not you wrote it.'
+  - level: syntax
+    text: '`first, last = full_name.split()` then build the string with an f-string.'
+  - level: explicit
+    text: '`if bottom == 0: return None` on its own line, then the division after it.'
+
+explanation: |
+  The print-versus-return distinction decides whether anything in your program
+  can be tested, composed, or reused, and it is the single most common thing
+  that separates a script from a program. A function that prints its answer has
+  thrown the answer away.
+
+  A function with no `return` returns `None` — not nothing, not zero, not an
+  error. That is why forgetting a `return` produces `TypeError: unsupported
+  operand type(s) for +: 'NoneType' and 'int'` somewhere completely different,
+  usually two functions away from the one that is actually wrong.
