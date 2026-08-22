@@ -1,0 +1,71 @@
+id: python.syntax.names
+version: 1
+language: python
+title: Two names, one object
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 180
+timeoutMs: 10000
+
+skills:
+  - python.syntax.variables
+
+prerequisites:
+  - python.syntax.expressions
+
+learningObjectives:
+  - Predict whether changing one name changes what another name sees.
+  - Swap two values without a temporary variable.
+  - Recall that rebinding a name and mutating an object are different acts.
+
+prompt: |
+  Assignment in Python does not copy the thing. It gives the thing another
+  name. Everything below follows from that one sentence.
+
+  - `swap(pair)` takes a two-element list and returns a **new** list with the
+    two elements the other way round. The list you were given must not change.
+  - `rebind(values)` takes a list, points its own local name at a brand new
+    list, and returns that. The caller's list must not change.
+  - `mutate(values)` takes a list and appends `"x"` to the list itself, then
+    returns it. The caller's list **must** change.
+  - `same_object(a, b)` returns True when the two names refer to one object,
+    not merely to equal values.
+
+  Two of these look almost identical and do opposite things. That is the
+  exercise.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_names.py
+    visibility: visible
+    concept: python.syntax.variables
+  - path: tests/test_identity.py
+    visibility: edge
+    concept: python.syntax.variables
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.syntax.variables
+
+hints:
+  - level: conceptual
+    text: One of these changes what a name points at. Another changes the thing itself.
+  - level: structural
+    text: Building a new list and assigning to a local name never reaches the caller.
+  - level: language
+    text: '`is` asks whether two names refer to one object; `==` asks whether two objects look alike.'
+  - level: syntax
+    text: '`a, b = b, a` swaps. `values.append(...)` mutates. `values = [...]` rebinds.'
+  - level: explicit
+    text: '`swap` can be `return [pair[1], pair[0]]`.'
+
+explanation: |
+  The distinction here is the root of a whole family of bugs that show up years
+  later. `values = [1, 2]` inside a function points the local name somewhere
+  new and the caller sees nothing. `values.append(3)` reaches through the name
+  and changes the object the caller is still holding.
+
+  `==` and `is` come apart for the same reason. Two separately built lists with
+  the same contents are equal and are not the same object, so a function that
+  checks `is` when it meant `==` works perfectly on small integers and short
+  strings — which Python happens to reuse — and then fails on real data.

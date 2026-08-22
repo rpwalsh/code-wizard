@@ -161,11 +161,7 @@ async function syllabus(): Promise<number> {
     }
     console.log('');
     console.log(
-      indent(
-        style.grey(
-          `${progress.outstanding.length} ${pluralise(progress.outstanding.length, 'lesson')} still to write.`,
-        ),
-      ),
+      indent(style.grey(`${pluralise(progress.outstanding.length, 'lesson')} still to write.`)),
     );
   }
 

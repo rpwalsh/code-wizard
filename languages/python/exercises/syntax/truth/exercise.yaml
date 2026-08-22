@@ -1,0 +1,67 @@
+id: python.syntax.truth
+version: 1
+language: python
+title: Comparison and truth
+kind: syntax-drill
+difficulty: 2
+estimatedSeconds: 120
+timeoutMs: 10000
+
+skills:
+  - python.syntax.expressions
+
+prerequisites: []
+
+learningObjectives:
+  - Write a chained comparison instead of two joined by and.
+  - Predict what and / or return, which is not always a bool.
+  - Recall which values are falsy without checking.
+
+prompt: |
+  Four functions, each a single expression.
+
+  - `in_range(value, low, high)` — True when `value` is between `low` and
+    `high` inclusive. Write it as one chained comparison, not two joined by
+    `and`.
+  - `first_truthy(a, b)` — return `a` if it is truthy, otherwise `b`. One
+    operator, no `if`.
+  - `both_present(a, b)` — True only when both are truthy. It must return an
+    actual bool.
+  - `is_blank(text)` — True when the text is empty or only whitespace.
+
+  Two of these are about what the boolean operators *return*, which is not
+  what most people expect.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_truth.py
+    visibility: visible
+    concept: python.syntax.expressions
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.syntax.expressions
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.syntax.expressions
+
+hints:
+  - level: conceptual
+    text: Python lets you write a range check the way you would write it on paper.
+  - level: structural
+    text: '`or` does not return True. It returns one of the two things you gave it.'
+  - level: language
+    text: '`a or b` gives `a` when `a` is truthy, otherwise `b`. `bool(x)` forces a real bool.'
+  - level: syntax
+    text: '`low <= value <= high` is one expression.'
+  - level: explicit
+    text: '`both_present` is `bool(a and b)`.'
+
+explanation: |
+  `and` and `or` return an operand, not a bool. `"" or "fallback"` is
+  `"fallback"`, and `"a" and "b"` is `"b"`. That is what makes `value or
+  default` a useful idiom — and also what makes it a bug when `0` or `""` is a
+  legitimate value, because both are falsy and get replaced.
+
+  Chained comparison is not sugar for `and`. `low <= value <= high` evaluates
+  `value` once, which matters the moment it is a function call.

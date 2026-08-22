@@ -1,0 +1,69 @@
+id: python.control.branching
+version: 1
+language: python
+title: Deciding, and the block that follows
+kind: micro-problem
+difficulty: 1
+estimatedSeconds: 180
+timeoutMs: 10000
+
+skills:
+  - python.syntax.indentation
+  - python.control.conditionals
+
+prerequisites:
+  - python.syntax.variables
+
+learningObjectives:
+  - Write if / elif / else where the order of branches is itself a decision.
+  - See that a line's indentation decides whether it runs once or every time.
+  - Use a guard clause instead of wrapping the body in an else.
+
+prompt: |
+  In Python the indentation *is* the block. A line one level too far out runs
+  at a different time, and the program still starts.
+
+  - `grade(score)` returns `"A"` for 90 and above, `"B"` for 80 and above,
+    `"C"` for 70 and above, and `"F"` below that. Mind the order.
+  - `describe(number)` returns `"negative"`, `"zero"` or `"positive"`.
+  - `first_long(words, minimum)` returns the first word longer than `minimum`,
+    or `None` if there is none. Return as soon as you find it.
+  - `count_matching(words, letter)` returns how many words start with `letter`.
+    The total must be returned once, after the loop — not inside it.
+
+  The last two differ only in where the `return` sits.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_branching.py
+    visibility: visible
+    concept: python.control.conditionals
+  - path: tests/test_blocks.py
+    visibility: edge
+    concept: python.syntax.indentation
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.control.conditionals
+
+hints:
+  - level: conceptual
+    text: Branches are checked top to bottom, so the most demanding condition goes first.
+  - level: structural
+    text: One function returns from inside the loop; the other returns after it.
+  - level: language
+    text: '`elif` only runs when everything above it was false, which is what saves you writing the upper bound.'
+  - level: syntax
+    text: 'A `return` inside `for` stops the whole function, not just the loop.'
+  - level: explicit
+    text: 'For `grade`, check `>= 90` first, then `>= 80`, then `>= 70`, then else.'
+
+explanation: |
+  Branch order is a decision, not a formatting choice. Checking `score >= 70`
+  first would give everyone a C, because 95 is also at least 70 and `elif`
+  never gets a chance. That bug produces plausible output for every input,
+  which is the kind that survives review.
+
+  The last two functions are the whole point of the indentation half. Moving
+  `return total` one level in means returning after the first word instead of
+  after all of them — and the program runs, returns a number, and is wrong.

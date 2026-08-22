@@ -1,0 +1,66 @@
+id: python.syntax.arithmetic
+version: 1
+language: python
+title: Arithmetic that means what you meant
+kind: syntax-drill
+difficulty: 1
+estimatedSeconds: 90
+timeoutMs: 10000
+
+skills:
+  - python.syntax.expressions
+
+prerequisites: []
+
+learningObjectives:
+  - Recall the difference between / and // without checking.
+  - Use % to answer a question about divisibility or position.
+  - Predict the type of an arithmetic result before running it.
+
+prompt: |
+  Four one-line functions.
+
+  - `halves(total)` returns `total` divided by two, keeping the fraction.
+    `halves(7)` is `3.5`.
+  - `whole_halves(total)` returns how many whole halves fit. `whole_halves(7)`
+    is `3`, and the result is an `int`, not `3.0`.
+  - `remainder(total, size)` returns what is left over after packing `total`
+    into groups of `size`. `remainder(7, 3)` is `1`.
+  - `is_even(number)` returns True or False.
+
+  No `if` statements, no `round`, no `math`. Each one is a single expression.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_arithmetic.py
+    visibility: visible
+    concept: python.syntax.expressions
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.syntax.expressions
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.syntax.expressions
+
+hints:
+  - level: conceptual
+    text: Two of these want a whole number and two do not. Decide which before writing anything.
+  - level: structural
+    text: Python has a division that keeps the fraction and one that throws it away.
+  - level: language
+    text: The modulo operator answers "what is left over", and comparing it to zero answers "does it divide".
+  - level: syntax
+    text: '`/` keeps the fraction, `//` floors, `%` is the remainder.'
+  - level: explicit
+    text: '`is_even` is `number % 2 == 0`.'
+
+explanation: |
+  `/` always gives a float, even when it divides exactly: `4 / 2` is `2.0`, not
+  `2`. That single fact is behind a surprising share of "why is my index not an
+  integer" errors, because a float index raises.
+
+  `//` floors rather than truncating, which only shows up with negatives:
+  `-7 // 2` is `-4`, not `-3`. And `%` follows it, so `-7 % 2` is `1` rather
+  than `-1`. Most languages made the opposite choice, which is why the edge
+  tests here exist.
