@@ -1,0 +1,69 @@
+id: python.functions.signatures
+version: 1
+language: python
+title: Write a function signature
+kind: syntax-drill
+difficulty: 2
+estimatedSeconds: 90
+timeoutMs: 10000
+
+skills:
+  - python.functions.varargs
+
+prerequisites:
+  - python.functions.arguments
+
+learningObjectives:
+  - Recall default, variadic and keyword-variadic parameter syntax unaided.
+  - Choose a default that does not persist between calls.
+
+prompt: |
+  Three functions, each defined by its signature more than its body.
+
+  `join_words(*words, separator=" ")` — join any number of words with the
+  separator. `join_words("a", "b")` is `"a b"`; `join_words()` is `""`.
+
+  `tag(name, **attributes)` — build an HTML-ish opening tag.
+  `tag("a", href="/x")` is `'<a href="/x">'`. With no attributes, `tag("br")`
+  is `"<br>"`. Attributes keep the order they were passed in.
+
+  `collect(item, into=None)` — append `item` to `into` and return the list.
+  Called with no list, it starts a new one. **Call it twice with no list and
+  you must get two separate lists back.**
+
+  That last sentence is the exercise.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_signatures.py
+    visibility: visible
+    concept: python.functions.varargs
+  - path: tests/test_defaults.py
+    visibility: edge
+    concept: python.functions.varargs
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.functions.varargs
+
+hints:
+  - level: conceptual
+    text: One function takes any number of positional arguments; one takes any number of named ones.
+  - level: structural
+    text: A default value is evaluated once, when the function is defined — not on each call.
+  - level: language
+    text: '`*args` collects positionals into a tuple; `**kwargs` collects named ones into a dict.'
+  - level: syntax
+    text: 'A keyword-only parameter goes after `*args`: `def f(*args, sep=" ")`.'
+  - level: explicit
+    text: 'Default to `None` and build the list inside the body: `if into is None: into = []`.'
+
+explanation: |
+  The mutable default is the one that bites, and it bites quietly. `def
+  collect(item, into=[])` creates that list **once**, when the function is
+  defined, and every call with no list appends to the same one. The bug shows
+  up as data from a previous call appearing in a fresh result, usually in
+  production, usually months later.
+
+  `None` as the default and the real value built inside the body is the fix,
+  and it is worth having in your fingers rather than in a linter.

@@ -59,7 +59,7 @@ and GitLab Pages.
 | Packaged installers, accounts, sync                                         | Not started |
 | Second language                                                             | Not started |
 
-7 exercises · 45 Python skills · 341 tests
+10 exercises · 45 Python skills · 456 tests
 
 ---
 
@@ -181,8 +181,10 @@ apps/desktop/       Electron shell around the same interface.
 
 ```bash
 npm run verify      # everything
-npm test            # 393 tests
+npm test            # 456 tests
 npm run generate    # re-inline the Python support files after editing them
+npm run typecheck   # the packages and both apps
+code-retrainer exercise mutate   # would the tests catch a wrong answer?
 ```
 
 `any` and `unknown` are lint errors. Trust boundaries — JSON, IPC, SQL rows —

@@ -1,0 +1,88 @@
+id: python.idioms.from-javascript
+version: 1
+language: python
+title: Translate it out of JavaScript
+kind: translation
+difficulty: 3
+estimatedSeconds: 240
+timeoutMs: 15000
+
+skills:
+  - python.idioms.sorting
+  - python.collections.comprehensions
+  - python.idioms.aggregation
+
+prerequisites:
+  - python.collections.dict-lookup
+  - python.control.for
+
+learningObjectives:
+  - Express map, filter and reduce as Python idioms rather than as transliterated JavaScript.
+  - Sort by a computed key without writing a comparator.
+  - Recognise where the two languages genuinely differ instead of guessing.
+
+prompt: |
+  Below is working JavaScript. Write the same behaviour in Python — not the
+  same *lines*, the same behaviour, in the way Python would have it.
+
+  ```js
+  const activeNames = (users) =>
+    users.filter((u) => u.active).map((u) => u.name);
+
+  const totalSpend = (orders) =>
+    orders.reduce((sum, o) => sum + o.amount, 0);
+
+  const byNewest = (posts) =>
+    [...posts].sort((a, b) => b.createdAt - a.createdAt);
+
+  const firstMatch = (items, predicate) =>
+    items.find(predicate) ?? null;
+  ```
+
+  Four functions: `active_names(users)`, `total_spend(orders)`,
+  `by_newest(posts)`, `first_match(items, predicate)`.
+
+  Records are dictionaries: `{"name": "Ada", "active": True}`.
+
+  Two of these translate almost directly. Two do not, and the tests will tell
+  you which — a chained `.filter().map()` is one comprehension here, and
+  `.sort()` in JavaScript mutates while Python's `sorted` does not.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_translation.py
+    visibility: visible
+    concept: python.collections.comprehensions
+  - path: tests/test_differences.py
+    visibility: edge
+    concept: python.idioms.sorting
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.idioms.aggregation
+
+hints:
+  - level: conceptual
+    text: Three of these are things Python has a single built-in expression for.
+  - level: structural
+    text: A filter followed by a map is one comprehension, not two passes.
+  - level: language
+    text: '`sorted` takes a `key` function and a `reverse` flag; it never takes a comparator.'
+  - level: syntax
+    text: '`[u["name"] for u in users if u["active"]]`, and `sum(o["amount"] for o in orders)`.'
+  - level: explicit
+    text: 'Newest first is `sorted(posts, key=lambda p: p["createdAt"], reverse=True)`.'
+
+explanation: |
+  The interesting part is not the syntax, it is which habits survive the trip.
+
+  `reduce` survives as `sum` — reaching for `functools.reduce` here is
+  transliteration, not translation. The chained `.filter().map()` becomes one
+  comprehension because two passes over the list were never the point.
+
+  And `sort` is where the languages genuinely disagree. JavaScript's sorts in
+  place and returns the array, which is why the original had to spread it
+  first. Python gives you both: `list.sort()` mutates and returns `None`,
+  `sorted()` returns a new list. The spread is not needed because `sorted`
+  already does not touch the original — and a test here checks that you did
+  not translate the defensive copy into a defensive copy you no longer need.

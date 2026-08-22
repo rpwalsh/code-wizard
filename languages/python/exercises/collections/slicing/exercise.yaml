@@ -1,0 +1,64 @@
+id: python.collections.slicing
+version: 1
+language: python
+title: Slice a list
+kind: syntax-drill
+difficulty: 1
+estimatedSeconds: 60
+timeoutMs: 10000
+
+skills:
+  - python.collections.slicing
+
+prerequisites:
+  - python.collections.list
+
+learningObjectives:
+  - Recall slice syntax without looking it up.
+  - Use a negative index and a negative step from memory.
+
+prompt: |
+  Four one-line functions. Each is a single slice expression — no loops, no
+  `reversed`, no `len` arithmetic.
+
+  - `first_three(items)` — the first three elements.
+  - `last_two(items)` — the last two.
+  - `middle(items)` — everything except the first and last element.
+  - `backwards(items)` — the whole list, reversed.
+
+  All four must work on a list shorter than the slice asks for, without
+  raising. That is not extra credit; it is what slicing already does.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_slicing.py
+    visibility: visible
+    concept: python.collections.slicing
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.collections.slicing
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.collections.slicing
+
+hints:
+  - level: conceptual
+    text: A slice takes a start, a stop and a step, and any of them may be left out.
+  - level: structural
+    text: Counting from the end is a negative index. Going backwards is a negative step.
+  - level: language
+    text: '`items[start:stop:step]`. Omitting start means the beginning; omitting stop means the end.'
+  - level: syntax
+    text: '`items[:3]`, `items[-2:]`, `items[1:-1]`.'
+  - level: explicit
+    text: 'Reversed is `items[::-1]`.'
+
+explanation: |
+  Slicing never raises for being out of range, which is the whole reason to
+  reach for it instead of index arithmetic. `[1:-1]` on a one-element list is
+  empty rather than an error, and `[:3]` on a two-element list gives you two.
+
+  The one that catches people is `[::-1]`: the empty start and stop are doing
+  real work. `[:-1]` is "everything but the last" and `[::-1]` is "all of it,
+  backwards", and they are one character apart.
