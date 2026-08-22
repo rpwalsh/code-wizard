@@ -1,0 +1,85 @@
+id: python.algorithms.tables
+version: 1
+language: python
+title: One row of state
+kind: focused-problem
+difficulty: 5
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.algorithms.dynamic-programming
+  - python.algorithms.intervals
+
+prerequisites:
+  - python.recursion.memoisation
+  - python.idioms.sorting
+
+learningObjectives:
+  - Turn a recurrence into a table filled in order.
+  - Recognise when only the previous row is needed and drop the rest.
+  - Solve an interval problem by sorting first and then doing one pass.
+
+prompt: |
+  Dynamic programming is memoisation with the recursion removed: work out the
+  order the answers depend on each other, then fill them in that order.
+
+  - `ways_up(steps)` counts the ways to climb `steps` stairs taking one or two
+    at a time. `ways_up(0)` is 1 — doing nothing is one way.
+  - `best_take(values)` returns the largest total you can take from a list
+    without taking two adjacent entries.
+  - `fewest_coins(coins, amount)` returns the fewest coins summing to `amount`,
+    or `-1`. Each coin may be used any number of times.
+  - `merge_ranges(ranges)` takes `(start, end)` pairs and returns them merged
+    where they overlap or touch, sorted by start.
+
+  The first two need only the previous one or two answers, so neither needs a
+  table at all. Notice that after writing them, not before.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_tables.py
+    visibility: visible
+    concept: python.algorithms.dynamic-programming
+  - path: tests/test_ranges.py
+    visibility: edge
+    concept: python.algorithms.intervals
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.dynamic-programming
+
+hints:
+  - level: conceptual
+    text: Write the answer for size n in terms of smaller sizes, then fill upward.
+  - level: structural
+    text: At each entry you either take it and skip the next, or skip it — the answer is the better of the two.
+  - level: language
+    text: 'For coins, an amount that cannot be made must stay distinguishable from an expensive one.'
+  - level: syntax
+    text: 'Sort the ranges by start; then a range either extends the last one or begins a new one.'
+  - level: explicit
+    text: 'Ranges touch when the next start is less than or equal to the current end.'
+
+explanation: |
+  The stairs and the non-adjacent sum are the same recurrence wearing different
+  clothes: each answer depends on the two before it. Both can be written with a
+  table and both then collapse to two variables, which is worth doing once so
+  that "optimising the space" stops being a separate trick and becomes an
+  observation.
+
+  The coin problem needs an unreachable marker that survives arithmetic. Using
+  a very large number works only if you never add to it and then compare; using
+  `None` forces the check to be explicit, which is why it is less error-prone.
+
+  Merging ranges is the archetype: almost every interval question is a sort
+  followed by one pass, and the only real decision is whether ranges that merely
+  touch should merge. Say which you mean, because the tests will.
+
+mutationExceptions:
+  - path: main.py
+    operator: off-by-one
+    line: 28
+    why: >-
+      One extra slot on the end of the table is never written to and never
+      read, so no input can distinguish it from the exact size.

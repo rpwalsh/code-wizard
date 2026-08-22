@@ -1,0 +1,95 @@
+id: python.algorithms.ordering
+version: 1
+language: python
+title: Order, cycles and cheapest routes
+kind: focused-problem
+difficulty: 5
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.algorithms.topological
+  - python.algorithms.shortest-path
+
+prerequisites:
+  - python.algorithms.traversal
+  - python.structures.heap
+
+learningObjectives:
+  - Produce an order that respects every dependency, or detect that none exists.
+  - Explain why breadth-first search stops being correct once edges have weights.
+  - Implement Dijkstra with a priority queue, skipping stale entries.
+
+prompt: |
+  Three questions about directed graphs that come up constantly.
+
+  Graphs are `{node: [neighbour, ...]}`. Weighted graphs are
+  `{node: [(neighbour, cost), ...]}`.
+
+  - `count_regions(grid)` counts the connected groups of `"#"` cells in a grid
+    of strings. Cells connect up, down, left and right — not diagonally.
+  - `has_cycle(graph)` returns True when the directed graph contains a cycle.
+  - `ordering(graph)` returns a list of nodes where every node appears after
+    everything it depends on — an edge `a -> b` means `a` must come first.
+    Return `None` when no such order exists. Break ties alphabetically so the
+    answer is comparable.
+  - `cheapest(graph, start, goal)` returns the total cost of the cheapest route
+    in a weighted graph, or `None`. Costs are non-negative.
+
+  For `cheapest`, breadth-first search gives the wrong answer and one of the
+  tests proves it on a three-node graph.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_ordering.py
+    visibility: visible
+    concept: python.algorithms.topological
+  - path: tests/test_weights.py
+    visibility: edge
+    concept: python.algorithms.shortest-path
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.topological
+
+hints:
+  - level: conceptual
+    text: A node can be placed once nothing it depends on is still waiting.
+  - level: structural
+    text: Count how many edges point *into* each node, and place the ones with none.
+  - level: language
+    text: 'If the ordering ends before every node is placed, what remains contains a cycle.'
+  - level: syntax
+    text: 'A heap of (cost, node) pops the cheapest frontier entry first.'
+  - level: explicit
+    text: 'Skip a popped entry whose cost is worse than the best already recorded for that node.'
+
+explanation: |
+  Kahn's algorithm and cycle detection are the same computation seen twice: if
+  you can place every node, there is no cycle, and if you cannot, what is left
+  is exactly the cycle. Writing them separately is fine; noticing they are one
+  thing is better.
+
+  Dijkstra is breadth-first search with a heap instead of a queue, plus one
+  detail: entries already in the heap cannot be updated when a cheaper route to
+  the same node is found, so a stale entry stays there and must be recognised
+  and skipped on the way out. Forgetting that does not give a wrong answer on
+  small graphs, which is precisely why it survives into production.
+
+  Non-negative costs are not a footnote. Dijkstra settles a node the first time
+  it is popped, and that reasoning collapses the moment an edge can reduce a
+  total, which is why negative weights need a different algorithm entirely.
+
+mutationExceptions:
+  - path: main.py
+    operator: arithmetic
+    line: 22
+    why: >-
+      The four offsets are symmetric, so subtracting the row delta instead of
+      adding it yields the same set of neighbours in a different order. No
+      input can tell them apart.
+  - path: main.py
+    operator: arithmetic
+    line: 23
+    why: >-
+      The same symmetry on the column delta.

@@ -1,0 +1,78 @@
+id: python.structures.linked
+version: 1
+language: python
+title: Chains of nodes
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 15000
+
+skills:
+  - python.structures.linked
+
+prerequisites:
+  - python.modeling.classes
+  - python.recursion.linear
+
+learningObjectives:
+  - Traverse and rebuild a chain of nodes without losing the tail.
+  - Detect a cycle with two pointers moving at different speeds.
+  - Merge two sorted chains without building a list first.
+
+prompt: |
+  A `Node` has a `value` and a `next`. That is the whole data structure, and
+  everything hard about it comes from having no index and no length.
+
+  `Node` is provided. Do not convert to a list and back — the point is the
+  pointer work.
+
+  - `to_list(head)` returns the values in order, for checking your work.
+  - `reverse(head)` reverses the chain and returns the new head. Three
+    pointers, one loop.
+  - `has_cycle(head)` returns True when following `next` never ends. Use two
+    pointers at different speeds; do not use a set.
+  - `merge_sorted(first, second)` takes two sorted chains and returns one
+    sorted chain, reusing the existing nodes.
+
+  In `reverse`, the moment you point a node backwards you have lost the rest of
+  the chain unless you saved it first. That saving is the whole exercise.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_linked.py
+    visibility: visible
+    concept: python.structures.linked
+  - path: tests/test_pointers.py
+    visibility: edge
+    concept: python.structures.linked
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.linked
+
+hints:
+  - level: conceptual
+    text: Before repointing a node, remember where it used to point.
+  - level: structural
+    text: Two pointers, one moving twice as fast, must meet if there is a loop and cannot if there is not.
+  - level: language
+    text: 'A chain ends when `next` is None, which is also the base case for every function here.'
+  - level: syntax
+    text: '`previous, current = None, head` then advance both inside the loop.'
+  - level: explicit
+    text: 'Merging is easier with a throwaway node in front, so there is no special case for the first item.'
+
+explanation: |
+  Reversal is three pointers because you need the one behind, the one you are
+  on, and the one ahead — and the one ahead must be saved before you overwrite
+  the link that leads to it. Draw it once and it is obvious; try to hold it in
+  your head and it is not.
+
+  The two-speed cycle detection is worth knowing beyond the trick. It uses
+  constant memory where a set uses memory proportional to the chain, and the
+  same idea — two indices at different rates — shows up in a dozen other
+  places.
+
+  The throwaway head node in `merge_sorted` is the standard trick for removing
+  a special case. Without it, the first node needs different handling from every
+  other node, and that difference is where the bug goes.

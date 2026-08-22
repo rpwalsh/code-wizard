@@ -1,0 +1,92 @@
+id: python.structures.heap
+version: 1
+language: python
+title: The k largest, without sorting everything
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 360
+timeoutMs: 15000
+
+skills:
+  - python.structures.heap
+  - python.complexity.data-structure-choice
+
+prerequisites:
+  - python.structures.stack-queue
+  - python.complexity.growth
+
+learningObjectives:
+  - Use a heap to keep the best k without sorting the whole input.
+  - Work around the fact that the standard heap is a minimum heap.
+  - Say when a heap beats a sort and when it does not.
+
+prompt: |
+  A heap answers one question cheaply — "what is the smallest thing in here?" —
+  and does not sort anything else. That is enough for a surprising number of
+  problems.
+
+  - `k_largest(values, k)` returns the k largest values, largest first. Keep a
+    heap of size k rather than sorting everything.
+  - `k_smallest(values, k)` returns the k smallest, smallest first.
+  - `merge_sorted_lists(lists)` merges any number of sorted lists into one
+    sorted list, using a heap holding one item from each.
+  - `most_common(counts, k)` takes `{name: count}` and returns the k names with
+    the highest counts, ties broken alphabetically.
+
+  `heapq` is a **minimum** heap and has no maximum version. Getting the largest
+  out of it is the part worth having in your fingers.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_heap.py
+    visibility: visible
+    concept: python.structures.heap
+  - path: tests/test_choice.py
+    visibility: edge
+    concept: python.complexity.data-structure-choice
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.heap
+
+hints:
+  - level: conceptual
+    text: To keep the k largest, hold a heap of k and evict the smallest whenever it grows.
+  - level: structural
+    text: To use a minimum heap as a maximum heap, push the negative and negate on the way out.
+  - level: language
+    text: '`heapq.heappush`, `heappop`, and `heappushpop` which does both in one step.'
+  - level: syntax
+    text: 'A heap of tuples orders by the first element, then the second, and so on.'
+  - level: explicit
+    text: 'For ties broken alphabetically with counts descending, sort by `(-count, name)`.'
+
+explanation: |
+  Sorting to get the top k does n log n work; a heap of size k does n log k. On
+  a million items with k of 10 that is a real difference, and on a thousand
+  items with k of 900 it is not — the heap is not universally better, which is
+  the point of the lesson. Knowing which case you are in beats knowing the
+  trick.
+
+  The negation trick for maximum heaps is ugly and standard. The alternative —
+  wrapping values in a class with reversed comparison — is worse, and the
+  standard library deliberately offers no maximum heap because the negation is
+  considered sufficient.
+
+  Tuples in a heap compare element by element, which is how you attach a
+  tiebreaker. It also means the second element must be comparable, so a heap of
+  `(count, some_object)` explodes on a tie unless the object supports `<`.
+
+mutationExceptions:
+  - path: main.py
+    operator: comparison
+    line: 14
+    why: >-
+      Replacing the smallest kept value with an equal one leaves the same
+      multiset, so no input can distinguish `>` from `>=` in the eviction test.
+  - path: main.py
+    operator: comparison
+    line: 28
+    why: >-
+      The same equivalence as line 14, on the negated heap used to keep the k
+      smallest.

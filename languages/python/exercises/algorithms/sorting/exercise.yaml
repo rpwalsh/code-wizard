@@ -1,0 +1,77 @@
+id: python.algorithms.sorting
+version: 1
+language: python
+title: Sorting, by hand
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 15000
+
+skills:
+  - python.algorithms.sorting
+  - python.algorithms.linear-search
+
+prerequisites:
+  - python.recursion.tree
+  - python.complexity.growth
+
+learningObjectives:
+  - Write insertion sort and merge sort from the idea rather than from memory.
+  - Write the merge step on its own, because it is where the bugs are.
+  - Recognise the input that makes each algorithm behave at its worst.
+
+prompt: |
+  You will never write these in anger. You will be asked about them, and more
+  usefully, writing them once makes the built-in sort stop being magic.
+
+  - `scan(values, target)` returns every index where `target` appears, in
+    order. A plain linear scan, for contrast with everything else here.
+  - `insertion_sort(values)` returns a new sorted list, built by inserting each
+    value into its place among those already placed.
+  - `merge(left, right)` takes two sorted lists and returns one. Write this
+    first and test it before writing the sort that uses it.
+  - `merge_sort(values)` returns a new sorted list, splitting in half and
+    merging.
+
+  Do not use `sorted` or `.sort()` anywhere. `merge` must be stable: when two
+  values are equal, the one from the left list comes first.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_sorting.py
+    visibility: visible
+    concept: python.algorithms.sorting
+  - path: tests/test_stability.py
+    visibility: edge
+    concept: python.algorithms.sorting
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.sorting
+
+hints:
+  - level: conceptual
+    text: Merge sort splits until the pieces are trivially sorted, then does all its work joining them.
+  - level: structural
+    text: A list of zero or one items is already sorted, and that is the base case.
+  - level: language
+    text: 'Take from whichever side has the smaller head, and when one side runs out take the rest of the other.'
+  - level: syntax
+    text: '`values[:middle]` and `values[middle:]` split without arithmetic on the ends.'
+  - level: explicit
+    text: 'Stability comes from taking the left value when the two are equal.'
+
+explanation: |
+  Merge sort is the same shape as every other divide-and-conquer algorithm:
+  split, recurse, combine. Almost all the difficulty is in the combine step,
+  which is why writing `merge` separately and testing it alone is not a
+  convenience — it is the technique.
+
+  Stability is not decoration. Once you sort by two things — by date, then by
+  name — stability is what stops the second sort from destroying the first, and
+  it is why the built-in sort guarantees it.
+
+  Insertion sort is quadratic in general and linear on data that is already
+  nearly sorted, which is why real sorting implementations switch to it for
+  small or nearly-ordered runs. Knowing an algorithm's best case matters as much
+  as knowing its worst.

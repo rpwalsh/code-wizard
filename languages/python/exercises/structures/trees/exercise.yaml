@@ -1,0 +1,76 @@
+id: python.structures.trees
+version: 1
+language: python
+title: Walking a tree, four ways
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 15000
+
+skills:
+  - python.structures.tree
+
+prerequisites:
+  - python.recursion.tree
+  - python.structures.stack-queue
+
+learningObjectives:
+  - Write the three depth-first orders and say what each is for.
+  - Check a search tree against a carried range rather than its children.
+  - Find the lowest common ancestor in one pass.
+
+prompt: |
+  A `Node` has a `value`, a `left` and a `right`. Recursion and trees fit
+  together so well that most of these are three lines.
+
+  - `in_order(root)` returns the values left, self, right. On a search tree
+    this comes out sorted, which is the whole reason it is the default.
+  - `by_level(root)` returns the values top to bottom, left to right. This one
+    is not recursive — it needs a queue.
+  - `is_search_tree(root)` returns True when every value in the left subtree is
+    smaller and every value on the right is larger, all the way down.
+  - `common_ancestor(root, a, b)` returns the deepest node whose subtree
+    contains both values. Assume both are present.
+
+  `is_search_tree` is the one that catches people. Checking each node against
+  its immediate children is not enough, and the counterexample is small.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_trees.py
+    visibility: visible
+    concept: python.structures.tree
+  - path: tests/test_ordering.py
+    visibility: edge
+    concept: python.structures.tree
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.tree
+
+hints:
+  - level: conceptual
+    text: Every node in the left subtree must be below this node, not merely below its parent.
+  - level: structural
+    text: Carry a permitted range down the recursion, narrowing it at each step.
+  - level: language
+    text: 'A queue gives level order; a stack or the call stack gives depth order.'
+  - level: syntax
+    text: 'Use None for "no bound yet" at the root, and check against it only when it is set.'
+  - level: explicit
+    text: 'For the ancestor: if both values are below this node on the same side, recurse that way; otherwise this node is the answer.'
+
+explanation: |
+  The search-tree check is the classic trap. A tree with root 10, left child 5,
+  and that child having a right child of 20 passes every local check — 5 is
+  less than 10, 20 is more than 5 — and is not a search tree, because 20 sits
+  in the left subtree of 10. The fix is to carry the range down: everything
+  left of 10 must be less than 10, no matter how deep.
+
+  Level order is the odd one out because it cannot be done with the call stack.
+  The call stack goes deep first, by construction. Getting breadth means an
+  explicit queue, and that is the same queue as the graph traversal, which is
+  not a coincidence — a tree is a graph that happens to have no cycles.
+
+  The ancestor works because of a single observation: the deepest node
+  containing both is the point where they stop being on the same side.
