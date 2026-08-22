@@ -61,3 +61,35 @@ jobs:
 
       - name: Check curriculum health
         run: node packages/cli/dist/main.js curriculum check
+
+  # Browser tests run once rather than across the matrix: they exercise the
+  # deployed artefact, which is the same bytes everywhere, and each run boots
+  # CPython in WebAssembly.
+  browser:
+    name: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the site
+        run: npm run web
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Test in a browser
+        run: npm run e2e --workspace @forge/web
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/e2e/.results
+          retention-days: 7

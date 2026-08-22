@@ -1,6 +1,8 @@
 import type { TrainingMode } from '@forge/core';
 import { trainingModes } from '@forge/core';
 import type { Exercise } from '@forge/exercises';
+import type { ExperienceLevel } from '@forge/curriculum';
+import { seedFromExperience } from '@forge/curriculum';
 import type { Constraint, Dashboard, SkillMap } from '@forge/session';
 import { ProgressService } from '@forge/session';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,8 +12,12 @@ import { Palette, usePaletteShortcut } from '../components/Palette.tsx';
 import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
 import { Home } from './Home.tsx';
+import { Onboarding } from './Onboarding.tsx';
 import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
+
+/** Set once the learner has answered the first-run question. */
+const ONBOARDED_KEY = 'onboarding.level';
 
 type Screen =
   | { readonly kind: 'home' }
@@ -31,6 +37,7 @@ export function App() {
   const [skillMap, setSkillMap] = useState<SkillMap | null>(null);
   const [constraints, setConstraints] = useState<Record<string, readonly Constraint[]>>({});
   const [mode, setMode] = useState<TrainingMode>('practice');
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const [fontSize, setFontSize] = useState(14);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -78,6 +85,31 @@ export function App() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Asked once, then never again. The answer is stored rather than inferred so
+  // clearing progress also clears the claim it was based on.
+  useEffect(() => {
+    if (!platform) return;
+    void platform.store
+      .getSetting(ONBOARDED_KEY)
+      .then((value) => setOnboarded(value !== null))
+      .catch(() => setOnboarded(true));
+  }, [platform]);
+
+  const completeOnboarding = useCallback(
+    async (level: ExperienceLevel) => {
+      if (!platform) return;
+      const seeded = seedFromExperience(platform.skillGraph, level, {
+        at: new Date().toISOString(),
+        language: 'python',
+      });
+      for (const mastery of seeded.values()) await platform.store.saveMastery(mastery);
+      await platform.store.setSetting(ONBOARDED_KEY, level);
+      setOnboarded(true);
+      await refresh();
+    },
+    [platform, refresh],
+  );
 
   const open = useCallback((exercise: Exercise) => {
     setScreen({ kind: 'workspace', exercise, nonce: Date.now() });
@@ -137,7 +169,11 @@ export function App() {
     );
   }
 
-  if (!platform || !dashboard || !skillMap) {
+  if (platform && onboarded === false) {
+    return <Onboarding onChoose={completeOnboarding} />;
+  }
+
+  if (!platform || !dashboard || !skillMap || onboarded === null) {
     return (
       <main className="boot" aria-busy="true">
         <p className="boot__mark">Forge</p>
@@ -213,7 +249,9 @@ export function App() {
       ) : null}
 
       <div id="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {screen.kind === 'home' ? <Home dashboard={dashboard} onOpen={open} /> : null}
+        {screen.kind === 'home' ? (
+          <Home platform={platform} dashboard={dashboard} onOpen={open} />
+        ) : null}
 
         {screen.kind === 'map' ? (
           <SkillMapView

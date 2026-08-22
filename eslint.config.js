@@ -11,6 +11,7 @@ export default tseslint.config(
       'apps/desktop/renderer/**',
       'apps/desktop/content/**',
       'apps/web/public/content/**',
+      'apps/web/e2e/.results/**',
     ],
   },
   js.configs.recommended,

@@ -28,10 +28,12 @@
     "generate:check": "node scripts/generate-python-sources.mjs --check",
     "bundle": "node packages/cli/dist/main.js content bundle",
     "web": "npm run build && npm run bundle && npm run build --workspace @forge/web",
-    "web:dev": "npm run bundle && npm run dev --workspace @forge/web"
+    "web:dev": "npm run bundle && npm run dev --workspace @forge/web",
+    "e2e": "npm run web && npm run e2e --workspace @forge/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
@@ -39,7 +41,6 @@
     "typescript-eslint": "^8.18.1",
     "vitest": "^4.1.11"
   },
-  "dependencies": {},
   "allowScripts": {
     "esbuild@0.25.12": true
   }

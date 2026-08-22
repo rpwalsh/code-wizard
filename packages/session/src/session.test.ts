@@ -104,6 +104,29 @@ describe('editing', () => {
     expect(() => begin().updateFile('tests/test_a.py', 'tampered')).toThrow(/not editable/);
   });
 
+  it('returns the same state object until something changes', () => {
+    const session = begin();
+    // The contract an identity-comparing observer relies on. Rebuilding the
+    // snapshot per read makes every read look like a change, which is an
+    // infinite render loop in any subscriber that compares by identity.
+    expect(session.state).toBe(session.state);
+
+    const before = session.state;
+    session.updateFile('main.py', 'edited');
+    expect(session.state).not.toBe(before);
+    expect(session.state).toBe(session.state);
+  });
+
+  it('gives subscribers the new state, not the one being replaced', () => {
+    const session = begin();
+    let seen: string | undefined;
+    session.subscribe((state) => {
+      seen = state.files.find((file) => file.path === 'main.py')?.contents;
+    });
+    session.updateFile('main.py', 'edited');
+    expect(seen).toBe('edited');
+  });
+
   it('notifies subscribers when a file changes', () => {
     const session = begin();
     let notified = 0;

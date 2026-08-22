@@ -3,10 +3,13 @@ import { slotLabel } from '@forge/curriculum';
 import type { Exercise } from '@forge/exercises';
 import type { Dashboard } from '@forge/session';
 
+import type { Platform } from '../platform/index.ts';
+
 import { formatDuration } from '../components/Complete.tsx';
 import { Trajectory } from '../components/Trajectory.tsx';
 
 interface HomeProps {
+  readonly platform: Platform;
   readonly dashboard: Dashboard;
   readonly onOpen: (exercise: Exercise) => void;
 }
@@ -18,15 +21,22 @@ interface HomeProps {
  * the app at 8am actually needs, and nothing else — no greeting, no streak, no
  * celebration for showing up. They came here to work.
  */
-export function Home({ dashboard, onOpen }: HomeProps) {
+export function Home({ platform, dashboard, onOpen }: HomeProps) {
   const { fluency, plan } = dashboard;
   const first = plan.items[0];
   const rest = plan.items.slice(1);
 
+  const scheduled = new Set(plan.items.map((item) => item.exercise.id));
+  const catalogue = platform.catalog
+    .all()
+    .slice()
+    .sort((a, b) => a.difficulty - b.difficulty || a.title.localeCompare(b.title))
+    .map((exercise) => ({ exercise, locked: !scheduled.has(exercise.id) }));
+
   return (
     <div className="home">
       <header className="reading">
-        <p className="reading__language">Python</p>
+        <h1 className="reading__language">Python</h1>
         <p className="reading__caption">Independent fluency</p>
 
         <div className="reading__figure">
@@ -84,7 +94,7 @@ export function Home({ dashboard, onOpen }: HomeProps) {
         {rest.length === 0 ? (
           <p className="empty">
             {plan.items.length === 0
-              ? 'Nothing unlocked yet. Open any exercise below to start measuring.'
+              ? 'Nothing is scheduled yet. Pick anything from the catalogue below — the schedule builds itself once there is something to go on.'
               : 'That is the session.'}
           </p>
         ) : (
@@ -154,6 +164,37 @@ export function Home({ dashboard, onOpen }: HomeProps) {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="section" aria-labelledby="catalogue-heading">
+        <div className="section__head">
+          <p className="label" id="catalogue-heading">
+            Catalogue
+          </p>
+          <p className="label">{catalogue.length} exercises</p>
+        </div>
+
+        <ul className="catalogue">
+          {catalogue.map(({ exercise }) => (
+            <li key={exercise.id}>
+              <button type="button" className="catalogue__row" onClick={() => onOpen(exercise)}>
+                <span className="catalogue__difficulty numeral">d{exercise.difficulty}</span>
+                <span className="catalogue__title">{exercise.title}</span>
+                <span className="catalogue__kind">{exercise.kind.replace(/-/g, ' ')}</span>
+                <span className="catalogue__time numeral">
+                  {Math.round(exercise.estimatedSeconds / 60)}m
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {catalogue.some((entry) => entry.locked) ? (
+          <p className="empty">
+            Exercises above your current level are still open — the schedule leaves them out, but
+            nothing stops you trying one.
+          </p>
+        ) : null}
       </section>
 
       {dashboard.improvements.length > 0 ? (

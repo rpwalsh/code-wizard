@@ -87,6 +87,7 @@ export class ExerciseSession {
   readonly #hints: readonly Hint[];
 
   #attempt: Attempt;
+  #snapshot: SessionState | null = null;
   #activity: SessionActivity = 'idle';
   #lastRun: ExecutionResult | null = null;
   #lastTests: TestResult | null = null;
@@ -128,7 +129,21 @@ export class ExerciseSession {
 
   // -- observation --------------------------------------------------------
 
+  /**
+   * The current state, as a value that only changes when something did.
+   *
+   * Cached deliberately. An observer that compares snapshots by identity — a
+   * React `useSyncExternalStore` subscriber, say — sees a freshly built object
+   * as a change, and rebuilding one per read means it sees a change on every
+   * render and never stops re-rendering. The cache is cleared by `#emit`, so
+   * "changed" means an actual mutation rather than an actual read.
+   */
   get state(): SessionState {
+    this.#snapshot ??= this.#buildState();
+    return this.#snapshot;
+  }
+
+  #buildState(): SessionState {
     const affordances = affordancesFor(this.mode);
     return {
       exercise: this.exercise,
@@ -156,6 +171,8 @@ export class ExerciseSession {
   }
 
   #emit(): void {
+    // Invalidate first: a listener reading `state` must see the new value.
+    this.#snapshot = null;
     const snapshot = this.state;
     for (const listener of this.#listeners) listener(snapshot);
   }

@@ -1,5 +1,7 @@
 import type { Constraint, SkillMap, SkillNode } from '@forge/session';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+
+import { SkillDag } from '../components/SkillDag.tsx';
 
 interface SkillMapViewProps {
   readonly map: SkillMap;
@@ -9,12 +11,12 @@ interface SkillMapViewProps {
 }
 
 /**
- * The curriculum as a landscape.
+ * The curriculum as a landscape you can explore.
  *
- * Skills are laid out in tiers by dependency depth, so everything a skill
- * rests on sits above it and the eye can trace downward. A node's strength is
- * drawn as well as numbered: the shape of the map shows where the learner is
- * solid and where they are thin, which a list of percentages never does.
+ * The graph carries the structure; the inspector answers what to do about it.
+ * Together they let a learner go from "state modelling is weak" to "state
+ * modelling is weak *because* dictionary mutation is, and here is an exercise
+ * for that" without reading a single list.
  */
 export function SkillMapView({
   map,
@@ -23,68 +25,25 @@ export function SkillMapView({
   onPractise,
 }: SkillMapViewProps) {
   const [selected, setSelected] = useState<string | null>(null);
-
-  const tiers = useMemo(() => {
-    const grouped = new Map<number, SkillNode[]>();
-    for (const node of map.nodes) {
-      const bucket = grouped.get(node.depth);
-      if (bucket) bucket.push(node);
-      else grouped.set(node.depth, [node]);
-    }
-    for (const bucket of grouped.values()) {
-      bucket.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-    }
-    return [...grouped.entries()].sort(([a], [b]) => a - b);
-  }, [map]);
-
   const node = map.nodes.find((candidate) => candidate.skillId === selected) ?? null;
+
+  const measured = map.nodes.filter((entry) => !entry.unmeasured).length;
+  const due = map.nodes.filter(
+    (entry) => entry.dueAt !== null && Date.parse(entry.dueAt) <= Date.now(),
+  ).length;
 
   return (
     <div className="map">
-      <div className="map__canvas">
+      <div className="map__main">
         <div className="section__head">
           <p className="label">Skill map</p>
           <p className="label">
-            {map.nodes.filter((entry) => !entry.unmeasured).length} / {map.nodes.length} measured
+            {measured} / {map.nodes.length} measured
+            {due > 0 ? ` · ${due} due` : ''}
           </p>
         </div>
 
-        {tiers.map(([depth, nodes]) => (
-          <div className="tier" key={depth}>
-            <span className="tier__depth" aria-hidden="true">
-              {depth}
-            </span>
-            <ul className="tier__nodes">
-              {nodes.map((entry) => (
-                <li key={entry.skillId}>
-                  <button
-                    type="button"
-                    className={`node${entry.unmeasured ? ' node--unmeasured' : ''}${
-                      isDue(entry) ? ' node--due' : ''
-                    }`}
-                    aria-pressed={entry.skillId === selected}
-                    onClick={() => setSelected(entry.skillId === selected ? null : entry.skillId)}
-                  >
-                    <span className="node__name">{entry.name}</span>
-                    <span className="node__value">
-                      {entry.unmeasured ? '—' : Math.round(entry.mastery * 100)}
-                      {isDue(entry) ? ' · due' : ''}
-                    </span>
-                    <span
-                      className="node__strength"
-                      style={{ width: `${Math.max(2, entry.mastery * 100)}%` }}
-                      aria-hidden="true"
-                    />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-
-        <p className="empty" style={{ marginTop: 16 }}>
-          Tier numbers are dependency depth: everything a skill rests on sits above it.
-        </p>
+        <SkillDag map={map} selected={selected} onSelect={setSelected} />
       </div>
 
       {node ? (
@@ -93,13 +52,14 @@ export function SkillMapView({
           constraints={constraintsFor(node.skillId)}
           exerciseCount={exerciseCountFor(node.skillId)}
           onPractise={() => onPractise(node.skillId)}
+          onClear={() => setSelected(null)}
         />
       ) : (
         <aside className="inspector">
           <p className="label">Inspector</p>
           <p className="empty">
-            Select a skill to see how it is measured, when it is next due, and what is holding it
-            back.
+            Select a skill to see how it is measured, when it is next due, and which of the things
+            it rests on are holding it back.
           </p>
         </aside>
       )}
@@ -112,17 +72,29 @@ function Inspector({
   constraints,
   exerciseCount,
   onPractise,
+  onClear,
 }: {
   readonly node: SkillNode;
   readonly constraints: readonly Constraint[];
   readonly exerciseCount: number;
   readonly onPractise: () => void;
+  readonly onClear: () => void;
 }) {
   return (
     <aside className="inspector" aria-live="polite">
-      <div>
-        <p className="label">{node.category}</p>
-        <h2 className="inspector__name">{node.name}</h2>
+      <div className="inspector__head">
+        <div>
+          <p className="label">{node.category}</p>
+          <h2 className="inspector__name">{node.name}</h2>
+        </div>
+        <button
+          type="button"
+          className="button button--bare"
+          onClick={onClear}
+          aria-label="Clear selection"
+        >
+          ✕
+        </button>
       </div>
 
       <div className="inspector__facts">
@@ -139,7 +111,7 @@ function Inspector({
       {constraints.length > 0 ? (
         <div>
           <p className="label">Constrained by</p>
-          <ul className="constraint-list" style={{ marginTop: 8 }}>
+          <ul className="constraint-list">
             {constraints.map((constraint) => (
               <li key={constraint.skillId} className="constraint">
                 <span>{constraint.name}</span>
@@ -149,9 +121,9 @@ function Inspector({
               </li>
             ))}
           </ul>
-          <p className="empty" style={{ marginTop: 8 }}>
-            {node.name} is limited by what it rests on. Strengthening the weakest of these first is
-            usually faster than attacking {node.name} directly.
+          <p className="empty">
+            {node.name} rests on these. Strengthening the weakest first is usually faster than
+            attacking {node.name} directly.
           </p>
         </div>
       ) : null}
@@ -175,10 +147,6 @@ function Fact({ label, value }: { readonly label: string; readonly value: string
       <span className="fact__value">{value}</span>
     </div>
   );
-}
-
-function isDue(node: SkillNode): boolean {
-  return node.dueAt !== null && Date.parse(node.dueAt) <= Date.now();
 }
 
 function relative(iso: string | null, future = false): string {
