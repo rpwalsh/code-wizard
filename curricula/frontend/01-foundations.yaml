@@ -1,0 +1,105 @@
+# Stage 1 — The part that is not a framework (lessons 1–16)
+#
+# Every framework rebuilds these badly at least once. Someone who knows what
+# the platform already does writes less code and ships something that works
+# with a keyboard, which is most of what separates competent frontend work
+# from the other kind.
+
+stage: foundations
+title: The part that is not a framework
+lessons:
+  - id: fe.001
+    title: The element that already does it
+    focus: Rebuild a control with divs, then delete it and use the real one.
+    skills: [frontend.markup.semantics]
+    difficulty: 3
+
+  - id: fe.002
+    title: Document structure
+    focus: Headings and landmarks, and navigating by them.
+    skills: [frontend.markup.landmarks]
+    difficulty: 3
+
+  - id: fe.003
+    title: Forms the browser understands
+    focus: Labels, types, and validation you did not write.
+    skills: [frontend.markup.forms]
+    difficulty: 3
+
+  - id: fe.004
+    title: Keyboard only
+    focus: Unplug the mouse. Complete the task. Fix what you cannot reach.
+    skills: [frontend.a11y.keyboard]
+    difficulty: 4
+
+  - id: fe.005
+    title: Focus after an action
+    focus: A dialog opens, closes, and focus goes somewhere sensible.
+    skills: [frontend.a11y.focus]
+    difficulty: 4
+
+  - id: fe.006
+    title: The focus trap
+    focus: Inside a modal, and released properly on exit.
+    skills: [frontend.a11y.focus]
+    difficulty: 5
+
+  - id: fe.007
+    title: Accessible names
+    focus: What it is called, versus what it looks like.
+    skills: [frontend.a11y.names]
+    difficulty: 4
+
+  - id: fe.008
+    title: Announcing a change
+    focus: Something updated off-screen. Say so, once, not on every keystroke.
+    skills: [frontend.a11y.live]
+    difficulty: 5
+
+  - id: fe.009
+    title: Respecting a preference
+    focus: Reduced motion, contrast, colour scheme — honoured, not overridden.
+    skills: [frontend.a11y.motion]
+    difficulty: 3
+
+  - id: fe.010
+    title: Normal flow
+    focus: Remove every layout rule. Understand what is left.
+    skills: [frontend.layout.flow]
+    difficulty: 3
+
+  - id: fe.011
+    title: Flexbox
+    focus: One axis, and the properties that actually matter.
+    skills: [frontend.layout.flexbox]
+    difficulty: 3
+
+  - id: fe.012
+    title: Grid
+    focus: Two axes, and a layout that does not need media queries.
+    skills: [frontend.layout.grid]
+    difficulty: 4
+
+  - id: fe.013
+    title: Responsive without breakpoints
+    focus: Intrinsic sizing, and a layout that adapts to content.
+    skills: [frontend.layout.responsive]
+    difficulty: 4
+
+  - id: fe.014
+    title: The text that was longer
+    focus: A German word, a long name, a missing translation.
+    skills: [frontend.layout.overflow]
+    difficulty: 4
+
+  - id: fe.015
+    title: The URL as state
+    focus: What survives a refresh, a share and the back button.
+    skills: [frontend.state.url]
+    difficulty: 4
+
+  - id: fe.016
+    title: Server state is not client state
+    focus: Caching, staleness, and the two being confused.
+    skills: [frontend.state.server]
+    difficulty: 5

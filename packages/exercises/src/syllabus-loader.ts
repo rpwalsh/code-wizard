@@ -13,7 +13,7 @@ import { z } from 'zod';
  */
 const lessonSchema = z
   .object({
-    id: z.string().regex(/^[a-z]{2,4}\.\d{3}$/, 'expected an id like py.001'),
+    id: z.string().regex(/^[a-z]{1,4}\.\d{3}$/, 'expected an id like py.001'),
     title: z.string().min(1),
     focus: z.string().min(1),
     skills: z.array(z.string().min(1)).min(1),
@@ -56,7 +56,10 @@ export async function loadSyllabus(directory: string): Promise<{ stages: readonl
     return { stages: [] };
   }
 
-  const files = entries.filter((name) => name.endsWith('.yaml')).sort();
+  // Numbered files only. The number is the course order, and it also keeps
+  // anything else in the directory — a manifest, a note — from being read as
+  // a stage and failing the whole load.
+  const files = entries.filter((name) => /^\d{2}-.+\.yaml$/.test(name)).sort();
   const stages: LoadedStage[] = [];
 
   for (const file of files) {

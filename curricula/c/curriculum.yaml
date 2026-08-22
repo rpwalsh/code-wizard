@@ -1,0 +1,106 @@
+id: c
+title: C
+summary: >-
+  For someone who wants to know what the machine is actually doing. About memory you manage yourself, and the discipline that makes that survivable.
+blockedBy: >-
+  A compiler toolchain inside the sandbox, and a report format that separates a program which would not compile from one that compiled and failed. Those are different answers about the learner and must not arrive as the same result. C additionally needs the sandbox to survive a segmentation fault and report it as a result rather than as a crashed harness.
+
+skills:
+  - id: c.basics.types
+    name: Types, sizes and integer promotion
+    category: Basics
+    prerequisites: []
+
+  - id: c.basics.control
+    name: Control flow
+    category: Basics
+    prerequisites: [c.basics.types]
+
+  - id: c.basics.functions
+    name: Functions and declarations
+    category: Basics
+    prerequisites: [c.basics.control]
+
+  - id: c.memory.pointers
+    name: Pointers
+    category: Memory
+    prerequisites: [c.basics.functions]
+
+  - id: c.memory.arrays
+    name: Arrays, and the decay to a pointer
+    category: Memory
+    prerequisites: [c.memory.pointers]
+
+  - id: c.memory.strings
+    name: Strings, and the terminator
+    category: Memory
+    prerequisites: [c.memory.arrays]
+    description: The off-by-one that is a buffer overrun.
+
+  - id: c.memory.stack-heap
+    name: Stack and heap
+    category: Memory
+    prerequisites: [c.memory.pointers]
+
+  - id: c.memory.malloc
+    name: malloc, free, and ownership by convention
+    category: Memory
+    prerequisites: [c.memory.stack-heap]
+
+  - id: c.memory.lifetime
+    name: Lifetime bugs
+    category: Memory
+    prerequisites: [c.memory.stack-heap]
+    description: Use after free, double free, and the pointer to a dead stack frame.
+
+  - id: c.structs.definition
+    name: Structs
+    category: Structures
+    prerequisites: [c.memory.pointers]
+
+  - id: c.structs.layout
+    name: Layout and padding
+    category: Structures
+    prerequisites: [c.structs.definition]
+
+  - id: c.structs.opaque
+    name: Opaque types
+    category: Structures
+    prerequisites: [c.structs.definition]
+    description: Hiding a representation in a language with no access control.
+
+  - id: c.errors.returns
+    name: Failure by return value
+    category: Errors
+    prerequisites: [c.basics.functions]
+
+  - id: c.errors.cleanup
+    name: Cleaning up on every path
+    category: Errors
+    prerequisites: [c.errors.returns, c.memory.malloc]
+
+  - id: c.io.files
+    name: Files
+    category: Input and output
+    prerequisites: [c.errors.returns]
+
+  - id: c.io.buffers
+    name: Reading into a buffer, safely
+    category: Input and output
+    prerequisites: [c.io.files, c.memory.strings]
+
+  - id: c.build.headers
+    name: Headers and translation units
+    category: Building
+    prerequisites: [c.basics.functions]
+
+  - id: c.build.undefined
+    name: Undefined behaviour
+    category: Building
+    prerequisites: [c.basics.types]
+    description: What the standard permits the compiler to assume, and the optimisation that removed your check.
+
+  - id: c.build.tools
+    name: Sanitisers and valgrind
+    category: Building
+    prerequisites: [c.memory.pointers]

@@ -1,0 +1,80 @@
+# Stage 2 — Asynchrony and resources (lessons 15–26)
+#
+# Asynchrony in C# is easy to write and easy to write wrongly, and the two
+# most expensive mistakes — blocking on a task and never passing a
+# cancellation token — both look like working code for a long time.
+
+stage: async
+title: Asynchrony and resources
+lessons:
+  - id: cs.015
+    title: A Task
+    focus: What it is before you await it.
+    skills: [csharp.async.tasks]
+    difficulty: 3
+
+  - id: cs.016
+    title: await
+    focus: Where the method resumes, and on which thread.
+    skills: [csharp.async.await]
+    difficulty: 4
+
+  - id: cs.017
+    title: The deadlock
+    focus: Block on a task in the wrong context. Watch it stop forever.
+    skills: [csharp.async.deadlock]
+    difficulty: 5
+
+  - id: cs.018
+    title: async void
+    focus: The one place it is legal, and why it is unrecoverable everywhere else.
+    skills: [csharp.async.await]
+    difficulty: 4
+
+  - id: cs.019
+    title: The await inside the loop
+    focus: Serialised work, measured, then made concurrent.
+    skills: [csharp.async.tasks]
+    difficulty: 4
+
+  - id: cs.020
+    title: Cancellation
+    focus: A token, threaded all the way down, and honoured.
+    skills: [csharp.async.cancellation]
+    difficulty: 4
+
+  - id: cs.021
+    title: Timeouts
+    focus: Racing a deadline, and cleaning up the loser.
+    skills: [csharp.async.cancellation]
+    difficulty: 5
+
+  - id: cs.022
+    title: Asynchronous streams
+    focus: Yielding results as they arrive rather than at the end.
+    skills: [csharp.async.streams]
+    difficulty: 5
+
+  - id: cs.023
+    title: IDisposable
+    focus: using, and the resource released on every path.
+    skills: [csharp.memory.disposal]
+    difficulty: 3
+
+  - id: cs.024
+    title: Disposing something asynchronous
+    focus: The interface that exists because the other one blocks.
+    skills: [csharp.memory.disposal, csharp.async.await]
+    difficulty: 4
+
+  - id: cs.025
+    title: What the collector does
+    focus: Generations, and why a finaliser is rarely the answer.
+    skills: [csharp.memory.gc]
+    difficulty: 4
+
+  - id: cs.026
+    title: Span, and the copy avoided
+    focus: Parsing without allocating, measured before and after.
+    skills: [csharp.memory.spans]
+    difficulty: 5

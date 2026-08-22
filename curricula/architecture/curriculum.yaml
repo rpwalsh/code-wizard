@@ -1,0 +1,103 @@
+id: architecture
+title: Architecture
+summary: >-
+  Design judgement, drilled rather than discussed. Every exercise is a decision with a cost on both sides, and the deliverable is the reasoning as much as the structure.
+blockedBy: >-
+  A way to judge a design. Every other curriculum here is graded by executing code against tests; this one cannot be, and grading it with a model would put the one thing this platform refuses at the centre of its hardest subject. Until there is an honest deterministic way to assess a design, this stays a plan.
+
+skills:
+  - id: architecture.boundaries.coupling
+    name: Coupling and cohesion
+    category: Boundaries
+    prerequisites: []
+
+  - id: architecture.boundaries.seams
+    name: Where to put a seam
+    category: Boundaries
+    prerequisites: [architecture.boundaries.coupling]
+
+  - id: architecture.boundaries.dependencies
+    name: Which way a dependency points
+    category: Boundaries
+    prerequisites: [architecture.boundaries.seams]
+
+  - id: architecture.boundaries.modules
+    name: Modules and ownership
+    category: Boundaries
+    prerequisites: [architecture.boundaries.dependencies]
+
+  - id: architecture.state.sources
+    name: One source of truth
+    category: State
+    prerequisites: []
+
+  - id: architecture.state.consistency
+    name: Choosing a consistency model
+    category: State
+    prerequisites: [architecture.state.sources]
+
+  - id: architecture.state.events
+    name: Events as a record
+    category: State
+    prerequisites: [architecture.state.sources]
+
+  - id: architecture.state.migration
+    name: Changing a decision you already shipped
+    category: State
+    prerequisites: [architecture.state.consistency]
+
+  - id: architecture.tradeoffs.cost
+    name: Reading a trade-off
+    category: Judgement
+    prerequisites: []
+    description: Both sides, honestly, including the one you prefer.
+
+  - id: architecture.tradeoffs.reversibility
+    name: Reversible and irreversible decisions
+    category: Judgement
+    prerequisites: [architecture.tradeoffs.cost]
+
+  - id: architecture.tradeoffs.simplicity
+    name: The cost of a solution nobody needed
+    category: Judgement
+    prerequisites: [architecture.tradeoffs.cost]
+
+  - id: architecture.tradeoffs.records
+    name: Recording why
+    category: Judgement
+    prerequisites: [architecture.tradeoffs.reversibility]
+
+  - id: architecture.scale.bottlenecks
+    name: Finding the constraint
+    category: Scale
+    prerequisites: []
+
+  - id: architecture.scale.partitioning
+    name: Splitting work
+    category: Scale
+    prerequisites: [architecture.scale.bottlenecks]
+
+  - id: architecture.scale.failure
+    name: Designing for partial failure
+    category: Scale
+    prerequisites: [architecture.scale.partitioning]
+
+  - id: architecture.scale.capacity
+    name: Estimating before building
+    category: Scale
+    prerequisites: [architecture.scale.bottlenecks]
+
+  - id: architecture.legacy.characterisation
+    name: Understanding what is there
+    category: Legacy
+    prerequisites: []
+
+  - id: architecture.legacy.strangler
+    name: Replacing something that is running
+    category: Legacy
+    prerequisites: [architecture.legacy.characterisation]
+
+  - id: architecture.legacy.risk
+    name: Changing something you cannot test
+    category: Legacy
+    prerequisites: [architecture.legacy.characterisation]

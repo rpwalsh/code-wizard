@@ -1,0 +1,80 @@
+# Stage 2 — Failing without losing anything (lessons 17–28)
+#
+# Everything here is about the failure rather than the feature, and every
+# lesson begins by causing one. A retry policy you have never watched cause a
+# duplicate is a retry policy you do not understand.
+
+stage: reliability
+title: Failing without losing anything
+lessons:
+  - id: be.017
+    title: The call with no deadline
+    focus: Hang the dependency. Watch the whole service go with it.
+    skills: [backend.reliability.timeouts]
+    difficulty: 4
+
+  - id: be.018
+    title: Retries
+    focus: Backoff, jitter, a cap, and which failures are worth repeating.
+    skills: [backend.reliability.retries]
+    difficulty: 4
+
+  - id: be.019
+    title: The retry storm
+    focus: Everyone retrying at once, and the recovery that never arrives.
+    skills: [backend.reliability.retries]
+    difficulty: 5
+
+  - id: be.020
+    title: Failing fast
+    focus: A breaker, and the difference between open and broken.
+    skills: [backend.reliability.breakers]
+    difficulty: 5
+
+  - id: be.021
+    title: Work that happens later
+    focus: A queue, and the response that no longer waits for it.
+    skills: [backend.reliability.queues]
+    difficulty: 4
+
+  - id: be.022
+    title: At least once
+    focus: The message delivered twice, and the handler that has to cope.
+    skills: [backend.reliability.delivery]
+    difficulty: 5
+
+  - id: be.023
+    title: The poison message
+    focus: One that always fails, and the queue it blocked.
+    skills: [backend.reliability.delivery]
+    difficulty: 5
+
+  - id: be.024
+    title: Ordering
+    focus: What you get, what you assumed, and the gap.
+    skills: [backend.reliability.delivery]
+    difficulty: 5
+
+  - id: be.025
+    title: Logs you can search
+    focus: Structured, correlated, and not a sentence.
+    skills: [backend.operations.observability]
+    difficulty: 3
+
+  - id: be.026
+    title: Metrics that answer a question
+    focus: Deciding the question first, and the percentile that matters.
+    skills: [backend.operations.observability]
+    difficulty: 4
+
+  - id: be.027
+    title: Deciding what is acceptable
+    focus: An objective, a budget, and what you do when it is spent.
+    skills: [backend.operations.slos]
+    difficulty: 4
+
+  - id: be.028
+    title: Deploying without an outage
+    focus: Rolling, backwards-compatible, and reversible.
+    skills: [backend.operations.deploys]
+    difficulty: 5

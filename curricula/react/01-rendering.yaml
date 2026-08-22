@@ -1,0 +1,93 @@
+# # Stage 1 — Rendering as a function of state (lessons 1–14)
+#
+# The stage that decides whether the rest is simple. Someone who thinks of a
+# component as a thing that runs once and then gets updated will fight the
+# library forever; someone who thinks of it as a function from state to
+# output finds most of the API unnecessary.
+
+stage: rendering
+title: Rendering as a function of state
+lessons:
+  - id: re.001
+    title: A component is a function
+    focus: Props in, output out, and nothing else.
+    skills: [react.render.components]
+    difficulty: 2
+
+  - id: re.002
+    title: JSX, and what it becomes
+    focus: Compile it by hand once. It stops being syntax and becomes calls.
+    skills: [react.render.jsx]
+    difficulty: 2
+
+  - id: re.003
+    title: Conditional rendering
+    focus: Four ways, and where each one stops reading well.
+    skills: [react.render.conditional]
+    difficulty: 2
+
+  - id: re.004
+    title: Lists
+    focus: Rendering a collection, and passing the right thing down.
+    skills: [react.render.lists]
+    difficulty: 2
+
+  - id: re.005
+    title: The index as a key
+    focus: A list that reorders, and the input that follows the wrong row.
+    skills: [react.render.lists]
+    difficulty: 4
+
+  - id: re.006
+    title: State
+    focus: The first useState, and where the value actually lives.
+    skills: [react.state.usestate]
+    difficulty: 2
+
+  - id: re.007
+    title: Updates are not immediate
+    focus: Read the value straight after setting it. Explain what you see.
+    skills: [react.state.updates]
+    difficulty: 3
+
+  - id: re.008
+    title: The updater function
+    focus: Two increments in one handler, and why only one happened.
+    skills: [react.state.updates]
+    difficulty: 3
+
+  - id: re.009
+    title: Derived state
+    focus: Computing during render instead of storing a second copy that drifts.
+    skills: [react.state.derived]
+    difficulty: 3
+
+  - id: re.010
+    title: Updating without mutating
+    focus: Nested state, changed properly, and the render that did not happen.
+    skills: [react.state.immutability]
+    difficulty: 4
+
+  - id: re.011
+    title: Lifting state up
+    focus: Two components that need the same value, and where it belongs.
+    skills: [react.state.lifting]
+    difficulty: 3
+
+  - id: re.012
+    title: A reducer
+    focus: Several fields that must change together, and an invalid state made impossible.
+    skills: [react.state.reducer]
+    difficulty: 4
+
+  - id: re.013
+    title: Composition
+    focus: Children and slots, instead of fourteen boolean props.
+    skills: [react.structure.composition]
+    difficulty: 3
+
+  - id: re.014
+    title: Forms
+    focus: Controlled inputs, and validation that waits until the user is finished.
+    skills: [react.structure.forms]
+    difficulty: 4

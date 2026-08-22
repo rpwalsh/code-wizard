@@ -1,0 +1,68 @@
+# Stage 2 — Making it fast, with evidence (lessons 17–26)
+#
+# Same discipline as the complexity stage in the Python course: measure, change
+# one thing, measure again. Frontend performance advice is unusually full of
+# folklore, and the profiler settles it.
+
+stage: performance
+title: Making it fast, with evidence
+lessons:
+  - id: fe.017
+    title: Measuring
+    focus: A profile, and reading which part is actually slow.
+    skills: [frontend.perf.measure]
+    difficulty: 4
+
+  - id: fe.018
+    title: The long task
+    focus: Find the one blocking interaction, and break it up.
+    skills: [frontend.perf.rendering]
+    difficulty: 5
+
+  - id: fe.019
+    title: Layout thrash
+    focus: Read, write, read. Watch it force layout each time.
+    skills: [frontend.perf.rendering]
+    difficulty: 5
+
+  - id: fe.020
+    title: Animating the cheap properties
+    focus: Two animations, profiled, and the difference explained.
+    skills: [frontend.perf.rendering]
+    difficulty: 4
+
+  - id: fe.021
+    title: What is in the bundle
+    focus: Look before optimising. The answer is usually one dependency.
+    skills: [frontend.perf.loading]
+    difficulty: 4
+
+  - id: fe.022
+    title: The critical path
+    focus: What must arrive before anything is usable.
+    skills: [frontend.perf.loading]
+    difficulty: 5
+
+  - id: fe.023
+    title: The font that hid the text
+    focus: Loading strategy, and the flash you chose deliberately.
+    skills: [frontend.perf.loading]
+    difficulty: 4
+
+  - id: fe.024
+    title: Images
+    focus: Dimensions, formats, and the layout shift you caused.
+    skills: [frontend.perf.images]
+    difficulty: 4
+
+  - id: fe.025
+    title: Optimistic updates
+    focus: Instant feedback, and undoing it when the server disagrees.
+    skills: [frontend.state.optimistic]
+    difficulty: 5
+
+  - id: fe.026
+    title: A screen, end to end
+    focus: Accessible, responsive, measured, and correct when the request fails.
+    skills: [frontend.a11y.keyboard, frontend.state.server, frontend.perf.measure]
+    difficulty: 5

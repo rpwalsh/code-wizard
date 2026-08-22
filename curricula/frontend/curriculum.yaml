@@ -1,0 +1,114 @@
+id: frontend
+title: Frontend
+summary: >-
+  The part of frontend work that is not a framework. Accessibility, the layout model, forms that behave, and performance measured in the browser rather than guessed at.
+blockedBy: >-
+  A runtime with a real browser: a DOM, a layout engine, an accessibility tree and a way to drive input. Assertions here are about what a screen reader announces and what the layout does at 320 pixels, neither of which a text harness can see.
+
+skills:
+  - id: frontend.markup.semantics
+    name: Semantic markup
+    category: Markup
+    prerequisites: []
+    description: The element that already does what you were about to build.
+
+  - id: frontend.markup.landmarks
+    name: Document structure
+    category: Markup
+    prerequisites: [frontend.markup.semantics]
+
+  - id: frontend.markup.forms
+    name: Forms that behave
+    category: Markup
+    prerequisites: [frontend.markup.semantics]
+    description: Labels, grouping, and validation the browser already does.
+
+  - id: frontend.a11y.keyboard
+    name: Keyboard
+    category: Accessibility
+    prerequisites: [frontend.markup.semantics]
+    description: Every interaction reachable, in an order that makes sense.
+
+  - id: frontend.a11y.focus
+    name: Focus management
+    category: Accessibility
+    prerequisites: [frontend.a11y.keyboard]
+
+  - id: frontend.a11y.names
+    name: Accessible names and roles
+    category: Accessibility
+    prerequisites: [frontend.markup.landmarks]
+
+  - id: frontend.a11y.live
+    name: Announcing change
+    category: Accessibility
+    prerequisites: [frontend.a11y.names]
+
+  - id: frontend.a11y.motion
+    name: Motion, contrast and preference
+    category: Accessibility
+    prerequisites: [frontend.a11y.names]
+
+  - id: frontend.layout.flow
+    name: Normal flow
+    category: Layout
+    prerequisites: []
+    description: What the browser does before you tell it anything.
+
+  - id: frontend.layout.flexbox
+    name: Flexbox
+    category: Layout
+    prerequisites: [frontend.layout.flow]
+
+  - id: frontend.layout.grid
+    name: Grid
+    category: Layout
+    prerequisites: [frontend.layout.flexbox]
+
+  - id: frontend.layout.responsive
+    name: Responsive without breakpoints
+    category: Layout
+    prerequisites: [frontend.layout.grid]
+
+  - id: frontend.layout.overflow
+    name: Overflow, and text that is longer than you tested with
+    category: Layout
+    prerequisites: [frontend.layout.flow]
+
+  - id: frontend.state.url
+    name: The URL as state
+    category: State
+    prerequisites: []
+    description: What should survive a refresh, a share and a back button.
+
+  - id: frontend.state.server
+    name: Server state is not client state
+    category: State
+    prerequisites: [frontend.state.url]
+
+  - id: frontend.state.optimistic
+    name: Optimistic updates, and undoing them
+    category: State
+    prerequisites: [frontend.state.server]
+
+  - id: frontend.perf.measure
+    name: Measuring in the browser
+    category: Performance
+    prerequisites: []
+    description: The profiler, not the impression.
+
+  - id: frontend.perf.rendering
+    name: Layout, paint and the long task
+    category: Performance
+    prerequisites: [frontend.perf.measure]
+
+  - id: frontend.perf.loading
+    name: Loading
+    category: Performance
+    prerequisites: [frontend.perf.measure]
+    description: Bundle size, critical path, and the font that blocked the text.
+
+  - id: frontend.perf.images
+    name: Images
+    category: Performance
+    prerequisites: [frontend.perf.loading]

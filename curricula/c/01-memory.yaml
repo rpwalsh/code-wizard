@@ -1,0 +1,105 @@
+# Stage 1 — Memory, and who owns it (lessons 1–16)
+#
+# C has no safety net, so the curriculum supplies one: every memory lesson is
+# run under a sanitiser, and the exercise is not finished until the sanitiser
+# is quiet. Reasoning about memory is not the same as checking it, and only
+# one of those catches the mistake you did not know you made.
+
+stage: memory
+title: Memory, and who owns it
+lessons:
+  - id: c.001
+    title: Types and sizes
+    focus: What fits, and the promotion that happened silently.
+    skills: [c.basics.types]
+    difficulty: 3
+
+  - id: c.002
+    title: Signed overflow
+    focus: Undefined, not wrapping. Watch an optimiser use that.
+    skills: [c.build.undefined]
+    difficulty: 5
+
+  - id: c.003
+    title: Pointers
+    focus: An address in a variable, and dereferencing it.
+    skills: [c.memory.pointers]
+    difficulty: 3
+
+  - id: c.004
+    title: Pointers to change a caller's value
+    focus: The out-parameter, and why it exists here.
+    skills: [c.memory.pointers]
+    difficulty: 3
+
+  - id: c.005
+    title: Arrays decay
+    focus: Passing an array loses its length. Pass the length.
+    skills: [c.memory.arrays]
+    difficulty: 4
+
+  - id: c.006
+    title: Strings and the terminator
+    focus: The off-by-one that writes past the end.
+    skills: [c.memory.strings]
+    difficulty: 4
+
+  - id: c.007
+    title: The buffer overrun
+    focus: Write one, see the sanitiser catch it, then bound it.
+    skills: [c.memory.strings, c.build.tools]
+    difficulty: 5
+
+  - id: c.008
+    title: Stack and heap
+    focus: Where a value lives, and how long it lasts.
+    skills: [c.memory.stack-heap]
+    difficulty: 3
+
+  - id: c.009
+    title: Returning a pointer to a dead frame
+    focus: Compiles, sometimes works, always wrong.
+    skills: [c.memory.lifetime]
+    difficulty: 5
+
+  - id: c.010
+    title: malloc and free
+    focus: Who owns it, said in a comment because the language will not say it.
+    skills: [c.memory.malloc]
+    difficulty: 4
+
+  - id: c.011
+    title: Use after free
+    focus: Write it, watch it, then structure the code so it cannot happen.
+    skills: [c.memory.lifetime]
+    difficulty: 5
+
+  - id: c.012
+    title: The leak
+    focus: Find it with a tool, not by reading.
+    skills: [c.build.tools]
+    difficulty: 4
+
+  - id: c.013
+    title: Structs
+    focus: Grouping data, and passing by pointer.
+    skills: [c.structs.definition]
+    difficulty: 3
+
+  - id: c.014
+    title: Padding
+    focus: sizeof is not the sum of the fields.
+    skills: [c.structs.layout]
+    difficulty: 4
+
+  - id: c.015
+    title: An opaque type
+    focus: A handle, a constructor, a destructor, and no peeking.
+    skills: [c.structs.opaque]
+    difficulty: 5
+
+  - id: c.016
+    title: Cleaning up on every path
+    focus: Five returns, one exit, and nothing leaked.
+    skills: [c.errors.cleanup]
+    difficulty: 5

@@ -1,7 +1,7 @@
-import { loadSyllabus } from '@code-retrainer/exercises';
+import { loadPlanned, loadSyllabus } from '@code-retrainer/exercises';
 import { readSyllabusProgress, validateSyllabus } from '@code-retrainer/curriculum';
 
-import { createContext, curriculumRoots } from '../context.ts';
+import { createContext, curriculumRoots, plannedRoot } from '../context.ts';
 import { columns, heading, indent, pluralise, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
 
@@ -19,9 +19,11 @@ export async function runCurriculumCommand(
       return skills();
     case 'syllabus':
       return syllabus();
+    case 'planned':
+      return planned();
     default:
       console.error(style.red(`Unknown curriculum command "${subcommand}".`));
-      console.error('Try: code-retrainer curriculum check | skills | syllabus');
+      console.error('Try: code-retrainer curriculum check | skills | syllabus | planned');
       return 2;
   }
 }
@@ -193,4 +195,67 @@ function percent(part: number, whole: number): number {
 function renderBar(part: number, whole: number): string {
   const filled = whole === 0 ? 10 : Math.round((part / whole) * 10);
   return style.grey('#'.repeat(filled) + '.'.repeat(10 - filled));
+}
+
+/**
+ * Curricula that exist as design and not yet as something you can run.
+ *
+ * Listed separately from the syllabus report on purpose. Mixing a course with
+ * no runtime into the same table as one with 228 exercises behind it would
+ * make the difference a percentage rather than a fact, and the difference is
+ * the whole point.
+ */
+async function planned(): Promise<number> {
+  const curricula = await loadPlanned(plannedRoot);
+
+  if (curricula.length === 0) {
+    console.log(heading('Planned curricula'));
+    console.log(indent(style.grey('None.')));
+    return 0;
+  }
+
+  console.log(heading('Planned curricula'));
+  console.log(
+    indent(
+      style.grey(
+        'Designed, and not runnable. Each needs a runtime that can execute an ' +
+          'attempt and judge it before any of it can be practised.',
+      ),
+    ),
+  );
+  console.log('');
+
+  let lessons = 0;
+  let skills = 0;
+
+  for (const curriculum of curricula) {
+    const syllabus = await loadSyllabus(curriculum.directory);
+    const count = syllabus.stages.reduce((total, stage) => total + stage.lessons.length, 0);
+    lessons += count;
+    skills += curriculum.skills.length;
+
+    console.log(indent(`${curriculum.title}`));
+    console.log(
+      indent(
+        indent(
+          style.grey(
+            `${pluralise(curriculum.skills.length, 'skill')} · ` +
+              `${pluralise(syllabus.stages.length, 'stage')} · ` +
+              `${pluralise(count, 'lesson')}`,
+          ),
+        ),
+      ),
+    );
+    console.log(indent(indent(style.grey(curriculum.summary))));
+    console.log(indent(indent(style.grey(`Needs: ${curriculum.blockedBy}`))));
+    console.log('');
+  }
+
+  console.log(
+    indent(
+      `${pluralise(curricula.length, 'curriculum', 'curricula')} · ` +
+        `${pluralise(skills, 'skill')} · ${pluralise(lessons, 'lesson')} designed, none runnable.`,
+    ),
+  );
+  return 0;
 }

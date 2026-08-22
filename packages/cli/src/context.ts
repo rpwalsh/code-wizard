@@ -49,6 +49,9 @@ export function exerciseRoots(): string[] {
   return [pythonExercisesDir, javascriptExercisesDir];
 }
 
+/** Curricula that are designed but have no runtime yet. */
+export const plannedRoot = path.join(repositoryRoot, 'curricula');
+
 /** Where each language keeps its planned course, by language id. */
 export function curriculumRoots(): Readonly<Record<string, string>> {
   return { python: pythonCurriculumDir, javascript: javascriptCurriculumDir };

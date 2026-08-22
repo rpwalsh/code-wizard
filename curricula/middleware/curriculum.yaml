@@ -1,0 +1,96 @@
+id: middleware
+title: Middleware and integration
+summary: >-
+  The layer between systems: messaging, contracts between services, and the failures that only exist because there is a network in the middle.
+blockedBy: >-
+  A runtime that can run several services at once and break the connections between them on purpose. Every lesson here needs at least two processes and a way to delay, drop or duplicate what passes between them.
+
+skills:
+  - id: middleware.contracts.schemas
+    name: Contracts between services
+    category: Contracts
+    prerequisites: []
+    description: What each side may assume, written down.
+
+  - id: middleware.contracts.evolution
+    name: Evolving a contract
+    category: Contracts
+    prerequisites: [middleware.contracts.schemas]
+    description: Compatible in which direction, and who deploys first.
+
+  - id: middleware.contracts.testing
+    name: Testing a contract
+    category: Contracts
+    prerequisites: [middleware.contracts.evolution]
+
+  - id: middleware.messaging.queues
+    name: Queues
+    category: Messaging
+    prerequisites: []
+
+  - id: middleware.messaging.topics
+    name: Publish and subscribe
+    category: Messaging
+    prerequisites: [middleware.messaging.queues]
+
+  - id: middleware.messaging.delivery
+    name: Delivery guarantees
+    category: Messaging
+    prerequisites: [middleware.messaging.queues]
+
+  - id: middleware.messaging.ordering
+    name: Ordering and partitioning
+    category: Messaging
+    prerequisites: [middleware.messaging.topics]
+
+  - id: middleware.messaging.dlq
+    name: Messages that cannot be handled
+    category: Messaging
+    prerequisites: [middleware.messaging.delivery]
+
+  - id: middleware.state.idempotency
+    name: Handling the same thing twice
+    category: State
+    prerequisites: [middleware.messaging.delivery]
+
+  - id: middleware.state.outbox
+    name: Writing and publishing atomically
+    category: State
+    prerequisites: [middleware.state.idempotency]
+    description: The database committed and the message did not, or the other way round.
+
+  - id: middleware.state.saga
+    name: Work that spans services
+    category: State
+    prerequisites: [middleware.state.outbox]
+    description: No distributed transaction, so compensation instead.
+
+  - id: middleware.state.eventual
+    name: Eventual consistency
+    category: State
+    prerequisites: [middleware.state.saga]
+
+  - id: middleware.gateway.routing
+    name: Gateways and routing
+    category: Edge
+    prerequisites: []
+
+  - id: middleware.gateway.limits
+    name: Rate limiting and quotas
+    category: Edge
+    prerequisites: [middleware.gateway.routing]
+
+  - id: middleware.gateway.shedding
+    name: Shedding load
+    category: Edge
+    prerequisites: [middleware.gateway.limits]
+
+  - id: middleware.observe.tracing
+    name: Tracing across a boundary
+    category: Observability
+    prerequisites: []
+
+  - id: middleware.observe.correlation
+    name: Correlating a request through five services
+    category: Observability
+    prerequisites: [middleware.observe.tracing]

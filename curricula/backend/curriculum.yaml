@@ -1,0 +1,122 @@
+id: backend
+title: Backend
+summary: >-
+  Language-agnostic service work: designing an interface, storing things, and failing without losing data. About the properties that only appear under concurrency and load.
+blockedBy: >-
+  A runtime with a database and a network, plus the ability to run several processes at once and interfere with them on purpose. Half these lessons are about what happens when two things race, which needs more than one process.
+
+skills:
+  - id: backend.api.resources
+    name: Designing an interface
+    category: Interface
+    prerequisites: []
+    description: Nouns, verbs, and the shape a caller can predict.
+
+  - id: backend.api.errors
+    name: Errors a caller can act on
+    category: Interface
+    prerequisites: [backend.api.resources]
+
+  - id: backend.api.versioning
+    name: Changing without breaking
+    category: Interface
+    prerequisites: [backend.api.resources]
+
+  - id: backend.api.pagination
+    name: Pagination
+    category: Interface
+    prerequisites: [backend.api.resources]
+    description: Offsets, cursors, and the page that skipped a row because the data moved.
+
+  - id: backend.api.idempotency
+    name: Idempotency
+    category: Interface
+    prerequisites: [backend.api.errors]
+    description: The retry that charged the card twice.
+
+  - id: backend.data.modelling
+    name: Modelling
+    category: Data
+    prerequisites: []
+
+  - id: backend.data.transactions
+    name: Transactions and boundaries
+    category: Data
+    prerequisites: [backend.data.modelling]
+
+  - id: backend.data.concurrency
+    name: Concurrent writers
+    category: Data
+    prerequisites: [backend.data.transactions]
+    description: Optimistic and pessimistic, and the lost update between them.
+
+  - id: backend.data.migration
+    name: Changing a live schema
+    category: Data
+    prerequisites: [backend.data.modelling]
+
+  - id: backend.data.caching
+    name: Caching, and invalidating
+    category: Data
+    prerequisites: [backend.data.modelling]
+
+  - id: backend.reliability.timeouts
+    name: Timeouts
+    category: Reliability
+    prerequisites: []
+    description: A call with no deadline is an outage waiting for traffic.
+
+  - id: backend.reliability.retries
+    name: Retries and backoff
+    category: Reliability
+    prerequisites: [backend.reliability.timeouts]
+
+  - id: backend.reliability.breakers
+    name: Failing fast
+    category: Reliability
+    prerequisites: [backend.reliability.retries]
+
+  - id: backend.reliability.queues
+    name: Work that happens later
+    category: Reliability
+    prerequisites: [backend.reliability.retries]
+
+  - id: backend.reliability.delivery
+    name: At least once, and what that forces
+    category: Reliability
+    prerequisites: [backend.reliability.queues]
+
+  - id: backend.security.authn
+    name: Who the caller is
+    category: Security
+    prerequisites: []
+
+  - id: backend.security.authz
+    name: What they may do
+    category: Security
+    prerequisites: [backend.security.authn]
+
+  - id: backend.security.secrets
+    name: Secrets, and not logging them
+    category: Security
+    prerequisites: [backend.security.authn]
+
+  - id: backend.security.input
+    name: Never trusting input
+    category: Security
+    prerequisites: [backend.api.resources]
+
+  - id: backend.operations.observability
+    name: Logs, metrics and traces
+    category: Operations
+    prerequisites: []
+
+  - id: backend.operations.slos
+    name: Deciding what is acceptable
+    category: Operations
+    prerequisites: [backend.operations.observability]
+
+  - id: backend.operations.deploys
+    name: Deploying without an outage
+    category: Operations
+    prerequisites: [backend.data.migration]

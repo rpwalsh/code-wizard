@@ -1,0 +1,92 @@
+# Stage 1 — Values, nulls and queries (lessons 1–14)
+#
+# The half of C# that people think they know. Value semantics and deferred
+# execution both behave exactly as specified and both surprise experienced
+# developers, which is the definition of a thing worth drilling.
+
+stage: values
+title: Values, nulls and queries
+lessons:
+  - id: cs.001
+    title: Value or reference
+    focus: Assign, mutate, and check what the other name sees.
+    skills: [csharp.values.types]
+    difficulty: 3
+
+  - id: cs.002
+    title: Nullable reference types
+    focus: Turning them on, and what the warnings are telling you.
+    skills: [csharp.values.nullable]
+    difficulty: 3
+
+  - id: cs.003
+    title: The null that got in anyway
+    focus: Where the guarantee stops, at a boundary the compiler cannot see.
+    skills: [csharp.values.nullable]
+    difficulty: 4
+
+  - id: cs.004
+    title: Records
+    focus: Value equality, and a changed copy rather than a mutation.
+    skills: [csharp.values.records]
+    difficulty: 3
+
+  - id: cs.005
+    title: Structs, and when they pay
+    focus: Measure before believing anything about them.
+    skills: [csharp.values.structs]
+    difficulty: 5
+
+  - id: cs.006
+    title: Interfaces
+    focus: Depending on behaviour, and keeping the surface small.
+    skills: [csharp.types.interfaces]
+    difficulty: 3
+
+  - id: cs.007
+    title: Generics and constraints
+    focus: Any type that can do this, and the where clause.
+    skills: [csharp.types.generics]
+    difficulty: 4
+
+  - id: cs.008
+    title: Pattern matching
+    focus: Switch expressions, and exhaustiveness you can rely on.
+    skills: [csharp.types.patterns]
+    difficulty: 4
+
+  - id: cs.009
+    title: LINQ
+    focus: A pipeline, read top to bottom.
+    skills: [csharp.linq.queries]
+    difficulty: 3
+
+  - id: cs.010
+    title: Deferred execution
+    focus: Enumerate twice, and count how many times the source was read.
+    skills: [csharp.linq.deferred]
+    difficulty: 4
+
+  - id: cs.011
+    title: The query that outlived its source
+    focus: Deferred, then the connection closed. Reproduce it deliberately.
+    skills: [csharp.linq.deferred]
+    difficulty: 5
+
+  - id: cs.012
+    title: Where LINQ costs
+    focus: Allocations per element, measured, and the loop that was fine.
+    skills: [csharp.linq.performance]
+    difficulty: 5
+
+  - id: cs.013
+    title: Exceptions, thrown well
+    focus: The right type, a message with the value in it, and no swallowing.
+    skills: [csharp.errors.exceptions]
+    difficulty: 3
+
+  - id: cs.014
+    title: Failure without an exception
+    focus: A result type, and when it reads better than throwing.
+    skills: [csharp.errors.results]
+    difficulty: 4

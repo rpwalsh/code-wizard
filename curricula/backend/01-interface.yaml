@@ -1,0 +1,104 @@
+# Stage 1 — The interface, and the data behind it (lessons 1–16)
+#
+# An API is a promise you cannot take back, and a schema is a promise with
+# data already in it. Both stages here are about making changes you can
+# survive having made.
+
+stage: interface
+title: The interface, and the data behind it
+lessons:
+  - id: be.001
+    title: Designing an interface
+    focus: Two designs for the same feature, and which one a caller can guess.
+    skills: [backend.api.resources]
+    difficulty: 3
+
+  - id: be.002
+    title: Errors a caller can act on
+    focus: A code, a field, and a message that is not for a human only.
+    skills: [backend.api.errors]
+    difficulty: 4
+
+  - id: be.003
+    title: Never trusting input
+    focus: Validating at the boundary, in one place, before anything runs.
+    skills: [backend.security.input]
+    difficulty: 3
+
+  - id: be.004
+    title: Pagination
+    focus: Offsets, then the page that skipped a row because the data moved.
+    skills: [backend.api.pagination]
+    difficulty: 5
+
+  - id: be.005
+    title: Changing without breaking
+    focus: Add, deprecate, remove — and the client that never updated.
+    skills: [backend.api.versioning]
+    difficulty: 4
+
+  - id: be.006
+    title: Idempotency
+    focus: The retry that charged twice. Reproduce it, then make it safe.
+    skills: [backend.api.idempotency]
+    difficulty: 5
+
+  - id: be.007
+    title: Modelling
+    focus: The entities, their keys, and the constraint that prevents nonsense.
+    skills: [backend.data.modelling]
+    difficulty: 3
+
+  - id: be.008
+    title: Transaction boundaries
+    focus: What is atomic, and the unit of work that was too wide.
+    skills: [backend.data.transactions]
+    difficulty: 4
+
+  - id: be.009
+    title: Two writers, one row
+    focus: Watch the lost update. Then fix it two ways and compare.
+    skills: [backend.data.concurrency]
+    difficulty: 5
+
+  - id: be.010
+    title: Changing a live schema
+    focus: Expand, migrate, contract — deployable while running.
+    skills: [backend.data.migration]
+    difficulty: 5
+
+  - id: be.011
+    title: Caching
+    focus: What to cache, and how you will know it is wrong.
+    skills: [backend.data.caching]
+    difficulty: 4
+
+  - id: be.012
+    title: Invalidating
+    focus: The second hard problem, met properly once.
+    skills: [backend.data.caching]
+    difficulty: 5
+
+  - id: be.013
+    title: Who the caller is
+    focus: Establishing identity once, at the edge.
+    skills: [backend.security.authn]
+    difficulty: 4
+
+  - id: be.014
+    title: What they may do
+    focus: Deciding close to the data, not close to the route.
+    skills: [backend.security.authz]
+    difficulty: 5
+
+  - id: be.015
+    title: Secrets
+    focus: Where they live, and the log line that leaked one.
+    skills: [backend.security.secrets]
+    difficulty: 4
+
+  - id: be.016
+    title: An endpoint, end to end
+    focus: Validate, authorise, transact, respond, log.
+    skills: [backend.api.errors, backend.data.transactions]
+    difficulty: 5

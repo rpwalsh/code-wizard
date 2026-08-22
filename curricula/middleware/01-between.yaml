@@ -1,0 +1,117 @@
+# Stage 1 — Between two systems (lessons 1–18)
+#
+# Everything here exists because a network sits in the middle, and networks
+# delay, duplicate, reorder and drop. The lessons cause each of those on
+# purpose, because a guarantee you have not seen violated is one you will
+# assume you have.
+
+stage: between
+title: Between two systems
+lessons:
+  - id: mw.001
+    title: A contract, written down
+    focus: What each side may assume, and where it is checked.
+    skills: [middleware.contracts.schemas]
+    difficulty: 3
+
+  - id: mw.002
+    title: Evolving it
+    focus: Which changes are safe, and who has to deploy first.
+    skills: [middleware.contracts.evolution]
+    difficulty: 5
+
+  - id: mw.003
+    title: Testing a contract
+    focus: Against the promise rather than against a running copy.
+    skills: [middleware.contracts.testing]
+    difficulty: 4
+
+  - id: mw.004
+    title: A queue
+    focus: Producer, consumer, and the buffer between them.
+    skills: [middleware.messaging.queues]
+    difficulty: 3
+
+  - id: mw.005
+    title: Publish and subscribe
+    focus: One event, several interested parties, none of them coupled.
+    skills: [middleware.messaging.topics]
+    difficulty: 4
+
+  - id: mw.006
+    title: Delivery guarantees
+    focus: At most once, at least once, and the exactly-once that is not.
+    skills: [middleware.messaging.delivery]
+    difficulty: 5
+
+  - id: mw.007
+    title: The duplicate
+    focus: Deliver it twice on purpose. Watch what breaks.
+    skills: [middleware.state.idempotency]
+    difficulty: 5
+
+  - id: mw.008
+    title: Handling it twice safely
+    focus: A key, a record of what was done, and a second attempt that changes nothing.
+    skills: [middleware.state.idempotency]
+    difficulty: 5
+
+  - id: mw.009
+    title: Ordering
+    focus: What partitioning buys, and what it costs.
+    skills: [middleware.messaging.ordering]
+    difficulty: 5
+
+  - id: mw.010
+    title: The message that always fails
+    focus: A dead letter queue, and the alert that follows.
+    skills: [middleware.messaging.dlq]
+    difficulty: 4
+
+  - id: mw.011
+    title: The write that published nothing
+    focus: Commit, then crash before publishing. Reproduce it.
+    skills: [middleware.state.outbox]
+    difficulty: 5
+
+  - id: mw.012
+    title: The outbox
+    focus: One transaction, and a publisher that catches up.
+    skills: [middleware.state.outbox]
+    difficulty: 5
+
+  - id: mw.013
+    title: Work across services
+    focus: No distributed transaction. Compensation, and what it cannot undo.
+    skills: [middleware.state.saga]
+    difficulty: 5
+
+  - id: mw.014
+    title: Eventual consistency
+    focus: The read that was correct and stale, and telling the user honestly.
+    skills: [middleware.state.eventual]
+    difficulty: 5
+
+  - id: mw.015
+    title: A gateway
+    focus: Routing, and the one place cross-cutting concerns belong.
+    skills: [middleware.gateway.routing]
+    difficulty: 3
+
+  - id: mw.016
+    title: Rate limiting
+    focus: A fair algorithm, and the client that got throttled unfairly.
+    skills: [middleware.gateway.limits]
+    difficulty: 4
+
+  - id: mw.017
+    title: Shedding load
+    focus: Refusing work early, and why that is kinder than queueing it.
+    skills: [middleware.gateway.shedding]
+    difficulty: 5
+
+  - id: mw.018
+    title: Following one request through five services
+    focus: Trace context propagated, and the hop that dropped it.
+    skills: [middleware.observe.correlation]
+    difficulty: 5
