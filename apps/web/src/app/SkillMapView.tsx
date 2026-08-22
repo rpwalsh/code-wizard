@@ -8,6 +8,10 @@ interface SkillMapViewProps {
   readonly constraintsFor: (skillId: string) => readonly Constraint[];
   readonly exerciseCountFor: (skillId: string) => number;
   readonly onPractise: (skillId: string) => void;
+  /** Start a demonstration: the claim "I know this", put to a test. */
+  readonly onDemonstrate: (skillId: string) => void;
+  /** False when nothing unseen is left to test the claim against. */
+  readonly canDemonstrate: (skillId: string) => boolean;
 }
 
 /**
@@ -23,6 +27,8 @@ export function SkillMapView({
   constraintsFor,
   exerciseCountFor,
   onPractise,
+  onDemonstrate,
+  canDemonstrate,
 }: SkillMapViewProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const node = map.nodes.find((candidate) => candidate.skillId === selected) ?? null;
@@ -52,6 +58,8 @@ export function SkillMapView({
           constraints={constraintsFor(node.skillId)}
           exerciseCount={exerciseCountFor(node.skillId)}
           onPractise={() => onPractise(node.skillId)}
+          onDemonstrate={() => onDemonstrate(node.skillId)}
+          canDemonstrate={canDemonstrate(node.skillId)}
           onClear={() => setSelected(null)}
         />
       ) : (
@@ -72,12 +80,16 @@ function Inspector({
   constraints,
   exerciseCount,
   onPractise,
+  onDemonstrate,
+  canDemonstrate,
   onClear,
 }: {
   readonly node: SkillNode;
   readonly constraints: readonly Constraint[];
   readonly exerciseCount: number;
   readonly onPractise: () => void;
+  readonly onDemonstrate: () => void;
+  readonly canDemonstrate: boolean;
   readonly onClear: () => void;
 }) {
   return (
@@ -136,6 +148,23 @@ function Inspector({
       >
         {exerciseCount === 0 ? 'No exercises yet' : 'Practise this'}
       </button>
+
+      {canDemonstrate ? (
+        <>
+          <button type="button" className="button" onClick={onDemonstrate}>
+            I know this — skip it
+          </button>
+          {/*
+            Stated plainly, because the offer is worthless if the learner
+            thinks it is a trap. It is not a test they can fail into anything:
+            the only thing at stake is the shortcut they asked for.
+          */}
+          <p className="empty">
+            One exercise you have not seen, blank page, no hints. Pass it and this skill and
+            everything under it are credited. Fail it and nothing happens.
+          </p>
+        </>
+      ) : null}
     </aside>
   );
 }

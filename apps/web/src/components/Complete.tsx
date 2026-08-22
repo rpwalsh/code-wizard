@@ -33,6 +33,15 @@ export function Complete({ report, exercise, history, onAgain, onLeave }: Comple
         <p className="complete__figure">{formatDuration(report.durationMs)}</p>
       </div>
 
+      {report.demonstration ? (
+        <p
+          className={`notice notice--${report.demonstration.passed ? 'good' : 'quiet'}`}
+          role="status"
+        >
+          {report.demonstration.reason}
+        </p>
+      ) : null}
+
       <div className="complete__facts">
         <Fact label="Independent completion" value={report.independent ? '100%' : 'assisted'} />
         <Fact label="Hints" value={String(report.hintsUsed)} />

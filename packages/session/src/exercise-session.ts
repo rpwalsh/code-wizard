@@ -7,7 +7,14 @@ import type {
   TrainingMode,
 } from '@code-retrainer/core';
 import type { Prediction } from '@code-retrainer/core';
-import { affordancesFor, isGreen, isPredictionCorrect } from '@code-retrainer/core';
+import {
+  affordancesFor,
+  headlineMastery,
+  isGreen,
+  isPredictionCorrect,
+} from '@code-retrainer/core';
+import type { Demonstration, DemonstrationResult } from '@code-retrainer/curriculum';
+import { creditDemonstration, judgeDemonstration } from '@code-retrainer/curriculum';
 import type { Exercise, Hint } from '@code-retrainer/exercises';
 import { attemptWorkspace, orderedHints, testVisibility } from '@code-retrainer/exercises';
 import type { Attempt, MasteryChange } from '@code-retrainer/learning';
@@ -37,6 +44,14 @@ export interface SessionDependencies {
    * as transfer if its skills were practised elsewhere first.
    */
   readonly skillsOf?: (exerciseId: string) => readonly string[];
+  /**
+   * Present when this sitting is a claim being tested rather than practice.
+   *
+   * A demonstration is graded like any other attempt — the evidence is real
+   * either way — and then judged a second time, more strictly, to decide
+   * whether the shortcut the learner asked for is granted.
+   */
+  readonly demonstration?: Demonstration;
   /** Injected so tests are deterministic and history is reproducible. */
   readonly clock?: () => Date;
   readonly newId?: () => string;
@@ -60,6 +75,8 @@ export interface CompletionReport {
   readonly changes: readonly MasteryChange[];
   readonly reasons: readonly string[];
   readonly reviewNotes: readonly string[];
+  /** How the claim went, when this sitting was a demonstration. */
+  readonly demonstration: DemonstrationResult | null;
 }
 
 export interface SessionState {
@@ -545,10 +562,38 @@ export class ExerciseSession {
       changes,
       reasons: [...reasons],
       reviewNotes,
+      demonstration: await this.#settleClaim(),
     };
 
     this.#emit();
     return this.#completion;
+  }
+
+  /**
+   * Decide whether a demonstration earned the shortcut it was asking for.
+   *
+   * Credit is only ever applied upward. Someone who demonstrates a skill they
+   * had already practised further must not be pushed backwards by a figure
+   * meant to save them time.
+   */
+  async #settleClaim(): Promise<DemonstrationResult | null> {
+    const demonstration = this.#deps.demonstration;
+    if (!demonstration) return null;
+
+    const result = judgeDemonstration(this.#attempt, demonstration, this.#deps.skillGraph);
+    if (!result.passed) return result;
+
+    for (const credited of creditDemonstration(demonstration, this.#deps.skillGraph, this.#now())) {
+      const current = await this.#deps.store.getMastery(credited.skillId);
+      if (current && headlineMastery(current.vector) >= headlineMastery(credited.vector)) continue;
+      await this.#deps.store.saveMastery(
+        current
+          ? { ...credited, observations: Math.max(current.observations, credited.observations) }
+          : credited,
+      );
+    }
+
+    return result;
   }
 
   #skillName(skillId: string): string {

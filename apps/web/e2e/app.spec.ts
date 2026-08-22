@@ -49,6 +49,16 @@ test('boots and shows the instrument', async ({ page }) => {
   await expect(page.getByText(/no measurements yet|skills measured/)).toBeVisible();
 });
 
+test('the dashboard says nothing it cannot support yet', async ({ page }) => {
+  await start(page);
+
+  // A fresh learner has no history, and the assistance panel must say so
+  // rather than drawing a flat line at zero — which would read as "you never
+  // need help" on the day they arrived.
+  await expect(page.getByText('Assistance dependency')).toBeVisible();
+  await expect(page.getByText(/the useful direction is down/)).toBeVisible();
+});
+
 test('every exercise is reachable from the dashboard', async ({ page }) => {
   await start(page);
 

@@ -6,6 +6,7 @@ import type { Dashboard } from '@code-retrainer/session';
 import type { Platform } from '../platform/index.ts';
 
 import { formatDuration } from '../components/Complete.tsx';
+import { Dependency } from '../components/Dependency.tsx';
 import { Trajectory } from '../components/Trajectory.tsx';
 
 interface HomeProps {
@@ -127,6 +128,17 @@ export function Home({ platform, dashboard, onOpen }: HomeProps) {
             </p>
           </>
         )}
+      </section>
+
+      <section className="section" aria-labelledby="dependency-heading">
+        <div className="section__head">
+          <p className="label" id="dependency-heading">
+            Assistance dependency
+          </p>
+          <p className="section__note">Down is the direction that matters</p>
+        </div>
+
+        <Dependency points={dashboard.assistance} baseline={dashboard.baseline} />
       </section>
 
       <section className="section" aria-labelledby="dimensions-heading">

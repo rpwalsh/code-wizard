@@ -14,6 +14,8 @@ import type { ProgressStore, StoredReview } from '@code-retrainer/storage';
 
 import type { Constraint, FluencyReading, SkillMap, TrajectoryPoint } from './analytics.ts';
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';
+import type { AssistancePoint, BaselineComparison } from './baseline.ts';
+import { compareToBaseline, readAssistance } from './baseline.ts';
 
 /** The window the home screen reports change over. */
 const TRAJECTORY_DAYS = 30;
@@ -44,8 +46,20 @@ export interface Dashboard {
   readonly improvements: readonly RecentImprovement[];
   /** Fraction of solved attempts completed with no assistance at all. */
   readonly independentCompletion: number | null;
+  /**
+   * Where they started, beside where they are. Null until there is enough
+   * history for the two windows not to overlap.
+   */
+  readonly baseline: BaselineComparison | null;
+  /** How much help they leaned on, day by day. */
+  readonly assistance: readonly AssistancePoint[];
   readonly dueCount: number;
   readonly totalAttempts: number;
+  /**
+   * Exercises already seen. A demonstration cannot use one of these: passing
+   * an exercise you have met before demonstrates that you have met it before.
+   */
+  readonly attemptedExerciseIds: ReadonlySet<string>;
 }
 
 /**
@@ -116,8 +130,11 @@ export class ProgressService {
       weaknesses: this.#weaknesses(state.mastery),
       improvements: this.#improvements(attempts),
       independentCompletion: independentCompletionRate(attempts),
+      baseline: compareToBaseline(attempts),
+      assistance: readAssistance(attempts, { days: TRAJECTORY_DAYS, now }),
       dueCount: dueSkills.size,
       totalAttempts: attempts.length,
+      attemptedExerciseIds: new Set(attempts.map((attempt) => attempt.exerciseId)),
     };
   }
 

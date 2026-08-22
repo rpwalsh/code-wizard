@@ -13,6 +13,8 @@ import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
 import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
+import type { Demonstration } from '@code-retrainer/curriculum';
+import { planDemonstration } from '@code-retrainer/curriculum';
 import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
 
@@ -22,7 +24,13 @@ const ONBOARDED_KEY = 'onboarding.level';
 type Screen =
   | { readonly kind: 'home' }
   | { readonly kind: 'map' }
-  | { readonly kind: 'workspace'; readonly exercise: Exercise; readonly nonce: number };
+  | {
+      readonly kind: 'workspace';
+      readonly exercise: Exercise;
+      readonly nonce: number;
+      /** Set when this sitting is a claim being tested rather than practice. */
+      readonly demonstration?: Demonstration;
+    };
 
 export function App() {
   const [platform, setPlatform] = useState<Platform | null>(null);
@@ -109,6 +117,18 @@ export function App() {
       await refresh();
     },
     [platform, refresh],
+  );
+
+  const attempted = dashboard?.attemptedExerciseIds;
+  const catalog = platform?.catalog;
+  const demonstrationFor = useCallback(
+    (skillId: string) =>
+      catalog
+        ? planDemonstration(skillId, catalog.all(), {
+            ...(attempted ? { attemptedExerciseIds: attempted } : {}),
+          })
+        : null,
+    [catalog, attempted],
   );
 
   const open = useCallback((exercise: Exercise) => {
@@ -267,6 +287,20 @@ export function App() {
               const candidate = platform.catalog.forSkill(skillId)[0];
               if (candidate) open(candidate);
             }}
+            canDemonstrate={(skillId) => demonstrationFor(skillId) !== null}
+            onDemonstrate={(skillId) => {
+              const demonstration = demonstrationFor(skillId);
+              if (!demonstration) return;
+              // The mode is not the learner's choice here. A claim to know
+              // something is only settled with the starter code withdrawn.
+              setMode(demonstration.mode);
+              setScreen({
+                kind: 'workspace',
+                exercise: platform.catalog.get(demonstration.exerciseId),
+                nonce: Date.now(),
+                demonstration,
+              });
+            }}
           />
         ) : null}
 
@@ -280,6 +314,7 @@ export function App() {
             exercise={screen.exercise}
             mode={mode}
             fontSize={fontSize}
+            {...(screen.demonstration ? { demonstration: screen.demonstration } : {})}
             onLeave={leave}
             onAgain={() => open(screen.exercise)}
             onCommands={setScreenCommands}

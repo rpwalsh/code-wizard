@@ -1,4 +1,10 @@
-import { headlineMastery, makeMastery, SkillGraph } from '@code-retrainer/core';
+import {
+  headlineMastery,
+  makeMastery,
+  masteryDimensions,
+  readiness,
+  SkillGraph,
+} from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 import { ExerciseCatalog } from '@code-retrainer/exercises';
 import type { ProgressStore } from '@code-retrainer/storage';
@@ -178,6 +184,110 @@ describe('editing', () => {
     session.updateFile('main.py', 'scribbles');
     session.resetFiles();
     expect(session.state.files.find((file) => file.path === 'main.py')?.contents).toBe('STUB');
+  });
+});
+
+describe('demonstrating a claim', () => {
+  const demonstration = {
+    skillId: 'python.dict-lookup',
+    exerciseId: exercise.id,
+    mode: 'blank-page',
+    budgetSeconds: 600,
+  } as const;
+
+  function beginClaim(): ExerciseSession {
+    return ExerciseSession.begin(exercise, 'blank-page', {
+      runtime,
+      store,
+      skillGraph,
+      clock,
+      newId: () => 'attempt-1',
+      demonstration,
+    });
+  }
+
+  it('credits the skill and everything under it when the claim holds', async () => {
+    const session = beginClaim();
+    runtime.green = true;
+    await session.runTests();
+
+    expect(session.state.completion?.demonstration?.passed).toBe(true);
+
+    // Readiness, not headline mastery: the question a credited prerequisite
+    // answers is "should this still gate them", and it is deliberately a
+    // different question from "how fluent are they". An implied prerequisite
+    // scoring high on the headline would be a claim nobody demonstrated.
+    const prerequisite = (await store.getMastery('python.dict'))!;
+    expect(readiness(prerequisite.vector)).toBeGreaterThan(0.5);
+    expect(headlineMastery(prerequisite.vector)).toBeLessThan(0.5);
+
+    // What a demonstration actually shows: they produced it unaided, from an
+    // empty file, quickly. It does not show retention or composition, and the
+    // headline stays honest about that rather than being rounded up.
+    const demonstrated = (await store.getMastery('python.dict-lookup'))!;
+    expect(demonstrated.vector.recall).toBeGreaterThan(0.8);
+    expect(demonstrated.vector.independence).toBeGreaterThan(0.8);
+    expect(demonstrated.vector.retention).toBe(0);
+    expect(headlineMastery(demonstrated.vector)).toBeGreaterThan(
+      headlineMastery(prerequisite.vector),
+    );
+  });
+
+  it('does not claim the prerequisites were measured', async () => {
+    const session = beginClaim();
+    runtime.green = true;
+    await session.runTests();
+
+    // They were shown by implication. Counting them as evidence would put
+    // skills nobody demonstrated into the headline fluency reading.
+    expect((await store.getMastery('python.dict'))?.observations).toBe(0);
+    expect((await store.getMastery('python.dict-lookup'))?.observations).toBeGreaterThan(0);
+  });
+
+  it('credits nothing when the claim took longer than it should have', async () => {
+    // Knowing it and having it to hand are different things, and the second
+    // is the whole subject matter.
+    const session = ExerciseSession.begin(exercise, 'blank-page', {
+      runtime,
+      store,
+      skillGraph,
+      clock,
+      newId: () => 'attempt-1',
+      demonstration: { ...demonstration, budgetSeconds: 1 },
+    });
+    runtime.green = true;
+    await session.runTests();
+
+    expect(session.state.completion?.demonstration?.passed).toBe(false);
+    expect(session.state.completion?.demonstration?.reason).toMatch(/budget/);
+    // The attempt still counts as evidence; only the shortcut is refused.
+    expect(await store.getMastery('python.dict')).toBeNull();
+  });
+
+  it('never pushes an already-stronger skill backwards', async () => {
+    // Someone who demonstrates a skill they had practised further must not be
+    // demoted by a figure that exists to save them time.
+    await store.saveMastery({
+      skillId: 'python.dict',
+      vector: makeMastery(Object.fromEntries(masteryDimensions.map((dimension) => [dimension, 1]))),
+      observations: 9,
+      lastPracticedAt: '2026-02-01T00:00:00.000Z',
+    });
+
+    const session = beginClaim();
+    runtime.green = true;
+    await session.runTests();
+
+    const after = await store.getMastery('python.dict');
+    expect(headlineMastery(after!.vector)).toBe(1);
+    expect(after?.observations).toBe(9);
+  });
+
+  it('says nothing about a claim on an ordinary attempt', async () => {
+    const session = begin();
+    runtime.green = true;
+    await session.runTests();
+    expect(session.state.completion?.demonstration).toBeNull();
   });
 });
 

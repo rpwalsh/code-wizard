@@ -1,3 +1,4 @@
+import type { Demonstration } from '@code-retrainer/curriculum';
 import type { TrainingMode } from '@code-retrainer/core';
 import { affordancesFor, isGreen } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
@@ -29,6 +30,8 @@ interface WorkspaceProps {
   readonly platform: Platform;
   readonly exercise: Exercise;
   readonly mode: TrainingMode;
+  /** Set when this sitting is a claim being tested rather than practice. */
+  readonly demonstration?: Demonstration;
   readonly fontSize: number;
   readonly onLeave: () => void;
   readonly onAgain: () => void;
@@ -39,6 +42,7 @@ export function Workspace({
   platform,
   exercise,
   mode,
+  demonstration,
   fontSize,
   onLeave,
   onAgain,
@@ -52,8 +56,9 @@ export function Workspace({
         skillGraph: platform.skillGraph,
         skillsOf: (exerciseId) =>
           platform.catalog.has(exerciseId) ? platform.catalog.get(exerciseId).skills : [],
+        ...(demonstration ? { demonstration } : {}),
       }),
-    [platform, exercise, mode],
+    [platform, exercise, mode, demonstration],
   );
 
   const state = useSessionState(session);

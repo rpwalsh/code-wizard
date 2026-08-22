@@ -170,6 +170,23 @@ to have been recorded differently.
 right, is the one signal in the system that distinguishes understanding the code from the code
 happening to work — and the only way an onboarding claim can be corrected downward by reality.
 
+**Two things are measured against the learner's own past rather than a scale.** The personal
+baseline is the reading over their first attempts, derived from the log rather than stored — a
+frozen snapshot would be a derived value pretending to be evidence, stranded the moment the scoring
+model improves. Assistance dependency is the share of recent attempts that used a hint, the
+documentation or the answer, over a trailing window; for someone rebuilding fundamentals it is the
+chart that answers the actual question, and days with no practice draw nothing rather than dropping
+to zero.
+
+**A claim to already know something is neither refused nor trusted.** `planDemonstration` picks the
+hardest unseen exercise for the skill and runs it on the blank-page rung — completing a skeleton
+would show recognition, which is exactly what an experienced programmer already has.
+`judgeDemonstration` is stricter than ordinary grading, because the cost of a false pass is that the
+learner skips material they needed: it requires a solve that is unaided _and_ inside a generous time
+budget. Passing credits the skill and everything beneath it; the prerequisites are credited on
+`readiness` only, with `observations` left at zero, so they stop gating the learner without
+claiming anyone measured them. Credit is applied upward only.
+
 **Readiness is a different question from mastery.** Whether a prerequisite is satisfied well enough
 to _attempt_ dependent work is weighted toward knowledge, recognition and application; headline
 mastery is weighted toward independent recall. Gating on mastery would refuse to teach anyone

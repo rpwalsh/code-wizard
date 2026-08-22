@@ -89,6 +89,12 @@ Ranking changes the goal from _recover capability_ to _optimise a score_, and
 those come apart immediately. The comparison that matters is the learner
 against their own dependence on assistance.
 
+That comparison is built, not gestured at. A personal baseline is derived from
+the learner's first attempts and held up beside their most recent ones, and the
+assistance-dependency chart shows how often they still reached for a hint, the
+documentation or the answer. Both are drawn falling-is-good and labelled that
+way. Neither has anyone else in it.
+
 ---
 
 ## 6. Knowledge and fluency are different numbers
@@ -128,6 +134,27 @@ measurement underneath it would stop meaning anything.
 This is also why full recall requires an empty file. A skeleton answers half
 the question before it is asked — which shape, which signature, which imports
 — so completing one is capped below the top of that dimension.
+
+---
+
+## 6b. An experienced programmer is not treated as a beginner
+
+Sending someone through a beginner's ladder for material they already know is
+how you lose them, and they would be right to go. But simply believing "I know
+this" stops the system measuring anything, and every figure it printed
+afterwards would be worth nothing.
+
+So the claim is neither refused nor trusted. It is put to one short test: the
+hardest exercise for that skill that they have not seen, on the blank page,
+with nothing to lean on. Pass it unaided and inside a generous budget and the
+skill is credited along with everything beneath it — the ladder under something
+you have just demonstrated is not worth anyone's evening. Fail and nothing is
+lost but the shortcut, because a failed demonstration is not a failed exercise.
+It is an answer to a question the learner asked about themselves.
+
+The prerequisites credited this way raise _readiness_ and not the headline, and
+their observation count stays at zero. They stop gating the learner without
+anybody pretending they were measured.
 
 ---
 

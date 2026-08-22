@@ -254,6 +254,14 @@ kbd {
   border-left-color: var(--fail);
   color: var(--text);
 }
+.notice--good {
+  border-left-color: var(--pass);
+  color: var(--text);
+}
+/* A failed demonstration is an answer, not a fault: no status colour at all. */
+.notice--quiet {
+  border-left-color: var(--line-strong);
+}
 
 /* ── shell ────────────────────────────────────────────────────────────── */
 
@@ -1719,4 +1727,51 @@ kbd {
 .predict__verdict code {
   font-family: var(--font-mono);
   color: var(--text);
+}
+
+/* ── Assistance dependency ──────────────────────────────────────────────
+ *
+ * The chart that answers the actual question for someone rebuilding
+ * fundamentals: not what they scored, but whether they still need help. Drawn
+ * falling-is-good and said in words, because a chart that needs a caption to
+ * read correctly will be read incorrectly.
+ */
+.section__note {
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.dependency {
+  display: grid;
+  gap: var(--space-3);
+}
+.spark--dependency {
+  height: 48px;
+  width: 100%;
+}
+/* Muted rather than accented: this line is read against the fluency line
+ * above it, and two accents would make neither of them mean anything. */
+.spark__line--dependency {
+  stroke: var(--text-dim);
+  stroke-width: 1.5;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.dependency__reading,
+.dependency__baseline {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.dependency__reading strong,
+.dependency__baseline strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+/* Status colour only where the direction is genuinely the good one, and only
+ * on the sentence — never on the line, which has to stay readable as shape. */
+.dependency__baseline[data-direction='down'] strong {
+  color: var(--pass);
+}
+.dependency__baseline[data-direction='up'] strong {
+  color: var(--warn);
 }
