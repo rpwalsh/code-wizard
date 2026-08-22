@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@forge/core": "*",
-    "@forge/execution": "*",
     "@forge/python": "*",
     "pyodide": "^314.0.5"
   },

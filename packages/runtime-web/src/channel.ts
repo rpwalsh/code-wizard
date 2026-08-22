@@ -20,15 +20,18 @@ export interface WorkerChannel {
 export type WorkerChannelFactory = () => WorkerChannel | Promise<WorkerChannel>;
 
 /**
- * A browser `Worker`.
+ * Wrap an already-constructed browser `Worker`.
+ *
+ * Takes the worker rather than a URL because bundlers detect worker entry
+ * points syntactically: handing this function a URL to construct would leave
+ * the worker module out of the build entirely, and the failure would only
+ * appear in production.
  *
  * `terminate()` is the browser's answer to killing a process tree: it stops
  * the thread wherever it is, including inside an infinite Python loop that no
  * cooperative cancellation could ever interrupt.
  */
-export function browserChannel(scriptUrl: string | URL): WorkerChannel {
-  const worker = new Worker(scriptUrl, { type: 'module' });
-
+export function browserChannel(worker: Worker): WorkerChannel {
   return {
     post: (message) => worker.postMessage(message),
     onMessage: (handler) => {

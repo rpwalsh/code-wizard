@@ -9,9 +9,5 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [
-    { "path": "../core" },
-    { "path": "../execution" },
-    { "path": "../../languages/python" }
-  ]
+  "references": [{ "path": "../core" }, { "path": "../../languages/python" }]
 }

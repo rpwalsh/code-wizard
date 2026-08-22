@@ -4,51 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 
 import type { Workspace, WorkspaceFile } from '@forge/core';
+import { assertSafeRelativePath, WorkspacePathError } from '@forge/core';
 
-export class WorkspacePathError extends Error {
-  constructor(
-    readonly requestedPath: string,
-    reason: string,
-  ) {
-    super(`Unsafe workspace path ${JSON.stringify(requestedPath)}: ${reason}`);
-    this.name = 'WorkspacePathError';
-  }
-}
-
-const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
-
-/**
- * Exercise content is data, and data can be hostile or simply wrong (spec §35
- * lists malicious exercise content as a tested threat). Every relative path is
- * validated before it is joined to a real directory.
- */
-export function assertSafeRelativePath(relativePath: string): string {
-  if (relativePath.length === 0) throw new WorkspacePathError(relativePath, 'path is empty');
-  if (relativePath.includes('\0')) throw new WorkspacePathError(relativePath, 'contains NUL');
-  if (path.isAbsolute(relativePath) || /^[A-Za-z]:/.test(relativePath)) {
-    throw new WorkspacePathError(relativePath, 'must be relative');
-  }
-  // Both separators, deliberately: Windows exercise content and hand-written
-  // manifests use backslashes, and a guard that only understands `/` would let
-  // `..\escape.py` through.
-  if (/^[\\/]/.test(relativePath)) {
-    throw new WorkspacePathError(relativePath, 'must not start with a separator');
-  }
-
-  const segments = relativePath.split(/[\\/]+/);
-  for (const segment of segments) {
-    if (segment === '' || segment === '.') {
-      throw new WorkspacePathError(relativePath, 'contains an empty or "." segment');
-    }
-    if (segment === '..') {
-      throw new WorkspacePathError(relativePath, 'traverses outside the workspace');
-    }
-    if (WINDOWS_RESERVED.test(segment)) {
-      throw new WorkspacePathError(relativePath, `"${segment}" is a reserved device name`);
-    }
-  }
-  return segments.join('/');
-}
+// Re-exported so existing callers keep working; the definitions moved to core
+// because the browser runtime needs them and cannot import node builtins.
+export { assertSafeRelativePath, WorkspacePathError, isSafeRelativePath } from '@forge/core';
 
 /** Resolve a workspace-relative path inside `root`, refusing to escape it. */
 export function resolveInside(root: string, relativePath: string): string {

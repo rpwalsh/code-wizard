@@ -17,8 +17,12 @@ import type {
   TestVisibility,
   Workspace,
 } from '@forge/core';
-import { redactHiddenTests, summarise } from '@forge/core';
-import { assertSafeRelativePath, WorkspacePathError } from '@forge/execution';
+import {
+  assertSafeRelativePath,
+  redactHiddenTests,
+  summarise,
+  WorkspacePathError,
+} from '@forge/core';
 import { parseReport, toTestCases } from '@forge/python/report';
 import { FORGE_EXPECT_PY, FORGE_REPORT_PY } from '@forge/python/support';
 

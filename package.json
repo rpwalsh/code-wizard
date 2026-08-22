@@ -25,7 +25,10 @@
     "forge": "node --experimental-strip-types packages/cli/src/main.ts",
     "verify": "npm run generate:check && npm run lint && npm run build && npm run test",
     "generate": "node scripts/generate-python-sources.mjs",
-    "generate:check": "node scripts/generate-python-sources.mjs --check"
+    "generate:check": "node scripts/generate-python-sources.mjs --check",
+    "bundle": "node packages/cli/dist/main.js content bundle",
+    "web": "npm run build && npm run bundle && npm run build --workspace @forge/web",
+    "web:dev": "npm run bundle && npm run dev --workspace @forge/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -36,5 +39,8 @@
     "typescript-eslint": "^8.18.1",
     "vitest": "^4.1.11"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
 }
