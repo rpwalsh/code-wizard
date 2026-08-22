@@ -5,11 +5,12 @@ import type {
   TestResult,
   TraceResult,
   TrainingMode,
-} from '@forge/core';
-import { affordancesFor, isGreen } from '@forge/core';
-import type { Exercise, Hint } from '@forge/exercises';
-import { attemptWorkspace, orderedHints, testVisibility } from '@forge/exercises';
-import type { Attempt, MasteryChange } from '@forge/learning';
+} from '@code-retrainer/core';
+import type { Prediction } from '@code-retrainer/core';
+import { affordancesFor, isGreen, isPredictionCorrect } from '@code-retrainer/core';
+import type { Exercise, Hint } from '@code-retrainer/exercises';
+import { attemptWorkspace, orderedHints, testVisibility } from '@code-retrainer/exercises';
+import type { Attempt, MasteryChange } from '@code-retrainer/learning';
 import {
   abandonAttempt,
   applyObservation,
@@ -21,9 +22,9 @@ import {
   recordEvent,
   reinforceRetention,
   startAttempt,
-} from '@forge/learning';
-import type { ProgressStore, StoredReview } from '@forge/storage';
-import { scheduleNext } from '@forge/curriculum';
+} from '@code-retrainer/learning';
+import type { ProgressStore, StoredReview } from '@code-retrainer/storage';
+import { scheduleNext } from '@code-retrainer/curriculum';
 
 export interface SessionDependencies {
   readonly runtime: LanguageRuntime;
@@ -79,6 +80,17 @@ export interface SessionState {
   /** True when the mode forbids hints entirely (spec §9). */
   readonly hintsAllowed: boolean;
   readonly documentationAllowed: boolean;
+  /** A claim the learner has made and not yet had judged. */
+  readonly pendingPrediction: Prediction | null;
+  /** Every prediction this attempt has had judged, oldest first. */
+  readonly predictions: readonly PredictionRecord[];
+}
+
+/** A judged prediction, as the workspace shows it back. */
+export interface PredictionRecord {
+  readonly about: Prediction['about'];
+  readonly predicted: string;
+  readonly correct: boolean;
 }
 
 /**
@@ -100,6 +112,8 @@ export class ExerciseSession {
 
   #attempt: Attempt;
   #snapshot: SessionState | null = null;
+  /** A claim awaiting the run that will judge it. */
+  #pending: { readonly prediction: Prediction; readonly at: string } | null = null;
   #activity: SessionActivity = 'idle';
   #lastRun: ExecutionResult | null = null;
   #lastTests: TestResult | null = null;
@@ -169,6 +183,14 @@ export class ExerciseSession {
       remainingHints: affordances.hints ? this.#hints.length - this.#revealed : 0,
       solved: this.#attempt.outcome === 'solved',
       completion: this.#completion,
+      pendingPrediction: this.#pending?.prediction ?? null,
+      predictions: this.#attempt.events
+        .filter((event) => event.type === 'prediction')
+        .map((event) => ({
+          about: event.about,
+          predicted: event.predicted,
+          correct: event.correct,
+        })),
       hintsAllowed: affordances.hints,
       documentationAllowed: affordances.documentation,
     };
@@ -258,6 +280,47 @@ export class ExerciseSession {
 
   // -- actions ------------------------------------------------------------
 
+  /**
+   * Commit to what the machine will do, before finding out.
+   *
+   * Nothing is recorded yet: a prediction only means something once the run
+   * it describes has happened, so it is held until then. Predicting again
+   * before running replaces the claim rather than stacking up two.
+   */
+  predict(prediction: Prediction): void {
+    this.#pending = { prediction, at: this.#now() };
+    this.#emit();
+  }
+
+  /** Withdraw an unjudged prediction. */
+  clearPrediction(): void {
+    if (!this.#pending) return;
+    this.#pending = null;
+    this.#emit();
+  }
+
+  /**
+   * Judge a held prediction against what actually happened.
+   *
+   * The event carries the time the claim was made, not the time it was
+   * judged, so a replay puts it where it belongs: before the run.
+   */
+  #resolvePrediction(
+    about: Prediction['about'],
+    outcome: { readonly stdout: string } | { readonly green: boolean },
+  ): void {
+    const held = this.#pending;
+    if (!held || held.prediction.about !== about) return;
+    this.#pending = null;
+    this.#record({
+      type: 'prediction',
+      at: held.at,
+      about,
+      predicted: held.prediction.predicted,
+      correct: isPredictionCorrect(held.prediction, outcome),
+    });
+  }
+
   async run(): Promise<ExecutionResult> {
     return this.#busy('running', async () => {
       const result = await this.#deps.runtime.execute({
@@ -266,6 +329,7 @@ export class ExerciseSession {
       });
 
       this.#lastRun = result;
+      this.#resolvePrediction('output', { stdout: result.stdout });
       this.#record({
         type: 'run',
         at: this.#now(),
@@ -285,6 +349,9 @@ export class ExerciseSession {
 
       this.#lastTests = result;
       const green = isGreen(result);
+      // Judged before the test event is recorded, so the log reads in the
+      // order the learner lived it: claim, then verdict.
+      this.#resolvePrediction('tests', { green });
       this.#record({
         type: 'test',
         at: this.#now(),

@@ -1,5 +1,5 @@
 {
-  "name": "@forge/curriculum",
+  "name": "@code-retrainer/curriculum",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,11 +12,12 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/exercises": "*",
-    "@forge/learning": "*"
+    "@code-retrainer/core": "*",
+    "@code-retrainer/exercises": "*",
+    "@code-retrainer/learning": "*"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

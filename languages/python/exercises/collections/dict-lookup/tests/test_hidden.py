@@ -2,7 +2,7 @@
 
 import pytest
 
-from forge_expect import expect_equal
+from retrainer.expect import expect_equal
 from main import get_balance, total_balance
 
 

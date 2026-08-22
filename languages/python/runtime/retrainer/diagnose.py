@@ -3,7 +3,7 @@
 Always available: it needs nothing beyond the interpreter, so the editor gutter
 never depends on the learner having installed a linter.
 
-Usage: python forge_diagnose.py <report-path> <file> [<file> ...]
+Usage: python retrainer/diagnose.py <report-path> <file> [<file> ...]
 """
 
 from __future__ import annotations
@@ -70,7 +70,7 @@ def diagnose(root: str, paths: list[str]) -> list[dict[str, object]]:
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
-        print("usage: forge_diagnose.py <report-path> <file>...", file=sys.stderr)
+        print("usage: retrainer/diagnose.py <report-path> <file>...", file=sys.stderr)
         return 2
     report_path, *paths = argv
     root = os.getcwd()

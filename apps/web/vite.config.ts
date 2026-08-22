@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   // Relative asset URLs, so the same build works at a domain root, under a
-  // GitHub Pages project path (/forge/), and from Electron's file:// loader.
+  // GitHub Pages project path (/code-retrainer/), and from Electron's file:// loader.
   base: './',
   plugins: [react()],
   worker: { format: 'es' },

@@ -1,7 +1,7 @@
-import { masteryDimensions } from '@forge/core';
-import { slotLabel } from '@forge/curriculum';
-import type { Exercise } from '@forge/exercises';
-import type { Dashboard } from '@forge/session';
+import { masteryDimensions } from '@code-retrainer/core';
+import { slotLabel } from '@code-retrainer/curriculum';
+import type { Exercise } from '@code-retrainer/exercises';
+import type { Dashboard } from '@code-retrainer/session';
 
 import type { Platform } from '../platform/index.ts';
 

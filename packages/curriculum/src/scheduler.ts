@@ -1,4 +1,4 @@
-import type { MasteryObservation } from '@forge/learning';
+import type { MasteryObservation } from '@code-retrainer/learning';
 
 /**
  * Spaced repetition state for one skill (spec §21).

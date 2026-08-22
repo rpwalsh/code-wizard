@@ -1,6 +1,6 @@
-import type { Exercise } from '@forge/exercises';
-import type { FluencyHistory } from '@forge/learning';
-import type { CompletionReport } from '@forge/session';
+import type { Exercise } from '@code-retrainer/exercises';
+import type { FluencyHistory } from '@code-retrainer/learning';
+import type { CompletionReport } from '@code-retrainer/session';
 
 interface CompleteProps {
   readonly report: CompletionReport;

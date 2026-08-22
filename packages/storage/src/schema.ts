@@ -79,7 +79,7 @@ export class SchemaTooNewError extends Error {
   constructor(found: number, supported: number) {
     super(
       `This progress database is at schema version ${found}, but this build only understands ${supported}. ` +
-        'Update Forge rather than letting an older build write to it.',
+        'Update Code Retrainer rather than letting an older build write to it.',
     );
     this.name = 'SchemaTooNewError';
   }

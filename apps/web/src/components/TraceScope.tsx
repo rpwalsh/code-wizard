@@ -1,5 +1,5 @@
-import type { TraceResult, TraceStep } from '@forge/core';
-import { stateAt } from '@forge/core';
+import type { TraceResult, TraceStep } from '@code-retrainer/core';
+import { stateAt } from '@code-retrainer/core';
 import { useEffect, useMemo, useState } from 'react';
 
 interface TraceScopeProps {

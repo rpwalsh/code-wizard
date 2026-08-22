@@ -14,15 +14,14 @@
  *   blank-page  the starter code withdrawn — produce it from nothing
  *   simulation  the tests withdrawn too; you decide when it is correct
  */
-export const trainingModes = [
-  'learn',
-  'practice',
-  'fluency',
-  'blank-page',
-  'simulation',
-] as const;
+export const trainingModes = ['learn', 'practice', 'fluency', 'blank-page', 'simulation'] as const;
 
 export type TrainingMode = (typeof trainingModes)[number];
+
+/** Whether a string from outside — a URL, a form, stored state — names a mode. */
+export function isTrainingMode(value: string): value is TrainingMode {
+  return trainingModes.some((mode) => mode === value);
+}
 
 /**
  * The rung a mode sits on, from 0 (fully assisted) upward.

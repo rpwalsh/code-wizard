@@ -27,7 +27,7 @@ export async function runRuntimeCommand(args: readonly string[], flags: Flags): 
       return list();
     default:
       console.error(style.red(`Unknown runtime command "${subcommand ?? ''}".`));
-      console.error('Try: forge runtime doctor');
+      console.error('Try: code-retrainer runtime doctor');
       return 2;
   }
 }
@@ -49,7 +49,7 @@ async function doctor(flags: Flags): Promise<number> {
       return 2;
     }
     const runtime = registry.get(languageId);
-    console.log(heading(`Forge Runtime Diagnostics — ${runtime.metadata().displayName}`));
+    console.log(heading(`Code Retrainer Runtime Diagnostics — ${runtime.metadata().displayName}`));
     const diagnosis = await runtime.doctor();
     console.log(formatDiagnosis(diagnosis));
     allReady &&= diagnosis.ready;

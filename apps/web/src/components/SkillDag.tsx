@@ -1,4 +1,4 @@
-import type { SkillMap, SkillNode } from '@forge/session';
+import type { SkillMap, SkillNode } from '@code-retrainer/session';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { DagLayout } from './dag-layout.ts';

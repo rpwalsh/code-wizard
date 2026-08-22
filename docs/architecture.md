@@ -36,10 +36,15 @@ Everything above `LanguageRuntime` is language-agnostic. There is no `if (langua
 anywhere outside `languages/` and the one registry call that names the concrete runtimes.
 
 This is not aesthetic, and it is no longer untested. There are two runtimes now: one spawns a real
-interpreter, one runs CPython compiled to WebAssembly. They share the entire Python support layer —
-`forge_report.py` and `forge_expect.py` run unmodified in both and emit identical structured JSON —
-and `tests/cross-runtime.test.ts` puts the whole curriculum through both and requires identical
-verdicts. If they ever disagreed, a learner on the website and a learner on the desktop would be
+interpreter, one runs CPython compiled to WebAssembly. They share the entire Python support layer — the
+`retrainer` package (`report`, `expect`, `trace`, `diagnose`) runs unmodified in both and emits
+identical structured JSON — and `tests/cross-runtime.test.ts` puts the whole curriculum through
+both and requires identical verdicts.
+
+It is a package rather than a set of prefixed top-level modules because the learner's workspace is
+on `sys.path` too: a bare `trace.py` would shadow the standard library, and `report.py` or
+`expect.py` would collide with anything they create. One name stays out of the way, and
+`from retrainer.expect import expect_equal` reads like a library instead of like a prefix. If they ever disagreed, a learner on the website and a learner on the desktop would be
 measured by different rulers, and every mastery number from either would be meaningless.
 
 Isolation maps across without changing the contract:
@@ -75,7 +80,7 @@ data that can be wrong or hostile.
   segments, NUL bytes and Windows reserved device names, and verifying the resolved path stays
   inside the sandbox root.
 
-`forge runtime doctor` verifies these behaviours by exercising them, not by asserting that the code
+`code-retrainer runtime doctor` verifies these behaviours by exercising them, not by asserting that the code
 exists. It runs a program, trips a timeout, and floods an output buffer.
 
 ### A tradeoff worth naming
@@ -89,10 +94,10 @@ how tests run — is closed by `PYTEST_DISABLE_PLUGIN_AUTOLOAD` instead.
 
 ## 3. Test results are structured, never scraped
 
-Parsing human-readable pytest output is brittle and version-dependent. Forge ships a pytest plugin
+Parsing human-readable pytest output is brittle and version-dependent. Code Retrainer ships a pytest plugin
 that writes a versioned JSON document, and the TypeScript side reads that.
 
-Exercises may use `forge_expect` helpers, which raise an exception carrying the expected and
+Exercises may use `retrainer.expect` helpers, which raise an exception carrying the expected and
 received values as separate fields. That is what lets the panel show
 
 ```text
@@ -116,7 +121,7 @@ explanation.
 
 Adding an exercise never requires changing application code.
 
-`forge exercise validate` executes the content:
+`code-retrainer exercise validate` executes the content:
 
 - The reference solution must pass every test.
 - The starter must **fail** at least one — otherwise the exercise asks the learner to do nothing.
@@ -131,8 +136,8 @@ cannot silently rewrite a learner's history.
 
 ## 5. Mastery is not one number
 
-Eight dimensions: knowledge, recognition, recall, application, composition, speed, retention,
-independence.
+Ten dimensions: knowledge, recognition, recall, application, composition, debugging, transfer,
+speed, retention, independence.
 
 The product exists because these come apart. A senior engineer can score high on knowledge and
 recognition for Python dictionaries and near zero on recall — they know exactly what they want and
@@ -147,6 +152,23 @@ count: a conceptual nudge costs almost nothing, being handed the answer costs al
 Reading the reference solution zeroes the attempt's evidence weight entirely. A failure, by
 contrast, is never discounted — being unable to do it is unambiguous however much help was
 available.
+
+**Recall separates producing code from completing it.** A starter skeleton answers half the
+question before it is asked — which shape, which signature, which imports — so a solve with it in
+the editor is capped below the top of the dimension. Only the rungs that hand over an empty file
+can reach it, and the reason attached to the observation names the next rung rather than only the
+gap.
+
+**Debugging and transfer are graded from different things than the rest.** Debugging comes from a
+red-to-green transition, scaled by how many red runs it took, or directly from a bug-fix exercise.
+Transfer needs history rather than the attempt: it counts only the first time an exercise is seen,
+and only when its skills were practised elsewhere first. That history is derived from the attempt
+log at grading time, so changing what counts as prior experience re-reads it rather than needing it
+to have been recorded differently.
+
+**Knowledge is earned only by prediction.** Saying in advance what the machine will do, and being
+right, is the one signal in the system that distinguishes understanding the code from the code
+happening to work — and the only way an onboarding claim can be corrected downward by reality.
 
 **Readiness is a different question from mastery.** Whether a prerequisite is satisfied well enough
 to _attempt_ dependent work is weighted toward knowledge, recognition and application; headline
@@ -252,8 +274,8 @@ together — a stored snapshot would freeze history against whatever the rules w
   rather than a live connection.
 - **A second language.** The runtime abstraction is now tested by two Python runtimes, which is a
   real test of the boundary but not the same as a second language.
-- **Knowledge and recognition grading.** Nothing currently produces evidence for those two
-  dimensions; they are seeded by the onboarding prior and otherwise left alone rather than inferred
-  from unrelated signals.
-- **Browser end-to-end tests.** The runtime is tested against a real interpreter under Node, and the
-  UI is typechecked and built, but no headless browser drives the actual screens yet.
+- **Recognition grading.** Nothing currently produces evidence for it; it is seeded by the
+  onboarding prior and otherwise left alone rather than inferred from unrelated signals. Knowledge
+  used to be in the same position and is now earned by prediction.
+- **Language friction.** Comparing how long the same idea takes in two languages needs a second
+  language runtime first.

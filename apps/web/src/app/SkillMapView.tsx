@@ -1,4 +1,4 @@
-import type { Constraint, SkillMap, SkillNode } from '@forge/session';
+import type { Constraint, SkillMap, SkillNode } from '@code-retrainer/session';
 import { useState } from 'react';
 
 import { SkillDag } from '../components/SkillDag.tsx';

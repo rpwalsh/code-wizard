@@ -1,7 +1,7 @@
-import type { JsonObject, JsonValue, TraceEvent, TraceStep } from '@forge/core';
-import { isJsonObject, parseJson, readNumber, readString } from '@forge/core';
+import type { JsonObject, JsonValue, TraceEvent, TraceStep } from '@code-retrainer/core';
+import { isJsonObject, parseJson, readNumber, readString } from '@code-retrainer/core';
 
-/** The document `forge_trace.py` writes. */
+/** The document `retrainer/trace.py` writes. */
 export interface TraceDocument {
   readonly steps: readonly TraceStep[];
   readonly truncated: boolean;

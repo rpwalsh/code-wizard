@@ -7,12 +7,12 @@ export type { Platform, PlatformProgress } from './types.ts';
 /** Injected by Electron's preload script; absent in a browser. */
 declare global {
   interface Window {
-    forgeDesktop?: DesktopBridge;
+    codeRetrainerDesktop?: DesktopBridge;
   }
 }
 
 /**
- * Choose how this copy of Forge talks to the machine.
+ * Choose how this copy of Code Retrainer talks to the machine.
  *
  * Detection is a capability check rather than a user-agent sniff: the desktop
  * build announces itself by injecting a bridge, and everything else is the web.
@@ -20,7 +20,7 @@ declare global {
 export async function createPlatform(
   report: (progress: PlatformProgress) => void = () => {},
 ): Promise<Platform> {
-  if (typeof window !== 'undefined' && window.forgeDesktop) {
+  if (typeof window !== 'undefined' && window.codeRetrainerDesktop) {
     const { createDesktopPlatform } = await import('./desktop.ts');
     return createDesktopPlatform(report);
   }

@@ -1,4 +1,4 @@
-import type { ValidationIssue, ValidationReport } from '@forge/exercises';
+import type { ValidationIssue, ValidationReport } from '@code-retrainer/exercises';
 import {
   attemptWorkspace,
   orderedHints,
@@ -6,7 +6,7 @@ import {
   testVisibility,
   validateCatalog,
   validateExercise,
-} from '@forge/exercises';
+} from '@code-retrainer/exercises';
 
 import { createContext, relativeToRepository } from '../context.ts';
 import { formatTestResult } from '../format-results.ts';
@@ -36,7 +36,7 @@ export async function runExerciseCommand(args: readonly string[], flags: Flags):
       return run(rest[0], flags);
     default:
       console.error(style.red(`Unknown exercise command "${subcommand ?? ''}".`));
-      console.error('Try: forge exercise list | show <id> | validate | run <id>');
+      console.error('Try: code-retrainer exercise list | show <id> | validate | run <id>');
       return 2;
   }
 }
@@ -71,7 +71,7 @@ async function list(flags: Flags): Promise<number> {
 
 async function show(id: string | undefined): Promise<number> {
   if (!id) {
-    console.error(style.red('Usage: forge exercise show <id>'));
+    console.error(style.red('Usage: code-retrainer exercise show <id>'));
     return 2;
   }
   const context = await createContext();
@@ -195,7 +195,7 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
 
 async function run(id: string | undefined, flags: Flags): Promise<number> {
   if (!id) {
-    console.error(style.red('Usage: forge exercise run <id> [--solution]'));
+    console.error(style.red('Usage: code-retrainer exercise run <id> [--solution]'));
     return 2;
   }
 

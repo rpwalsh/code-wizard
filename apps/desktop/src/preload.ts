@@ -14,7 +14,7 @@ import { DESKTOP_CHANNELS } from '../../web/src/platform/bridge.ts';
  */
 const allowed = new Set<string>(DESKTOP_CHANNELS);
 
-contextBridge.exposeInMainWorld('forgeDesktop', {
+contextBridge.exposeInMainWorld('codeRetrainerDesktop', {
   invoke<C extends DesktopChannel>(channel: C, payload: PayloadOf<C>): Promise<ResultOf<C>> {
     if (!allowed.has(channel)) {
       return Promise.reject(new Error(`Channel "${channel}" is not available.`));

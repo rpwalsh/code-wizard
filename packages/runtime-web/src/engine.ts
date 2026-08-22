@@ -1,5 +1,5 @@
-import type { JsonValue } from '@forge/core';
-import { parseJson } from '@forge/core';
+import type { JsonValue } from '@code-retrainer/core';
+import { parseJson } from '@code-retrainer/core';
 
 import type {
   BootConfig,
@@ -48,8 +48,8 @@ export interface PyodideLoadOptions {
 
 export type PyodideLoader = (options: PyodideLoadOptions) => Promise<PyodideApi>;
 
-const SUPPORT_DIR = '/forge';
-const REPORT_PATH = '/work/.forge/report.json';
+const SUPPORT_DIR = '/code-retrainer';
+const REPORT_PATH = '/work/.code-retrainer/report.json';
 
 /**
  * Drives CPython-in-WebAssembly.
@@ -76,7 +76,7 @@ export class PyodideEngine {
     const pyodide = await loadPyodide({
       ...(config.indexUrl ? { indexURL: config.indexUrl } : {}),
       // Anything Python writes during a run is captured inside the interpreter
-      // by `forge_web`, which is what the caller actually receives. These
+      // by `pyodide_host`, which is what the caller actually receives. These
       // handlers only catch what escapes that — boot chatter and interpreter
       // diagnostics — and must not reach the host's real streams.
       stdout: (text: string) => report(`python: ${text}`),
@@ -94,17 +94,21 @@ export class PyodideEngine {
     report('Preparing the workspace…');
     pyodide.FS.mkdirTree(SUPPORT_DIR);
     for (const [name, source] of Object.entries(config.supportModules)) {
+      // Keys are paths, not filenames: the support modules are a package, so
+      // `retrainer/` has to exist before anything can be written into it.
+      const slash = name.lastIndexOf('/');
+      if (slash > 0) pyodide.FS.mkdirTree(`${SUPPORT_DIR}/${name.slice(0, slash)}`);
       pyodide.FS.writeFile(`${SUPPORT_DIR}/${name}`, source);
     }
-    pyodide.FS.writeFile(`${SUPPORT_DIR}/forge_web.py`, config.forgeWebSource);
+    pyodide.FS.writeFile(`${SUPPORT_DIR}/pyodide_host.py`, config.hostSource);
 
-    pyodide.globals.set('_forge_support_dir', SUPPORT_DIR);
+    pyodide.globals.set('_retrainer_support_dir', SUPPORT_DIR);
     pyodide.runPython(`
 import sys
-if _forge_support_dir not in sys.path:
-    sys.path.insert(0, _forge_support_dir)
-import forge_web
-forge_web.reset_workspace()
+if _retrainer_support_dir not in sys.path:
+    sys.path.insert(0, _retrainer_support_dir)
+import pyodide_host
+pyodide_host.reset_workspace()
 `);
 
     const pythonVersion = String(
@@ -114,10 +118,10 @@ forge_web.reset_workspace()
       pyodide.runPython(`
 try:
     import pytest
-    _forge_pytest_version = pytest.__version__
+    _retrainer_pytest_version = pytest.__version__
 except Exception:
-    _forge_pytest_version = ""
-_forge_pytest_version
+    _retrainer_pytest_version = ""
+_retrainer_pytest_version
 `) ?? '',
     );
 
@@ -137,9 +141,9 @@ _forge_pytest_version
     // Payloads travel as globals rather than being interpolated into source.
     // Escaping learner code into a Python string literal is a code-injection
     // bug waiting to happen, and there is no reason to take the risk.
-    this.pyodide.globals.set('_forge_files', JSON.stringify(files));
+    this.pyodide.globals.set('_retrainer_files', JSON.stringify(files));
     this.pyodide.runPython(
-      'import forge_web\nforge_web.reset_workspace()\nforge_web.write_files(_forge_files)',
+      'import pyodide_host\npyodide_host.reset_workspace()\npyodide_host.write_files(_retrainer_files)',
     );
   }
 
@@ -151,12 +155,12 @@ _forge_pytest_version
     maxOutputBytes: number;
   }): ExecuteResult {
     this.#materialise(request.files);
-    this.pyodide.globals.set('_forge_entry', request.entryPoint);
-    this.pyodide.globals.set('_forge_argv', JSON.stringify(request.args));
-    this.pyodide.globals.set('_forge_stdin', request.stdin);
-    this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
+    this.pyodide.globals.set('_retrainer_entry', request.entryPoint);
+    this.pyodide.globals.set('_retrainer_argv', JSON.stringify(request.args));
+    this.pyodide.globals.set('_retrainer_stdin', request.stdin);
+    this.pyodide.globals.set('_retrainer_limit', request.maxOutputBytes);
     return this.#json(
-      'import forge_web\nforge_web.run_program(_forge_entry, _forge_argv, _forge_stdin, _forge_limit)',
+      'import pyodide_host\npyodide_host.run_program(_retrainer_entry, _retrainer_argv, _retrainer_stdin, _retrainer_limit)',
       toExecuteResult,
     );
   }
@@ -167,11 +171,11 @@ _forge_pytest_version
     maxOutputBytes: number;
   }): TestRunResult {
     this.#materialise(request.files);
-    this.pyodide.globals.set('_forge_targets', JSON.stringify(request.targets));
-    this.pyodide.globals.set('_forge_report_path', REPORT_PATH);
-    this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
+    this.pyodide.globals.set('_retrainer_targets', JSON.stringify(request.targets));
+    this.pyodide.globals.set('_retrainer_report_path', REPORT_PATH);
+    this.pyodide.globals.set('_retrainer_limit', request.maxOutputBytes);
     return this.#json(
-      'import forge_web\nforge_web.run_tests(_forge_targets, _forge_report_path, _forge_limit)',
+      'import pyodide_host\npyodide_host.run_tests(_retrainer_targets, _retrainer_report_path, _retrainer_limit)',
       toTestRunResult,
     );
   }
@@ -185,16 +189,16 @@ _forge_pytest_version
     maxOutputBytes: number;
   }): TraceRunResult {
     this.#materialise(request.files);
-    this.pyodide.globals.set('_forge_entry', request.entryPoint);
-    this.pyodide.globals.set('_forge_stdin', request.stdin);
-    this.pyodide.globals.set('_forge_max_steps', request.maxSteps);
-    this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
-    this.pyodide.globals.set('_forge_test', request.test ?? '');
+    this.pyodide.globals.set('_retrainer_entry', request.entryPoint);
+    this.pyodide.globals.set('_retrainer_stdin', request.stdin);
+    this.pyodide.globals.set('_retrainer_max_steps', request.maxSteps);
+    this.pyodide.globals.set('_retrainer_limit', request.maxOutputBytes);
+    this.pyodide.globals.set('_retrainer_test', request.test ?? '');
 
     const raw = this.pyodide.runPython(
       request.test
-        ? 'import forge_web\nforge_web.trace_test_case(_forge_test, _forge_max_steps, _forge_limit)'
-        : 'import forge_web\nforge_web.trace(_forge_entry, _forge_stdin, _forge_max_steps, _forge_limit)',
+        ? 'import pyodide_host\npyodide_host.trace_test_case(_retrainer_test, _retrainer_max_steps, _retrainer_limit)'
+        : 'import pyodide_host\npyodide_host.trace(_retrainer_entry, _retrainer_stdin, _retrainer_max_steps, _retrainer_limit)',
     );
     if (typeof raw !== 'string') {
       throw new Error(`Expected a trace document from Python, received ${typeof raw}.`);
@@ -207,8 +211,11 @@ _forge_pytest_version
     paths: readonly string[];
   }): DiagnoseResult {
     this.#materialise(request.files);
-    this.pyodide.globals.set('_forge_paths', JSON.stringify(request.paths));
-    return this.#json('import forge_web\nforge_web.diagnose(_forge_paths)', toDiagnoseResult);
+    this.pyodide.globals.set('_retrainer_paths', JSON.stringify(request.paths));
+    return this.#json(
+      'import pyodide_host\npyodide_host.diagnose(_retrainer_paths)',
+      toDiagnoseResult,
+    );
   }
 
   /**

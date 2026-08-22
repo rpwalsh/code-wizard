@@ -1,15 +1,16 @@
-import type { TrainingMode } from '@forge/core';
-import { affordancesFor, isGreen } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
-import type { FluencyHistory } from '@forge/learning';
-import { buildHistory } from '@forge/learning';
-import type { SessionState } from '@forge/session';
-import { ExerciseSession } from '@forge/session';
+import type { TrainingMode } from '@code-retrainer/core';
+import { affordancesFor, isGreen } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
+import type { FluencyHistory } from '@code-retrainer/learning';
+import { buildHistory } from '@code-retrainer/learning';
+import type { SessionState } from '@code-retrainer/session';
+import { ExerciseSession } from '@code-retrainer/session';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { Complete, formatDuration } from '../components/Complete.tsx';
 import { Editor } from '../components/Editor.tsx';
 import { Hints } from '../components/Hints.tsx';
+import { Predict, PredictionVerdict } from '../components/Predict.tsx';
 import type { Command } from '../components/Palette.tsx';
 import { Results } from '../components/Results.tsx';
 import { TraceScope } from '../components/TraceScope.tsx';
@@ -218,6 +219,12 @@ export function Workspace({
         <aside className="brief" aria-label="Task" hidden={focus !== 'write'}>
           <Prompt exercise={exercise} />
 
+          <Predict
+            pending={state.pendingPrediction}
+            onPredict={(prediction) => session.predict(prediction)}
+            onClear={() => session.clearPrediction()}
+          />
+
           <section>
             <p className="label">Skills</p>
             <ul className="skill-dots" style={{ marginTop: 8 }}>
@@ -290,6 +297,7 @@ export function Workspace({
             />
           ) : (
             <>
+              <PredictionVerdict pending={state.pendingPrediction} history={state.predictions} />
               <Results
                 result={state.lastTests}
                 busy={state.activity === 'testing'}

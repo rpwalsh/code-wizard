@@ -1,5 +1,5 @@
-import type { SkillMastery } from '@forge/core';
-import type { Attempt } from '@forge/learning';
+import type { SkillMastery } from '@code-retrainer/core';
+import type { Attempt } from '@code-retrainer/learning';
 
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
 import { assertImportable, selectDue, SNAPSHOT_FORMAT } from './progress-store.ts';

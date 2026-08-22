@@ -1,7 +1,7 @@
-import type { Skill, SkillMastery } from '@forge/core';
-import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@forge/core';
-import type { Exercise, ExerciseKind } from '@forge/exercises';
-import type { MasteryObservation } from '@forge/learning';
+import type { Skill, SkillMastery } from '@code-retrainer/core';
+import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
+import type { Exercise, ExerciseKind } from '@code-retrainer/exercises';
+import type { MasteryObservation } from '@code-retrainer/learning';
 import { describe, expect, it } from 'vitest';
 
 import type { ExerciseHistory, LearnerState } from './recommender.ts';

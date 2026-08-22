@@ -1,5 +1,5 @@
 {
-  "name": "@forge/runtime-web",
+  "name": "@code-retrainer/runtime-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,11 +16,12 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/python": "*",
+    "@code-retrainer/core": "*",
+    "@code-retrainer/python": "*",
     "pyodide": "^314.0.5"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

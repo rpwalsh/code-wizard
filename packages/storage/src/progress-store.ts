@@ -1,5 +1,5 @@
-import type { SkillMastery } from '@forge/core';
-import type { Attempt } from '@forge/learning';
+import type { SkillMastery } from '@code-retrainer/core';
+import type { Attempt } from '@code-retrainer/learning';
 
 /**
  * Spaced-repetition state as stored. Structurally identical to the curriculum
@@ -25,7 +25,7 @@ export interface ProgressSnapshot {
   readonly attempts: readonly Attempt[];
 }
 
-export const SNAPSHOT_FORMAT = 'forge-progress';
+export const SNAPSHOT_FORMAT = 'code-retrainer-progress';
 
 /**
  * Everything the application needs from persistence.
@@ -53,7 +53,7 @@ export interface ProgressStore {
   saveAttempt(attempt: Attempt): Promise<void>;
   countAttempts(): Promise<number>;
 
-  /** Everything, for `.forgepack` export (spec §42). */
+  /** Everything, for `.retrainerpack` export (spec §42). */
   exportAll(): Promise<ProgressSnapshot>;
   /** Replace everything. Refuses a foreign or newer snapshot. */
   importAll(snapshot: ProgressSnapshot): Promise<void>;
@@ -72,7 +72,7 @@ export class SnapshotFormatError extends Error {
 export function assertImportable(snapshot: ProgressSnapshot, supportedVersion: number): void {
   if (snapshot.format !== SNAPSHOT_FORMAT) {
     throw new SnapshotFormatError(
-      `Not a Forge progress export (format: ${String(snapshot.format)}).`,
+      `Not a Code Retrainer progress export (format: ${String(snapshot.format)}).`,
     );
   }
   if (snapshot.schemaVersion > supportedVersion) {

@@ -85,6 +85,49 @@ test('closed-book mode really is closed book', async ({ page }) => {
   await expect(page.getByText('Closed book. That is the point of this mode.')).toBeVisible();
 });
 
+test('the blank-page rung really hands over an empty file', async ({ page }) => {
+  await start(page);
+  await page.getByLabel('Training mode').selectOption('blank-page');
+  await page
+    .getByRole('button', { name: /Safe account lookup/ })
+    .first()
+    .click();
+
+  await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
+  // The skeleton is gone, but the file and the tests that import it are not:
+  // withdrawing the file itself would withdraw the exercise.
+  await expect(page.getByRole('button', { name: 'main.py' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'tests/test_lookup.py' })).toBeVisible();
+  await expect(page.locator('.monaco-editor')).not.toContainText('def get_balance');
+});
+
+test('a prediction is held until the run that judges it', async ({ page }) => {
+  test.slow();
+  await start(page);
+  await page
+    .getByRole('button', { name: /Safe account lookup/ })
+    .first()
+    .click();
+  await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
+
+  // The claim is made beside the prompt, before running — which is the only
+  // screen where predicting means anything, and the regression this covers:
+  // it was first built into a panel that only appears after a run.
+  await expect(page.getByText('Before you run it')).toBeVisible();
+  await page.getByRole('button', { name: 'This will pass' }).click();
+  await expect(page.getByText('You said it would').first()).toBeVisible();
+  await expect(page.getByText('pass the tests').first()).toBeVisible();
+
+  await page.getByRole('button', { name: /^Test/ }).click();
+
+  // The starter is a stub, so the claim was wrong — and being wrong is the
+  // measurement working, not a punishment.
+  await expect(page.getByText('You expected something else.')).toBeVisible({ timeout: 220_000 });
+  await expect(page.getByText('You said it would')).toHaveCount(0);
+  // And it is not coloured as a failure: being wrong is the measurement working.
+  await expect(page.locator('.predict__verdict--wrong')).toBeVisible();
+});
+
 test('draws the skill graph as a DAG', async ({ page }) => {
   await start(page);
   await page.getByRole('button', { name: 'Skill map' }).click();

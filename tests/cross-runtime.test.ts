@@ -1,16 +1,16 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { LanguageRuntime, TestCaseResult } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
+import type { LanguageRuntime, TestCaseResult } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
 import {
   attemptWorkspace,
   ExerciseCatalog,
   solutionWorkspace,
   testVisibility,
-} from '@forge/exercises';
-import { discoverPython, PythonRuntime, pythonExercisesDir } from '@forge/python';
-import { nodeChannel, PyodideRuntime } from '@forge/runtime-web';
+} from '@code-retrainer/exercises';
+import { discoverPython, PythonRuntime, pythonExercisesDir } from '@code-retrainer/python';
+import { nodeChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**

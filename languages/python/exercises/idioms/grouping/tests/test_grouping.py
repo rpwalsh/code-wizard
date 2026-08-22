@@ -1,6 +1,6 @@
 import pytest
 
-from forge_expect import expect_equal
+from retrainer.expect import expect_equal
 from main import balances, busiest_account, group_by_account
 
 TRANSACTIONS = [

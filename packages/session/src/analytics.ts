@@ -1,14 +1,14 @@
-import type { MasteryDimension, SkillGraph, SkillMastery } from '@forge/core';
-import { headlineMastery, masteryDimensions } from '@forge/core';
-import type { ExerciseCatalog } from '@forge/exercises';
-import type { Attempt } from '@forge/learning';
+import type { MasteryDimension, SkillGraph, SkillMastery } from '@code-retrainer/core';
+import { headlineMastery, masteryDimensions } from '@code-retrainer/core';
+import type { ExerciseCatalog } from '@code-retrainer/exercises';
+import type { Attempt } from '@code-retrainer/learning';
 import {
   applyObservation,
   emptyMastery,
   gradeAttempt,
   gradingContext,
   reinforceRetention,
-} from '@forge/learning';
+} from '@code-retrainer/learning';
 
 /**
  * The single number on the home screen.

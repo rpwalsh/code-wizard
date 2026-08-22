@@ -1,5 +1,5 @@
 {
-  "name": "@forge/session",
+  "name": "@code-retrainer/session",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,13 +12,14 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/curriculum": "*",
-    "@forge/exercises": "*",
-    "@forge/learning": "*",
-    "@forge/storage": "*"
+    "@code-retrainer/core": "*",
+    "@code-retrainer/curriculum": "*",
+    "@code-retrainer/exercises": "*",
+    "@code-retrainer/learning": "*",
+    "@code-retrainer/storage": "*"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

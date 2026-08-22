@@ -1,5 +1,5 @@
-import type { Diagnostic, DiagnosticSeverity, JsonObject, JsonValue } from '@forge/core';
-import { isJsonObject, readBoolean, readNumber, readString } from '@forge/core';
+import type { Diagnostic, DiagnosticSeverity, JsonObject, JsonValue } from '@code-retrainer/core';
+import { isJsonObject, readBoolean, readNumber, readString } from '@code-retrainer/core';
 
 import type { DiagnoseResult, ExecuteResult, TestRunResult } from './protocol.ts';
 

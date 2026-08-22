@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 function onDisk(): { store: SqliteProgressStore; file: string } {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-store-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'code-retrainer-store-'));
   temporary.push(directory);
   const file = path.join(directory, 'nested', 'progress.db');
   return { store: SqliteProgressStore.open({ location: file }), file };
@@ -57,7 +57,7 @@ describe('SQLite specifics', () => {
     const { store, file } = onDisk();
     await store.close();
 
-    // Simulate a future Forge having upgraded this profile.
+    // Simulate a future Code Retrainer having upgraded this profile.
     const raw = new DatabaseSync(file);
     raw.exec(`PRAGMA user_version = ${LATEST_VERSION + 5}`);
     raw.close();

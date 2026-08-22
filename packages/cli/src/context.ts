@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { LanguageRuntime, SkillGraph } from '@forge/core';
-import { LanguageRegistry, SkillGraph as SkillGraphClass } from '@forge/core';
-import type { ExerciseCatalog } from '@forge/exercises';
-import { ExerciseCatalog as Catalog } from '@forge/exercises';
-import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@forge/python';
+import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
+import { LanguageRegistry, SkillGraph as SkillGraphClass } from '@code-retrainer/core';
+import type { ExerciseCatalog } from '@code-retrainer/exercises';
+import { ExerciseCatalog as Catalog } from '@code-retrainer/exercises';
+import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-retrainer/python';
 
 /** Repository root, resolved from this file rather than from the cwd. */
 export const repositoryRoot = path.resolve(

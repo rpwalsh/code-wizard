@@ -1,10 +1,10 @@
-"""pytest plugin that emits a structured JSON report for Forge.
+"""pytest plugin that emits a structured JSON report for Code Retrainer.
 
 Parsing human-readable pytest output is brittle and version-dependent, so the
 runtime adapter never does it. This plugin writes one JSON document describing
 every test case, which the TypeScript side reads directly.
 
-Loaded explicitly with ``-p forge_report``; the runtime puts this directory on
+Loaded explicitly with ``-p retrainer.report``; the runtime puts this directory on
 PYTHONPATH. Only stable, non-wrapper hooks are used so the plugin keeps working
 across pytest majors.
 """
@@ -17,15 +17,15 @@ from typing import Any
 
 import pytest
 
-_REPORT_OPTION = "--forge-report"
+_REPORT_OPTION = "--retrainer-report"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup("forge", "Forge structured reporting")
+    group = parser.getgroup("retrainer", "Structured test reporting")
     group.addoption(
         _REPORT_OPTION,
         action="store",
-        dest="forge_report",
+        dest="report_path",
         default=None,
         metavar="PATH",
         help="Write a structured JSON report of the run to PATH.",
@@ -37,9 +37,9 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "concept(name): the skill this test probes, shown when it fails.",
     )
-    path = config.getoption("forge_report", default=None)
+    path = config.getoption("report_path", default=None)
     if path:
-        config.pluginmanager.register(ForgeReporter(path), "forge-reporter")
+        config.pluginmanager.register(Reporter(path), "retrainer-reporter")
 
 
 def _normalise(value: str) -> str:
@@ -52,7 +52,7 @@ def _split_nodeid(nodeid: str) -> tuple[str, str]:
     return file_path, remainder or file_path
 
 
-class ForgeReporter:
+class Reporter:
     """Collects per-test outcomes and writes them once the session ends."""
 
     def __init__(self, path: str) -> None:
@@ -179,16 +179,16 @@ def _describe(error: BaseException) -> str:
 def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
     record["exceptionType"] = type(error).__name__
 
-    expected = getattr(error, "forge_expected", None)
-    received = getattr(error, "forge_received", None)
+    expected = getattr(error, "retrainer_expected", None)
+    received = getattr(error, "retrainer_received", None)
     if expected is not None:
         record["expected"] = str(expected)
     if received is not None:
         record["received"] = str(received)
 
-    forge_message = getattr(error, "forge_message", None)
-    if forge_message:
-        record["message"] = str(forge_message)
+    retrainer_message = getattr(error, "retrainer_message", None)
+    if retrainer_message:
+        record["message"] = str(retrainer_message)
     elif expected is not None or received is not None:
         # The expected/received pair says everything the traceback would, and
         # says it in the learner's terms. Drop whatever logreport left behind.
@@ -196,7 +196,7 @@ def _attach_exception(record: dict[str, Any], error: BaseException) -> None:
     else:
         record["message"] = _shorten(_describe(error))
 
-    concept = getattr(error, "forge_concept", None)
+    concept = getattr(error, "retrainer_concept", None)
     if concept:
         record["concept"] = str(concept)
 

@@ -4,8 +4,8 @@ import type {
   TestRequest,
   TestResult,
   Workspace,
-} from '@forge/core';
-import { SkillGraph } from '@forge/core';
+} from '@code-retrainer/core';
+import { SkillGraph } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 import { ExerciseCatalog } from './catalog.ts';

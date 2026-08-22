@@ -1,5 +1,5 @@
-import type { MasteryDimension, MasteryVector, SkillMastery } from '@forge/core';
-import { clamp01, makeMastery, masteryDimensions, zeroMastery } from '@forge/core';
+import type { MasteryDimension, MasteryVector, SkillMastery } from '@code-retrainer/core';
+import { clamp01, makeMastery, masteryDimensions, zeroMastery } from '@code-retrainer/core';
 
 import type { MasteryObservation } from './grading.ts';
 

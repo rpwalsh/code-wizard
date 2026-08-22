@@ -1,4 +1,4 @@
-import { affordancesFor } from '@forge/core';
+import { affordancesFor } from '@code-retrainer/core';
 
 import type { Attempt, HintLevel } from './attempt.ts';
 
@@ -29,6 +29,10 @@ export interface FluencyMetrics {
   /** The most explicit hint reached, which matters more than the count. */
   readonly deepestHint: HintLevel | null;
   readonly documentationLookups: number;
+  readonly predictionsMade: number;
+  readonly predictionsCorrect: number;
+  /** Share of predictions that were right, or null if none were made. */
+  readonly predictionAccuracy: number | null;
   readonly solutionRevealed: boolean;
   readonly solved: boolean;
   /**
@@ -54,6 +58,8 @@ export function computeMetrics(attempt: Attempt): FluencyMetrics {
   let failedTestRuns = 0;
   let hintsRevealed = 0;
   let documentationLookups = 0;
+  let predictionsMade = 0;
+  let predictionsCorrect = 0;
   let solutionRevealed = false;
   let deepestHintIndex = -1;
   let firstRunAt: number | null = null;
@@ -81,6 +87,10 @@ export function computeMetrics(attempt: Attempt): FluencyMetrics {
         break;
       case 'documentation':
         documentationLookups += 1;
+        break;
+      case 'prediction':
+        predictionsMade += 1;
+        if (event.correct) predictionsCorrect += 1;
         break;
       case 'solution-revealed':
         solutionRevealed = true;
@@ -114,6 +124,9 @@ export function computeMetrics(attempt: Attempt): FluencyMetrics {
     hintsRevealed,
     deepestHint: deepestHintIndex >= 0 ? (HINT_ORDER[deepestHintIndex] ?? null) : null,
     documentationLookups,
+    predictionsMade,
+    predictionsCorrect,
+    predictionAccuracy: predictionsMade === 0 ? null : predictionsCorrect / predictionsMade,
     solutionRevealed,
     solved,
     independent,

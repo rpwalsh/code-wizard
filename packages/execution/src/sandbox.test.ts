@@ -42,7 +42,9 @@ describe('workspace path safety', () => {
   it('accepts ordinary relative paths', () => {
     expect(assertSafeRelativePath('main.py')).toBe('main.py');
     expect(assertSafeRelativePath('tests/test_main.py')).toBe('tests/test_main.py');
-    expect(assertSafeRelativePath('.forge/report.json')).toBe('.forge/report.json');
+    expect(assertSafeRelativePath('.code-retrainer/report.json')).toBe(
+      '.code-retrainer/report.json',
+    );
   });
 
   it('normalises backslash separators to POSIX', () => {
@@ -50,15 +52,17 @@ describe('workspace path safety', () => {
   });
 
   it('keeps resolved paths inside the root', () => {
-    const root = path.join(os.tmpdir(), 'forge-root');
+    const root = path.join(os.tmpdir(), 'code-retrainer-root');
     expect(resolveInside(root, 'a/b.py')).toBe(path.resolve(root, 'a', 'b.py'));
     expect(() => resolveInside(root, '../sibling/b.py')).toThrow(WorkspacePathError);
   });
 
   it('does not confuse a sibling directory sharing a name prefix', () => {
-    // `forge-root-evil` starts with `forge-root`; a naive prefix check passes it.
-    const root = path.join(os.tmpdir(), 'forge-root');
-    expect(() => resolveInside(root, '../forge-root-evil/x.py')).toThrow(WorkspacePathError);
+    // `code-retrainer-root-evil` starts with `code-retrainer-root`; a naive prefix check passes it.
+    const root = path.join(os.tmpdir(), 'code-retrainer-root');
+    expect(() => resolveInside(root, '../code-retrainer-root-evil/x.py')).toThrow(
+      WorkspacePathError,
+    );
   });
 });
 
@@ -130,21 +134,21 @@ describe('environment allowlisting', () => {
         PATH: '/usr/bin',
         ANTHROPIC_API_KEY: 'secret',
         AWS_SECRET_ACCESS_KEY: 'secret',
-        FORGE_INTERNAL_TOKEN: 'secret',
+        RETRAINER_INTERNAL_TOKEN: 'secret',
       },
     });
     expect(environment.PATH).toBe('/usr/bin');
     expect(environment.ANTHROPIC_API_KEY).toBeUndefined();
     expect(environment.AWS_SECRET_ACCESS_KEY).toBeUndefined();
-    expect(environment.FORGE_INTERNAL_TOKEN).toBeUndefined();
+    expect(environment.RETRAINER_INTERNAL_TOKEN).toBeUndefined();
   });
 
   it('does not leak the real process environment by default', () => {
-    process.env.FORGE_TEST_LEAK_CANARY = 'leaked';
+    process.env.RETRAINER_TEST_LEAK_CANARY = 'leaked';
     try {
-      expect(buildSandboxEnvironment().FORGE_TEST_LEAK_CANARY).toBeUndefined();
+      expect(buildSandboxEnvironment().RETRAINER_TEST_LEAK_CANARY).toBeUndefined();
     } finally {
-      delete process.env.FORGE_TEST_LEAK_CANARY;
+      delete process.env.RETRAINER_TEST_LEAK_CANARY;
     }
   });
 

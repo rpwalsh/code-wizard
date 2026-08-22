@@ -1,5 +1,5 @@
-import type { SkillMastery } from '@forge/core';
-import type { Attempt } from '@forge/learning';
+import type { SkillMastery } from '@code-retrainer/core';
+import type { Attempt } from '@code-retrainer/learning';
 
 import { MemoryProgressStore } from './memory-store.ts';
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
@@ -10,7 +10,7 @@ import { LATEST_VERSION } from './version.ts';
  * What may be written to a store.
  *
  * IndexedDB serialises with structured clone, which accepts a wider set than
- * JSON — but everything Forge stores is plain data, and naming that keeps the
+ * JSON — but everything Code Retrainer stores is plain data, and naming that keeps the
  * write path checked.
  */
 type StorableRecord = string | SkillMastery | StoredReview | Attempt;
@@ -20,7 +20,7 @@ interface StoreReplacement {
   readonly records: readonly (readonly [IDBValidKey, StorableRecord])[];
 }
 
-const DATABASE_NAME = 'forge-progress';
+const DATABASE_NAME = 'code-retrainer-progress';
 const DATABASE_VERSION = 1;
 
 const STORES = {
@@ -57,7 +57,7 @@ export class IndexedDbProgressStore implements ProgressStore {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error ?? new Error('IndexedDB open failed'));
       request.onblocked = () =>
-        reject(new Error('Another Forge tab is holding an older database version open.'));
+        reject(new Error('Another Code Retrainer tab is holding an older database version open.'));
     });
     return new IndexedDbProgressStore(database);
   }

@@ -2,7 +2,7 @@
 /**
  * Inline the Python support files into TypeScript modules.
  *
- * The browser build has no filesystem, so it cannot read `forge_report.py` off
+ * The browser build has no filesystem, so it cannot read `retrainer/report.py` off
  * disk the way the desktop runtime does. Rather than couple the packages to a
  * bundler feature (Vite's `?raw`), the sources are embedded into checked-in
  * modules by this script, and a test asserts they have not drifted.
@@ -27,15 +27,16 @@ const targets = [
       'exercise cannot behave differently depending on where it runs.',
     ].join('\n'),
     files: [
-      { constant: 'FORGE_REPORT_PY', source: 'languages/python/runtime/forge_report.py' },
-      { constant: 'FORGE_EXPECT_PY', source: 'languages/python/runtime/forge_expect.py' },
-      { constant: 'FORGE_TRACE_PY', source: 'languages/python/runtime/forge_trace.py' },
+      { constant: 'INIT_PY', source: 'languages/python/runtime/retrainer/__init__.py' },
+      { constant: 'REPORT_PY', source: 'languages/python/runtime/retrainer/report.py' },
+      { constant: 'EXPECT_PY', source: 'languages/python/runtime/retrainer/expect.py' },
+      { constant: 'TRACE_PY', source: 'languages/python/runtime/retrainer/trace.py' },
     ],
   },
   {
     output: 'packages/runtime-web/src/python-sources.generated.ts',
     banner: 'The in-WASM host helpers, inlined as a string.',
-    files: [{ constant: 'FORGE_WEB_PY', source: 'packages/runtime-web/python/forge_web.py' }],
+    files: [{ constant: 'PYODIDE_HOST_PY', source: 'packages/runtime-web/python/pyodide_host.py' }],
   },
 ];
 

@@ -19,10 +19,15 @@ import type {
   TestVisibility,
   TraceRequest,
   TraceResult,
-} from '@forge/core';
-import { redactHiddenTests, summarise } from '@forge/core';
-import type { ProcessOutcome, Sandbox } from '@forge/execution';
-import { buildSandboxEnvironment, resolveLimits, runProcess, withSandbox } from '@forge/execution';
+} from '@code-retrainer/core';
+import { redactHiddenTests, summarise } from '@code-retrainer/core';
+import type { ProcessOutcome, Sandbox } from '@code-retrainer/execution';
+import {
+  buildSandboxEnvironment,
+  resolveLimits,
+  runProcess,
+  withSandbox,
+} from '@code-retrainer/execution';
 
 import type { PythonInterpreter } from './discovery.ts';
 import { discoverPython, MINIMUM_PYTHON, PythonNotFoundError } from './discovery.ts';
@@ -30,9 +35,9 @@ import { parseReport, toTestCases } from './report.ts';
 import { parseTrace } from './trace-report.ts';
 import { pythonDocumentationDir, pythonSupportDir } from './paths.ts';
 
-const REPORT_PATH = '.forge/report.json';
-const DIAGNOSTIC_PATH = '.forge/diagnostics.json';
-const TRACE_PATH = '.forge/trace.json';
+const REPORT_PATH = '.code-retrainer/report.json';
+const DIAGNOSTIC_PATH = '.code-retrainer/diagnostics.json';
+const TRACE_PATH = '.code-retrainer/trace.json';
 
 /**
  * Flags applied to every interpreter launch:
@@ -50,7 +55,7 @@ const BASE_FLAGS = ['-u', '-B'] as const;
 export interface PythonRuntimeOptions {
   /** Override interpreter discovery (tests, or a pinned virtualenv). */
   readonly interpreter?: PythonInterpreter;
-  /** Directory holding `forge_report.py` and friends. */
+  /** Directory holding `retrainer/report.py` and friends. */
   readonly supportDir?: string;
   /** Parent directory for sandboxes. */
   readonly sandboxRoot?: string;
@@ -89,7 +94,7 @@ export class PythonRuntime implements LanguageRuntime {
         label: 'Python interpreter',
         status: 'fail',
         detail: error instanceof PythonNotFoundError ? error.message : String(error),
-        remedy: `Install Python ${MINIMUM_PYTHON.join('.')} or newer, or set FORGE_PYTHON.`,
+        remedy: `Install Python ${MINIMUM_PYTHON.join('.')} or newer, or set CODE_RETRAINER_PYTHON.`,
       });
       return { language: 'python', ready: false, checks };
     }
@@ -148,12 +153,12 @@ export class PythonRuntime implements LanguageRuntime {
     try {
       const result = await this.execute({
         workspace: {
-          files: [{ path: 'main.py', contents: 'print("forge-sandbox-ok")' }],
+          files: [{ path: 'main.py', contents: 'print("sandbox-ok")' }],
           entryPoint: 'main.py',
         },
         limits: { timeoutMs: 15_000 },
       });
-      const ok = result.outcome === 'completed' && result.stdout.includes('forge-sandbox-ok');
+      const ok = result.outcome === 'completed' && result.stdout.includes('sandbox-ok');
       return {
         id: 'sandbox',
         label: 'Workspace execution',
@@ -298,8 +303,8 @@ export class PythonRuntime implements LanguageRuntime {
             '-p',
             'no:cacheprovider',
             '-p',
-            'forge_report',
-            '--forge-report',
+            'retrainer.report',
+            '--retrainer-report',
             REPORT_PATH,
             '-q',
             '--no-header',
@@ -407,11 +412,11 @@ export class PythonRuntime implements LanguageRuntime {
         // differ only in which recorder entry point is called.
         const driver = [
           'import os, sys',
-          'sys.path.insert(0, os.environ["FORGE_SUPPORT"])',
-          'from forge_trace import trace_program, trace_test',
+          'sys.path.insert(0, os.environ["RETRAINER_SUPPORT"])',
+          'from retrainer.trace import trace_program, trace_test',
           'target, steps, limit, report = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]',
-          'if os.environ.get("FORGE_TRACE_TEST"):',
-          '    document = trace_test(os.getcwd(), os.environ["FORGE_TRACE_TEST"], steps, limit)',
+          'if os.environ.get("RETRAINER_TRACE_TEST"):',
+          '    document = trace_test(os.getcwd(), os.environ["RETRAINER_TRACE_TEST"], steps, limit)',
           'else:',
           '    document = trace_program(os.getcwd(), target, steps, limit, sys.stdin.read())',
           'os.makedirs(os.path.dirname(report), exist_ok=True)',
@@ -433,8 +438,8 @@ export class PythonRuntime implements LanguageRuntime {
           cwd: sandbox.root,
           env: {
             ...this.#environment(sandbox),
-            FORGE_SUPPORT: this.#supportDir(),
-            ...(request.test ? { FORGE_TRACE_TEST: request.test } : {}),
+            RETRAINER_SUPPORT: this.#supportDir(),
+            ...(request.test ? { RETRAINER_TRACE_TEST: request.test } : {}),
           },
           timeoutMs: limits.timeoutMs,
           maxOutputBytes: limits.maxOutputBytes,
@@ -602,7 +607,7 @@ export class PythonRuntime implements LanguageRuntime {
           args: [
             ...interpreter.prefixArgs,
             ...BASE_FLAGS,
-            path.join(this.#supportDir(), 'forge_diagnose.py'),
+            path.join(this.#supportDir(), 'retrainer/diagnose.py'),
             DIAGNOSTIC_PATH,
             ...targets,
           ],
@@ -649,7 +654,7 @@ export class PythonRuntime implements LanguageRuntime {
     return buildSandboxEnvironment({
       extra: {
         // The sandbox root first so `import main` finds the learner's file;
-        // the support directory second so `forge_expect` and the reporting
+        // the support directory second so `retrainer.expect` and the reporting
         // plugin are importable without being copied into the workspace.
         PYTHONPATH: [sandbox.root, this.#supportDir()].join(path.delimiter),
         PYTHONDONTWRITEBYTECODE: '1',
@@ -657,7 +662,7 @@ export class PythonRuntime implements LanguageRuntime {
         // Deterministic iteration order for sets and string-keyed dicts, so an
         // exercise cannot pass on one run and fail on the next.
         PYTHONHASHSEED: '0',
-        // Only plugins Forge asks for; a plugin the learner happens to have
+        // Only plugins Code Retrainer asks for; a plugin the learner happens to have
         // installed must not change how their exercise is graded.
         PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1',
       },

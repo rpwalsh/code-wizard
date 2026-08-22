@@ -1,4 +1,4 @@
-import type { TrajectoryPoint } from '@forge/session';
+import type { TrajectoryPoint } from '@code-retrainer/session';
 
 interface TrajectoryProps {
   readonly points: readonly TrajectoryPoint[];

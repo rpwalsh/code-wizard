@@ -1,5 +1,5 @@
-import type { JsonObject, JsonValue, Skill, TestVisibility, Workspace } from '@forge/core';
-import { isJsonObject, readBoolean, readNumber, readString } from '@forge/core';
+import type { JsonObject, JsonValue, Skill, TestVisibility, Workspace } from '@code-retrainer/core';
+import { isJsonObject, readBoolean, readNumber, readString } from '@code-retrainer/core';
 
 import type { Exercise, ExerciseKind, ExerciseTestFile, Hint, HintLevel } from './model.ts';
 import { hintLevels } from './model.ts';

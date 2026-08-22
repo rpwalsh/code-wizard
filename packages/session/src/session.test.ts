@@ -1,8 +1,8 @@
-import { headlineMastery, makeMastery, SkillGraph } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
-import { ExerciseCatalog } from '@forge/exercises';
-import type { ProgressStore } from '@forge/storage';
-import { MemoryProgressStore } from '@forge/storage';
+import { headlineMastery, makeMastery, SkillGraph } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
+import { ExerciseCatalog } from '@code-retrainer/exercises';
+import type { ProgressStore } from '@code-retrainer/storage';
+import { MemoryProgressStore } from '@code-retrainer/storage';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ExerciseSession } from './exercise-session.ts';
@@ -178,6 +178,90 @@ describe('editing', () => {
     session.updateFile('main.py', 'scribbles');
     session.resetFiles();
     expect(session.state.files.find((file) => file.path === 'main.py')?.contents).toBe('STUB');
+  });
+});
+
+describe('predicting', () => {
+  it('records nothing until the run that judges it', async () => {
+    const session = begin();
+    session.predict({ about: 'output', predicted: 'ran' });
+
+    expect(session.state.pendingPrediction).toEqual({ about: 'output', predicted: 'ran' });
+    expect(session.state.predictions).toEqual([]);
+
+    await session.run();
+    expect(session.state.pendingPrediction).toBeNull();
+    expect(session.state.predictions).toEqual([
+      { about: 'output', predicted: 'ran', correct: true },
+    ]);
+  });
+
+  it('marks a wrong claim wrong', async () => {
+    const session = begin();
+    session.predict({ about: 'output', predicted: 'something else' });
+    await session.run();
+    expect(session.state.predictions[0]?.correct).toBe(false);
+  });
+
+  it('replaces an unjudged claim rather than stacking two', () => {
+    const session = begin();
+    session.predict({ about: 'output', predicted: 'first' });
+    session.predict({ about: 'output', predicted: 'second' });
+    expect(session.state.pendingPrediction).toEqual({ about: 'output', predicted: 'second' });
+  });
+
+  it('can be withdrawn before it is judged', async () => {
+    const session = begin();
+    session.predict({ about: 'output', predicted: 'ran' });
+    session.clearPrediction();
+    await session.run();
+    expect(session.state.predictions).toEqual([]);
+  });
+
+  it('leaves a claim about the tests alone when the program is merely run', async () => {
+    // Running is not the event the learner made a claim about.
+    const session = begin();
+    session.predict({ about: 'tests', predicted: 'pass' });
+    await session.run();
+    expect(session.state.pendingPrediction).toEqual({ about: 'tests', predicted: 'pass' });
+
+    runtime.green = true;
+    await session.runTests();
+    expect(session.state.predictions).toEqual([
+      { about: 'tests', predicted: 'pass', correct: true },
+    ]);
+  });
+
+  it('records the claim before the run it describes', async () => {
+    // Otherwise a replay would show the learner predicting an answer they had
+    // already been shown.
+    const session = begin();
+    session.predict({ about: 'output', predicted: 'ran' });
+    tick += 1;
+    await session.run();
+
+    const kinds = session.attempt.events.map((event) => event.type);
+    expect(kinds.indexOf('prediction')).toBeLessThan(kinds.indexOf('run'));
+  });
+
+  it('is the only way the knowledge dimension is ever earned', async () => {
+    const session = begin();
+    session.predict({ about: 'tests', predicted: 'pass' });
+    runtime.green = true;
+    await session.runTests();
+
+    const report = session.state.completion;
+    const knowledge = report?.changes.find((change) => change.dimension === 'knowledge');
+    expect(knowledge?.to).toBeGreaterThan(knowledge?.from ?? 0);
+    expect(report?.reasons.join(' ')).toMatch(/Predicted the outcome correctly 1 of 1/);
+  });
+
+  it('leaves knowledge unjudged when no claim was made', async () => {
+    const session = begin();
+    runtime.green = true;
+    await session.runTests();
+    const report = session.state.completion;
+    expect(report?.changes.some((change) => change.dimension === 'knowledge')).toBe(false);
   });
 });
 

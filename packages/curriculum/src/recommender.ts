@@ -1,6 +1,6 @@
-import type { SkillGraph, SkillMastery } from '@forge/core';
-import { headlineMastery, readiness } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
+import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
+import { headlineMastery, readiness } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
 
 import type { ReviewState } from './scheduler.ts';
 import { isDue, overdueDays } from './scheduler.ts';

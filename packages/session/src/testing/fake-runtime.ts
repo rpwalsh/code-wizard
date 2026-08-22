@@ -4,7 +4,7 @@ import type {
   TestRequest,
   TestResult,
   Workspace,
-} from '@forge/core';
+} from '@code-retrainer/core';
 
 export interface FakeRuntime extends LanguageRuntime {
   /** Flip to make the next test run pass. */

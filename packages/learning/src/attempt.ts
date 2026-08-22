@@ -1,4 +1,4 @@
-import type { TrainingMode } from '@forge/core';
+import type { TrainingMode } from '@code-retrainer/core';
 
 /**
  * Everything the learning engine knows about one sitting with one exercise.
@@ -34,6 +34,23 @@ export type AttemptEvent =
    * product wants, so metrics do not discount it.
    */
   | { readonly type: 'trace'; readonly at: string }
+  /**
+   * A claim about what the machine will do, made before it does it.
+   *
+   * The only event recorded *before* the thing it describes. Committing to an
+   * answer first is what turns running the code into a test of the learner's
+   * model rather than a lookup — and it is the only evidence the system ever
+   * gets that they understand what they wrote, as opposed to that it works.
+   */
+  | {
+      readonly type: 'prediction';
+      readonly at: string;
+      /** Whether the claim was about the program's output or the tests' verdict. */
+      readonly about: 'output' | 'tests';
+      /** Kept so an attempt can be replayed with the wrong answer visible. */
+      readonly predicted: string;
+      readonly correct: boolean;
+    }
   | { readonly type: 'documentation'; readonly at: string; readonly query: string }
   /** The learner gave up and read the reference solution. */
   | { readonly type: 'solution-revealed'; readonly at: string }

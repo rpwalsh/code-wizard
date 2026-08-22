@@ -1,5 +1,5 @@
 {
-  "name": "@forge/exercises",
+  "name": "@code-retrainer/exercises",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,11 +12,12 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
+    "@code-retrainer/core": "*",
     "yaml": "^2.6.1",
     "zod": "^3.24.1"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

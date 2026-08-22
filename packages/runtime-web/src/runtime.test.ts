@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Workspace } from '@forge/core';
+import type { Workspace } from '@code-retrainer/core';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { nodeChannel } from './channel.ts';
@@ -212,12 +212,12 @@ describe('PyodideRuntime testing', () => {
     expect(result.cases[0]?.message).toContain('NotImplementedError');
   }, 90_000);
 
-  it('surfaces structured expectations from forge_expect', async () => {
+  it('surfaces structured expectations from retrainer.expect', async () => {
     const result = await runtime.test({
       workspace: workspace({
         'main.py': 'def add(a, b):\n    return a * b\n',
         'tests/test_visible.py':
-          'from forge_expect import expect_equal\nfrom main import add\n\n\n' +
+          'from retrainer.expect import expect_equal\nfrom main import add\n\n\n' +
           'def test_adds():\n    expect_equal(add(2, 3), 5, concept="python.syntax.expressions")\n',
       }),
       visibility: { 'tests/test_visible.py': 'visible' },

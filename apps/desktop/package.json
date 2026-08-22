@@ -1,5 +1,5 @@
 {
-  "name": "@forge/desktop",
+  "name": "@code-retrainer/desktop",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,14 +10,15 @@
     "dev": "node scripts/dev.mjs"
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/exercises": "*",
-    "@forge/learning": "*",
-    "@forge/python": "*",
-    "@forge/storage": "*"
+    "@code-retrainer/core": "*",
+    "@code-retrainer/exercises": "*",
+    "@code-retrainer/learning": "*",
+    "@code-retrainer/python": "*",
+    "@code-retrainer/storage": "*"
   },
   "devDependencies": {
     "electron": "^43.4.1",
     "esbuild": "^0.25.12"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

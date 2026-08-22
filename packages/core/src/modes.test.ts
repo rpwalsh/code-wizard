@@ -36,8 +36,10 @@ describe('the withdrawal ladder', () => {
       const here = offersOf(trainingModes[rung]!);
 
       for (const offer of here) {
-        expect(below.has(offer), `${trainingModes[rung]} offers ${offer} but the rung below does not`)
-          .toBe(true);
+        expect(
+          below.has(offer),
+          `${trainingModes[rung]} offers ${offer} but the rung below does not`,
+        ).toBe(true);
       }
       expect(here.size).toBeLessThan(below.size);
     }

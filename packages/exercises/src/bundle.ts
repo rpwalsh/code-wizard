@@ -1,11 +1,11 @@
-import type { JsonValue, Skill } from '@forge/core';
-import { isJsonObject, parseJson, readNumber, readString, toError } from '@forge/core';
+import type { JsonValue, Skill } from '@code-retrainer/core';
+import { isJsonObject, parseJson, readNumber, readString, toError } from '@code-retrainer/core';
 
 import { toExercise, toSkill } from './bundle-parse.ts';
 import { ExerciseCatalog } from './catalog.ts';
 import type { Exercise } from './model.ts';
 
-export const BUNDLE_FORMAT = 'forge-content';
+export const BUNDLE_FORMAT = 'code-retrainer-content';
 export const BUNDLE_VERSION = 1;
 
 /**
@@ -74,7 +74,7 @@ export function toBundle(
  * Parse a bundle back into a catalogue.
  *
  * Validation is structural rather than exhaustive: a bundle is produced by
- * `forge content bundle` from already-validated exercises, so the job here is
+ * `code-retrainer content bundle` from already-validated exercises, so the job here is
  * to fail clearly on a stale, truncated or foreign file rather than to
  * re-litigate content rules the authoring pipeline already enforced.
  */
@@ -96,7 +96,7 @@ export function parseBundle(raw: string | JsonValue): ContentBundle {
 
   const format = readString(parsed, 'format');
   if (format !== BUNDLE_FORMAT) {
-    throw new BundleError(`Not a Forge content bundle (format: ${String(format)}).`);
+    throw new BundleError(`Not a Code Retrainer content bundle (format: ${String(format)}).`);
   }
 
   const version = readNumber(parsed, 'version');

@@ -2,7 +2,7 @@
 
 import pytest
 
-from forge_expect import expect_equal, expect_raises
+from retrainer.expect import expect_equal, expect_raises
 from main import Ledger
 
 

@@ -1,5 +1,5 @@
-import type { MasteryDimension, TrainingMode } from '@forge/core';
-import { affordancesFor } from '@forge/core';
+import type { MasteryDimension, TrainingMode } from '@code-retrainer/core';
+import { affordancesFor } from '@code-retrainer/core';
 
 import type { Attempt } from './attempt.ts';
 import type { FluencyMetrics } from './metrics.ts';
@@ -87,6 +87,21 @@ export function gradeAttempt(
   const recall = recallEvidence(metrics, attempt.mode);
   evidence.recall = recall.value;
   reasons.push(recall.reason);
+
+  // -- knowledge: did they know what the machine would do? -----------------
+  //
+  // The only place this dimension is ever earned. Everything else here
+  // measures whether the code worked; a prediction made before running is the
+  // only evidence that the learner knew *why* — and the only way a claim made
+  // at onboarding can ever be corrected downward by reality.
+  if (metrics.predictionAccuracy !== null) {
+    evidence.knowledge = round(metrics.predictionAccuracy);
+    reasons.push(
+      `Predicted the outcome correctly ${metrics.predictionsCorrect} of ` +
+        `${metrics.predictionsMade} ${metrics.predictionsMade === 1 ? 'time' : 'times'} ` +
+        'before running.',
+    );
+  }
 
   // -- composition: only where several pieces had to be combined ----------
   if (profile.skills.length > 1 || profile.difficulty >= 3) {

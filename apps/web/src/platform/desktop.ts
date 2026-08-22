@@ -12,17 +12,17 @@ import type {
   SkillMastery,
   TestRequest,
   TestResult,
-} from '@forge/core';
-import { SkillGraph } from '@forge/core';
-import { catalogFromBundle } from '@forge/exercises';
-import type { Attempt } from '@forge/learning';
-import type { ProgressSnapshot, ProgressStore, StoredReview } from '@forge/storage';
+} from '@code-retrainer/core';
+import { SkillGraph } from '@code-retrainer/core';
+import { catalogFromBundle } from '@code-retrainer/exercises';
+import type { Attempt } from '@code-retrainer/learning';
+import type { ProgressSnapshot, ProgressStore, StoredReview } from '@code-retrainer/storage';
 
 import type { DesktopBridge } from './bridge.ts';
 import type { Platform, PlatformProgress } from './types.ts';
 
 function bridge(): DesktopBridge {
-  const found = (window as { forgeDesktop?: DesktopBridge }).forgeDesktop;
+  const found = (window as { codeRetrainerDesktop?: DesktopBridge }).codeRetrainerDesktop;
   if (!found) throw new Error('The desktop bridge is unavailable.');
   return found;
 }

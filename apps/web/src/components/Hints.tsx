@@ -1,4 +1,4 @@
-import type { Hint, HintLevel } from '@forge/exercises';
+import type { Hint, HintLevel } from '@code-retrainer/exercises';
 
 interface HintsProps {
   readonly revealed: readonly Hint[];

@@ -1,5 +1,5 @@
 {
-  "name": "@forge/storage",
+  "name": "@code-retrainer/storage",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,10 +20,11 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/learning": "*"
+    "@code-retrainer/core": "*",
+    "@code-retrainer/learning": "*"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

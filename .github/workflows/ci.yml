@@ -48,6 +48,10 @@ jobs:
 
       - run: npm run build
 
+      # The two apps are outside the tsc solution, so `build` never sees
+      # them. Without this a type error in the UI reaches the bundler.
+      - run: npm run typecheck
+
       - name: Verify the Python toolchain is usable
         run: node packages/cli/dist/main.js runtime doctor
 
@@ -85,7 +89,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Test in a browser
-        run: npm run e2e --workspace @forge/web
+        run: npm run e2e --workspace @code-retrainer/web
 
       - uses: actions/upload-artifact@v4
         if: failure()

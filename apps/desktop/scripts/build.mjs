@@ -39,8 +39,8 @@ await esbuild.build({
   // esbuild emits ESM that may reference these; define them for the bundle.
   banner: {
     js: [
-      "import { createRequire as __forgeCreateRequire } from 'node:module';",
-      'const require = __forgeCreateRequire(import.meta.url);',
+      "import { createRequire as __retrainerCreateRequire } from 'node:module';",
+      'const require = __retrainerCreateRequire(import.meta.url);',
     ].join('\n'),
   },
 });

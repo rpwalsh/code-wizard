@@ -1,11 +1,16 @@
-import type { SkillGraph, SkillMastery } from '@forge/core';
-import { headlineMastery, weakestDimensions } from '@forge/core';
-import type { ExerciseHistory, LearnerState, Recommendation, SessionPlan } from '@forge/curriculum';
-import { planSession, recommend } from '@forge/curriculum';
-import type { ExerciseCatalog } from '@forge/exercises';
-import type { Attempt } from '@forge/learning';
-import { buildHistory, computeMetrics, independentCompletionRate } from '@forge/learning';
-import type { ProgressStore, StoredReview } from '@forge/storage';
+import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
+import { headlineMastery, weakestDimensions } from '@code-retrainer/core';
+import type {
+  ExerciseHistory,
+  LearnerState,
+  Recommendation,
+  SessionPlan,
+} from '@code-retrainer/curriculum';
+import { planSession, recommend } from '@code-retrainer/curriculum';
+import type { ExerciseCatalog } from '@code-retrainer/exercises';
+import type { Attempt } from '@code-retrainer/learning';
+import { buildHistory, computeMetrics, independentCompletionRate } from '@code-retrainer/learning';
+import type { ProgressStore, StoredReview } from '@code-retrainer/storage';
 
 import type { Constraint, FluencyReading, SkillMap, TrajectoryPoint } from './analytics.ts';
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';

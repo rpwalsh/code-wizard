@@ -1,7 +1,7 @@
-import type { SkillGraph, SkillMastery } from '@forge/core';
-import type { ClaimableDimension } from '@forge/core';
-import { makeMastery } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
+import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
+import type { ClaimableDimension } from '@code-retrainer/core';
+import { makeMastery } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
 
 /**
  * Onboarding (spec §30).

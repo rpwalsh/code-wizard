@@ -1,6 +1,11 @@
-import { SkillGraph } from '@forge/core';
-import { ExerciseCatalog, validateExercise } from '@forge/exercises';
-import { discoverPython, PythonRuntime, pythonExercisesDir, pythonSkills } from '@forge/python';
+import { SkillGraph } from '@code-retrainer/core';
+import { ExerciseCatalog, validateExercise } from '@code-retrainer/exercises';
+import {
+  discoverPython,
+  PythonRuntime,
+  pythonExercisesDir,
+  pythonSkills,
+} from '@code-retrainer/python';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**

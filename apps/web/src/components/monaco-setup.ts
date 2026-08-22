@@ -1,5 +1,5 @@
 /**
- * A Monaco build containing only what Forge uses.
+ * A Monaco build containing only what Code Retrainer uses.
  *
  * Importing the `monaco-editor` barrel pulls in every language it ships with —
  * ABAP, Solidity, Razor and eighty more — which is over 3 MB of grammars for a

@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { buildSandboxEnvironment, runProcess } from '@forge/execution';
+import { buildSandboxEnvironment, runProcess } from '@code-retrainer/execution';
 
 export interface PythonInterpreter {
   /** Executable to spawn, e.g. `py` or `python3`. */
@@ -31,7 +31,7 @@ def version_of(module):
         return None
     return str(getattr(loaded, "__version__", "unknown"))
 
-print("FORGE_PROBE" + json.dumps({
+print("RETRAINER_PROBE" + json.dumps({
     "executable": sys.executable,
     "version": "%d.%d.%d" % sys.version_info[:3],
     "versionTuple": list(sys.version_info[:3]),
@@ -47,7 +47,7 @@ interface Candidate {
 }
 
 function candidates(): Candidate[] {
-  const configured = process.env.FORGE_PYTHON?.trim();
+  const configured = process.env.CODE_RETRAINER_PYTHON?.trim();
   const list: Candidate[] = [];
   if (configured) list.push({ command: configured, prefixArgs: [] });
   if (os.platform() === 'win32') {
@@ -65,7 +65,7 @@ export class PythonNotFoundError extends Error {
   constructor(readonly attempted: readonly string[]) {
     super(
       `No usable Python ${MINIMUM_PYTHON.join('.')}+ interpreter found. Tried: ${attempted.join(', ')}. ` +
-        'Set FORGE_PYTHON to an interpreter path to override discovery.',
+        'Set CODE_RETRAINER_PYTHON to an interpreter path to override discovery.',
     );
     this.name = 'PythonNotFoundError';
   }
@@ -83,7 +83,7 @@ async function probe(candidate: Candidate): Promise<PythonInterpreter | null> {
 
   if (outcome.spawnError || outcome.exitCode !== 0) return null;
 
-  const marker = outcome.stdout.indexOf('FORGE_PROBE');
+  const marker = outcome.stdout.indexOf('RETRAINER_PROBE');
   if (marker < 0) return null;
 
   let payload: {
@@ -95,7 +95,7 @@ async function probe(candidate: Candidate): Promise<PythonInterpreter | null> {
     black: string | null;
   };
   try {
-    payload = JSON.parse(outcome.stdout.slice(marker + 'FORGE_PROBE'.length).trim());
+    payload = JSON.parse(outcome.stdout.slice(marker + 'RETRAINER_PROBE'.length).trim());
   } catch {
     return null;
   }

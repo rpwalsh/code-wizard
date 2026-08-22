@@ -1,6 +1,6 @@
-import type { LanguageRuntime, SkillGraph } from '@forge/core';
-import type { ExerciseCatalog } from '@forge/exercises';
-import type { ProgressStore } from '@forge/storage';
+import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
+import type { ExerciseCatalog } from '@code-retrainer/exercises';
+import type { ProgressStore } from '@code-retrainer/storage';
 
 /**
  * Everything the application needs from the machine it is running on.

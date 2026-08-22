@@ -1,4 +1,4 @@
-import type { Diagnostic } from '@forge/core';
+import type { Diagnostic } from '@code-retrainer/core';
 
 /**
  * The wire format between the page and the Pyodide worker.
@@ -14,8 +14,8 @@ export interface BootConfig {
    */
   readonly indexUrl?: string;
   /** Python source of the in-WASM host helpers. */
-  readonly forgeWebSource: string;
-  /** Support modules written to `/forge`, keyed by filename. */
+  readonly hostSource: string;
+  /** Support modules written under the support directory, keyed by relative path. */
   readonly supportModules: Readonly<Record<string, string>>;
   /** Packages to install with micripip before anything runs. */
   readonly packages?: readonly string[];

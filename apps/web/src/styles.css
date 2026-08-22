@@ -1,5 +1,5 @@
 /*
- * Forge — a professional instrument for building programming fluency.
+ * Code Retrainer — a professional instrument for building programming fluency.
  *
  * The rules this file holds itself to:
  *   Monochrome, with exactly one accent. Skills do not get colours.
@@ -1650,4 +1650,73 @@ kbd {
   background: var(--accent);
   width: 2px !important;
   margin-left: 3px;
+}
+
+/* ── Prediction ─────────────────────────────────────────────────────────
+ *
+ * Quiet by default. Committing to an answer is worth doing and not worth
+ * nagging about, so this reads as an available instrument rather than a
+ * prompt — and it never turns being wrong into a penalty, because being
+ * wrong here is the measurement working.
+ */
+.predict {
+  border-bottom: 1px solid var(--line);
+  padding: var(--space-3) var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+.predict--held {
+  background: var(--surface-raised);
+  border-left: 2px solid var(--accent);
+}
+.predict__label {
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.predict__claim {
+  color: var(--text);
+  font-size: 13px;
+}
+.predict__text,
+.predict__input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: var(--space-2);
+  white-space: pre-wrap;
+  width: 100%;
+  resize: vertical;
+}
+.predict__input:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1px;
+}
+.predict__hint {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.predict__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.predict__verdict {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.predict__verdict--right {
+  color: var(--pass);
+}
+/* Not red. A wrong prediction is information, not a failure. */
+.predict__verdict--wrong {
+  color: var(--warn);
+}
+.predict__verdict code {
+  font-family: var(--font-mono);
+  color: var(--text);
 }

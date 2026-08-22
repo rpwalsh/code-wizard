@@ -1,5 +1,5 @@
 {
-  "name": "@forge/python",
+  "name": "@code-retrainer/python",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,10 +20,11 @@
     }
   },
   "dependencies": {
-    "@forge/core": "*",
-    "@forge/execution": "*"
+    "@code-retrainer/core": "*",
+    "@code-retrainer/execution": "*"
   },
   "scripts": {
     "build": "tsc --build"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

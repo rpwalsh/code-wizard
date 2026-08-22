@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { ContentBundle } from '@forge/exercises';
-import { ExerciseCatalog, parseBundle, toBundle } from '@forge/exercises';
-import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@forge/python';
-import { SqliteProgressStore } from '@forge/storage/sqlite';
+import type { ContentBundle } from '@code-retrainer/exercises';
+import { ExerciseCatalog, parseBundle, toBundle } from '@code-retrainer/exercises';
+import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-retrainer/python';
+import { SqliteProgressStore } from '@code-retrainer/storage/sqlite';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 
 import type { DesktopChannel, PayloadOf, ResultOf } from '../../web/src/platform/bridge.ts';
@@ -112,7 +112,7 @@ function createWindow(): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: '#0f1115',
-    title: 'Forge',
+    title: 'Code Retrainer',
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),
       // The renderer gets no Node, an isolated context, and a sandbox. Its
@@ -132,7 +132,7 @@ function createWindow(): BrowserWindow {
   });
   window.webContents.on('will-navigate', (event) => event.preventDefault());
 
-  const devServer = process.env.FORGE_DEV_SERVER;
+  const devServer = process.env.CODE_RETRAINER_DEV_SERVER;
   if (devServer) {
     void window.loadURL(devServer);
     window.webContents.openDevTools({ mode: 'detach' });

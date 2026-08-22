@@ -1,5 +1,5 @@
 import dagre from '@dagrejs/dagre';
-import type { SkillMap } from '@forge/session';
+import type { SkillMap } from '@code-retrainer/session';
 
 export interface LaidOutNode {
   readonly skillId: string;

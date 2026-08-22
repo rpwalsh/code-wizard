@@ -1,6 +1,6 @@
-import { makeMastery } from '@forge/core';
-import type { Attempt } from '@forge/learning';
-import { recordEvent, startAttempt } from '@forge/learning';
+import { makeMastery } from '@code-retrainer/core';
+import type { Attempt } from '@code-retrainer/learning';
+import { recordEvent, startAttempt } from '@code-retrainer/learning';
 import { describe, expect, it } from 'vitest';
 
 import type { ProgressStore, StoredReview } from './progress-store.ts';
@@ -250,7 +250,7 @@ export function describeProgressStoreContract(
             reviews: [],
             attempts: [],
           }),
-        ).rejects.toThrow(/Not a Forge progress export/);
+        ).rejects.toThrow(/Not a Code Retrainer progress export/);
       });
     });
 

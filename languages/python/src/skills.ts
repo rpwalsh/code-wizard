@@ -1,5 +1,5 @@
-import type { Skill } from '@forge/core';
-import { SkillGraph } from '@forge/core';
+import type { Skill } from '@code-retrainer/core';
+import { SkillGraph } from '@code-retrainer/core';
 
 /**
  * The Python skill graph (spec §6, §31).

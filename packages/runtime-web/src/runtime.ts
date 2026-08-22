@@ -18,20 +18,20 @@ import type {
   TraceRequest,
   TraceResult,
   Workspace,
-} from '@forge/core';
+} from '@code-retrainer/core';
 import {
   assertSafeRelativePath,
   redactHiddenTests,
   toError,
   summarise,
   WorkspacePathError,
-} from '@forge/core';
-import { parseReport, parseTrace, toTestCases } from '@forge/python/report';
-import { FORGE_EXPECT_PY, FORGE_REPORT_PY, FORGE_TRACE_PY } from '@forge/python/support';
+} from '@code-retrainer/core';
+import { parseReport, parseTrace, toTestCases } from '@code-retrainer/python/report';
+import { EXPECT_PY, INIT_PY, REPORT_PY, TRACE_PY } from '@code-retrainer/python/support';
 
 import type { WorkerChannel } from './channel.ts';
 import { WorkerClient, WorkerTerminatedError } from './channel.ts';
-import { FORGE_WEB_PY } from './python-sources.generated.ts';
+import { PYODIDE_HOST_PY } from './python-sources.generated.ts';
 import type { BootResult, TestRunResult } from './protocol.ts';
 
 export interface PyodideRuntimeOptions {
@@ -120,11 +120,12 @@ export class PyodideRuntime implements LanguageRuntime {
         kind: 'boot',
         config: {
           ...(this.#options.indexUrl ? { indexUrl: this.#options.indexUrl } : {}),
-          forgeWebSource: FORGE_WEB_PY,
+          hostSource: PYODIDE_HOST_PY,
           supportModules: {
-            'forge_report.py': FORGE_REPORT_PY,
-            'forge_expect.py': FORGE_EXPECT_PY,
-            'forge_trace.py': FORGE_TRACE_PY,
+            'retrainer/__init__.py': INIT_PY,
+            'retrainer/report.py': REPORT_PY,
+            'retrainer/expect.py': EXPECT_PY,
+            'retrainer/trace.py': TRACE_PY,
           },
         },
       }),
@@ -279,7 +280,7 @@ export class PyodideRuntime implements LanguageRuntime {
   /**
    * Record what the program actually did, inside the worker.
    *
-   * The same `forge_trace` module the desktop runtime spawns a process for, so
+   * The same `retrainer.trace` module the desktop runtime spawns a process for, so
    * a learner stepping through a loop in a browser sees exactly what they
    * would see in the app. Tracing is roughly an order of magnitude slower than
    * running, so the deadline is generous — and still enforced by killing the
@@ -416,15 +417,15 @@ export class PyodideRuntime implements LanguageRuntime {
 
     const hello = await this.execute({
       workspace: {
-        files: [{ path: 'main.py', contents: 'print("forge-sandbox-ok")' }],
+        files: [{ path: 'main.py', contents: 'print("sandbox-ok")' }],
         entryPoint: 'main.py',
       },
     });
     checks.push({
       id: 'sandbox',
       label: 'Workspace execution',
-      status: hello.stdout.includes('forge-sandbox-ok') ? 'pass' : 'fail',
-      ...(hello.stdout.includes('forge-sandbox-ok') ? {} : { detail: hello.stderr.trim() }),
+      status: hello.stdout.includes('sandbox-ok') ? 'pass' : 'fail',
+      ...(hello.stdout.includes('sandbox-ok') ? {} : { detail: hello.stderr.trim() }),
     });
 
     const runaway = await this.execute({

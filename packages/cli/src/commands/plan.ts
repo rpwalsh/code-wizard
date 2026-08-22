@@ -1,5 +1,5 @@
-import type { SkillMastery } from '@forge/core';
-import type { ExperienceLevel } from '@forge/curriculum';
+import type { SkillMastery } from '@code-retrainer/core';
+import type { ExperienceLevel } from '@code-retrainer/curriculum';
 import {
   groupBySlot,
   planDiagnostic,
@@ -7,7 +7,7 @@ import {
   recommend,
   seedFromExperience,
   slotLabel,
-} from '@forge/curriculum';
+} from '@code-retrainer/curriculum';
 
 import type { CliContext } from '../context.ts';
 import { createContext } from '../context.ts';
@@ -48,7 +48,7 @@ export async function runPlanCommand(args: readonly string[], flags: Flags): Pro
       return next(context, level);
     default:
       console.error(style.red(`Unknown plan command "${subcommand}".`));
-      console.error('Try: forge plan session | next | diagnostic');
+      console.error('Try: code-retrainer plan session | next | diagnostic');
       return 2;
   }
 }

@@ -1,4 +1,4 @@
-import type { Workspace } from '@forge/core';
+import type { Workspace } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 import { discoverPython } from './discovery.ts';
@@ -176,16 +176,16 @@ describeIfPython('PythonRuntime.execute', () => {
   });
 
   it('does not expose the host environment to learner code', async () => {
-    process.env.FORGE_RUNTIME_SECRET = 'leaked';
+    process.env.RETRAINER_RUNTIME_SECRET = 'leaked';
     try {
       const result = await runtime.execute({
         workspace: workspace({
-          'main.py': 'import os; print(os.environ.get("FORGE_RUNTIME_SECRET", "absent"))',
+          'main.py': 'import os; print(os.environ.get("RETRAINER_RUNTIME_SECRET", "absent"))',
         }),
       });
       expect(result.stdout.trim()).toBe('absent');
     } finally {
-      delete process.env.FORGE_RUNTIME_SECRET;
+      delete process.env.RETRAINER_RUNTIME_SECRET;
     }
   });
 });
@@ -248,12 +248,12 @@ describeIfPytest('PythonRuntime.test', () => {
     expect(result.cases[0]?.message).toContain('NotImplementedError');
   });
 
-  it('surfaces structured expectations from the forge_expect helpers', async () => {
+  it('surfaces structured expectations from the retrainer.expect helpers', async () => {
     const result = await runtime.test({
       workspace: workspace({
         'main.py': 'def add(a, b):\n    return a * b\n',
         'tests/test_visible.py':
-          'from forge_expect import expect_equal\nfrom main import add\n\n\n' +
+          'from retrainer.expect import expect_equal\nfrom main import add\n\n\n' +
           'def test_adds():\n    expect_equal(add(2, 3), 5, concept="python.syntax.expressions")\n',
       }),
       visibility: { 'tests/test_visible.py': 'visible' },

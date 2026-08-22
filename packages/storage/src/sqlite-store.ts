@@ -2,15 +2,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-import type { MasteryDimension, MasteryVector, SkillMastery, TrainingMode } from '@forge/core';
+import type {
+  MasteryDimension,
+  MasteryVector,
+  SkillMastery,
+  TrainingMode,
+} from '@code-retrainer/core';
 import {
   isJsonObject,
   makeMastery,
   masteryDimensions,
   parseJson,
   trainingModes,
-} from '@forge/core';
-import type { Attempt, AttemptEvent, AttemptOutcome } from '@forge/learning';
+} from '@code-retrainer/core';
+import type { Attempt, AttemptEvent, AttemptOutcome } from '@code-retrainer/learning';
 
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
 import { assertImportable, SNAPSHOT_FORMAT } from './progress-store.ts';
@@ -77,7 +82,7 @@ export class SqliteProgressStore implements ProgressStore {
    */
   transaction<T>(body: () => T): T {
     const nested = this.#transactionDepth > 0;
-    const savepoint = `forge_sp_${this.#transactionDepth}`;
+    const savepoint = `retrainer_sp_${this.#transactionDepth}`;
 
     this.#database.exec(nested ? `SAVEPOINT ${savepoint}` : 'BEGIN');
     this.#transactionDepth += 1;

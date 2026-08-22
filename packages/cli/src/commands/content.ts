@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { bundleSizeBytes, parseBundle, toBundle } from '@forge/exercises';
+import { bundleSizeBytes, parseBundle, toBundle } from '@code-retrainer/exercises';
 
 import { createContext, relativeToRepository, repositoryRoot } from '../context.ts';
 import { columns, heading, indent, style, symbol } from '../terminal.ts';
@@ -25,7 +25,7 @@ export async function runContentCommand(args: readonly string[], flags: Flags): 
       return inspect(flags);
     default:
       console.error(style.red(`Unknown content command "${subcommand}".`));
-      console.error('Try: forge content bundle [--out <path>]');
+      console.error('Try: code-retrainer content bundle [--out <path>]');
       return 2;
   }
 }
@@ -81,7 +81,7 @@ async function inspect(flags: Flags): Promise<number> {
     raw = await fs.readFile(target, 'utf8');
   } catch {
     console.error(style.red(`No bundle at ${relativeToRepository(target)}.`));
-    console.error('Build one with: forge content bundle');
+    console.error('Build one with: code-retrainer content bundle');
     return 2;
   }
 

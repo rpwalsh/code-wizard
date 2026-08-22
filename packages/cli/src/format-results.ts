@@ -1,4 +1,4 @@
-import type { RuntimeDiagnosis, TestCaseResult, TestResult } from '@forge/core';
+import type { RuntimeDiagnosis, TestCaseResult, TestResult } from '@code-retrainer/core';
 
 import { columns, formatDuration, indent, style, symbol } from './terminal.ts';
 
@@ -67,7 +67,7 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'runtime-unavailable':
       return 'the language runtime is not available';
     case 'internal-error':
-      return 'Forge could not read the test report';
+      return 'Code Retrainer could not read the test report';
     case 'completed':
       return 'completed';
   }

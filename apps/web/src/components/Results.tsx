@@ -1,4 +1,4 @@
-import type { TestCaseResult, TestResult } from '@forge/core';
+import type { TestCaseResult, TestResult } from '@code-retrainer/core';
 import { useState } from 'react';
 
 interface ResultsProps {
@@ -183,7 +183,7 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'runtime-unavailable':
       return 'Python is not available.';
     case 'internal-error':
-      return 'Forge could not read the test results.';
+      return 'Code Retrainer could not read the test results.';
     case 'completed':
       return 'Completed.';
   }

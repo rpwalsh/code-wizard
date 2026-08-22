@@ -1,4 +1,4 @@
-import type { Exercise } from '@forge/exercises';
+import type { Exercise } from '@code-retrainer/exercises';
 
 import type { Recommendation } from './recommender.ts';
 

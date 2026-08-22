@@ -1,11 +1,11 @@
-import { SkillGraph } from '@forge/core';
-import { catalogFromBundle, parseBundle } from '@forge/exercises';
-import { browserChannel, PyodideRuntime } from '@forge/runtime-web';
+import { SkillGraph } from '@code-retrainer/core';
+import { catalogFromBundle, parseBundle } from '@code-retrainer/exercises';
+import { browserChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
 
 // Vite's `?worker` suffix compiles the module as a worker entry and hands back
 // a constructor, which guarantees it is in the build.
 import PyodideWorker from '../worker/pyodide-worker.ts?worker';
-import { IndexedDbProgressStore } from '@forge/storage/indexeddb';
+import { IndexedDbProgressStore } from '@code-retrainer/storage/indexeddb';
 
 import type { Platform, PlatformProgress } from './types.ts';
 
@@ -20,7 +20,7 @@ import type { Platform, PlatformProgress } from './types.ts';
 const PYODIDE_VERSION = '314.0.5';
 const PYODIDE_INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
-/** Where `forge content bundle` writes the curriculum. */
+/** Where `code-retrainer content bundle` writes the curriculum. */
 const CATALOG_URL = 'content/catalog.json';
 
 export async function createWebPlatform(
@@ -32,7 +32,7 @@ export async function createWebPlatform(
   if (!response.ok) {
     throw new Error(
       `Could not load the exercise catalogue (${response.status}). ` +
-        'The site may have been deployed without running `forge content bundle`.',
+        'The site may have been deployed without running `code-retrainer content bundle`.',
     );
   }
   const bundle = parseBundle(await response.text());

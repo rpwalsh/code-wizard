@@ -1,4 +1,4 @@
-import type { Skill } from '@forge/core';
+import type { Skill } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 import {

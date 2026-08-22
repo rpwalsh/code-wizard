@@ -10,8 +10,8 @@ import { runProcess } from './process-runner.ts';
  * output flooding, and process trees. They run against a real interpreter
  * because that is the only way the guarantees mean anything.
  */
-const python = process.env.FORGE_PYTHON ?? (os.platform() === 'win32' ? 'py' : 'python3');
-const prefix = process.env.FORGE_PYTHON ? [] : os.platform() === 'win32' ? ['-3'] : [];
+const python = process.env.CODE_RETRAINER_PYTHON ?? (os.platform() === 'win32' ? 'py' : 'python3');
+const prefix = process.env.CODE_RETRAINER_PYTHON ? [] : os.platform() === 'win32' ? ['-3'] : [];
 
 function run(script: string, overrides: Partial<Parameters<typeof runProcess>[0]> = {}) {
   return runProcess({
@@ -114,7 +114,7 @@ describe('runProcess', () => {
 
   it('reports a spawn failure rather than throwing', async () => {
     const outcome = await runProcess({
-      command: 'forge-definitely-not-a-real-binary',
+      command: 'code-retrainer-definitely-not-a-real-binary',
       args: [],
       cwd: os.tmpdir(),
       env: buildSandboxEnvironment(),
@@ -126,12 +126,14 @@ describe('runProcess', () => {
   });
 
   it('does not leak the host environment into the child', async () => {
-    process.env.FORGE_TEST_SECRET = 'do-not-leak';
+    process.env.RETRAINER_TEST_SECRET = 'do-not-leak';
     try {
-      const outcome = await run('import os; print(os.environ.get("FORGE_TEST_SECRET", "absent"))');
+      const outcome = await run(
+        'import os; print(os.environ.get("RETRAINER_TEST_SECRET", "absent"))',
+      );
       expect(outcome.stdout.trim()).toBe('absent');
     } finally {
-      delete process.env.FORGE_TEST_SECRET;
+      delete process.env.RETRAINER_TEST_SECRET;
     }
   });
 });

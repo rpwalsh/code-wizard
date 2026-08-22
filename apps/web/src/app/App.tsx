@@ -1,10 +1,10 @@
-import type { TrainingMode } from '@forge/core';
-import { trainingModes } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
-import type { ExperienceLevel } from '@forge/curriculum';
-import { seedFromExperience } from '@forge/curriculum';
-import type { Constraint, Dashboard, SkillMap } from '@forge/session';
-import { ProgressService } from '@forge/session';
+import type { TrainingMode } from '@code-retrainer/core';
+import { isTrainingMode, withdrawalLadder } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
+import type { ExperienceLevel } from '@code-retrainer/curriculum';
+import { seedFromExperience } from '@code-retrainer/curriculum';
+import type { Constraint, Dashboard, SkillMap } from '@code-retrainer/session';
+import { ProgressService } from '@code-retrainer/session';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Command } from '../components/Palette.tsx';
@@ -138,11 +138,11 @@ export function App() {
     const navigation: Command[] = [
       { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
       { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
-      ...trainingModes.map((candidate) => ({
-        id: `mode-${candidate}`,
-        name: `Switch to ${candidate} mode`,
-        disabled: candidate === mode,
-        run: () => setMode(candidate),
+      ...withdrawalLadder.map((rung) => ({
+        id: `mode-${rung.mode}`,
+        name: `${rung.name} — withdraws: ${rung.withdraws}`,
+        disabled: rung.mode === mode,
+        run: () => setMode(rung.mode),
       })),
       {
         id: 'font-up',
@@ -161,7 +161,7 @@ export function App() {
   if (failure) {
     return (
       <main className="boot">
-        <p className="boot__mark">Forge</p>
+        <p className="boot__mark">Code Retrainer</p>
         <p className="notice notice--error" role="alert">
           {failure}
         </p>
@@ -176,7 +176,7 @@ export function App() {
   if (!platform || !dashboard || !skillMap || onboarded === null) {
     return (
       <main className="boot" aria-busy="true">
-        <p className="boot__mark">Forge</p>
+        <p className="boot__mark">Code Retrainer</p>
         <p className="boot__status" role="status" aria-live="polite">
           {progress.message}
         </p>
@@ -191,7 +191,7 @@ export function App() {
       </a>
 
       <header className="topbar">
-        <span className="wordmark">Forge</span>
+        <span className="wordmark">Code Retrainer</span>
 
         <nav className="topbar__nav" aria-label="Sections">
           <button
@@ -230,11 +230,16 @@ export function App() {
             <select
               className="mode-select"
               value={mode}
-              onChange={(event) => setMode(event.target.value as TrainingMode)}
+              onChange={(event) => {
+                const chosen = event.target.value;
+                // Checked rather than asserted: the value comes back from the
+                // DOM as a plain string, and a cast would only be a promise.
+                if (isTrainingMode(chosen)) setMode(chosen);
+              }}
             >
-              {trainingModes.map((candidate) => (
-                <option key={candidate} value={candidate}>
-                  {candidate}
+              {withdrawalLadder.map((rung) => (
+                <option key={rung.mode} value={rung.mode} title={`Withdraws: ${rung.withdraws}`}>
+                  {rung.name}
                 </option>
               ))}
             </select>

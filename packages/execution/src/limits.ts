@@ -1,5 +1,5 @@
-import type { ExecutionLimits } from '@forge/core';
-import { defaultExecutionLimits } from '@forge/core';
+import type { ExecutionLimits } from '@code-retrainer/core';
+import { defaultExecutionLimits } from '@code-retrainer/core';
 
 /** Hard ceilings the application will not exceed regardless of what an exercise asks for. */
 export const maximumLimits: ExecutionLimits = Object.freeze({

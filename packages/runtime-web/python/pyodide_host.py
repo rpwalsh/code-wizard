@@ -6,7 +6,7 @@ or a pytest session — lives here. Every entry point returns a JSON string, so
 the boundary carries plain data rather than Python object proxies.
 
 This file is the browser counterpart of the process spawning that the desktop
-runtime does. The support modules it loads (``forge_report``, ``forge_expect``)
+runtime does. The support modules it loads (``retrainer.report``, ``retrainer.expect``)
 are the *same files* the desktop runtime puts on PYTHONPATH.
 """
 
@@ -24,7 +24,7 @@ import traceback
 from typing import Any
 
 WORKSPACE = "/work"
-SUPPORT = "/forge"
+SUPPORT = "/code-retrainer"
 
 __all__ = [
     "reset_workspace",
@@ -178,7 +178,7 @@ def run_program(entry_point: str, argv_json: str, stdin_text: str, limit: int) -
 
 
 def run_tests(targets_json: str, report_path: str, limit: int) -> str:
-    """Run pytest with the Forge reporting plugin loaded."""
+    """Run pytest with the Code Retrainer reporting plugin loaded."""
     _purge_workspace_modules()
     targets = json.loads(targets_json)
     status = -1
@@ -204,8 +204,8 @@ def run_tests(targets_json: str, report_path: str, limit: int) -> str:
                         "-p",
                         "no:cacheprovider",
                         "-p",
-                        "forge_report",
-                        "--forge-report",
+                        "retrainer.report",
+                        "--retrainer-report",
                         report_path,
                         *targets,
                     ]
@@ -234,12 +234,12 @@ def run_tests(targets_json: str, report_path: str, limit: int) -> str:
 def trace(entry_point: str, stdin_text: str, max_steps: int, limit: int) -> str:
     """Record an execution trace.
 
-    The tracer itself is the same ``forge_trace`` module the desktop runtime
+    The tracer itself is the same ``retrainer.trace`` module the desktop runtime
     runs in a subprocess — only the host differs, so a learner stepping through
     a loop in the browser sees exactly what they would see on the desktop.
     """
     _purge_workspace_modules()
-    from forge_trace import trace_program
+    from retrainer.trace import trace_program
 
     return trace_program(WORKSPACE, entry_point, max_steps, limit, stdin_text)
 
@@ -247,7 +247,7 @@ def trace(entry_point: str, stdin_text: str, max_steps: int, limit: int) -> str:
 def trace_test_case(node_id: str, max_steps: int, limit: int) -> str:
     """Record one test running, so a red test can be watched rather than read."""
     _purge_workspace_modules()
-    from forge_trace import trace_test
+    from retrainer.trace import trace_test
 
     return trace_test(WORKSPACE, node_id, max_steps, limit)
 

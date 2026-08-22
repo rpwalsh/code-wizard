@@ -1,4 +1,4 @@
-import type { ExperienceLevel } from '@forge/curriculum';
+import type { ExperienceLevel } from '@code-retrainer/curriculum';
 import { useState } from 'react';
 
 interface OnboardingProps {
@@ -50,7 +50,7 @@ export function Onboarding({ onChoose }: OnboardingProps) {
   return (
     <main className="onboarding">
       <div className="onboarding__inner">
-        <p className="boot__mark">Forge</p>
+        <p className="boot__mark">Code Retrainer</p>
         <h1 className="onboarding__question">How much Python have you written?</h1>
         <p className="onboarding__note">
           This only sets a starting point so the curriculum knows where to begin. Everything that

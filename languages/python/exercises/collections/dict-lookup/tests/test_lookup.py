@@ -1,6 +1,6 @@
 import pytest
 
-from forge_expect import expect_equal
+from retrainer.expect import expect_equal
 from main import get_balance, total_balance
 
 ACCOUNTS = {"acc-1": 1200, "acc-2": 0, "acc-3": -450}

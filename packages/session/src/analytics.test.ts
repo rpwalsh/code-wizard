@@ -1,8 +1,8 @@
-import { makeMastery, masteryDimensions, SkillGraph } from '@forge/core';
-import type { Exercise } from '@forge/exercises';
-import { ExerciseCatalog } from '@forge/exercises';
-import type { Attempt } from '@forge/learning';
-import { recordEvent, startAttempt } from '@forge/learning';
+import { makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
+import type { Exercise } from '@code-retrainer/exercises';
+import { ExerciseCatalog } from '@code-retrainer/exercises';
+import type { Attempt } from '@code-retrainer/learning';
+import { recordEvent, startAttempt } from '@code-retrainer/learning';
 import { describe, expect, it } from 'vitest';
 
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';
@@ -11,9 +11,7 @@ const NOW = new Date('2026-03-31T12:00:00.000Z');
 
 /** Every dimension at the same value. */
 function uniform(value: number) {
-  return makeMastery(
-    Object.fromEntries(masteryDimensions.map((dimension) => [dimension, value])),
-  );
+  return makeMastery(Object.fromEntries(masteryDimensions.map((dimension) => [dimension, value])));
 }
 
 const graph = SkillGraph.from([

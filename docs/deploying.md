@@ -1,6 +1,6 @@
 # Deploying
 
-Forge ships twice from one build: a static site anyone can host for nothing, and
+Code Retrainer ships twice from one build: a static site anyone can host for nothing, and
 a desktop app. The code is identical; only the `Platform` differs.
 
 ---
@@ -32,7 +32,7 @@ publishes it. The bundling step **refuses to emit while any exercise is
 broken**, so bad content fails the deploy rather than shipping a hole in the
 catalogue.
 
-Assets use relative URLs, so it works at `user.github.io/forge/` without
+Assets use relative URLs, so it works at `user.github.io/code-retrainer/` without
 configuration.
 
 ---
@@ -100,12 +100,12 @@ Run has to wait.
 ```bash
 npm run build          # packages
 npm run bundle         # curriculum
-npm run build --workspace @forge/web
-npm run build --workspace @forge/desktop
+npm run build --workspace @code-retrainer/web
+npm run build --workspace @code-retrainer/desktop
 cd apps/desktop && npx electron .
 ```
 
-`npm run dev --workspace @forge/desktop` runs it against the Vite dev server
+`npm run dev --workspace @code-retrainer/desktop` runs it against the Vite dev server
 instead, for UI work.
 
 The desktop build uses your **real** Python interpreter, which is faster than

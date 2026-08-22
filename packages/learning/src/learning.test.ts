@@ -1,4 +1,4 @@
-import { headlineMastery } from '@forge/core';
+import { headlineMastery } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 import type { Attempt, AttemptEvent, HintLevel } from './attempt.ts';
@@ -336,14 +336,24 @@ describe('grading context', () => {
   });
 
   it('ignores exercises that share no skill', () => {
-    const context = gradingContext([priorAttempt('a', 'ex.unrelated', 100)], target, skillsOf, at(0));
+    const context = gradingContext(
+      [priorAttempt('a', 'ex.unrelated', 100)],
+      target,
+      skillsOf,
+      at(0),
+    );
     expect(context.priorAttemptsAtSkill).toBe(0);
   });
 
   it('ignores attempts made after the one being graded', () => {
     // Grading is a replay over an append-only log, so it must see only what
     // had happened by then — otherwise re-deriving history changes it.
-    const context = gradingContext([priorAttempt('later', profile.id, -100)], target, skillsOf, at(0));
+    const context = gradingContext(
+      [priorAttempt('later', profile.id, -100)],
+      target,
+      skillsOf,
+      at(0),
+    );
     expect(context.priorAttemptsAtExercise).toBe(0);
   });
 });

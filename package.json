@@ -1,8 +1,8 @@
 {
-  "name": "forge",
+  "name": "code-retrainer",
   "version": "0.1.0",
   "private": true,
-  "description": "Code Fluency Training Platform — a language-agnostic deliberate-practice environment for building independent coding fluency.",
+  "description": "Code Fluency Training Platform \u2014 a language-agnostic deliberate-practice environment for building independent coding fluency.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -16,20 +16,20 @@
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
     "clean": "tsc --build --clean",
-    "typecheck": "tsc --build --dry --force",
+    "typecheck": "tsc --build && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/desktop/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "forge": "node --experimental-strip-types packages/cli/src/main.ts",
-    "verify": "npm run generate:check && npm run lint && npm run build && npm run test",
+    "code-retrainer": "node --experimental-strip-types packages/cli/src/main.ts",
+    "verify": "npm run generate:check && npm run lint && npm run typecheck && npm run test",
     "generate": "node scripts/generate-python-sources.mjs",
     "generate:check": "node scripts/generate-python-sources.mjs --check",
     "bundle": "node packages/cli/dist/main.js content bundle",
-    "web": "npm run build && npm run bundle && npm run build --workspace @forge/web",
-    "web:dev": "npm run bundle && npm run dev --workspace @forge/web",
-    "e2e": "npm run web && npm run e2e --workspace @forge/web"
+    "web": "npm run build && npm run bundle && npm run build --workspace @code-retrainer/web",
+    "web:dev": "npm run bundle && npm run dev --workspace @code-retrainer/web",
+    "e2e": "npm run web && npm run e2e --workspace @code-retrainer/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -44,5 +44,6 @@
   },
   "allowScripts": {
     "esbuild@0.25.12": true
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
 }

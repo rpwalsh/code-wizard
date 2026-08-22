@@ -47,7 +47,7 @@ async function writeExercise(
   files: Record<string, string> = {},
   manifest: string = MANIFEST,
 ): Promise<string> {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-fixture-'));
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'code-retrainer-fixture-'));
   created.push(root);
   const directory = path.join(root, 'example');
 
@@ -129,7 +129,7 @@ describe('loadExercise', () => {
   });
 
   it('reports a missing manifest', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-fixture-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'code-retrainer-fixture-'));
     created.push(root);
     await expect(loadExercise(root)).rejects.toThrow(/missing exercise.yaml/);
   });

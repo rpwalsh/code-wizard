@@ -10,19 +10,19 @@ import { runRuntimeCommand } from './commands/runtime.ts';
 import { style } from './terminal.ts';
 
 const USAGE = `
-${style.bold('forge')} — Code Fluency Training Platform toolkit
+${style.bold('code-retrainer')} — code fluency training toolkit
 
 ${style.bold('Usage')}
-  forge runtime doctor [--language <id>]     Check that a language toolchain is usable
-  forge exercise list [--language <id>]      List loadable exercises
-  forge exercise show <id>                   Print one exercise, including its hints
-  forge exercise validate [<id>] [--fast]    Validate exercise content
-  forge exercise run <id> [--solution]       Run an exercise's tests
-  forge curriculum check                     Check the skill graph and its coverage
-  forge plan session [--level <id>]          Build today's training session
-  forge plan next [--level <id>]             Explain what to practise next
-  forge plan diagnostic                      Show the onboarding diagnostic
-  forge content bundle [--out <path>]        Emit the curriculum as static JSON
+  code-retrainer runtime doctor [--language <id>]     Check that a language toolchain is usable
+  code-retrainer exercise list [--language <id>]      List loadable exercises
+  code-retrainer exercise show <id>                   Print one exercise, including its hints
+  code-retrainer exercise validate [<id>] [--fast]    Validate exercise content
+  code-retrainer exercise run <id> [--solution]       Run an exercise's tests
+  code-retrainer curriculum check                     Check the skill graph and its coverage
+  code-retrainer plan session [--level <id>]          Build today's training session
+  code-retrainer plan next [--level <id>]             Explain what to practise next
+  code-retrainer plan diagnostic                      Show the onboarding diagnostic
+  code-retrainer content bundle [--out <path>]        Emit the curriculum as static JSON
 
 ${style.bold('Options')}
   --help, -h        Show this message
@@ -85,7 +85,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
   } catch (error) {
     console.error(style.red(error instanceof Error ? error.message : String(error)));
-    if (process.env.FORGE_DEBUG && error instanceof Error && error.stack) {
+    if (process.env.CODE_RETRAINER_DEBUG && error instanceof Error && error.stack) {
       console.error(style.grey(error.stack));
     }
     return 1;

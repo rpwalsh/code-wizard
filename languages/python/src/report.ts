@@ -4,15 +4,15 @@ import type {
   TestCaseResult,
   TestStatus,
   TestVisibility,
-} from '@forge/core';
-import { isJsonObject, parseJson, readNumber, readObject, readString } from '@forge/core';
+} from '@code-retrainer/core';
+import { isJsonObject, parseJson, readNumber, readObject, readString } from '@code-retrainer/core';
 
-/** Shape written by `forge_report.py`. Versioned so the plugin can evolve. */
-export interface ForgeReportDocument {
+/** Shape written by `retrainer/report.py`. Versioned so the plugin can evolve. */
+export interface PytestReportDocument {
   readonly schema: number;
   readonly exitStatus: number;
   readonly collectionErrors: readonly CollectionError[];
-  readonly cases: readonly ForgeReportCase[];
+  readonly cases: readonly PytestReportCase[];
 }
 
 export interface CollectionError {
@@ -20,7 +20,7 @@ export interface CollectionError {
   readonly message: string;
 }
 
-export interface ForgeReportCase {
+export interface PytestReportCase {
   readonly id: string;
   readonly file: string;
   readonly name: string;
@@ -54,7 +54,7 @@ function toStatus(value: string | null): TestStatus | null {
  * learner code — so every field is narrowed rather than asserted. A malformed
  * case is dropped; a malformed document is refused.
  */
-export function parseReport(raw: string | JsonValue): ForgeReportDocument {
+export function parseReport(raw: string | JsonValue): PytestReportDocument {
   const parsed = typeof raw === 'string' ? parseJsonOrThrow(raw) : raw;
 
   if (!isJsonObject(parsed)) {
@@ -71,7 +71,7 @@ export function parseReport(raw: string | JsonValue): ForgeReportDocument {
     throw new ReportParseError('pytest report has no `cases` array');
   }
 
-  const cases: ForgeReportCase[] = [];
+  const cases: PytestReportCase[] = [];
   for (const candidate of rawCases) {
     const testCase = toReportCase(candidate);
     if (testCase) cases.push(testCase);
@@ -108,7 +108,7 @@ function toCollectionErrors(value: JsonValue | undefined): CollectionError[] {
   return errors;
 }
 
-function toReportCase(value: JsonValue): ForgeReportCase | null {
+function toReportCase(value: JsonValue): PytestReportCase | null {
   if (!isJsonObject(value)) return null;
 
   const id = readString(value, 'id');
@@ -153,7 +153,7 @@ function toLocation(source: JsonObject): { location?: { path: string; line: numb
  * the visibility the exercise declared for its file.
  */
 export function toTestCases(
-  document: ForgeReportDocument,
+  document: PytestReportDocument,
   visibility: Readonly<Record<string, TestVisibility>> = {},
 ): TestCaseResult[] {
   return document.cases.map((testCase) => {
@@ -177,7 +177,7 @@ export function toTestCases(
  * `test_transfer_unknown_account` reads better as
  * `transfer unknown account` in a results panel.
  */
-function displayName(testCase: ForgeReportCase): string {
+function displayName(testCase: PytestReportCase): string {
   const raw = testCase.name;
   const bare = raw.includes('::') ? (raw.split('::').at(-1) ?? raw) : raw;
   const [base, parameters] = splitParameters(bare);

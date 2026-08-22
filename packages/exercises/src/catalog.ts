@@ -1,4 +1,4 @@
-import type { SkillGraph } from '@forge/core';
+import type { SkillGraph } from '@code-retrainer/core';
 
 import { findExerciseDirectories, loadExercise, ExerciseLoadError } from './loader.ts';
 import type { Exercise } from './model.ts';

@@ -16,7 +16,7 @@ export async function runCurriculumCommand(
       return skills();
     default:
       console.error(style.red(`Unknown curriculum command "${subcommand}".`));
-      console.error('Try: forge curriculum check | skills');
+      console.error('Try: code-retrainer curriculum check | skills');
       return 2;
   }
 }

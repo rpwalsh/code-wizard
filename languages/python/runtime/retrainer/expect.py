@@ -1,6 +1,6 @@
 """Assertion helpers that carry structured expectation data.
 
-Plain ``assert`` works fine in Forge exercises, but pytest can only hand the
+Plain ``assert`` works fine in Code Retrainer exercises, but pytest can only hand the
 reporter a rendered string. These helpers raise an exception that carries the
 expected and received values as separate fields, so the test panel can show
 
@@ -19,7 +19,7 @@ import reprlib
 from typing import Any, Callable, NoReturn
 
 __all__ = [
-    "ForgeAssertionError",
+    "ExpectationError",
     "expect_equal",
     "expect_true",
     "expect_false",
@@ -34,7 +34,7 @@ _repr.maxlist = 20
 _repr.maxdict = 20
 
 
-class ForgeAssertionError(AssertionError):
+class ExpectationError(AssertionError):
     """An assertion failure with machine-readable expectation data."""
 
     def __init__(
@@ -50,10 +50,10 @@ class ForgeAssertionError(AssertionError):
         # author wrote. Keeping them apart lets the test panel stay quiet when
         # the author had nothing to add beyond the expected/received pair.
         super().__init__(message or summary)
-        self.forge_message = message
-        self.forge_expected = expected
-        self.forge_received = received
-        self.forge_concept = concept
+        self.retrainer_message = message
+        self.retrainer_expected = expected
+        self.retrainer_received = received
+        self.retrainer_concept = concept
 
 
 def _render(value: Any) -> str:
@@ -70,7 +70,7 @@ def _fail(
     received: str | None,
     concept: str | None,
 ) -> NoReturn:
-    raise ForgeAssertionError(
+    raise ExpectationError(
         message,
         summary=summary,
         expected=expected,

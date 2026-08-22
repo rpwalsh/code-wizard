@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { JsonValue, Workspace, WorkspaceFile } from '@forge/core';
-import { toError } from '@forge/core';
+import type { JsonValue, Workspace, WorkspaceFile } from '@code-retrainer/core';
+import { toError } from '@code-retrainer/core';
 import { parse as parseYaml } from 'yaml';
 import type { ZodError } from 'zod';
 

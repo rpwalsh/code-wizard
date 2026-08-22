@@ -11,10 +11,10 @@ import type {
   SkillMastery,
   TestRequest,
   TestResult,
-} from '@forge/core';
-import type { ContentBundle } from '@forge/exercises';
-import type { Attempt } from '@forge/learning';
-import type { ProgressSnapshot, StoredReview } from '@forge/storage';
+} from '@code-retrainer/core';
+import type { ContentBundle } from '@code-retrainer/exercises';
+import type { Attempt } from '@code-retrainer/learning';
+import type { ProgressSnapshot, StoredReview } from '@code-retrainer/storage';
 
 /**
  * The desktop IPC contract, written once and shared by both sides.
