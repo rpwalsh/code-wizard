@@ -9,6 +9,7 @@
     { "path": "./packages/storage" },
     { "path": "./languages/python" },
     { "path": "./packages/runtime-web" },
+    { "path": "./packages/session" },
     { "path": "./packages/cli" }
   ]
 }

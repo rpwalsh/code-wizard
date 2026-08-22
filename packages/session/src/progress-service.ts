@@ -1,0 +1,167 @@
+import type { SkillGraph, SkillMastery } from '@forge/core';
+import { headlineMastery, weakestDimensions } from '@forge/core';
+import type { ExerciseHistory, LearnerState, Recommendation, SessionPlan } from '@forge/curriculum';
+import { planSession, recommend } from '@forge/curriculum';
+import type { ExerciseCatalog } from '@forge/exercises';
+import type { Attempt } from '@forge/learning';
+import { buildHistory, computeMetrics, independentCompletionRate } from '@forge/learning';
+import type { ProgressStore, StoredReview } from '@forge/storage';
+
+export interface DashboardSkill {
+  readonly skillId: string;
+  readonly name: string;
+  readonly category: string;
+  readonly mastery: number;
+  readonly weakest: readonly { dimension: string; value: number }[];
+}
+
+export interface RecentImprovement {
+  readonly exerciseId: string;
+  readonly title: string;
+  readonly fromMs: number;
+  readonly toMs: number;
+}
+
+export interface Dashboard {
+  readonly plan: SessionPlan;
+  readonly recommendations: readonly Recommendation[];
+  /** Skills below the weakness threshold, weakest first. */
+  readonly weaknesses: readonly DashboardSkill[];
+  readonly improvements: readonly RecentImprovement[];
+  /** Fraction of solved attempts completed with no assistance at all. */
+  readonly independentCompletion: number | null;
+  readonly dueCount: number;
+  readonly totalAttempts: number;
+}
+
+/**
+ * Reads stored progress and answers the two questions the home screen asks:
+ * what should I do today, and what am I actually getting better at.
+ *
+ * Everything here is derived. Nothing is cached in the database, so a change
+ * to how a metric is defined shows up in history rather than invalidating it.
+ */
+export class ProgressService {
+  constructor(
+    private readonly store: ProgressStore,
+    private readonly catalog: ExerciseCatalog,
+    private readonly skillGraph: SkillGraph,
+  ) {}
+
+  async learnerState(now = new Date()): Promise<LearnerState> {
+    const [mastery, reviews, attempts] = await Promise.all([
+      this.store.allMastery(),
+      this.store.allReviews(),
+      this.store.allAttempts(),
+    ]);
+
+    return {
+      mastery,
+      reviews: reviews as ReadonlyMap<string, StoredReview>,
+      attempts: summariseAttempts(attempts),
+      now,
+    };
+  }
+
+  async dashboard(now = new Date()): Promise<Dashboard> {
+    const state = await this.learnerState(now);
+    const attempts = await this.store.allAttempts();
+
+    const { recommendations } = recommend(this.catalog.all(), this.skillGraph, state);
+
+    const dueSkills = new Set(
+      [...state.reviews.values()]
+        .filter((review) => Date.parse(review.dueAt) <= now.getTime())
+        .map((review) => review.skillId),
+    );
+
+    return {
+      plan: planSession(recommendations, { dueSkills }),
+      recommendations,
+      weaknesses: this.#weaknesses(state.mastery),
+      improvements: this.#improvements(attempts),
+      independentCompletion: independentCompletionRate(attempts),
+      dueCount: dueSkills.size,
+      totalAttempts: attempts.length,
+    };
+  }
+
+  #weaknesses(mastery: ReadonlyMap<string, SkillMastery>): DashboardSkill[] {
+    return (
+      [...mastery.values()]
+        // A skill nobody has practised is not a weakness, it is unexplored;
+        // listing it would bury the things the learner is genuinely losing.
+        .filter((record) => record.observations > 0)
+        .map((record) => ({
+          skillId: record.skillId,
+          name: this.skillGraph.has(record.skillId)
+            ? this.skillGraph.get(record.skillId).name
+            : record.skillId,
+          category: this.skillGraph.has(record.skillId)
+            ? this.skillGraph.get(record.skillId).category
+            : 'Unknown',
+          mastery: headlineMastery(record.vector),
+          weakest: weakestDimensions(record.vector).slice(0, 3),
+        }))
+        .filter((entry) => entry.mastery < 0.7)
+        .sort((a, b) => a.mastery - b.mastery)
+        .slice(0, 5)
+    );
+  }
+
+  #improvements(attempts: readonly Attempt[]): RecentImprovement[] {
+    const exerciseIds = [...new Set(attempts.map((attempt) => attempt.exerciseId))];
+
+    return exerciseIds
+      .flatMap((exerciseId) => {
+        if (!this.catalog.has(exerciseId)) return [];
+        const exercise = this.catalog.get(exerciseId);
+        const history = buildHistory(exerciseId, attempts, exercise.estimatedSeconds);
+        const solved = history.attempts.filter((summary) => summary.metrics.solved);
+        const first = solved[0]?.metrics.totalMs;
+        const latest = solved.at(-1)?.metrics.totalMs;
+
+        if (first === undefined || latest === undefined || solved.length < 2) return [];
+        if (latest >= first) return [];
+
+        return [{ exerciseId, title: exercise.title, fromMs: first, toMs: latest }];
+      })
+      .sort((a, b) => b.fromMs - b.toMs - (a.fromMs - a.toMs))
+      .slice(0, 3);
+  }
+}
+
+/** Collapse the raw attempt log into what the recommender needs per exercise. */
+export function summariseAttempts(attempts: readonly Attempt[]): Map<string, ExerciseHistory> {
+  const byExercise = new Map<string, Attempt[]>();
+  for (const attempt of attempts) {
+    const bucket = byExercise.get(attempt.exerciseId);
+    if (bucket) bucket.push(attempt);
+    else byExercise.set(attempt.exerciseId, [attempt]);
+  }
+
+  const summaries = new Map<string, ExerciseHistory>();
+  for (const [exerciseId, group] of byExercise) {
+    const ordered = [...group].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+    const metrics = ordered.map((attempt) => computeMetrics(attempt));
+    const solved = metrics.filter((entry) => entry.solved);
+
+    // Failures since the last success: an exercise failed three times last
+    // month and solved since is not urgent, one failed three times running is.
+    let recentFailures = 0;
+    for (let index = metrics.length - 1; index >= 0; index -= 1) {
+      if (metrics[index]?.solved) break;
+      recentFailures += 1;
+    }
+
+    summaries.set(exerciseId, {
+      attempts: ordered.length,
+      solvedAttempts: solved.length,
+      lastAttemptAt: ordered.at(-1)?.startedAt ?? null,
+      lastWasIndependent: solved.at(-1)?.independent ?? false,
+      recentFailures,
+    });
+  }
+
+  return summaries;
+}
