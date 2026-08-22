@@ -1,0 +1,134 @@
+# Stage 3 — Functions (lessons 53–72)
+#
+# Where most self-taught programmers plateau: they can write the code, but
+# every program is one long script. The skill being built is not `def` — it is
+# deciding where the seams go, and trusting a function you have not finished
+# writing yet.
+#
+# The last four lessons are recursion, placed here rather than in the
+# algorithms stage on purpose. Recursion is a way of writing a function, and
+# meeting it for the first time inside a graph traversal means fighting two
+# unfamiliar things at once.
+
+stage: functions
+title: Functions
+lessons:
+  - id: py.051
+    title: Naming a piece of work
+    focus: def, call, return — and a function that ends without returning.
+    skills: [python.functions.definition]
+    difficulty: 1
+
+  - id: py.052
+    title: Returning versus printing
+    focus: The distinction that decides whether anything is testable.
+    skills: [python.functions.definition]
+    difficulty: 1
+
+  - id: py.053
+    title: Returning early
+    focus: Guard clauses, and the nesting they remove.
+    skills: [python.functions.definition, python.control.conditionals]
+    difficulty: 2
+
+  - id: py.054
+    title: Arguments, positional and named
+    focus: Passing by position, by keyword, and why the second reads better.
+    skills: [python.functions.arguments]
+    difficulty: 1
+
+  - id: py.055
+    title: Defaults
+    focus: Optional parameters, and the mutable default that leaks between calls.
+    skills: [python.functions.arguments]
+    difficulty: 3
+
+  - id: py.056
+    title: Any number of arguments
+    focus: '*args, **kwargs, and keyword-only parameters after the star.'
+    skills: [python.functions.varargs]
+    difficulty: 3
+
+  - id: py.057
+    title: Unpacking into a call
+    focus: 'Calling with *list and **dict, and where that is genuinely useful.'
+    skills: [python.functions.varargs, python.collections.tuple]
+    difficulty: 3
+
+  - id: py.058
+    title: What a function can see
+    focus: Local, enclosing, global — and the assignment that shadows.
+    skills: [python.functions.scope]
+    difficulty: 2
+
+  - id: py.059
+    title: Functions are values
+    focus: Passing a function as an argument, and returning one.
+    skills: [python.functions.scope]
+    difficulty: 3
+
+  - id: py.060
+    title: Closures
+    focus: A function that remembers, and the late-binding loop trap.
+    skills: [python.functions.scope]
+    difficulty: 4
+
+  - id: py.061
+    title: lambda, and when not to
+    focus: Small anonymous functions, and the point where a name is kinder.
+    skills: [python.functions.scope, python.idioms.sorting]
+    difficulty: 2
+
+  - id: py.062
+    title: One function, one job
+    focus: Splitting a forty-line function, and testing the pieces separately.
+    skills: [python.functions.definition]
+    difficulty: 3
+
+  - id: py.063
+    title: Mutating what you were given
+    focus: A function that changes its argument, and whether it should.
+    skills: [python.functions.arguments, python.collections.list]
+    difficulty: 3
+
+  - id: py.064
+    title: Docstrings that earn their line
+    focus: Saying what it returns and what it refuses, not restating the name.
+    skills: [python.functions.definition]
+    difficulty: 1
+
+  - id: py.065
+    title: Importing your own code
+    focus: Modules, import forms, and what runs at import time.
+    skills: [python.syntax.imports]
+    difficulty: 2
+
+  - id: py.066
+    title: The main guard
+    focus: '`if __name__ == "__main__"`, and the import that ran your whole script.'
+    skills: [python.syntax.imports, python.engineering.cli]
+    difficulty: 2
+
+  - id: py.067
+    title: A function that calls itself
+    focus: The base case first. Write the stop before writing the step.
+    skills: [python.recursion.base-case]
+    difficulty: 3
+
+  - id: py.068
+    title: Recursion down a sequence
+    focus: One item and the rest — sum, reverse, and a search.
+    skills: [python.recursion.linear]
+    difficulty: 3
+
+  - id: py.069
+    title: Carrying a result down
+    focus: Accumulator passing, and why it changes the shape of the stack.
+    skills: [python.recursion.accumulator]
+    difficulty: 4
+
+  - id: py.070
+    title: Recursion that branches
+    focus: Two calls per frame. Watch the call tree in the tracer, then count it.
+    skills: [python.recursion.tree]
+    difficulty: 4

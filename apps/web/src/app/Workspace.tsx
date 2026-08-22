@@ -8,9 +8,11 @@ import type { SessionState } from '@code-retrainer/session';
 import { ExerciseSession } from '@code-retrainer/session';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
-import { Complete, formatDuration } from '../components/Complete.tsx';
+import { Complete } from '../components/Complete.tsx';
 import { Editor } from '../components/Editor.tsx';
 import { Hints } from '../components/Hints.tsx';
+import type { TimerMode } from '../components/Timer.tsx';
+import { Timer } from '../components/Timer.tsx';
 import { Predict, PredictionVerdict } from '../components/Predict.tsx';
 import type { Command } from '../components/Palette.tsx';
 import { Results } from '../components/Results.tsx';
@@ -30,6 +32,7 @@ interface WorkspaceProps {
   readonly platform: Platform;
   readonly exercise: Exercise;
   readonly mode: TrainingMode;
+  readonly timerMode: TimerMode;
   /** Set when this sitting is a claim being tested rather than practice. */
   readonly demonstration?: Demonstration;
   readonly fontSize: number;
@@ -42,6 +45,7 @@ export function Workspace({
   platform,
   exercise,
   mode,
+  timerMode,
   demonstration,
   fontSize,
   onLeave,
@@ -182,9 +186,7 @@ export function Workspace({
         <span className="workspace__bar-spacer" />
 
         {affordances.timer ? (
-          <output className="timer" aria-label="Time on this exercise">
-            {formatDuration(elapsed)}
-          </output>
+          <Timer mode={timerMode} elapsedMs={elapsed} exercise={exercise} />
         ) : null}
 
         <button

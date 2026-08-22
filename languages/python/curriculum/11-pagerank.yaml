@@ -1,0 +1,53 @@
+# Stage 11 — Convergence and PageRank (lessons 195–200)
+#
+# The finish, and the only place in the curriculum where "it runs" and "it is
+# correct" fully come apart. An iterative numerical method can run cleanly,
+# terminate, and return a confidently wrong answer, and nothing about the
+# output will tell you. That is the last thing worth learning here.
+#
+# PageRank is the right ending because it needs almost everything: a graph, a
+# vector, normalisation, a loop with a stopping condition that is not a count,
+# and the judgement to know when the answer stopped moving. It is also small
+# enough to write in one sitting once the pieces are there.
+
+stage: pagerank
+title: Convergence and PageRank
+lessons:
+  - id: py.195
+    title: Floats do not do what you said
+    focus: 0.1 + 0.2, accumulated error, and why equality is the wrong question.
+    skills: [python.numerical.floats]
+    difficulty: 3
+
+  - id: py.196
+    title: Comparing numbers properly
+    focus: Absolute and relative tolerance, isclose, and choosing a threshold on purpose.
+    skills: [python.numerical.floats]
+    difficulty: 4
+
+  - id: py.197
+    title: Vectors as dictionaries
+    focus: Adding, scaling, and normalising a distribution so it sums to one.
+    skills: [python.numerical.vectors]
+    difficulty: 4
+
+  - id: py.198
+    title: Looping until it stops moving
+    focus: A stopping condition that is a measurement, plus the iteration cap that saves you.
+    skills: [python.numerical.iteration]
+    difficulty: 5
+
+  - id: py.199
+    title: Power iteration
+    focus: Repeatedly applying a transition, watching a distribution settle.
+    skills: [python.numerical.iteration, python.structures.graph-representation]
+    difficulty: 5
+
+  - id: py.200
+    title: PageRank
+    focus: >-
+      Damping, dangling nodes that leak rank, and convergence. Written from an
+      adjacency dictionary, checked against a graph small enough to verify by
+      hand, then run on one that is not.
+    skills: [python.numerical.pagerank]
+    difficulty: 5

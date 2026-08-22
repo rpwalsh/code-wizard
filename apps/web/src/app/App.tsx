@@ -15,11 +15,14 @@ import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import type { Demonstration } from '@code-retrainer/curriculum';
 import { planDemonstration } from '@code-retrainer/curriculum';
+import type { TimerMode } from '../components/Timer.tsx';
+import { isTimerMode, timerModes } from '../components/Timer.tsx';
 import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
 
 /** Set once the learner has answered the first-run question. */
 const ONBOARDED_KEY = 'onboarding.level';
+const TIMER_KEY = 'preferences.timer';
 
 type Screen =
   | { readonly kind: 'home' }
@@ -45,6 +48,9 @@ export function App() {
   const [skillMap, setSkillMap] = useState<SkillMap | null>(null);
   const [constraints, setConstraints] = useState<Record<string, readonly Constraint[]>>({});
   const [mode, setMode] = useState<TrainingMode>('practice');
+  // Off by default. A timer helps someone deliberately training speed and
+  // hurts someone stuck on a concept, and only they know which they are.
+  const [timerMode, setTimerMode] = useState<TimerMode>('off');
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const [fontSize, setFontSize] = useState(14);
 
@@ -104,6 +110,30 @@ export function App() {
       .catch(() => setOnboarded(true));
   }, [platform]);
 
+  // A preference, so it survives a reload. Validated on the way in rather than
+  // cast: the value has been sitting in the learner's own storage and anything
+  // could have happened to it.
+  useEffect(() => {
+    if (!platform) return;
+    void platform.store
+      .getSetting(TIMER_KEY)
+      .then((value) => {
+        if (value !== null && isTimerMode(value)) setTimerMode(value);
+      })
+      .catch(() => {
+        // A preference that cannot be read is not worth an error on screen.
+      });
+  }, [platform]);
+
+  const cycleTimer = useCallback(() => {
+    const next = timerModes[(timerModes.indexOf(timerMode) + 1) % timerModes.length];
+    if (!next) return;
+    setTimerMode(next);
+    void platform?.store.setSetting(TIMER_KEY, next).catch(() => {
+      // Losing the preference is not worth interrupting anyone over.
+    });
+  }, [platform, timerMode]);
+
   const completeOnboarding = useCallback(
     async (level: ExperienceLevel) => {
       if (!platform) return;
@@ -158,6 +188,16 @@ export function App() {
     const navigation: Command[] = [
       { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
       { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
+      {
+        id: 'timer-cycle',
+        name:
+          timerMode === 'off'
+            ? 'Show a timer'
+            : timerMode === 'elapsed'
+              ? 'Show time remaining instead'
+              : 'Hide the timer',
+        run: cycleTimer,
+      },
       ...withdrawalLadder.map((rung) => ({
         id: `mode-${rung.mode}`,
         name: `${rung.name} — withdraws: ${rung.withdraws}`,
@@ -314,6 +354,7 @@ export function App() {
             exercise={screen.exercise}
             mode={mode}
             fontSize={fontSize}
+            timerMode={timerMode}
             {...(screen.demonstration ? { demonstration: screen.demonstration } : {})}
             onLeave={leave}
             onAgain={() => open(screen.exercise)}

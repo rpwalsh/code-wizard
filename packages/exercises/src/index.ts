@@ -5,3 +5,4 @@ export * from './catalog.ts';
 export * from './bundle.ts';
 export * from './validator.ts';
 export * from './mutation.ts';
+export * from './syllabus-loader.ts';

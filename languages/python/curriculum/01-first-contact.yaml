@@ -1,0 +1,133 @@
+# Stage 1 — First contact (lessons 1–20)
+#
+# The only goal here is that the loop becomes automatic: write something, run
+# it, read what happened, change it. Nothing in this stage is conceptually
+# hard, and none of it is worth explaining at length. It is worth doing forty
+# times until the editor stops being a place you think about.
+#
+# Every lesson is thirty minutes and holds several short exercises. The
+# per-exercise time allowance comes from its own difficulty, so a sixty-second
+# drill and a ten-minute problem are not judged by the same clock.
+
+stage: first-contact
+title: First contact
+lessons:
+  - id: py.001
+    title: Run something and read the output
+    focus: The whole loop once — write, run, read, change. Nothing else.
+    skills: [python.syntax.expressions]
+    difficulty: 1
+
+  - id: py.002
+    title: Arithmetic that means what you meant
+    focus: Precedence, integer versus float division, and the modulo everyone forgets.
+    skills: [python.syntax.expressions]
+    difficulty: 1
+
+  - id: py.003
+    title: Comparison and truth
+    focus: Comparison operators, chained comparisons, and what counts as falsy.
+    skills: [python.syntax.expressions]
+    difficulty: 1
+
+  - id: py.004
+    title: Boolean operators, and what they return
+    focus: and / or / not — and the fact that `a or b` returns a value, not True.
+    skills: [python.syntax.expressions]
+    difficulty: 1
+
+  - id: py.005
+    title: Naming a value
+    focus: Assignment, rebinding, and the difference between a name and a thing.
+    skills: [python.syntax.variables]
+    difficulty: 1
+
+  - id: py.006
+    title: Two names, one object
+    focus: Assignment copies the reference, not the object. The first real surprise.
+    skills: [python.syntax.variables]
+    difficulty: 2
+
+  - id: py.007
+    title: Swapping and multiple assignment
+    focus: Tuple assignment without a temporary variable.
+    skills: [python.syntax.variables]
+    difficulty: 1
+
+  - id: py.008
+    title: Text, quoted
+    focus: String literals, escapes, and when to reach for triple quotes.
+    skills: [python.syntax.strings]
+    difficulty: 1
+
+  - id: py.009
+    title: Building a string from values
+    focus: f-strings, format specifications, and why concatenation stops scaling.
+    skills: [python.syntax.strings]
+    difficulty: 1
+
+  - id: py.010
+    title: Strings are sequences
+    focus: Indexing, length, and iterating characters.
+    skills: [python.syntax.strings]
+    difficulty: 1
+
+  - id: py.011
+    title: The string methods worth knowing by heart
+    focus: strip, split, join, replace, startswith, lower. Recall, not recognition.
+    skills: [python.syntax.strings]
+    difficulty: 2
+
+  - id: py.012
+    title: Strings do not change
+    focus: Immutability, and what `s.replace(...)` actually returns.
+    skills: [python.syntax.strings]
+    difficulty: 2
+
+  - id: py.013
+    title: Indentation is the block
+    focus: Nesting, and the bug where a line sits one level too far out.
+    skills: [python.syntax.indentation]
+    difficulty: 1
+
+  - id: py.014
+    title: Deciding with if
+    focus: if / elif / else, and why the order of branches is a decision.
+    skills: [python.control.conditionals]
+    difficulty: 1
+
+  - id: py.015
+    title: Conditions that read like sentences
+    focus: Combining conditions without nesting four levels deep.
+    skills: [python.control.conditionals, python.syntax.expressions]
+    difficulty: 2
+
+  - id: py.016
+    title: The conditional expression
+    focus: '`a if condition else b`, and when it helps rather than hides.'
+    skills: [python.control.conditionals]
+    difficulty: 2
+
+  - id: py.017
+    title: None is a value
+    focus: None versus False versus empty, and `is None` rather than `== None`.
+    skills: [python.syntax.variables, python.control.conditionals]
+    difficulty: 2
+
+  - id: py.018
+    title: Converting between types
+    focus: int, float, str, bool — and what each one refuses.
+    skills: [python.syntax.expressions, python.syntax.variables]
+    difficulty: 2
+
+  - id: py.019
+    title: When Python refuses to run it
+    focus: SyntaxError, IndentationError, NameError — read the line it names.
+    skills: [python.syntax.indentation, python.syntax.variables]
+    difficulty: 2
+
+  - id: py.020
+    title: Predict, then run
+    focus: Six short programs. Say what each prints before running any of them.
+    skills: [python.syntax.expressions, python.syntax.strings, python.control.conditionals]
+    difficulty: 2

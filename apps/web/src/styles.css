@@ -1775,3 +1775,38 @@ kbd {
 .dependency__baseline[data-direction='up'] strong {
   color: var(--warn);
 }
+
+/* ── Budget timer ───────────────────────────────────────────────────────
+ *
+ * Opt-in, and quiet even when it is on. The allowance comes from the
+ * exercise's own difficulty, so a twenty-minute problem does not tick against
+ * the same clock as a sixty-second drill.
+ *
+ * Going over is not an error state. There is no red, no flash and no sound —
+ * the wording changes from "of 8:00" to "over" and that is all. Being slow is
+ * information, and information does not need a colour to be heard.
+ */
+.timer--budget {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 96px;
+}
+.timer__figure {
+  color: var(--text);
+}
+.timer__unit {
+  font-family: var(--font-ui);
+  font-variant-numeric: normal;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+/* The last stretch is worth noticing, so it stops being invisible — but it
+ * stops there, at "noticing", and never becomes a warning. */
+.timer--budget[data-state='close'] .timer__figure {
+  color: var(--text-dim);
+}
+.timer--budget[data-state='over'] .timer__figure {
+  color: var(--text-faint);
+}

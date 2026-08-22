@@ -168,7 +168,11 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     id: 'python.idioms.aggregation',
     name: 'any, all, sum, min and max',
     category: 'Pythonic Patterns',
-    prerequisites: ['python.collections.comprehensions'],
+    // Not comprehensions. `sum([1, 2, 3])` and `max(prices)` need a sequence
+    // and nothing else; requiring comprehensions first made every lesson that
+    // teaches a running total unreachable until forty lessons later, which the
+    // syllabus ordering test caught.
+    prerequisites: ['python.collections.list'],
   },
   {
     id: 'python.idioms.grouping',
@@ -300,6 +304,197 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     name: 'Type annotations',
     category: 'Advanced',
     prerequisites: ['python.functions.arguments', 'python.modeling.dataclasses'],
+  },
+
+  // -- Recursion ----------------------------------------------------------
+  //
+  // Split from Functions because the failure mode is different. People do not
+  // fail at recursion because they cannot write a function; they fail because
+  // they cannot see the base case, or because they will not trust a recursive
+  // call they have not finished writing yet. Both are practised, not read.
+  {
+    id: 'python.recursion.base-case',
+    name: 'Base cases and termination',
+    category: 'Recursion',
+    prerequisites: ['python.functions.definition', 'python.control.conditionals'],
+    description: 'Recognising what stops the recursion, before writing what continues it.',
+  },
+  {
+    id: 'python.recursion.linear',
+    name: 'Linear recursion',
+    category: 'Recursion',
+    prerequisites: ['python.recursion.base-case', 'python.collections.slicing'],
+  },
+  {
+    id: 'python.recursion.tree',
+    name: 'Tree recursion',
+    category: 'Recursion',
+    prerequisites: ['python.recursion.linear'],
+    description: 'Two or more recursive calls per frame, and the branching that follows.',
+  },
+  {
+    id: 'python.recursion.accumulator',
+    name: 'Accumulator passing',
+    category: 'Recursion',
+    prerequisites: ['python.recursion.linear', 'python.functions.arguments'],
+  },
+  {
+    id: 'python.recursion.memoisation',
+    name: 'Memoisation',
+    category: 'Recursion',
+    prerequisites: ['python.recursion.tree', 'python.collections.dict-mutation'],
+    description: 'Trading memory for repeated work, and seeing which calls actually repeat.',
+  },
+
+  // -- Complexity ---------------------------------------------------------
+  //
+  // Not a maths topic here. The only question that matters is whether the
+  // learner can predict which of two versions dies on real input, and that is
+  // something to measure rather than assert.
+  {
+    id: 'python.complexity.counting',
+    name: 'Counting operations',
+    category: 'Complexity',
+    prerequisites: ['python.control.for', 'python.collections.list'],
+    description: 'Counting what actually runs, rather than reasoning about what should.',
+  },
+  {
+    id: 'python.complexity.growth',
+    name: 'Growth rates',
+    category: 'Complexity',
+    prerequisites: ['python.complexity.counting'],
+  },
+  {
+    id: 'python.complexity.data-structure-choice',
+    name: 'Choosing a data structure',
+    category: 'Complexity',
+    prerequisites: ['python.complexity.growth', 'python.collections.set'],
+    description: 'Why membership in a list is a bug and membership in a set is not.',
+  },
+
+  // -- Data structures ----------------------------------------------------
+  {
+    id: 'python.structures.stack-queue',
+    name: 'Stacks and queues',
+    category: 'Data Structures',
+    prerequisites: ['python.collections.list', 'python.stdlib.collections'],
+  },
+  {
+    id: 'python.structures.linked',
+    name: 'Linked structures',
+    category: 'Data Structures',
+    prerequisites: ['python.modeling.classes', 'python.recursion.linear'],
+  },
+  {
+    id: 'python.structures.tree',
+    name: 'Trees',
+    category: 'Data Structures',
+    prerequisites: ['python.structures.linked', 'python.recursion.tree'],
+  },
+  {
+    id: 'python.structures.heap',
+    name: 'Heaps and priority queues',
+    category: 'Data Structures',
+    prerequisites: ['python.structures.stack-queue', 'python.complexity.growth'],
+  },
+  {
+    id: 'python.structures.graph-representation',
+    name: 'Representing a graph',
+    category: 'Data Structures',
+    prerequisites: ['python.collections.nested', 'python.collections.set'],
+    description: 'Adjacency lists and matrices, and what each one makes cheap.',
+  },
+
+  // -- Algorithms ---------------------------------------------------------
+  {
+    id: 'python.algorithms.linear-search',
+    name: 'Linear scan',
+    category: 'Algorithms',
+    prerequisites: ['python.control.for', 'python.control.loop-control'],
+  },
+  {
+    id: 'python.algorithms.binary-search',
+    name: 'Binary search',
+    category: 'Algorithms',
+    prerequisites: ['python.algorithms.linear-search', 'python.complexity.growth'],
+    description: 'The loop invariant, and the off-by-one that eats everyone.',
+  },
+  {
+    id: 'python.algorithms.two-pointer',
+    name: 'Two pointers and sliding windows',
+    category: 'Algorithms',
+    prerequisites: ['python.algorithms.linear-search', 'python.collections.slicing'],
+  },
+  {
+    id: 'python.algorithms.sorting',
+    name: 'Sorting algorithms',
+    category: 'Algorithms',
+    prerequisites: ['python.recursion.tree', 'python.complexity.growth'],
+  },
+  {
+    id: 'python.algorithms.traversal',
+    name: 'Breadth-first and depth-first traversal',
+    category: 'Algorithms',
+    prerequisites: [
+      'python.structures.graph-representation',
+      'python.structures.stack-queue',
+      'python.recursion.base-case',
+    ],
+    description: 'The visited set is the algorithm. Everything else is bookkeeping.',
+  },
+  {
+    id: 'python.algorithms.shortest-path',
+    name: 'Shortest paths',
+    category: 'Algorithms',
+    prerequisites: ['python.algorithms.traversal', 'python.structures.heap'],
+  },
+  {
+    id: 'python.algorithms.topological',
+    name: 'Topological ordering and cycles',
+    category: 'Algorithms',
+    prerequisites: ['python.algorithms.traversal'],
+  },
+  {
+    id: 'python.algorithms.dynamic-programming',
+    name: 'Dynamic programming',
+    category: 'Algorithms',
+    prerequisites: ['python.recursion.memoisation', 'python.complexity.growth'],
+  },
+
+  // -- Numerical ----------------------------------------------------------
+  //
+  // The last stretch before PageRank. Iterating a computation until it stops
+  // moving is a different mental model from looping a fixed number of times,
+  // and it is where "it runs" and "it is correct" finally come apart.
+  {
+    id: 'python.numerical.floats',
+    name: 'Floating point behaviour',
+    category: 'Numerical',
+    prerequisites: ['python.syntax.expressions'],
+    description: 'Why equality is the wrong question, and what to ask instead.',
+  },
+  {
+    id: 'python.numerical.vectors',
+    name: 'Vectors and normalisation',
+    category: 'Numerical',
+    prerequisites: ['python.numerical.floats', 'python.idioms.aggregation'],
+  },
+  {
+    id: 'python.numerical.iteration',
+    name: 'Iterating to convergence',
+    category: 'Numerical',
+    prerequisites: ['python.numerical.vectors', 'python.control.while'],
+  },
+  {
+    id: 'python.numerical.pagerank',
+    name: 'PageRank',
+    category: 'Numerical',
+    prerequisites: [
+      'python.numerical.iteration',
+      'python.structures.graph-representation',
+      'python.algorithms.traversal',
+    ],
+    description: 'A graph, a vector, and a loop that stops when nothing changes.',
   },
 ];
 

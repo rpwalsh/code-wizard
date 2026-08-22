@@ -1,0 +1,132 @@
+# Stage 7 — The toolkit (lessons 123–142)
+#
+# The standard library, plus the four engineering habits that separate a script
+# from a program. Nothing here is conceptually hard; all of it is the sort of
+# thing people look up every single time for years, which is exactly what this
+# platform exists to stop.
+#
+# Testing sits in the middle of the stage rather than at the end, because
+# everything after it is easier to learn when you can prove your own answer.
+
+stage: toolkit
+title: The toolkit
+lessons:
+  - id: py.123
+    title: defaultdict and Counter
+    focus: The two that delete the most code, and when they surprise you.
+    skills: [python.stdlib.collections]
+    difficulty: 2
+
+  - id: py.124
+    title: deque
+    focus: Appending and popping at both ends, and why a list is wrong for a queue.
+    skills: [python.stdlib.collections, python.structures.stack-queue]
+    difficulty: 3
+
+  - id: py.125
+    title: namedtuple and NamedTuple
+    focus: A record with names, where a dataclass would be more than you need.
+    skills: [python.stdlib.collections, python.modeling.dataclasses]
+    difficulty: 2
+
+  - id: py.126
+    title: Writing a test
+    focus: pytest, a plain assert, and one test per behaviour.
+    skills: [python.engineering.testing]
+    difficulty: 2
+
+  - id: py.127
+    title: Testing what should fail
+    focus: pytest.raises, and pinning the message as well as the type.
+    skills: [python.engineering.testing, python.errors.exceptions]
+    difficulty: 3
+
+  - id: py.128
+    title: Fixtures and parametrisation
+    focus: Shared setup, and one test that covers twelve cases.
+    skills: [python.engineering.testing]
+    difficulty: 3
+
+  - id: py.129
+    title: Tests that would catch a wrong answer
+    focus: Break the solution on purpose. If the tests stay green, they are decoration.
+    skills: [python.engineering.testing]
+    difficulty: 4
+
+  - id: py.130
+    title: Paths
+    focus: pathlib, joining without string concatenation, and platform differences.
+    skills: [python.stdlib.pathlib]
+    difficulty: 2
+
+  - id: py.131
+    title: Reading a file
+    focus: Opening with a context manager, iterating lines, and encoding.
+    skills: [python.engineering.files]
+    difficulty: 2
+
+  - id: py.132
+    title: Writing a file
+    focus: Modes, newlines, and not destroying the input on failure.
+    skills: [python.engineering.files]
+    difficulty: 3
+
+  - id: py.133
+    title: JSON in and out
+    focus: loads, dumps, and the types that do not survive the trip.
+    skills: [python.stdlib.json]
+    difficulty: 2
+
+  - id: py.134
+    title: Parsing something that is not JSON
+    focus: A CSV-ish format, by hand, with the edge cases the naive split misses.
+    skills: [python.syntax.strings, python.engineering.files]
+    difficulty: 4
+
+  - id: py.135
+    title: Dates and times
+    focus: date, datetime, timedelta, and arithmetic that crosses a month.
+    skills: [python.stdlib.datetime]
+    difficulty: 3
+
+  - id: py.136
+    title: Time zones, briefly and carefully
+    focus: Naive versus aware, and why comparing them raises.
+    skills: [python.stdlib.datetime]
+    difficulty: 4
+
+  - id: py.137
+    title: itertools worth memorising
+    focus: chain, groupby, islice, product, and the loop each one replaces.
+    skills: [python.stdlib.itertools]
+    difficulty: 3
+
+  - id: py.138
+    title: groupby and its one condition
+    focus: It groups runs, not values. Sort first, or be surprised.
+    skills: [python.stdlib.itertools, python.idioms.grouping]
+    difficulty: 4
+
+  - id: py.139
+    title: Arguments from the command line
+    focus: argparse, and a program someone else can run without reading it.
+    skills: [python.engineering.cli]
+    difficulty: 3
+
+  - id: py.140
+    title: Exit codes and stderr
+    focus: A program that fails in a way a shell script can detect.
+    skills: [python.engineering.cli, python.errors.exceptions]
+    difficulty: 3
+
+  - id: py.141
+    title: A small tool, end to end
+    focus: Read a file, transform it, write a report, fail cleanly on bad input.
+    skills: [python.engineering.files, python.engineering.cli, python.errors.validation]
+    difficulty: 4
+
+  - id: py.142
+    title: The same tool, tested
+    focus: Making the tool testable, which usually means making it less of a script.
+    skills: [python.engineering.testing, python.functions.definition]
+    difficulty: 4

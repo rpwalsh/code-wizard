@@ -1,0 +1,96 @@
+# Stage 9 — Data structures (lessons 163–176)
+#
+# Built, not imported. A learner who has written a linked list will never again
+# wonder why inserting at the front of a Python list is expensive, and one who
+# has written a heap will stop treating heapq as magic.
+#
+# Each structure is built by hand, then the standard-library equivalent is
+# introduced and the hand-written one is thrown away. That order matters: the
+# library version is a relief once you know what it saves you.
+
+stage: structures
+title: Data structures
+lessons:
+  - id: py.163
+    title: A stack
+    focus: push, pop, peek — and the bracket matcher that needs one.
+    skills: [python.structures.stack-queue]
+    difficulty: 3
+
+  - id: py.164
+    title: A queue
+    focus: The list that looks fine and is quadratic, measured, then deque.
+    skills: [python.structures.stack-queue, python.complexity.data-structure-choice]
+    difficulty: 3
+
+  - id: py.165
+    title: Evaluating with a stack
+    focus: Postfix evaluation, then converting infix to postfix.
+    skills: [python.structures.stack-queue]
+    difficulty: 4
+
+  - id: py.166
+    title: A node with a next
+    focus: A singly linked list, built by hand, traversed both ways round.
+    skills: [python.structures.linked]
+    difficulty: 4
+
+  - id: py.167
+    title: Reversing a linked list
+    focus: Three pointers, one loop, and the diagram you have to draw.
+    skills: [python.structures.linked]
+    difficulty: 5
+
+  - id: py.168
+    title: A node with two children
+    focus: A binary tree, and inserting into a search tree.
+    skills: [python.structures.tree]
+    difficulty: 4
+
+  - id: py.169
+    title: Walking a tree
+    focus: In-order, pre-order, post-order — recursively, and what each is for.
+    skills: [python.structures.tree, python.recursion.tree]
+    difficulty: 4
+
+  - id: py.170
+    title: Depth and balance
+    focus: Height, counting leaves, and detecting a tree that has degenerated.
+    skills: [python.structures.tree, python.complexity.growth]
+    difficulty: 4
+
+  - id: py.171
+    title: The heap property
+    focus: What a heap guarantees and what it does not. Built as an array.
+    skills: [python.structures.heap]
+    difficulty: 5
+
+  - id: py.172
+    title: heapq
+    focus: The library version, the min-heap-only problem, and the tuple trick.
+    skills: [python.structures.heap]
+    difficulty: 4
+
+  - id: py.173
+    title: The k largest
+    focus: Sorting everything versus keeping a heap of k. Counted, at scale.
+    skills: [python.structures.heap, python.complexity.growth]
+    difficulty: 4
+
+  - id: py.174
+    title: A graph, as a dictionary
+    focus: Adjacency lists, directed and undirected, and building one from edges.
+    skills: [python.structures.graph-representation]
+    difficulty: 3
+
+  - id: py.175
+    title: A graph, as a matrix
+    focus: The same graph, the other representation, and what each makes cheap.
+    skills: [python.structures.graph-representation, python.collections.nested]
+    difficulty: 4
+
+  - id: py.176
+    title: Reading a graph out of real data
+    focus: Links, follows, dependencies — turning records into a graph.
+    skills: [python.structures.graph-representation, python.idioms.grouping]
+    difficulty: 4

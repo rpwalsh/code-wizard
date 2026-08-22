@@ -1,0 +1,86 @@
+# Stage 5 — Failure (lessons 91–104)
+#
+# Handling failure is a separate discipline from producing correct code, and it
+# is the one most often learned by accident and therefore learned wrong. The
+# habits this stage is trying to prevent are the bare `except:`, the swallowed
+# error, and validation scattered through a function instead of standing at its
+# door.
+#
+# Half of these lessons are bug-fix exercises: given code that is wrong, find
+# out why. That is graded on its own dimension, and it is the one that
+# separates people who can write code from people who can work in a codebase.
+
+stage: failure
+title: Failure
+lessons:
+  - id: py.091
+    title: What an exception is
+    focus: Raising, propagating, and the stack unwinding in the tracer.
+    skills: [python.errors.exceptions]
+    difficulty: 2
+
+  - id: py.092
+    title: Catching one thing
+    focus: try / except for a specific type, and why the bare except is a trap.
+    skills: [python.errors.exceptions]
+    difficulty: 2
+
+  - id: py.093
+    title: else and finally
+    focus: What runs when nothing went wrong, and what runs regardless.
+    skills: [python.errors.exceptions]
+    difficulty: 3
+
+  - id: py.094
+    title: Ask forgiveness, or ask permission
+    focus: try/except versus a check first, and when each one races.
+    skills: [python.errors.exceptions, python.collections.dict-lookup]
+    difficulty: 3
+
+  - id: py.095
+    title: Raising well
+    focus: The right built-in type, and a message that names the value.
+    skills: [python.errors.exceptions, python.errors.validation]
+    difficulty: 2
+
+  - id: py.096
+    title: Validating at the door
+    focus: Checking inputs once, at the boundary, instead of everywhere.
+    skills: [python.errors.validation]
+    difficulty: 3
+
+  - id: py.097
+    title: Bug hunt — the off-by-one
+    focus: Given failing tests and working code that is subtly wrong, find it.
+    skills: [python.control.for, python.collections.slicing]
+    difficulty: 3
+
+  - id: py.098
+    title: Bug hunt — the shared mutable
+    focus: Two things that were meant to be separate and are not.
+    skills: [python.collections.nested, python.functions.arguments]
+    difficulty: 4
+
+  - id: py.099
+    title: Bug hunt — the wrong comparison
+    focus: '`is` where `==` was meant, and the small integers that hide it.'
+    skills: [python.syntax.expressions, python.syntax.variables]
+    difficulty: 4
+
+  - id: py.100
+    title: Bug hunt — the silent except
+    focus: Code that works until it does not, and says nothing either way.
+    skills: [python.errors.exceptions]
+    difficulty: 3
+
+  - id: py.101
+    title: Reading a traceback properly
+    focus: Chained exceptions, `raise from`, and finding the frame that matters.
+    skills: [python.errors.exceptions]
+    difficulty: 3
+
+  - id: py.102
+    title: Making failure observable
+    focus: Assertions, invariants, and a program that says where it went wrong.
+    skills: [python.errors.validation, python.engineering.testing]
+    difficulty: 4

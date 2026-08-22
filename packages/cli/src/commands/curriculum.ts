@@ -1,3 +1,7 @@
+import { loadSyllabus } from '@code-retrainer/exercises';
+import { readSyllabusProgress, validateSyllabus } from '@code-retrainer/curriculum';
+import { pythonCurriculumDir } from '@code-retrainer/python';
+
 import { createContext } from '../context.ts';
 import { columns, heading, indent, pluralise, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
@@ -14,9 +18,11 @@ export async function runCurriculumCommand(
       return check();
     case 'skills':
       return skills();
+    case 'syllabus':
+      return syllabus();
     default:
       console.error(style.red(`Unknown curriculum command "${subcommand}".`));
-      console.error('Try: code-retrainer curriculum check | skills');
+      console.error('Try: code-retrainer curriculum check | skills | syllabus');
       return 2;
   }
 }
@@ -99,4 +105,79 @@ async function skills(): Promise<number> {
     for (const entry of entries) console.log(`  ${entry}`);
   }
   return 0;
+}
+
+/**
+ * The planned course, against what has actually been written.
+ *
+ * The catalogue says what exists. This says what was intended, and the gap is
+ * the only honest measure of progress — a number that goes down as content
+ * lands, rather than a claim in a README that never moves.
+ */
+async function syllabus(): Promise<number> {
+  const context = await createContext();
+  const loaded = await loadSyllabus(pythonCurriculumDir);
+
+  if (loaded.stages.length === 0) {
+    console.error(style.red('No syllabus found.'));
+    return 2;
+  }
+
+  const issues = validateSyllabus(loaded, context.skillGraph);
+  const progress = readSyllabusProgress(loaded, context.catalog.all());
+
+  console.log(heading('Syllabus'));
+  console.log(
+    columns([
+      ['stages', String(loaded.stages.length)],
+      ['lessons', String(progress.total)],
+      ['with content', `${progress.covered} (${percent(progress.covered, progress.total)}%)`],
+      ['outstanding', String(progress.outstanding.length)],
+    ]),
+  );
+
+  console.log('');
+  console.log(heading('By stage'));
+  for (const stage of progress.byStage) {
+    const bar = renderBar(stage.covered, stage.total);
+    console.log(indent(`${bar}  ${stage.covered}/${stage.total}  ${stage.title}`));
+  }
+
+  if (issues.length > 0) {
+    console.log('');
+    console.log(heading('Problems with the plan itself'));
+    for (const issue of issues) {
+      console.log(indent(`${symbol.fail} ${issue.lessonId} — ${issue.message}`));
+    }
+  }
+
+  const next = progress.outstanding.slice(0, 8);
+  if (next.length > 0) {
+    console.log('');
+    console.log(heading('Next to write'));
+    for (const entry of next) {
+      console.log(indent(`${entry.lesson.id}  ${entry.lesson.title}`));
+      console.log(indent(indent(style.grey(entry.lesson.focus))));
+    }
+    console.log('');
+    console.log(
+      indent(
+        style.grey(
+          `${progress.outstanding.length} ${pluralise(progress.outstanding.length, 'lesson')} still to write.`,
+        ),
+      ),
+    );
+  }
+
+  return issues.length === 0 ? 0 : 1;
+}
+
+function percent(part: number, whole: number): number {
+  return whole === 0 ? 100 : Math.round((part / whole) * 100);
+}
+
+/** Ten cells, so every stage is comparable at a glance. */
+function renderBar(part: number, whole: number): string {
+  const filled = whole === 0 ? 10 : Math.round((part / whole) * 10);
+  return style.grey('#'.repeat(filled) + '.'.repeat(10 - filled));
 }

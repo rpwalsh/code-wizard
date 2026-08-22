@@ -90,6 +90,38 @@ export interface MutationException {
   readonly why: string;
 }
 
+/**
+ * How much slack a learner gets over the fluent-completion estimate.
+ *
+ * `estimatedSeconds` is how long someone who already has the skill takes.
+ * Someone rebuilding it takes longer, and the harder the exercise the wider
+ * that spread gets — an extra minute on a 60-second drill is a different
+ * proportion of trouble from an extra minute on a twenty-minute problem. So
+ * the allowance grows with difficulty rather than being a flat percentage.
+ */
+const DIFFICULTY_SLACK: Readonly<Record<number, number>> = Object.freeze({
+  1: 1.5,
+  2: 1.6,
+  3: 1.75,
+  4: 2,
+  5: 2.25,
+});
+
+/**
+ * The time this exercise is worth, in seconds.
+ *
+ * Used only for the optional on-screen timer. It deliberately does not feed
+ * grading: `speed` is already scored against the bare estimate, and having the
+ * clock a learner can see also be the clock that judges them would turn a
+ * quiet instrument into a stopwatch. Going over costs nothing.
+ */
+export function timeBudgetSeconds(
+  exercise: Pick<Exercise, 'difficulty' | 'estimatedSeconds'>,
+): number {
+  const slack = DIFFICULTY_SLACK[exercise.difficulty] ?? 2;
+  return Math.round(exercise.estimatedSeconds * slack);
+}
+
 /** The files the learner starts from, plus the test files they run against. */
 export function attemptWorkspace(exercise: Exercise): Workspace {
   return mergeWorkspace(exercise.starter, exercise.tests);

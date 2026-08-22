@@ -1,0 +1,133 @@
+# Stage 4 — Writing it the way the language wants (lessons 73–90)
+#
+# Everything here can already be done with a loop and an accumulator. That is
+# the point: the learner arrives able to solve each problem the long way, and
+# leaves able to solve it the short way and to say which is clearer.
+#
+# The failure mode this stage exists to prevent is the opposite of the obvious
+# one. It is not "cannot write a comprehension" — it is a four-clause nested
+# comprehension where a loop would have been readable, written by someone
+# proving a point.
+
+stage: idioms
+title: Writing it the way the language wants
+lessons:
+  - id: py.071
+    title: A list from a list
+    focus: The comprehension, as exactly the loop it replaces.
+    skills: [python.collections.comprehensions]
+    difficulty: 2
+
+  - id: py.072
+    title: Filtering in the same breath
+    focus: The `if` clause, and why filter-then-map is one pass here.
+    skills: [python.collections.comprehensions]
+    difficulty: 2
+
+  - id: py.073
+    title: Dictionary and set comprehensions
+    focus: The same shape, different braces, and inverting a mapping.
+    skills: [python.collections.comprehensions, python.collections.dict]
+    difficulty: 2
+
+  - id: py.074
+    title: Nested comprehensions
+    focus: Flattening, and reading the clause order correctly the first time.
+    skills: [python.collections.comprehensions, python.collections.nested]
+    difficulty: 3
+
+  - id: py.075
+    title: When a comprehension is the wrong answer
+    focus: Rewrite three clever one-liners back into loops. Argue for each.
+    skills: [python.collections.comprehensions]
+    difficulty: 3
+
+  - id: py.076
+    title: Generator expressions
+    focus: Lazy evaluation, and the memory difference on a large input.
+    skills: [python.advanced.generators, python.collections.comprehensions]
+    difficulty: 3
+
+  - id: py.077
+    title: Writing a generator
+    focus: yield, and a function that produces values without building a list.
+    skills: [python.advanced.generators]
+    difficulty: 4
+
+  - id: py.078
+    title: Generators that stop, and generators that do not
+    focus: Infinite sequences, and taking only what you need.
+    skills: [python.advanced.generators, python.control.loop-control]
+    difficulty: 4
+
+  - id: py.079
+    title: Sorting
+    focus: sorted versus .sort, the key function, and reverse.
+    skills: [python.idioms.sorting]
+    difficulty: 2
+
+  - id: py.080
+    title: Sorting by a computed key
+    focus: key functions, tuples as keys, and sorting by two fields in opposite directions.
+    skills: [python.idioms.sorting]
+    difficulty: 3
+
+  - id: py.081
+    title: Grouping properly
+    focus: defaultdict, Counter, and when a plain dict is still clearer.
+    skills: [python.idioms.grouping, python.stdlib.collections]
+    difficulty: 3
+
+  - id: py.082
+    title: Counting properly
+    focus: Counter, most_common, and arithmetic between counters.
+    skills: [python.stdlib.collections, python.idioms.aggregation]
+    difficulty: 2
+
+  - id: py.083
+    title: any, all, and the short circuit
+    focus: Stopping at the first answer, and proving it stopped.
+    skills: [python.idioms.aggregation]
+    difficulty: 2
+
+  - id: py.084
+    title: Unpacking in a loop
+    focus: Iterating over pairs, and the readability it buys.
+    skills: [python.collections.tuple, python.control.for]
+    difficulty: 2
+
+  - id: py.085
+    title: Truthiness, used well and used badly
+    focus: '`if items:` versus `if len(items) > 0:` — and where the shortcut lies to you.'
+    skills: [python.syntax.expressions, python.control.conditionals]
+    difficulty: 3
+
+  - id: py.086
+    title: The walrus, and its one good use
+    focus: Assignment expressions in a while loop, and restraint everywhere else.
+    skills: [python.control.while, python.syntax.variables]
+    difficulty: 3
+
+  - id: py.087
+    title: Matching structure
+    focus: match / case on shapes of data, and where if / elif is still better.
+    skills: [python.control.conditionals, python.collections.nested]
+    difficulty: 4
+
+  - id: py.088
+    title: Translation lab — from JavaScript
+    focus: map, filter, reduce, find, sort. Same behaviour, different habits.
+    skills: [python.collections.comprehensions, python.idioms.sorting, python.idioms.aggregation]
+    difficulty: 3
+
+  - id: py.089
+    title: Translation lab — from Java or C#
+    focus: Loops with counters, StringBuilder, and the interface that wanted to be a function.
+    skills: [python.collections.comprehensions, python.functions.scope, python.syntax.strings]
+    difficulty: 4
+
+  - id: py.090
+    title: A report from raw records
+    focus: Filter, group, aggregate, sort, format. Everything in this stage, once.
+    skills: [python.idioms.grouping, python.idioms.sorting, python.idioms.aggregation]
+    difficulty: 3

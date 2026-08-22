@@ -1,0 +1,121 @@
+# Stage 10 — Algorithms (lessons 177–194)
+#
+# Traversal is the centre of this stage and everything else orbits it. BFS and
+# DFS are the same seven lines with one container swapped, and a learner who
+# sees that once stops memorising two algorithms and starts recognising one.
+#
+# The visited set gets its own lesson, on its own, before either traversal is
+# written. Every wrong graph traversal in the world is a missing or misplaced
+# visited set, and it is worth meeting the idea while there is nothing else
+# competing for attention.
+
+stage: algorithms
+title: Algorithms
+lessons:
+  - id: py.177
+    title: Scanning
+    focus: Linear search, early exit, and finding all matches instead of one.
+    skills: [python.algorithms.linear-search]
+    difficulty: 2
+
+  - id: py.178
+    title: Halving the problem
+    focus: Binary search on a sorted list, written from the invariant.
+    skills: [python.algorithms.binary-search]
+    difficulty: 4
+
+  - id: py.179
+    title: The off-by-one, deliberately
+    focus: Four broken binary searches. Find each bug and say which input exposes it.
+    skills: [python.algorithms.binary-search]
+    difficulty: 5
+
+  - id: py.180
+    title: Searching for a boundary
+    focus: The first element satisfying a condition, and bisect.
+    skills: [python.algorithms.binary-search]
+    difficulty: 4
+
+  - id: py.181
+    title: Two pointers
+    focus: A pair summing to a target, and the quadratic version it replaces.
+    skills: [python.algorithms.two-pointer]
+    difficulty: 4
+
+  - id: py.182
+    title: Sliding a window
+    focus: Fixed and variable windows, and updating the total instead of recomputing.
+    skills: [python.algorithms.two-pointer]
+    difficulty: 4
+
+  - id: py.183
+    title: Sorting, by hand
+    focus: Selection and insertion sort, counted, and where insertion wins.
+    skills: [python.algorithms.sorting, python.complexity.counting]
+    difficulty: 3
+
+  - id: py.184
+    title: Merge sort
+    focus: Divide, recurse, merge — and the merge written on its own first.
+    skills: [python.algorithms.sorting, python.recursion.tree]
+    difficulty: 5
+
+  - id: py.185
+    title: Quicksort, and its bad day
+    focus: Partitioning, and the already-sorted input that makes it quadratic.
+    skills: [python.algorithms.sorting]
+    difficulty: 5
+
+  - id: py.186
+    title: The visited set
+    focus: Before any traversal. A walk that loops forever, then one that does not.
+    skills: [python.algorithms.traversal, python.collections.set]
+    difficulty: 3
+
+  - id: py.187
+    title: Breadth first
+    focus: A queue, a visited set, and the order that comes out.
+    skills: [python.algorithms.traversal, python.structures.stack-queue]
+    difficulty: 4
+
+  - id: py.188
+    title: Depth first
+    focus: The same seven lines with a stack. Then again, recursively.
+    skills: [python.algorithms.traversal, python.recursion.tree]
+    difficulty: 4
+
+  - id: py.189
+    title: The shortest path, unweighted
+    focus: BFS that remembers where each node came from, and reconstructing the route.
+    skills: [python.algorithms.traversal]
+    difficulty: 5
+
+  - id: py.190
+    title: Connected components
+    focus: Traversal from every unvisited node, and counting islands.
+    skills: [python.algorithms.traversal]
+    difficulty: 4
+
+  - id: py.191
+    title: Detecting a cycle
+    focus: Directed and undirected, and why the two need different bookkeeping.
+    skills: [python.algorithms.topological]
+    difficulty: 5
+
+  - id: py.192
+    title: Topological order
+    focus: Kahn's algorithm, and a dependency graph that cannot be satisfied.
+    skills: [python.algorithms.topological]
+    difficulty: 5
+
+  - id: py.193
+    title: Weights change everything
+    focus: Why BFS stops being correct, shown on a graph where it gives the wrong answer.
+    skills: [python.algorithms.shortest-path]
+    difficulty: 5
+
+  - id: py.194
+    title: Dijkstra
+    focus: A priority queue, relaxation, and the stale entry you must skip.
+    skills: [python.algorithms.shortest-path, python.structures.heap]
+    difficulty: 5

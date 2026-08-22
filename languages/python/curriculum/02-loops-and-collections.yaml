@@ -1,0 +1,192 @@
+# Stage 2 — Loops and collections (lessons 21–52)
+#
+# The longest stage, and deliberately so. Almost everything later is a loop
+# over a collection with a dictionary keeping score, and a learner who is
+# fluent here finds the algorithms stage mostly a matter of naming things.
+#
+# The traps in this stage are the ones that survive into professional code:
+# mutating a list while iterating it, using a list where a set was needed, and
+# reaching for an index when the language was offering the item.
+
+stage: loops-and-collections
+title: Loops and collections
+lessons:
+  - id: py.021
+    title: Doing something to each item
+    focus: for over a sequence, without touching an index.
+    skills: [python.control.for]
+    difficulty: 1
+
+  - id: py.022
+    title: Counting with range
+    focus: range with one, two and three arguments, and why it stops where it does.
+    skills: [python.control.range-enumerate-zip]
+    difficulty: 1
+
+  - id: py.023
+    title: Accumulating a result
+    focus: The running total, the running maximum, the running list.
+    skills: [python.control.for]
+    difficulty: 1
+
+  - id: py.024
+    title: Repeating while something is true
+    focus: while, and the loop that never ends because nothing inside it changed.
+    skills: [python.control.while]
+    difficulty: 2
+
+  - id: py.025
+    title: Leaving early, and skipping one
+    focus: break and continue, and the `else` clause on a loop nobody expects.
+    skills: [python.control.loop-control]
+    difficulty: 2
+
+  - id: py.026
+    title: When you need the position too
+    focus: enumerate, and why manual index counters go wrong.
+    skills: [python.control.range-enumerate-zip]
+    difficulty: 1
+
+  - id: py.027
+    title: Two sequences at once
+    focus: zip, and what it does with sequences of different lengths.
+    skills: [python.control.range-enumerate-zip]
+    difficulty: 2
+
+  - id: py.028
+    title: Loops inside loops
+    focus: Nesting, and keeping track of which variable belongs to which level.
+    skills: [python.control.for, python.syntax.indentation]
+    difficulty: 2
+
+  - id: py.029
+    title: Making a list
+    focus: Literals, append, extend, and the difference between the last two.
+    skills: [python.collections.list]
+    difficulty: 1
+
+  - id: py.030
+    title: Reaching into a list
+    focus: Indexing from both ends, and IndexError as information.
+    skills: [python.collections.list]
+    difficulty: 1
+
+  - id: py.031
+    title: Removing from a list
+    focus: remove, pop, del — and which of them return something.
+    skills: [python.collections.list]
+    difficulty: 2
+
+  - id: py.032
+    title: Mutating a list while looping over it
+    focus: The bug, watched happening in the tracer, then fixed two ways.
+    skills: [python.collections.list, python.control.for]
+    difficulty: 3
+
+  - id: py.033
+    title: Slicing
+    focus: start, stop, step — and the reversal that is two characters.
+    skills: [python.collections.slicing]
+    difficulty: 1
+
+  - id: py.034
+    title: Slices are copies
+    focus: Why `b = a[:]` matters, and where it stops being enough.
+    skills: [python.collections.slicing, python.syntax.variables]
+    difficulty: 2
+
+  - id: py.035
+    title: Tuples, and why they exist
+    focus: Immutability, and returning more than one thing from a function.
+    skills: [python.collections.tuple]
+    difficulty: 1
+
+  - id: py.036
+    title: Unpacking
+    focus: Destructuring assignment, star-unpacking, and ignoring with an underscore.
+    skills: [python.collections.tuple]
+    difficulty: 2
+
+  - id: py.037
+    title: Keys and values
+    focus: The dictionary literal, lookup, and KeyError.
+    skills: [python.collections.dict]
+    difficulty: 1
+
+  - id: py.038
+    title: Asking without raising
+    focus: '`in`, `.get`, and the default that saves a branch.'
+    skills: [python.collections.dict-lookup]
+    difficulty: 1
+
+  - id: py.039
+    title: Changing a dictionary
+    focus: Assignment, update, pop, and setdefault.
+    skills: [python.collections.dict-mutation]
+    difficulty: 2
+
+  - id: py.040
+    title: Looping over a dictionary
+    focus: keys, values, items — and what a bare loop over a dict gives you.
+    skills: [python.collections.dict, python.control.for]
+    difficulty: 1
+
+  - id: py.041
+    title: Counting things
+    focus: The count-with-a-dictionary pattern, written by hand before it is imported.
+    skills: [python.collections.dict-mutation, python.idioms.aggregation]
+    difficulty: 2
+
+  - id: py.042
+    title: Grouping things
+    focus: A dictionary of lists, and setdefault versus a defaultdict.
+    skills: [python.idioms.grouping]
+    difficulty: 3
+
+  - id: py.043
+    title: Sets, and what they are for
+    focus: Membership, uniqueness, and why order is not on offer.
+    skills: [python.collections.set]
+    difficulty: 1
+
+  - id: py.044
+    title: Set operations
+    focus: union, intersection, difference — and the loop each one replaces.
+    skills: [python.collections.set]
+    difficulty: 2
+
+  - id: py.045
+    title: Membership in a list is a bug
+    focus: Measure it. A list scan and a set lookup, timed on real sizes.
+    skills: [python.collections.set, python.complexity.counting]
+    difficulty: 3
+
+  - id: py.046
+    title: Collections inside collections
+    focus: Lists of dictionaries, dictionaries of lists, and reading the shape.
+    skills: [python.collections.nested]
+    difficulty: 2
+
+  - id: py.047
+    title: Reaching deep, safely
+    focus: Nested lookup where any level might be missing.
+    skills: [python.collections.nested, python.collections.dict-lookup]
+    difficulty: 3
+
+  - id: py.048
+    title: Copying is shallower than you think
+    focus: A copied outer list still shares the inner ones. Watched, then fixed.
+    skills: [python.collections.nested, python.syntax.variables]
+    difficulty: 3
+
+  - id: py.049
+    title: Removing duplicates while keeping order
+    focus: A set for membership, a list for order, and why neither alone is enough.
+    skills: [python.collections.set, python.collections.list]
+    difficulty: 3
+
+  - id: py.050
+    title: The aggregation built-ins
+    focus: sum, min, max, any, all — and the key argument on the ones that take it.
+    skills: [python.idioms.aggregation]
+    difficulty: 2

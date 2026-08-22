@@ -1,0 +1,134 @@
+# Stage 8 — Recursion and cost (lessons 143–162)
+#
+# Complexity is taught here as measurement, not notation. The learner counts
+# operations with a counter they wrote, watches two versions diverge on real
+# input, and only then puts a name to the shape of the curve. Someone who has
+# seen the quadratic version die at n=20000 does not need to be told what
+# O(n^2) means, and someone who has only been told will keep writing it.
+#
+# Memoisation closes the stage because it is where recursion and cost finally
+# meet, and because the tracer showing the same call happening 177 times is
+# more convincing than any explanation of why it is slow.
+
+stage: cost
+title: Recursion and cost
+lessons:
+  - id: py.143
+    title: The base case, alone
+    focus: Given the recursive step, write only the stop. Six times.
+    skills: [python.recursion.base-case]
+    difficulty: 3
+
+  - id: py.144
+    title: Trusting the call
+    focus: Assume it works for the smaller case. Write the one line that follows.
+    skills: [python.recursion.linear]
+    difficulty: 3
+
+  - id: py.145
+    title: Recursion on strings and lists
+    focus: Palindromes, reversal, flattening one level.
+    skills: [python.recursion.linear, python.collections.slicing]
+    difficulty: 3
+
+  - id: py.146
+    title: Recursion on nested data
+    focus: Walking a structure of unknown depth without knowing its shape.
+    skills: [python.recursion.tree, python.collections.nested]
+    difficulty: 4
+
+  - id: py.147
+    title: The accumulator
+    focus: Passing the answer down instead of building it on the way back up.
+    skills: [python.recursion.accumulator]
+    difficulty: 4
+
+  - id: py.148
+    title: Recursion that will not fit
+    focus: Hit the recursion limit on purpose, then convert the function to a loop.
+    skills: [python.recursion.linear, python.control.while]
+    difficulty: 4
+
+  - id: py.149
+    title: Counting what actually runs
+    focus: Instrument a loop with a counter. Not an estimate — a number.
+    skills: [python.complexity.counting]
+    difficulty: 3
+
+  - id: py.150
+    title: Two versions, measured
+    focus: The same task written twice, counted at four input sizes.
+    skills: [python.complexity.counting]
+    difficulty: 3
+
+  - id: py.151
+    title: Naming the curve
+    focus: Constant, linear, quadratic, logarithmic — matched to counts already taken.
+    skills: [python.complexity.growth]
+    difficulty: 3
+
+  - id: py.152
+    title: The nested loop that was not obvious
+    focus: A quadratic hiding inside a helper call, found by counting.
+    skills: [python.complexity.growth, python.complexity.counting]
+    difficulty: 4
+
+  - id: py.153
+    title: What each structure costs
+    focus: list, set, dict — lookup, insertion, membership. Measured, then tabulated.
+    skills: [python.complexity.data-structure-choice]
+    difficulty: 3
+
+  - id: py.154
+    title: Choosing the structure that removes the loop
+    focus: Three slow functions. Change the data structure, not the algorithm.
+    skills: [python.complexity.data-structure-choice]
+    difficulty: 4
+
+  - id: py.155
+    title: String concatenation in a loop
+    focus: Why it is quadratic, measured, and what join does instead.
+    skills: [python.complexity.growth, python.syntax.strings]
+    difficulty: 3
+
+  - id: py.156
+    title: The repeated call
+    focus: Trace a naive Fibonacci. Count how many times fib(3) is computed.
+    skills: [python.recursion.tree, python.complexity.counting]
+    difficulty: 4
+
+  - id: py.157
+    title: Remembering the answer
+    focus: A dictionary cache written by hand, and the count collapsing.
+    skills: [python.recursion.memoisation]
+    difficulty: 4
+
+  - id: py.158
+    title: lru_cache
+    focus: The decorator that does it, and the arguments that must be hashable.
+    skills: [python.recursion.memoisation, python.advanced.decorators]
+    difficulty: 4
+
+  - id: py.159
+    title: Top-down to bottom-up
+    focus: The same recurrence as a table filled in order.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 5
+
+  - id: py.160
+    title: Grid paths
+    focus: Counting routes, then the same grid with obstacles.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 5
+
+  - id: py.161
+    title: Choosing what to take
+    focus: A knapsack, small enough to check by hand and big enough to need the table.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 5
+
+  - id: py.162
+    title: Edit distance
+    focus: Two strings, one table, and reading the answer out of a corner.
+    skills: [python.algorithms.dynamic-programming]
+    difficulty: 5

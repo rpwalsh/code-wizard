@@ -18,6 +18,13 @@ export const pythonExercisesDir = path.resolve(
   'exercises',
 );
 
+/** The planned course: one YAML file per stage, numbered in course order. */
+export const pythonCurriculumDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'curriculum',
+);
+
 export const pythonDocumentationDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',

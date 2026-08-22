@@ -3,3 +3,4 @@ export * from './recommender.ts';
 export * from './session.ts';
 export * from './diagnostic.ts';
 export * from './demonstration.ts';
+export * from './syllabus.ts';
