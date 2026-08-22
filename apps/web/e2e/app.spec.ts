@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+import { pythonSkillGraph } from '@code-retrainer/python';
 
 /**
  * The app, in a real browser, against the real production build.
@@ -146,7 +147,7 @@ test('draws the skill graph as a DAG', async ({ page }) => {
   await expect(canvas).toBeVisible();
 
   // A layered DAG of 45 skills: every node placed, every prerequisite drawn.
-  await expect(canvas.locator('.dag__node')).toHaveCount(45);
+  await expect(canvas.locator('.dag__node')).toHaveCount(pythonSkillGraph.size);
   expect(await canvas.locator('.dag__edge').count()).toBeGreaterThan(40);
 
   // Layout actually ran — dagre gives real coordinates, not a pile at 0,0.
@@ -161,7 +162,7 @@ test('tracing a skill dims everything unrelated to it', async ({ page }) => {
   await page.getByRole('button', { name: 'Skill map' }).click();
 
   const canvas = page.getByRole('group', { name: 'Skill dependency graph' });
-  await expect(canvas.locator('.dag__node')).toHaveCount(45);
+  await expect(canvas.locator('.dag__node')).toHaveCount(pythonSkillGraph.size);
 
   await canvas.getByRole('button', { name: /Modelling mutable state/ }).click();
 
@@ -173,7 +174,7 @@ test('tracing a skill dims everything unrelated to it', async ({ page }) => {
   const lit = await canvas.locator('.dag__node:not([data-dimmed="true"])').count();
   expect(dimmed).toBeGreaterThan(0);
   expect(lit).toBeGreaterThan(1);
-  expect(dimmed + lit).toBe(45);
+  expect(dimmed + lit).toBe(pythonSkillGraph.size);
 
   await expect(canvas.locator('.dag__node[data-relation="self"]')).toHaveCount(1);
   expect(await canvas.locator('.dag__node[data-relation="ancestor"]').count()).toBeGreaterThan(0);

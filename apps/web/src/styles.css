@@ -8,33 +8,63 @@
  *   Status never carried by colour alone; every state has a glyph or a label.
  *   Motion is 160–260ms and only ever explains a change of state.
  *   Information density high, visual noise low.
+ *
+ * Surfaces are translucent panels over a drawn landscape. That is a deliberate
+ * risk: glass costs contrast, and contrast is what makes dense information
+ * readable for hours. The compromise is that the glass is heavily frosted and
+ * the scene behind it is low contrast and blurred, so panels read as panels
+ * and text sits on something close to a flat surface. Anywhere the two came
+ * into conflict — the editor, test output, the trace — opacity wins and the
+ * glass gives way.
+ *
+ * Two themes. `data-theme` on the root wins; otherwise the system decides.
  */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Surfaces, near-black upward. */
-  --bg: #08090b;
-  --surface: #0d0f12;
-  --surface-raised: #131619;
-  --surface-inset: #050608;
-  --line: #1c2026;
-  --line-strong: #2a3038;
+  /* Panels over the scene: translucent, with a frosted backdrop. */
+  --glass: rgb(255 255 255 / 62%);
+  --glass-raised: rgb(255 255 255 / 76%);
+  --glass-strong: rgb(255 255 255 / 90%);
+  --glass-blur: 20px;
+
+  --bg: #dfe6ec;
+  --surface: var(--glass);
+  --surface-raised: var(--glass-raised);
+  --surface-inset: rgb(255 255 255 / 46%);
+  --line: rgb(28 42 56 / 12%);
+  --line-strong: rgb(28 42 56 / 22%);
 
   /* Text, four steps and no more. */
-  --text: #e9ebee;
-  --text-dim: #8d949e;
-  --text-faint: #5c626b;
-  --text-inverse: #08090b;
+  --text: #16202b;
+  --text-dim: #4a5a68;
+  --text-faint: #74838f;
+  --text-inverse: #f4f8fb;
 
   /* One accent. */
-  --accent: #6b93ff;
-  --accent-dim: #2c3f6d;
+  --accent: #2f6d9e;
+  --accent-dim: #a9c6dc;
 
   /* Restrained status. Used sparingly, always beside a glyph or label. */
-  --pass: #4bab6b;
-  --warn: #c9973f;
-  --fail: #e05c5c;
+  --pass: #2f7d52;
+  --warn: #966414;
+  --fail: #b23b3b;
+
+  /* The landscape. Dawn over the inlet. */
+  --scene-sky-high: #a8c6dd;
+  --scene-sky-low: #d3e2ea;
+  --scene-haze: #e6eef2;
+  --scene-sun: #fdf0dc;
+  --scene-ridge-4: #b9cbd8;
+  --scene-ridge-3: #a4bac9;
+  --scene-ridge-2: #8fa9ba;
+  --scene-ridge-1: #7c96a8;
+  --scene-water-far: #cfe0e8;
+  --scene-water-near: #b6ccd8;
+  --scene-water-line: #ffffff;
+  --scene-tree-far: #6d8a94;
+  --scene-tree-near: #4f6d76;
 
   /*
    * Swap these two lines for a self-hosted Geist or Inter and the whole
@@ -86,9 +116,147 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font-size: var(--step-2);
+}
+
+/*
+ * Dusk. The same geometry with the light taken out of it: ridges go blue,
+ * the water darkens, and the glass becomes a tint rather than a frost.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --glass: rgb(16 22 30 / 64%);
+    --glass-raised: rgb(22 30 40 / 76%);
+    --glass-strong: rgb(12 17 23 / 90%);
+    --surface-inset: rgb(140 175 210 / 8%);
+
+    --bg: #070b10;
+    --line: rgb(190 214 236 / 12%);
+    --line-strong: rgb(190 214 236 / 22%);
+
+    --text: #e8eef4;
+    --text-dim: #9aa8b6;
+    --text-faint: #6b7986;
+    --text-inverse: #070b10;
+
+    --accent: #7fb0e0;
+    --accent-dim: #2c4a68;
+
+    --pass: #5cb37c;
+    --warn: #cc9a45;
+    --fail: #e06a6a;
+
+    --scene-sky-high: #0a1119;
+    --scene-sky-low: #142131;
+    --scene-haze: #1b2b3c;
+    --scene-sun: #2f4a63;
+    --scene-ridge-4: #17222f;
+    --scene-ridge-3: #131d29;
+    --scene-ridge-2: #0f1822;
+    --scene-ridge-1: #0b131b;
+    --scene-water-far: #16283a;
+    --scene-water-near: #0e1c2a;
+    --scene-water-line: #6f97b8;
+    --scene-tree-far: #0a141d;
+    --scene-tree-near: #060d14;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --glass: rgb(16 22 30 / 64%);
+  --glass-raised: rgb(22 30 40 / 76%);
+  --glass-strong: rgb(12 17 23 / 90%);
+  --surface-inset: rgb(140 175 210 / 8%);
+
+  --bg: #070b10;
+  --line: rgb(190 214 236 / 12%);
+  --line-strong: rgb(190 214 236 / 22%);
+
+  --text: #e8eef4;
+  --text-dim: #9aa8b6;
+  --text-faint: #6b7986;
+  --text-inverse: #070b10;
+
+  --accent: #7fb0e0;
+  --accent-dim: #2c4a68;
+
+  --pass: #5cb37c;
+  --warn: #cc9a45;
+  --fail: #e06a6a;
+
+  --scene-sky-high: #0a1119;
+  --scene-sky-low: #142131;
+  --scene-haze: #1b2b3c;
+  --scene-sun: #2f4a63;
+  --scene-ridge-4: #17222f;
+  --scene-ridge-3: #131d29;
+  --scene-ridge-2: #0f1822;
+  --scene-ridge-1: #0b131b;
+  --scene-water-far: #16283a;
+  --scene-water-near: #0e1c2a;
+  --scene-water-line: #6f97b8;
+  --scene-tree-far: #0a141d;
+  --scene-tree-near: #060d14;
+}
+
+/*
+ * The scene itself: fixed, behind everything, and blurred enough that no
+ * edge in it competes with an edge in the interface.
+ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--bg);
+}
+.backdrop__scene {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: blur(1.5px) saturate(0.92);
+  transform: scale(1.04);
+}
+
+/* A panel. Everything that reads as a surface uses this. */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--line);
+}
+
+/*
+ * Where readability beats atmosphere.
+ *
+ * The editor, the test output and the trace are read for minutes at a time,
+ * so they sit on an opaque surface. Frosted glass under a wall of monospace
+ * is the single fastest way to make people stop using a tool.
+ */
+.editor-pane__host,
+.results,
+.trace,
+.terminal {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: var(--bg);
+    --glass-raised: var(--bg);
+    --glass-strong: var(--bg);
+    --glass-blur: 0px;
+  }
+  .backdrop__scene {
+    display: none;
+  }
 }
 
 h1,
@@ -1809,4 +1977,180 @@ kbd {
 }
 .timer--budget[data-state='over'] .timer__figure {
   color: var(--text-faint);
+}
+
+/* ── Glass, applied ─────────────────────────────────────────────────────
+ *
+ * The panels that frame the work take the frosted treatment. The regions the
+ * work happens in — editor, results, trace, terminal — were opted out further
+ * up, because a wall of monospace over a landscape is unreadable and no amount
+ * of atmosphere is worth that.
+ */
+.topbar,
+.brief,
+.aside,
+.inspector,
+.workspace__bar,
+.palette {
+  background: var(--surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+.palette {
+  background: var(--glass-strong);
+}
+
+/* The reading surfaces, opaque and slightly inset from the glass. */
+.editor-pane__host,
+.results,
+.terminal,
+.trace {
+  background: var(--surface-inset);
+}
+
+/* Hairlines rather than borders: over glass a solid line reads as a seam. */
+.topbar,
+.workspace__bar {
+  border-bottom: 1px solid var(--line);
+}
+
+/* A soft lift so panels sit above the scene instead of being cut out of it. */
+.inspector,
+.palette {
+  box-shadow: 0 18px 48px rgb(8 16 24 / 18%);
+}
+:root[data-theme='dark'] .inspector,
+:root[data-theme='dark'] .palette {
+  box-shadow: 0 18px 48px rgb(0 0 0 / 45%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .inspector,
+  :root:not([data-theme='light']) .palette {
+    box-shadow: 0 18px 48px rgb(0 0 0 / 45%);
+  }
+}
+
+/* ── The theme switch ───────────────────────────────────────────────────
+ *
+ * Three states rather than two: light, dark, and following the system. The
+ * third is the default and is not a cop-out — someone whose machine already
+ * switches at dusk should not have to switch this as well.
+ */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-inset);
+}
+.theme-switch__option {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
+}
+.theme-switch__option:hover {
+  color: var(--text-dim);
+}
+.theme-switch__option[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+.theme-switch__option:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Corrections the glass exposed ──────────────────────────────────────
+ *
+ * These spans carried `margin-top` while still being inline, where it does
+ * nothing at all, so the label ran straight into the title and the reason ran
+ * into the link. It was wrong before the backdrop arrived; the backdrop is
+ * only what made it obvious.
+ */
+.continue__reason,
+.continue__go,
+.plan__slot,
+.plan__title,
+.plan__why {
+  display: block;
+}
+
+/* ── The scene, turned down ─────────────────────────────────────────────
+ *
+ * The first version competed with the interface: ridgelines cut across the
+ * reading column and the treeline reached into the content. Scenery that you
+ * notice while working is scenery that has failed, so it is now blurred well
+ * past legibility, dimmed, and pushed down so the busiest part sits below
+ * where text lives.
+ */
+.backdrop__scene {
+  filter: blur(9px) saturate(0.88);
+  transform: scale(1.1) translateY(3%);
+  opacity: 0.85;
+}
+:root[data-theme='dark'] .backdrop__scene {
+  opacity: 0.7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .backdrop__scene {
+    opacity: 0.7;
+  }
+}
+
+/* A wash that lifts the middle of the page toward the panel colour, so the
+ * reading column never sits directly on a ridgeline. */
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg) 8%, transparent),
+    color-mix(in srgb, var(--bg) 38%, transparent) 55%,
+    color-mix(in srgb, var(--bg) 62%, transparent)
+  );
+}
+
+/* ── The reading column gets a surface ──────────────────────────────────
+ *
+ * Dashboard content was floating directly on the landscape with only the list
+ * rows panelled, which read as debris rather than as a page. One panel behind
+ * the whole column fixes it and costs nothing in density.
+ */
+.home {
+  background: var(--surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-6) var(--space-7);
+  margin: var(--space-5) auto var(--space-7);
+  max-width: 860px;
+  box-shadow: 0 22px 60px rgb(8 16 24 / 14%);
+}
+:root[data-theme='dark'] .home {
+  box-shadow: 0 22px 60px rgb(0 0 0 / 42%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .home {
+    box-shadow: 0 22px 60px rgb(0 0 0 / 42%);
+  }
+}
+
+/* Rows inside the panel are already on a surface, so they only need a tint. */
+.continue,
+.plan__item {
+  background: var(--surface-inset);
 }

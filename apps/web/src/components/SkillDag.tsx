@@ -232,8 +232,11 @@ function usePanZoom(layout: DagLayout) {
       if (!container || layout.width === 0 || layout.height === 0) return;
       const { width, height } = container.getBoundingClientRect();
       // Never zoom past 1:1 — a small graph blown up looks broken rather than
-      // impressive.
-      const next = Math.min(1, width / layout.width, height / layout.height);
+      // impressive — and never below the point where the labels stop being
+      // words. A seventy-node graph shrunk to fit is a grey smear that answers
+      // no question; better to show part of it legibly and let the learner
+      // pan, which is what the drag is for.
+      const next = clamp(Math.min(width / layout.width, height / layout.height), MINIMUM_FIT, 1);
       setScale(next);
       setOffset({
         x: (width - layout.width * next) / 2,
@@ -286,4 +289,16 @@ function usePanZoom(layout: DagLayout) {
       );
     },
   };
+}
+
+/**
+ * The smallest scale at which a node label is still readable.
+ *
+ * Below roughly half size the names turn into grey bars, and an overview
+ * nobody can read is not an overview.
+ */
+const MINIMUM_FIT = 0.55;
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.max(low, Math.min(high, value));
 }

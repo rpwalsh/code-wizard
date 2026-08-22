@@ -29,7 +29,8 @@
     "bundle": "node packages/cli/dist/main.js content bundle",
     "web": "npm run build && npm run bundle && npm run build --workspace @code-retrainer/web",
     "web:dev": "npm run bundle && npm run dev --workspace @code-retrainer/web",
-    "e2e": "npm run web && npm run e2e --workspace @code-retrainer/web"
+    "e2e": "npm run web && npm run e2e --workspace @code-retrainer/web",
+    "screenshots": "npm run web && playwright test screenshots --config apps/web/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

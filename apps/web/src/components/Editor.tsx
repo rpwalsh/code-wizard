@@ -1,5 +1,5 @@
 import Monaco, { loader } from '@monaco-editor/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { installMonacoEnvironment, monaco } from './monaco-setup.ts';
 
@@ -70,7 +70,7 @@ export function Editor({
       path={path}
       language={language}
       value={value}
-      theme="vs-dark"
+      theme={useEditorTheme()}
       onChange={(next) => onChange(next ?? '')}
       onMount={(editor, instance) => {
         editorRef.current = editor;
@@ -99,4 +99,45 @@ export function Editor({
       loading={<p className="muted">Loading editor…</p>}
     />
   );
+}
+
+/**
+ * Which Monaco theme matches the page right now.
+ *
+ * Monaco does not read CSS custom properties, so the choice has to be made in
+ * JavaScript and kept in step by hand. It follows the same three states as the
+ * rest of the interface: an explicit choice on the root wins, and otherwise
+ * the system decides — including when the system changes while the page is
+ * open, which is the case a one-off read at startup gets wrong.
+ */
+function useEditorTheme(): 'vs' | 'vs-dark' {
+  const [dark, setDark] = useState(prefersDark);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setDark(prefersDark());
+
+    media.addEventListener('change', update);
+    // The root attribute changes when the learner picks a theme, and that is
+    // not something matchMedia reports.
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => {
+      media.removeEventListener('change', update);
+      observer.disconnect();
+    };
+  }, []);
+
+  return dark ? 'vs-dark' : 'vs';
+}
+
+function prefersDark(): boolean {
+  const chosen = document.documentElement.getAttribute('data-theme');
+  if (chosen === 'dark') return true;
+  if (chosen === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }

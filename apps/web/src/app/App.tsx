@@ -15,6 +15,14 @@ import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import type { Demonstration } from '@code-retrainer/curriculum';
 import { planDemonstration } from '@code-retrainer/curriculum';
+import { Backdrop } from '../components/Backdrop.tsx';
+import type { ThemeChoice } from '../components/ThemeSwitch.tsx';
+import {
+  applyTheme,
+  isThemeChoice,
+  ThemeSwitch,
+  themeChoices,
+} from '../components/ThemeSwitch.tsx';
 import type { TimerMode } from '../components/Timer.tsx';
 import { isTimerMode, timerModes } from '../components/Timer.tsx';
 import { SkillMapView } from './SkillMapView.tsx';
@@ -23,6 +31,7 @@ import { Workspace } from './Workspace.tsx';
 /** Set once the learner has answered the first-run question. */
 const ONBOARDED_KEY = 'onboarding.level';
 const TIMER_KEY = 'preferences.timer';
+const THEME_KEY = 'preferences.theme';
 
 type Screen =
   | { readonly kind: 'home' }
@@ -51,6 +60,9 @@ export function App() {
   // Off by default. A timer helps someone deliberately training speed and
   // hurts someone stuck on a concept, and only they know which they are.
   const [timerMode, setTimerMode] = useState<TimerMode>('off');
+  // Following the machine is the default, so a display that already shifts at
+  // dusk is not fought with.
+  const [theme, setTheme] = useState<ThemeChoice>('system');
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const [fontSize, setFontSize] = useState(14);
 
@@ -125,6 +137,32 @@ export function App() {
       });
   }, [platform]);
 
+  useEffect(() => {
+    if (!platform) return;
+    void platform.store
+      .getSetting(THEME_KEY)
+      .then((value) => {
+        if (value !== null && isThemeChoice(value)) {
+          setTheme(value);
+          applyTheme(value);
+        }
+      })
+      .catch(() => {
+        // A preference that cannot be read is not worth an error on screen.
+      });
+  }, [platform]);
+
+  const chooseTheme = useCallback(
+    (choice: ThemeChoice) => {
+      setTheme(choice);
+      applyTheme(choice);
+      void platform?.store.setSetting(THEME_KEY, choice).catch(() => {
+        // Losing the preference is not worth interrupting anyone over.
+      });
+    },
+    [platform],
+  );
+
   const cycleTimer = useCallback(() => {
     const next = timerModes[(timerModes.indexOf(timerMode) + 1) % timerModes.length];
     if (!next) return;
@@ -188,6 +226,12 @@ export function App() {
     const navigation: Command[] = [
       { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
       { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
+      ...themeChoices.map((candidate) => ({
+        id: `theme-${candidate}`,
+        name: candidate === 'system' ? 'Appearance: follow the system' : `Appearance: ${candidate}`,
+        disabled: candidate === theme,
+        run: () => chooseTheme(candidate),
+      })),
       {
         id: 'timer-cycle',
         name:
@@ -216,7 +260,7 @@ export function App() {
       },
     ];
     return [...screenCommands, ...navigation];
-  }, [screenCommands, mode]);
+  }, [screenCommands, mode, theme, timerMode, chooseTheme, cycleTimer]);
 
   if (failure) {
     return (
@@ -250,6 +294,8 @@ export function App() {
         Skip to content
       </a>
 
+      <Backdrop />
+
       <header className="topbar">
         <span className="wordmark">Code Retrainer</span>
 
@@ -282,6 +328,8 @@ export function App() {
         >
           <kbd>Ctrl K</kbd>
         </button>
+
+        <ThemeSwitch choice={theme} onChoose={chooseTheme} />
 
         <span className="mode-indicator" data-mode={mode}>
           <span className="mode-indicator__dot" aria-hidden="true" />
