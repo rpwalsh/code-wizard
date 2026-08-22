@@ -6,3 +6,4 @@ export * from './language.ts';
 export * from './errors.ts';
 export * from './skills.ts';
 export * from './mastery.ts';
+export * from './modes.ts';
