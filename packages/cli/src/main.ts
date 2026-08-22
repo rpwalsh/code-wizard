@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 
 import { runCurriculumCommand } from './commands/curriculum.ts';
 import { runExerciseCommand } from './commands/exercise.ts';
+import { runPlanCommand } from './commands/plan.ts';
 import { runRuntimeCommand } from './commands/runtime.ts';
 import { style } from './terminal.ts';
 
@@ -17,6 +18,9 @@ ${style.bold('Usage')}
   forge exercise validate [<id>] [--fast]    Validate exercise content
   forge exercise run <id> [--solution]       Run an exercise's tests
   forge curriculum check                     Check the skill graph and its coverage
+  forge plan session [--level <id>]          Build today's training session
+  forge plan next [--level <id>]             Explain what to practise next
+  forge plan diagnostic                      Show the onboarding diagnostic
 
 ${style.bold('Options')}
   --help, -h        Show this message
@@ -30,9 +34,17 @@ export async function main(argv: readonly string[]): Promise<number> {
     args: [...argv],
     strict: false,
     allowPositionals: true,
+    // Value-taking options must be declared even in non-strict mode: an
+    // undeclared `--level fluent` parses as a boolean flag plus a stray
+    // positional, and the value is silently lost.
     options: {
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean' },
+      language: { type: 'string' },
+      level: { type: 'string' },
+      limit: { type: 'string' },
+      fast: { type: 'boolean' },
+      solution: { type: 'boolean' },
     },
   });
 
@@ -56,6 +68,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         return await runExerciseCommand(rest, values);
       case 'curriculum':
         return await runCurriculumCommand(rest, values);
+      case 'plan':
+        return await runPlanCommand(rest, values);
       case undefined:
         console.log(USAGE);
         return 0;

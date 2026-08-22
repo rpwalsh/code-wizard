@@ -1,19 +1,19 @@
 {
-  "name": "@forge/cli",
+  "name": "@forge/curriculum",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./dist/main.js",
-  "types": "./dist/main.d.ts",
-  "bin": {
-    "forge": "./dist/main.js"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
     "@forge/core": "*",
-    "@forge/execution": "*",
     "@forge/exercises": "*",
-    "@forge/python": "*",
-    "@forge/curriculum": "*",
     "@forge/learning": "*"
   },
   "scripts": {

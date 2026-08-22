@@ -75,6 +75,31 @@ export function headlineMastery(vector: MasteryVector): number {
   return clamp01(total / weight);
 }
 
+/**
+ * How ready a learner is to *attempt* work that depends on this skill.
+ *
+ * Deliberately not `headlineMastery`. Headline mastery is weighted toward
+ * independent recall, which is what the product is trying to build; readiness
+ * asks whether the learner understands the idea well enough to engage with an
+ * exercise that uses it. Gating on mastery would refuse to teach anyone
+ * anything until they had already learned it elsewhere.
+ */
+const READINESS_WEIGHTS: Readonly<Partial<Record<MasteryDimension, number>>> = Object.freeze({
+  knowledge: 1,
+  recognition: 1.25,
+  application: 1.25,
+});
+
+export function readiness(vector: MasteryVector): number {
+  let total = 0;
+  let weight = 0;
+  for (const [dimension, dimensionWeight] of Object.entries(READINESS_WEIGHTS)) {
+    total += vector[dimension as MasteryDimension] * (dimensionWeight ?? 0);
+    weight += dimensionWeight ?? 0;
+  }
+  return weight === 0 ? 0 : clamp01(total / weight);
+}
+
 /** Dimensions below `threshold`, weakest first. Drives "current weaknesses". */
 export function weakestDimensions(
   vector: MasteryVector,

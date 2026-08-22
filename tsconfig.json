@@ -5,6 +5,7 @@
     { "path": "./packages/execution" },
     { "path": "./packages/exercises" },
     { "path": "./packages/learning" },
+    { "path": "./packages/curriculum" },
     { "path": "./languages/python" },
     { "path": "./packages/cli" }
   ]
