@@ -49,6 +49,8 @@ export function Workspace({
         runtime: platform.runtime,
         store: platform.store,
         skillGraph: platform.skillGraph,
+        skillsOf: (exerciseId) =>
+          platform.catalog.has(exerciseId) ? platform.catalog.get(exerciseId).skills : [],
       }),
     [platform, exercise, mode],
   );

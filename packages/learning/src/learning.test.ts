@@ -5,6 +5,7 @@ import type { Attempt, AttemptEvent, HintLevel } from './attempt.ts';
 import { abandonAttempt, AttemptClosedError, recordEvent, startAttempt } from './attempt.ts';
 import type { ExerciseProfile } from './grading.ts';
 import { gradeAttempt, isGradable } from './grading.ts';
+import { gradingContext } from './history-context.ts';
 import { buildHistory, fluencyStage, independentCompletionRate } from './history.ts';
 import {
   applyObservation,
@@ -214,6 +215,113 @@ describe('grading', () => {
     const [observation] = gradeAttempt(attempt([hint(5, 'language'), green(60)]), profile);
     expect(observation?.reasons.join(' ')).toMatch(/Solved the exercise/);
     expect(observation?.reasons.join(' ')).toMatch(/hint/i);
+  });
+});
+
+describe('debugging', () => {
+  it('says nothing when nothing ever broke', () => {
+    // Straight to green is not evidence about debugging, in either direction.
+    const [observation] = gradeAttempt(attempt([green(60)]), profile);
+    expect(observation?.evidence.debugging).toBeUndefined();
+  });
+
+  it('credits a red-to-green solve, because a fault was diagnosed', () => {
+    const [observation] = gradeAttempt(attempt([red(10), green(60)]), profile);
+    expect(observation?.evidence.debugging).toBe(1);
+  });
+
+  it('scores a long thrash below a clean diagnosis', () => {
+    const clean = gradeAttempt(attempt([red(10), green(60)]), profile)[0];
+    const thrashed = gradeAttempt(
+      attempt([red(10), red(20), red(30), red(40), red(50), green(60)]),
+      profile,
+    )[0];
+    expect(thrashed?.evidence.debugging).toBeLessThan(clean!.evidence.debugging!);
+    expect(thrashed?.evidence.debugging).toBeGreaterThan(0);
+  });
+
+  it('treats a bug-fix exercise as a debugging task outright', () => {
+    // No red run needed: locating the fault *is* the exercise.
+    const [observation] = gradeAttempt(attempt([green(60)]), { ...profile, kind: 'bug-fix' });
+    expect(observation?.evidence.debugging).toBe(1);
+  });
+
+  it('scores an unfixed bug at zero', () => {
+    const failed = abandonAttempt(attempt([red(10)]), at(300));
+    const [observation] = gradeAttempt(failed, { ...profile, kind: 'bug-fix' });
+    expect(observation?.evidence.debugging).toBe(0);
+  });
+});
+
+describe('transfer', () => {
+  const familiar = { priorAttemptsAtExercise: 0, priorAttemptsAtSkill: 3 };
+
+  it('says nothing without history, because there is nothing to transfer from', () => {
+    const [observation] = gradeAttempt(attempt([green(60)]), profile);
+    expect(observation?.evidence.transfer).toBeUndefined();
+  });
+
+  it('credits a known skill carried into an exercise never seen before', () => {
+    const [observation] = gradeAttempt(attempt([green(60)]), profile, familiar);
+    expect(observation?.evidence.transfer).toBe(1);
+  });
+
+  it('does not call repetition transfer', () => {
+    // Second time at the same exercise. Solving it again proves retention, not
+    // that the skill goes anywhere new.
+    const [observation] = gradeAttempt(attempt([green(60)]), profile, {
+      priorAttemptsAtExercise: 1,
+      priorAttemptsAtSkill: 3,
+    });
+    expect(observation?.evidence.transfer).toBeUndefined();
+  });
+
+  it('records a failure to carry the skill across', () => {
+    const failed = abandonAttempt(attempt([red(10)]), at(300));
+    const [observation] = gradeAttempt(failed, profile, familiar);
+    expect(observation?.evidence.transfer).toBe(0);
+  });
+});
+
+describe('grading context', () => {
+  const skills: Record<string, string[]> = {
+    'ex.same-skill': ['python.collections.dict-lookup'],
+    'ex.unrelated': ['python.functions'],
+  };
+  const skillsOf = (id: string) => skills[id] ?? [];
+
+  function priorAttempt(id: string, exerciseId: string, secondsAgo: number): Attempt {
+    return startAttempt({
+      id,
+      exerciseId,
+      exerciseVersion: 1,
+      mode: 'fluency',
+      startedAt: at(-secondsAgo),
+    });
+  }
+
+  const target = { exerciseId: profile.id, skills: profile.skills };
+
+  it('counts repeats of the same exercise separately from the skill', () => {
+    const context = gradingContext(
+      [priorAttempt('a', profile.id, 100), priorAttempt('b', 'ex.same-skill', 200)],
+      target,
+      skillsOf,
+      at(0),
+    );
+    expect(context).toEqual({ priorAttemptsAtExercise: 1, priorAttemptsAtSkill: 1 });
+  });
+
+  it('ignores exercises that share no skill', () => {
+    const context = gradingContext([priorAttempt('a', 'ex.unrelated', 100)], target, skillsOf, at(0));
+    expect(context.priorAttemptsAtSkill).toBe(0);
+  });
+
+  it('ignores attempts made after the one being graded', () => {
+    // Grading is a replay over an append-only log, so it must see only what
+    // had happened by then — otherwise re-deriving history changes it.
+    const context = gradingContext([priorAttempt('later', profile.id, -100)], target, skillsOf, at(0));
+    expect(context.priorAttemptsAtExercise).toBe(0);
   });
 });
 

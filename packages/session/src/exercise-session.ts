@@ -17,6 +17,7 @@ import {
   computeMetrics,
   emptyMastery,
   gradeAttempt,
+  gradingContext,
   recordEvent,
   reinforceRetention,
   startAttempt,
@@ -28,6 +29,13 @@ export interface SessionDependencies {
   readonly runtime: LanguageRuntime;
   readonly store: ProgressStore;
   readonly skillGraph: SkillGraph;
+  /**
+   * Which skills another exercise trains.
+   *
+   * Needed to tell transfer from repetition: solving something new only counts
+   * as transfer if its skills were practised elsewhere first.
+   */
+  readonly skillsOf?: (exerciseId: string) => readonly string[];
   /** Injected so tests are deterministic and history is reproducible. */
   readonly clock?: () => Date;
   readonly newId?: () => string;
@@ -409,14 +417,28 @@ export class ExerciseSession {
     await this.#persist();
 
     const metrics = computeMetrics(this.#attempt);
-    const observations = gradeAttempt(this.#attempt, {
-      id: this.exercise.id,
-      version: this.exercise.version,
-      skills: this.exercise.skills,
-      difficulty: this.exercise.difficulty,
-      estimatedSeconds: this.exercise.estimatedSeconds,
-      kind: this.exercise.kind,
-    });
+
+    // Two dimensions are about history rather than this attempt, so grading
+    // needs to know what came before it.
+    const history = gradingContext(
+      await this.#deps.store.allAttempts(),
+      { exerciseId: this.exercise.id, skills: this.exercise.skills },
+      (exerciseId) => this.#deps.skillsOf?.(exerciseId) ?? [],
+      this.#attempt.startedAt,
+    );
+
+    const observations = gradeAttempt(
+      this.#attempt,
+      {
+        id: this.exercise.id,
+        version: this.exercise.version,
+        skills: this.exercise.skills,
+        difficulty: this.exercise.difficulty,
+        estimatedSeconds: this.exercise.estimatedSeconds,
+        kind: this.exercise.kind,
+      },
+      history,
+    );
 
     const changes: MasteryChange[] = [];
     const reasons = new Set<string>();

@@ -56,6 +56,8 @@ describe('mastery vectors', () => {
       recall: 0.4,
       application: 0.9,
       composition: 0.6,
+      debugging: 0.9,
+      transfer: 0.9,
       speed: 0.9,
       retention: 0.9,
       independence: 0.9,

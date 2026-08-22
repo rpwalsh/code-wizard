@@ -19,6 +19,25 @@ export interface ExerciseProfile {
   readonly kind: string;
 }
 
+/**
+ * What the learner had already done before this attempt.
+ *
+ * Needed because two of the dimensions are about history rather than the
+ * attempt itself: solving something for the first time is only *transfer* if
+ * the skills behind it were practised somewhere else first.
+ */
+export interface GradingContext {
+  /** Attempts at this exact exercise, before this one. */
+  readonly priorAttemptsAtExercise: number;
+  /** Attempts at *other* exercises training any of the same skills. */
+  readonly priorAttemptsAtSkill: number;
+}
+
+export const noHistory: GradingContext = Object.freeze({
+  priorAttemptsAtExercise: 0,
+  priorAttemptsAtSkill: 0,
+});
+
 export interface MasteryObservation {
   readonly skillId: string;
   readonly exerciseId: string;
@@ -47,6 +66,7 @@ export function isGradable(
 export function gradeAttempt(
   attempt: Attempt,
   profile: ExerciseProfile,
+  history: GradingContext = noHistory,
 ): readonly MasteryObservation[] {
   const metrics = computeMetrics(attempt);
   if (!isGradable(attempt, metrics)) return [];
@@ -84,6 +104,32 @@ export function gradeAttempt(
     reasons.push(speed.reason);
   }
 
+  // -- debugging: could they find the fault? ------------------------------
+  //
+  // Two sources. A bug-fix exercise *is* a debugging task, so solving it is
+  // direct evidence. Any other exercise that went red and then green also
+  // required a diagnosis, and how many red runs it took is the measure of how
+  // efficiently they made it.
+  const debugging = debuggingEvidence(metrics, profile);
+  if (debugging) {
+    evidence.debugging = debugging.value;
+    reasons.push(debugging.reason);
+  }
+
+  // -- transfer: did they carry a known skill somewhere new? ---------------
+  //
+  // Only meaningful the first time an exercise is seen, and only when the
+  // skills behind it were practised elsewhere first. Otherwise this is not
+  // transfer, it is learning — which the other dimensions already cover.
+  if (history.priorAttemptsAtExercise === 0 && history.priorAttemptsAtSkill > 0) {
+    evidence.transfer = metrics.solved ? 1 : 0;
+    reasons.push(
+      metrics.solved
+        ? 'Applied a familiar skill in an exercise never seen before.'
+        : 'Could not carry a familiar skill into an unfamiliar exercise.',
+    );
+  }
+
   // -- independence: the product's headline dimension ---------------------
   evidence.independence = metrics.independent ? 1 : 0;
   reasons.push(
@@ -102,6 +148,33 @@ export function gradeAttempt(
     evidence,
     reasons,
   }));
+}
+
+function debuggingEvidence(
+  metrics: FluencyMetrics,
+  profile: ExerciseProfile,
+): { value: number; reason: string } | null {
+  if (profile.kind === 'bug-fix') {
+    return metrics.solved
+      ? { value: 1, reason: 'Located and corrected a fault in existing code.' }
+      : { value: 0, reason: 'Could not locate the fault.' };
+  }
+
+  // No red run means nothing was ever diagnosed, so there is nothing to say.
+  if (metrics.failedTestRuns === 0) return null;
+
+  if (!metrics.solved) {
+    return { value: 0, reason: 'Left the tests failing without finding the cause.' };
+  }
+
+  // One or two red runs before green is a diagnosis; ten is thrashing.
+  const value = clamp01(1 - (metrics.failedTestRuns - 1) / 8);
+  return {
+    value: round(value),
+    reason: `Went from failing to passing after ${metrics.failedTestRuns} red ${
+      metrics.failedTestRuns === 1 ? 'run' : 'runs'
+    }.`,
+  };
 }
 
 function recallEvidence(metrics: FluencyMetrics): { value: number; reason: string } {

@@ -1,9 +1,13 @@
 import type { SkillId } from './skills.ts';
 
 /**
- * Mastery is deliberately not a single score (spec §18). A learner can know a
- * concept perfectly and still be unable to recall the syntax unaided; those
- * are different numbers and the product exists because of the gap.
+ * Mastery is deliberately not a single score. A learner can know a concept
+ * perfectly and still be unable to recall the syntax unaided; those are
+ * different numbers and the product exists because of the gap.
+ *
+ * `application` is construction — can you build something with it. It keeps
+ * its original name rather than being renamed, because a rename would
+ * invalidate every stored profile in exchange for a synonym.
  */
 export const masteryDimensions = [
   'knowledge',
@@ -11,6 +15,10 @@ export const masteryDimensions = [
   'recall',
   'application',
   'composition',
+  /** Can you find the fault when it breaks? A separate skill from writing it. */
+  'debugging',
+  /** Can you use it somewhere you have not used it before? */
+  'transfer',
   'speed',
   'retention',
   'independence',
@@ -60,6 +68,8 @@ const HEADLINE_WEIGHTS: Readonly<Record<MasteryDimension, number>> = Object.free
   recall: 1.5,
   application: 1.25,
   composition: 1.25,
+  debugging: 1.25,
+  transfer: 1.25,
   speed: 1,
   retention: 1.25,
   independence: 1.5,
@@ -89,6 +99,26 @@ const READINESS_WEIGHTS: Readonly<Partial<Record<MasteryDimension, number>>> = O
   recognition: 1.25,
   application: 1.25,
 });
+
+/**
+ * The dimensions a declared prior is allowed to touch.
+ *
+ * Saying you know Python is evidence about knowledge and recognition. It is
+ * not evidence that you can produce it from an empty editor, find a fault in
+ * it, or carry it somewhere new — those are the whole subject matter, and they
+ * start at zero however senior the learner is.
+ */
+export const claimableDimensions = Object.freeze([
+  'knowledge',
+  'recognition',
+  'application',
+] as const) satisfies readonly MasteryDimension[];
+
+export type ClaimableDimension = (typeof claimableDimensions)[number];
+
+export function isClaimable(dimension: MasteryDimension): dimension is ClaimableDimension {
+  return claimableDimensions.some((claimable) => claimable === dimension);
+}
 
 export function readiness(vector: MasteryVector): number {
   let total = 0;

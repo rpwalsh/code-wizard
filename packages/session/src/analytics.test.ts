@@ -1,4 +1,4 @@
-import { SkillGraph } from '@forge/core';
+import { makeMastery, masteryDimensions, SkillGraph } from '@forge/core';
 import type { Exercise } from '@forge/exercises';
 import { ExerciseCatalog } from '@forge/exercises';
 import type { Attempt } from '@forge/learning';
@@ -8,6 +8,13 @@ import { describe, expect, it } from 'vitest';
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';
 
 const NOW = new Date('2026-03-31T12:00:00.000Z');
+
+/** Every dimension at the same value. */
+function uniform(value: number) {
+  return makeMastery(
+    Object.fromEntries(masteryDimensions.map((dimension) => [dimension, value])),
+  );
+}
 
 const graph = SkillGraph.from([
   { id: 'core', name: 'Core syntax', category: 'Syntax', prerequisites: [], language: 'python' },
@@ -149,16 +156,7 @@ describe('fluency reading', () => {
           'measured',
           {
             skillId: 'measured',
-            vector: {
-              knowledge: 0.5,
-              recognition: 0.5,
-              recall: 0.5,
-              application: 0.5,
-              composition: 0.5,
-              speed: 0.5,
-              retention: 0.5,
-              independence: 0.5,
-            },
+            vector: uniform(0.5),
             observations: 3,
             lastPracticedAt: null,
           },
@@ -167,16 +165,7 @@ describe('fluency reading', () => {
           'seeded',
           {
             skillId: 'seeded',
-            vector: {
-              knowledge: 0.9,
-              recognition: 0.9,
-              recall: 0,
-              application: 0,
-              composition: 0,
-              speed: 0,
-              retention: 0,
-              independence: 0,
-            },
+            vector: uniform(0.5),
             observations: 0,
             lastPracticedAt: null,
           },
@@ -227,16 +216,7 @@ describe('constraints', () => {
         skillId,
         {
           skillId,
-          vector: {
-            knowledge: value,
-            recognition: value,
-            recall: value,
-            application: value,
-            composition: value,
-            speed: value,
-            retention: value,
-            independence: value,
-          },
+          vector: uniform(value),
           observations: 4,
           lastPracticedAt: null,
         },

@@ -1,4 +1,4 @@
-import { headlineMastery, SkillGraph } from '@forge/core';
+import { headlineMastery, makeMastery, SkillGraph } from '@forge/core';
 import type { Exercise } from '@forge/exercises';
 import { ExerciseCatalog } from '@forge/exercises';
 import type { ProgressStore } from '@forge/storage';
@@ -404,14 +404,5 @@ describe('ProgressService', () => {
 });
 
 function emptyVector() {
-  return {
-    knowledge: 0,
-    recognition: 0,
-    recall: 0,
-    application: 0,
-    composition: 0,
-    speed: 0,
-    retention: 0,
-    independence: 0,
-  } as const;
+  return makeMastery({});
 }

@@ -1,4 +1,5 @@
 import type { SkillGraph, SkillMastery } from '@forge/core';
+import type { ClaimableDimension } from '@forge/core';
 import { makeMastery } from '@forge/core';
 import type { Exercise } from '@forge/exercises';
 
@@ -24,15 +25,13 @@ export type ExperienceLevel =
  * Priors are stated per dimension rather than as one number, because the
  * dimensions genuinely differ. A senior TypeScript engineer knows exactly what
  * a dictionary is and when to reach for one; that says nothing about whether
- * they can write the Python for it without looking. Knowledge and recognition
- * start high, application starts modest, and recall, speed, composition and
- * independence start at zero and have to be earned.
+ * they can write the Python for it without looking.
+ *
+ * Only the three dimensions in `claimableDimensions` can be claimed. Recall,
+ * debugging, transfer, speed, composition, retention and independence are the
+ * product's subject matter and start at zero however senior the learner is.
  */
-interface Prior {
-  readonly knowledge: number;
-  readonly recognition: number;
-  readonly application: number;
-}
+type Prior = Readonly<Record<ClaimableDimension, number>>;
 
 const PRIORS: Readonly<Record<ExperienceLevel, Prior>> = Object.freeze({
   'new-to-programming': { knowledge: 0, recognition: 0, application: 0 },
@@ -40,6 +39,13 @@ const PRIORS: Readonly<Record<ExperienceLevel, Prior>> = Object.freeze({
   rusty: { knowledge: 0.75, recognition: 0.7, application: 0.45 },
   'working-knowledge': { knowledge: 0.85, recognition: 0.8, application: 0.6 },
 });
+
+/**
+ * Every level, derived from the table above rather than listed again, so the
+ * two cannot drift apart. `PRIORS` is a total record over the union, so these
+ * keys are exactly the union.
+ */
+export const experienceLevels = Object.freeze(Object.keys(PRIORS)) as readonly ExperienceLevel[];
 
 export interface SeedOptions {
   /** Timestamp recorded as the prior's origin. Never counted as practice. */

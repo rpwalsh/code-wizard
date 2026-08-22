@@ -2,7 +2,13 @@ import type { MasteryDimension, SkillGraph, SkillMastery } from '@forge/core';
 import { headlineMastery, masteryDimensions } from '@forge/core';
 import type { ExerciseCatalog } from '@forge/exercises';
 import type { Attempt } from '@forge/learning';
-import { applyObservation, emptyMastery, gradeAttempt, reinforceRetention } from '@forge/learning';
+import {
+  applyObservation,
+  emptyMastery,
+  gradeAttempt,
+  gradingContext,
+  reinforceRetention,
+} from '@forge/learning';
 
 /**
  * The single number on the home screen.
@@ -81,7 +87,7 @@ export function replayTrajectory(
   // Fold in everything that happened before the window so the first point is
   // where the learner actually stood, not zero.
   while (index < ordered.length && Date.parse(ordered[index]?.startedAt ?? '') < cursor) {
-    absorb(mastery, ordered[index], catalog);
+    absorb(mastery, ordered[index], catalog, ordered);
     index += 1;
   }
 
@@ -89,7 +95,7 @@ export function replayTrajectory(
   while (cursor <= end) {
     const dayEnd = cursor + 86_400_000;
     while (index < ordered.length && Date.parse(ordered[index]?.startedAt ?? '') < dayEnd) {
-      absorb(mastery, ordered[index], catalog);
+      absorb(mastery, ordered[index], catalog, ordered);
       index += 1;
     }
     points.push({ date: new Date(cursor).toISOString().slice(0, 10), score: score(mastery) });
@@ -103,18 +109,32 @@ function absorb(
   mastery: Map<string, SkillMastery>,
   attempt: Attempt | undefined,
   catalog: ExerciseCatalog,
+  all: readonly Attempt[],
 ): void {
   if (!attempt || !catalog.has(attempt.exerciseId)) return;
   const exercise = catalog.get(attempt.exerciseId);
 
-  for (const observation of gradeAttempt(attempt, {
-    id: exercise.id,
-    version: exercise.version,
-    skills: exercise.skills,
-    difficulty: exercise.difficulty,
-    estimatedSeconds: exercise.estimatedSeconds,
-    kind: exercise.kind,
-  })) {
+  // The same history the live grading saw, so the chart cannot disagree with
+  // the number beside it.
+  const history = gradingContext(
+    all,
+    { exerciseId: exercise.id, skills: exercise.skills },
+    (exerciseId) => (catalog.has(exerciseId) ? catalog.get(exerciseId).skills : []),
+    attempt.startedAt,
+  );
+
+  for (const observation of gradeAttempt(
+    attempt,
+    {
+      id: exercise.id,
+      version: exercise.version,
+      skills: exercise.skills,
+      difficulty: exercise.difficulty,
+      estimatedSeconds: exercise.estimatedSeconds,
+      kind: exercise.kind,
+    },
+    history,
+  )) {
     const current = mastery.get(observation.skillId) ?? emptyMastery(observation.skillId);
     const updated = applyObservation(current, observation);
     mastery.set(observation.skillId, reinforceRetention(updated.mastery, observation));

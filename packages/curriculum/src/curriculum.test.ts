@@ -1,9 +1,10 @@
 import type { Skill, SkillMastery } from '@forge/core';
-import { makeMastery, SkillGraph } from '@forge/core';
+import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@forge/core';
 import type { Exercise, ExerciseKind } from '@forge/exercises';
 import type { MasteryObservation } from '@forge/learning';
 import { describe, expect, it } from 'vitest';
 
+import { experienceLevels, seedFromExperience } from './diagnostic.ts';
 import type { ExerciseHistory, LearnerState } from './recommender.ts';
 import { emptyHistory, recommend } from './recommender.ts';
 import type { ReviewState } from './scheduler.ts';
