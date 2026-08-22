@@ -4,12 +4,11 @@ import type { Exercise, ExerciseKind } from '@forge/exercises';
 import type { MasteryObservation } from '@forge/learning';
 import { describe, expect, it } from 'vitest';
 
-import { experienceLevels, seedFromExperience } from './diagnostic.ts';
 import type { ExerciseHistory, LearnerState } from './recommender.ts';
 import { emptyHistory, recommend } from './recommender.ts';
 import type { ReviewState } from './scheduler.ts';
 import { beginReview, dueForReview, isDue, REVIEW_LADDER, scheduleNext } from './scheduler.ts';
-import { planDiagnostic, seedFromExperience } from './diagnostic.ts';
+import { experienceLevels, planDiagnostic, seedFromExperience } from './diagnostic.ts';
 import { groupBySlot, planSession } from './session.ts';
 
 const NOW = new Date('2026-03-10T09:00:00.000Z');
@@ -453,6 +452,23 @@ describe('session planning', () => {
 });
 
 describe('onboarding', () => {
+  it('seeds only the dimensions a claim can be evidence for', () => {
+    // Saying you know the language is evidence about knowledge. It is not
+    // evidence that you can produce it from an empty editor, find a fault in
+    // it, or carry it somewhere new — that is the subject matter, and it
+    // starts at zero however senior the learner is.
+    for (const level of experienceLevels) {
+      for (const mastery of seedFromExperience(graph, level, { at: iso(0) }).values()) {
+        for (const dimension of masteryDimensions) {
+          if (isClaimable(dimension)) continue;
+          expect(mastery.vector[dimension]).toBe(0);
+        }
+        // A prior is a starting point, not evidence.
+        expect(mastery.observations).toBe(0);
+      }
+    }
+  });
+
   const graph = SkillGraph.from([
     skill('dict'),
     skill('dict-mutation', ['dict']),
@@ -479,14 +495,9 @@ describe('onboarding', () => {
     expect(result.blocked).toHaveLength(1);
   });
 
-  it('never seeds recall, speed or independence from a claim', () => {
+  it('does seed the dimensions a claim is evidence for', () => {
     const seeded = seedFromExperience(graph, 'working-knowledge', { at: iso(0) });
-    const vector = seeded.get('dict')!.vector;
-    expect(vector.knowledge).toBeGreaterThan(0);
-    // Claiming to know Python says nothing about writing it from memory.
-    expect(vector.recall).toBe(0);
-    expect(vector.speed).toBe(0);
-    expect(vector.independence).toBe(0);
+    expect(seeded.get('dict')!.vector.knowledge).toBeGreaterThan(0);
   });
 
   it('does not record a prior as practice', () => {
