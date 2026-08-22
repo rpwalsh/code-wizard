@@ -22,7 +22,13 @@ export const supportDir = path.resolve(
 export const harnessEntry = 'node_modules/retrainer/harness.mjs';
 
 /** The files copied into every sandbox. */
-export const supportFiles = ['package.json', 'expect.js', 'test.js', 'harness.mjs'] as const;
+export const supportFiles = [
+  'package.json',
+  'expect.js',
+  'test.js',
+  'run.js',
+  'harness.mjs',
+] as const;
 
 export const exercisesDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

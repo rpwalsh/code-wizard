@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Inline the Python support files into TypeScript modules.
+ * Inline each language's runtime support files into TypeScript modules.
  *
- * The browser build has no filesystem, so it cannot read `retrainer/report.py` off
- * disk the way the desktop runtime does. Rather than couple the packages to a
+ * The browser build has no filesystem, so it cannot read a support file off
+ * disk the way the desktop runtimes do. Rather than couple the packages to a
  * bundler feature (Vite's `?raw`), the sources are embedded into checked-in
  * modules by this script, and a test asserts they have not drifted.
  *
@@ -31,6 +31,21 @@ const targets = [
       { constant: 'REPORT_PY', source: 'languages/python/runtime/retrainer/report.py' },
       { constant: 'EXPECT_PY', source: 'languages/python/runtime/retrainer/expect.py' },
       { constant: 'TRACE_PY', source: 'languages/python/runtime/retrainer/trace.py' },
+    ],
+  },
+  {
+    output: 'languages/javascript/src/support-sources.generated.ts',
+    banner: [
+      'The JavaScript support package, inlined as strings.',
+      '',
+      'The desktop runtime copies these files into a sandbox from disk; the',
+      'browser runtime turns them into blob modules from here. Same bytes, so a',
+      'test cannot behave differently depending on where it runs.',
+    ].join('\n'),
+    files: [
+      { constant: 'TEST_JS', source: 'languages/javascript/runtime/retrainer/test.js' },
+      { constant: 'EXPECT_JS', source: 'languages/javascript/runtime/retrainer/expect.js' },
+      { constant: 'RUN_JS', source: 'languages/javascript/runtime/retrainer/run.js' },
     ],
   },
   {

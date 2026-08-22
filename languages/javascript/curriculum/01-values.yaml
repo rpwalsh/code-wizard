@@ -1,0 +1,109 @@
+# Stage 1 — Values, and what equals what (lessons 1–16)
+#
+# The stage that decides whether the rest of the language makes sense. Almost
+# every confident wrong answer in JavaScript traces back to one of three facts:
+# there are two kinds of nothing, the falsy list is longer than people
+# remember, and `==` has rules of its own.
+#
+# Written for someone who already programs. Nothing here explains what a
+# variable is; it drills the places this language disagrees with the one you
+# came from.
+
+stage: values
+title: Values, and what equals what
+lessons:
+  - id: js.001
+    title: Run something and read the output
+    focus: The loop once — write, run, read, change — and where output actually goes.
+    skills: [javascript.syntax.values]
+    difficulty: 1
+
+  - id: js.002
+    title: Numbers, and the one number type
+    focus: No integers. Precision, division that never throws, and NaN as a value.
+    skills: [javascript.syntax.values]
+    difficulty: 2
+
+  - id: js.003
+    title: const, let, and what const actually protects
+    focus: The binding, not the value. A const object is still mutable.
+    skills: [javascript.syntax.bindings]
+    difficulty: 2
+
+  - id: js.004
+    title: Block scope, and the loop variable
+    focus: Why let and var behave differently in a loop that captures.
+    skills: [javascript.syntax.bindings]
+    difficulty: 3
+
+  - id: js.005
+    title: Strings and templates
+    focus: Template literals, multi-line text, and the methods worth knowing by heart.
+    skills: [javascript.syntax.strings]
+    difficulty: 1
+
+  - id: js.006
+    title: Equal, or merely similar
+    focus: Falsy values that are present, two kinds of absent, and the nullish operators.
+    skills: [javascript.syntax.equality, javascript.syntax.nullish]
+    difficulty: 2
+
+  - id: js.007
+    title: The coercion table, by experiment
+    focus: Predict twelve comparisons before running them. Then run them.
+    skills: [javascript.syntax.equality]
+    difficulty: 3
+
+  - id: js.008
+    title: Optional chaining
+    focus: Reaching through data that might not be there, without a pyramid of checks.
+    skills: [javascript.syntax.nullish]
+    difficulty: 2
+
+  - id: js.009
+    title: Deciding
+    focus: if, ternary, switch — and where each one stops being readable.
+    skills: [javascript.control.conditionals]
+    difficulty: 1
+
+  - id: js.010
+    title: Looping over things
+    focus: for, for...of, for...in — and which one lies to you about arrays.
+    skills: [javascript.control.loops]
+    difficulty: 2
+
+  - id: js.011
+    title: Modules
+    focus: import, export, default versus named, and what runs at load time.
+    skills: [javascript.syntax.modules]
+    difficulty: 2
+
+  - id: js.012
+    title: Circular imports
+    focus: What actually happens, and why the error names a file that looks fine.
+    skills: [javascript.syntax.modules]
+    difficulty: 4
+
+  - id: js.013
+    title: Functions, and arrows
+    focus: Declarations, expressions, arrows — and which of them are hoisted.
+    skills: [javascript.functions.declaration]
+    difficulty: 2
+
+  - id: js.014
+    title: Parameters
+    focus: Defaults, rest, and destructured parameters with defaults inside them.
+    skills: [javascript.functions.parameters]
+    difficulty: 3
+
+  - id: js.015
+    title: Throwing and catching
+    focus: try, catch, finally — and why catching everything is not handling it.
+    skills: [javascript.control.exceptions]
+    difficulty: 3
+
+  - id: js.016
+    title: Predict, then run
+    focus: Eight short programs. Say what each prints before running any of them.
+    skills: [javascript.syntax.equality, javascript.control.loops, javascript.syntax.bindings]
+    difficulty: 3

@@ -1,0 +1,90 @@
+id: javascript.syntax.values
+version: 1
+language: javascript
+title: One number type, and a const that is not constant
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 300
+timeoutMs: 10000
+
+skills:
+  - javascript.syntax.values
+  - javascript.syntax.bindings
+  - javascript.syntax.strings
+
+prerequisites: []
+
+learningObjectives:
+  - Recall that there is one number type and what that costs.
+  - Distinguish a binding that cannot be reassigned from a value that cannot change.
+  - Build strings with templates rather than concatenation.
+
+prompt: |
+  There are no integers in JavaScript. Every number is a float, division never
+  throws, and `const` protects the name rather than the thing.
+
+  - `divide(top, bottom)` returns the division. Dividing by zero is `Infinity`
+    rather than an error, and `0 / 0` is `NaN` — return those, do not guard
+    against them.
+  - `isWholeNumber(value)` returns true only for a number with no fractional
+    part. `NaN` and `Infinity` are not whole numbers.
+  - `addItem(basket, item)` takes a basket declared with `const` and adds an
+    item to it, returning the same basket. This is legal, and the point.
+  - `describeBasket(basket)` returns `"3 items: tea, jam, bread"`, or
+    `"empty"`. Use a template literal.
+
+  `addItem` is the one worth sitting with. `const` stops the name being pointed
+  somewhere else; it says nothing at all about the object.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/values.test.js
+    visibility: visible
+    concept: javascript.syntax.values
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.syntax.bindings
+  - path: tests/hidden.test.js
+    visibility: hidden
+    concept: javascript.syntax.strings
+
+hints:
+  - level: conceptual
+    text: Dividing by zero is a value here, not an error, and there are two different such values.
+  - level: structural
+    text: A whole number is one that equals itself with the fraction removed — and infinity does not.
+  - level: language
+    text: '`Number.isInteger` answers the whole-number question including the infinities.'
+  - level: syntax
+    text: 'A template literal is backticks with `${...}` inside.'
+  - level: explicit
+    text: '`describeBasket` can use `basket.join(", ")`.'
+
+explanation: |
+  One number type means `0.1 + 0.2` is not `0.3` and `2 ** 53 + 1` is not what
+  you wrote, and it means an "integer" is a float that happens to be whole.
+  `Number.isInteger` exists because checking `value % 1 === 0` says yes to
+  `Infinity`, which is exactly the case that matters.
+
+  Division by zero producing `Infinity` rather than throwing is a real
+  convenience and a real trap: an average over an empty list comes out
+  `NaN`, propagates silently through every subsequent calculation, and shows up
+  three screens later as a blank cell.
+
+  `const` binds a name once. The array it points at is as mutable as any other,
+  which is why `const` is the right default for almost everything and is not a
+  substitute for actually not mutating.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 19
+    why: >-
+      An array length is always a number and zero is always a number, so strict
+      and loose comparison agree on every possible input.
+  - path: main.js
+    operator: strictness
+    line: 20
+    why: >-
+      The same number-to-number equivalence when choosing the singular noun.

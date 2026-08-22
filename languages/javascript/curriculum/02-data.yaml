@@ -1,0 +1,121 @@
+# Stage 2 — Data, and who is holding it (lessons 17–34)
+#
+# Arrays, objects, and the fact that both are handed around by reference. That
+# single fact is behind the state bugs that dominate this ecosystem: a spread
+# that copied one level, a sort that reordered the caller's array, a default
+# object shared by every call.
+#
+# The array methods get a lot of room. They are the vocabulary the rest of the
+# language is written in, and someone who reaches for a `for` loop to build a
+# list will find every codebase they join unreadable.
+
+stage: data
+title: Data, and who is holding it
+lessons:
+  - id: js.017
+    title: Arrays
+    focus: Building, reading, and the methods that mutate versus the ones that do not.
+    skills: [javascript.data.arrays]
+    difficulty: 2
+
+  - id: js.018
+    title: Sorting, and the comparator
+    focus: The default sort compares as text, so 10 comes before 9.
+    skills: [javascript.data.arrays]
+    difficulty: 3
+
+  - id: js.019
+    title: sort mutates
+    focus: The caller's array, reordered. And the two newer methods that do not.
+    skills: [javascript.data.arrays, javascript.data.reference]
+    difficulty: 3
+
+  - id: js.020
+    title: map and filter
+    focus: The two that replace most loops, and the one thing map is not for.
+    skills: [javascript.data.array-methods]
+    difficulty: 2
+
+  - id: js.021
+    title: reduce
+    focus: The accumulator, the seed, and when reduce is the wrong answer.
+    skills: [javascript.data.array-methods]
+    difficulty: 4
+
+  - id: js.022
+    title: find, some, every
+    focus: Short-circuiting, and proving that it stopped.
+    skills: [javascript.data.array-methods]
+    difficulty: 2
+
+  - id: js.023
+    title: flat and flatMap
+    focus: Flattening one level, and the map that returns lists.
+    skills: [javascript.data.array-methods]
+    difficulty: 3
+
+  - id: js.024
+    title: Objects
+    focus: Literals, computed keys, and iterating entries.
+    skills: [javascript.data.objects]
+    difficulty: 2
+
+  - id: js.025
+    title: Destructuring
+    focus: From objects and arrays, with defaults, renaming and nesting.
+    skills: [javascript.data.destructuring]
+    difficulty: 3
+
+  - id: js.026
+    title: Spread and rest
+    focus: The same three dots doing opposite jobs, and what each one copies.
+    skills: [javascript.data.destructuring]
+    difficulty: 3
+
+  - id: js.027
+    title: Copying is shallower than you think
+    focus: A spread copies one level. The nested object is still shared.
+    skills: [javascript.data.reference]
+    difficulty: 4
+
+  - id: js.028
+    title: Two names, one object
+    focus: Passing an object to a function that changes it, and whether it should.
+    skills: [javascript.data.reference]
+    difficulty: 3
+
+  - id: js.029
+    title: Producing a changed copy
+    focus: Updating nested state without mutating — the discipline behind modern UI.
+    skills: [javascript.modeling.immutability]
+    difficulty: 4
+
+  - id: js.030
+    title: Map and Set
+    focus: Keys that are not strings, insertion order, and why an object is not a map.
+    skills: [javascript.data.collections]
+    difficulty: 3
+
+  - id: js.031
+    title: Grouping and counting
+    focus: A Map of arrays, and the one-pass tally.
+    skills: [javascript.data.collections, javascript.data.array-methods]
+    difficulty: 3
+
+  - id: js.032
+    title: JSON
+    focus: parse, stringify, and the types that do not survive the trip.
+    skills: [javascript.data.json]
+    difficulty: 2
+
+  - id: js.033
+    title: Parsing what you were sent
+    focus: Validating a payload at the boundary rather than trusting its shape.
+    skills: [javascript.data.json, javascript.control.exceptions]
+    difficulty: 4
+
+  - id: js.034
+    title: A report from raw records
+    focus: Filter, group, aggregate, sort, format. Everything in this stage, once.
+    skills: [javascript.data.array-methods, javascript.data.collections]
+    difficulty: 4

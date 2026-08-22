@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./test.js": "./test.js",
-    "./expect.js": "./expect.js"
+    "./expect.js": "./expect.js",
+    "./run.js": "./run.js"
   }
 }

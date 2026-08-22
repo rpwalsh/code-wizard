@@ -1,8 +1,7 @@
 import { loadSyllabus } from '@code-retrainer/exercises';
 import { readSyllabusProgress, validateSyllabus } from '@code-retrainer/curriculum';
-import { pythonCurriculumDir } from '@code-retrainer/python';
 
-import { createContext } from '../context.ts';
+import { createContext, curriculumRoots } from '../context.ts';
 import { columns, heading, indent, pluralise, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
 
@@ -116,17 +115,35 @@ async function skills(): Promise<number> {
  */
 async function syllabus(): Promise<number> {
   const context = await createContext();
-  const loaded = await loadSyllabus(pythonCurriculumDir);
+  let failures = 0;
+
+  for (const [language, directory] of Object.entries(curriculumRoots())) {
+    failures += await reportSyllabus(context, language, directory);
+    console.log('');
+  }
+
+  return failures === 0 ? 0 : 1;
+}
+
+async function reportSyllabus(
+  context: Awaited<ReturnType<typeof createContext>>,
+  language: string,
+  directory: string,
+): Promise<number> {
+  const loaded = await loadSyllabus(directory);
 
   if (loaded.stages.length === 0) {
-    console.error(style.red('No syllabus found.'));
-    return 2;
+    console.log(heading(language));
+    console.log(indent(style.grey('No syllabus written yet.')));
+    return 0;
   }
 
   const issues = validateSyllabus(loaded, context.skillGraph);
-  const progress = readSyllabusProgress(loaded, context.catalog.all());
+  // Only this language's exercises count toward this language's plan.
+  const exercises = context.catalog.all().filter((entry) => entry.language === language);
+  const progress = readSyllabusProgress(loaded, exercises);
 
-  console.log(heading('Syllabus'));
+  console.log(heading(language));
   console.log(
     columns([
       ['stages', String(loaded.stages.length)],
@@ -151,7 +168,7 @@ async function syllabus(): Promise<number> {
     }
   }
 
-  const next = progress.outstanding.slice(0, 8);
+  const next = progress.outstanding.slice(0, 6);
   if (next.length > 0) {
     console.log('');
     console.log(heading('Next to write'));
@@ -165,7 +182,7 @@ async function syllabus(): Promise<number> {
     );
   }
 
-  return issues.length === 0 ? 0 : 1;
+  return issues.length;
 }
 
 function percent(part: number, whole: number): number {

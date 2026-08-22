@@ -1,0 +1,96 @@
+# Stage 3 — Functions, closures and this (lessons 35–48)
+#
+# `this` gets four lessons, which looks disproportionate until you count the
+# hours people lose to it. It is not conceptually hard; it is that the rule is
+# about the call site rather than the definition, and every intuition carried
+# from another language points the wrong way.
+#
+# Closures come first, because half of what looks like a `this` problem is
+# really a capture problem.
+
+stage: functions
+title: Functions, closures and this
+lessons:
+  - id: js.035
+    title: Functions as values
+    focus: Passing one, returning one, storing one in a data structure.
+    skills: [javascript.functions.higher-order]
+    difficulty: 2
+
+  - id: js.036
+    title: Closures
+    focus: A function that remembers, and what exactly it remembers.
+    skills: [javascript.functions.closures]
+    difficulty: 3
+
+  - id: js.037
+    title: The counter, and private state
+    focus: State that outlives a call without belonging to an object.
+    skills: [javascript.functions.closures]
+    difficulty: 3
+
+  - id: js.038
+    title: Building functions in a loop
+    focus: The capture that surprises everyone, and the two ways out.
+    skills: [javascript.functions.closures, javascript.syntax.bindings]
+    difficulty: 4
+
+  - id: js.039
+    title: What this is, at the call site
+    focus: Four call forms, four answers. The rule is about the call, not the code.
+    skills: [javascript.functions.this]
+    difficulty: 4
+
+  - id: js.040
+    title: The method that lost its receiver
+    focus: Passing `object.method` as a callback, and why it stops working.
+    skills: [javascript.functions.this]
+    difficulty: 4
+
+  - id: js.041
+    title: bind, call and apply
+    focus: Fixing the receiver on purpose, and partial application for free.
+    skills: [javascript.functions.this]
+    difficulty: 4
+
+  - id: js.042
+    title: What arrows actually change
+    focus: They do not have their own this — which is a fix and also a trap.
+    skills: [javascript.functions.this]
+    difficulty: 4
+
+  - id: js.043
+    title: Composing functions
+    focus: Piping, currying, and a decorator that wraps without hiding.
+    skills: [javascript.functions.higher-order]
+    difficulty: 4
+
+  - id: js.044
+    title: Memoising
+    focus: A cache keyed by argument, and where that goes wrong.
+    skills: [javascript.functions.higher-order, javascript.data.collections]
+    difficulty: 4
+
+  - id: js.045
+    title: Iterables
+    focus: What for...of actually asks for, and making your own object work with it.
+    skills: [javascript.iteration.iterables]
+    difficulty: 4
+
+  - id: js.046
+    title: Generators
+    focus: yield, laziness, and taking only what you need from something endless.
+    skills: [javascript.iteration.generators]
+    difficulty: 5
+
+  - id: js.047
+    title: Designing a module interface
+    focus: What to export, what to keep, and why a smaller surface is easier to change.
+    skills: [javascript.engineering.api]
+    difficulty: 4
+
+  - id: js.048
+    title: Writing tests
+    focus: One behaviour per test, and a test that would catch a wrong answer.
+    skills: [javascript.engineering.testing]
+    difficulty: 3

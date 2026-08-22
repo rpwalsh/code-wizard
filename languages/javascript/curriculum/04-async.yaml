@@ -1,0 +1,108 @@
+# Stage 4 — Asynchrony, and things that break (lessons 49–64)
+#
+# The stage that separates people who can write JavaScript from people who can
+# ship it. Everything here is about time, and the failures are the quiet kind:
+# a promise nobody awaited, a rejection nobody caught, ten requests that ran
+# one after another because the await was inside the loop.
+#
+# The event loop comes first and is taught by measurement — logging the order
+# things actually happen in — rather than by diagram.
+
+stage: async
+title: Asynchrony, and things that break
+lessons:
+  - id: js.049
+    title: The order things happen in
+    focus: Log the sequence. Synchronous, microtask, macrotask — observed, not described.
+    skills: [javascript.async.callbacks]
+    difficulty: 3
+
+  - id: js.050
+    title: Nothing interrupts your function
+    focus: Why a long loop freezes everything, and what that guarantee buys you.
+    skills: [javascript.async.callbacks]
+    difficulty: 3
+
+  - id: js.051
+    title: Promises
+    focus: The three states, then, and the value that arrives later.
+    skills: [javascript.async.promises]
+    difficulty: 3
+
+  - id: js.052
+    title: Chaining, and the return you forgot
+    focus: A then that does not return leaves the next one with undefined.
+    skills: [javascript.async.promises]
+    difficulty: 4
+
+  - id: js.053
+    title: Making a promise
+    focus: Wrapping a callback API, and resolving exactly once.
+    skills: [javascript.async.promises]
+    difficulty: 4
+
+  - id: js.054
+    title: async and await
+    focus: The same thing, readable. And the async function that returns a promise anyway.
+    skills: [javascript.async.await]
+    difficulty: 3
+
+  - id: js.055
+    title: The await inside the loop
+    focus: Ten requests, one after another. Measure it, then fix it.
+    skills: [javascript.async.concurrency]
+    difficulty: 4
+
+  - id: js.056
+    title: all, allSettled, race, any
+    focus: Four ways to wait for several, and which failure each one gives you.
+    skills: [javascript.async.concurrency]
+    difficulty: 4
+
+  - id: js.057
+    title: Limiting how many run at once
+    focus: A pool, because unbounded concurrency is a different outage.
+    skills: [javascript.async.concurrency]
+    difficulty: 5
+
+  - id: js.058
+    title: The rejection nobody caught
+    focus: What an unhandled rejection does, and where the boundary belongs.
+    skills: [javascript.async.errors]
+    difficulty: 4
+
+  - id: js.059
+    title: try, catch and await
+    focus: What a catch around an await actually catches, and what escapes it.
+    skills: [javascript.async.errors]
+    difficulty: 4
+
+  - id: js.060
+    title: Timeouts and cancellation
+    focus: Racing against a clock, and cleaning up the loser.
+    skills: [javascript.async.concurrency, javascript.async.errors]
+    difficulty: 5
+
+  - id: js.061
+    title: Retrying
+    focus: Backoff, a cap, and knowing which failures are worth retrying.
+    skills: [javascript.async.errors]
+    difficulty: 5
+
+  - id: js.062
+    title: Classes
+    focus: Fields, methods, static, private — and the constructor that does too much.
+    skills: [javascript.modeling.classes]
+    difficulty: 3
+
+  - id: js.063
+    title: Error types of your own
+    focus: A hierarchy a caller can catch selectively, carrying data rather than prose.
+    skills: [javascript.engineering.errors]
+    difficulty: 4
+
+  - id: js.064
+    title: Prototypes
+    focus: What a class is underneath, and where that still shows through.
+    skills: [javascript.modeling.prototypes]
+    difficulty: 5

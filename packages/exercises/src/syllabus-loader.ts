@@ -13,7 +13,7 @@ import { z } from 'zod';
  */
 const lessonSchema = z
   .object({
-    id: z.string().regex(/^[a-z]{2}\.\d{3}$/, 'expected an id like py.001'),
+    id: z.string().regex(/^[a-z]{2,4}\.\d{3}$/, 'expected an id like py.001'),
     title: z.string().min(1),
     focus: z.string().min(1),
     skills: z.array(z.string().min(1)).min(1),

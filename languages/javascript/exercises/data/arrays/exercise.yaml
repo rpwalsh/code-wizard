@@ -1,0 +1,75 @@
+id: javascript.data.arrays
+version: 1
+language: javascript
+title: The methods that mutate, and the ones that do not
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 10000
+
+skills:
+  - javascript.data.arrays
+  - javascript.data.array-methods
+
+prerequisites:
+  - javascript.functions.higher-order
+
+learningObjectives:
+  - Replace a loop with map, filter or reduce where it reads better.
+  - Sort by a computed key without disturbing the caller's array.
+  - Recall which array methods change the array they were called on.
+
+prompt: |
+  Half the array methods return something new and half change the array in
+  place, and the names give you almost no clue which is which.
+
+  Records are `{ name, price, active }`.
+
+  - `activeNames(items)` returns the names of active items, in order.
+  - `total(items)` returns the sum of the prices. No items means 0.
+  - `cheapestFirst(items)` returns the items sorted by price, cheapest first,
+    **without changing the array it was given**.
+  - `firstPriceOver(items, limit)` returns the **price** of the first item
+    priced above `limit`, or `null`. Stop as soon as you find it, and remember
+    that a price of zero is a real answer.
+
+  `sort` mutates. That is the whole reason `cheapestFirst` is on this list.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/arrays.test.js
+    visibility: visible
+    concept: javascript.data.array-methods
+  - path: tests/mutation.test.js
+    visibility: edge
+    concept: javascript.data.arrays
+  - path: tests/hidden.test.js
+    visibility: hidden
+    concept: javascript.data.array-methods
+
+hints:
+  - level: conceptual
+    text: A filter followed by a map is two passes and one idea.
+  - level: structural
+    text: Sorting in place is the default; getting a sorted copy takes one extra step.
+  - level: language
+    text: '`sort` takes a comparator returning a negative number, zero or a positive one.'
+  - level: syntax
+    text: '`[...items].sort(...)` sorts a copy.'
+  - level: explicit
+    text: '`items.find(...)?.price ?? null` — and `??` rather than `||`, or a price of zero becomes null.'
+
+explanation: |
+  The default sort converts everything to text, so `[10, 9]` sorts to
+  `[10, 9]` — because `"10"` really does come before `"9"`. A comparator is not
+  an optimisation, it is the only correct way to sort numbers.
+
+  `sort` mutating is the one that costs people time. It returns the array as
+  well, which makes `const sorted = items.sort(...)` look like it produced
+  something new right up until the caller notices their own array has been
+  reordered. `[...items].sort(...)` is the fix, and `toSorted` is the newer one.
+
+  `find` returns `undefined` rather than `null` when nothing matches, which is
+  fine until it flows into JSON, where `undefined` disappears entirely and
+  `null` survives.
