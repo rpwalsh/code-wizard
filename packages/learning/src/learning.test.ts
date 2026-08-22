@@ -176,8 +176,31 @@ describe('grading', () => {
   it('scores recall lower when the syntax had to be handed over', () => {
     const unaided = gradeAttempt(attempt([green(60)]), profile)[0];
     const told = gradeAttempt(attempt([hint(5, 'explicit'), green(60)]), profile)[0];
-    expect(unaided?.evidence.recall).toBe(1);
+    expect(unaided?.evidence.recall).toBeGreaterThan(0.8);
     expect(told?.evidence.recall).toBeLessThan(0.2);
+  });
+
+  it('reserves full recall for producing the code, not completing it', () => {
+    // A skeleton answers half the question before it is asked: which shape,
+    // which signature, which imports. Filling the gap is not the same act.
+    const completed = gradeAttempt(attempt([green(60)], { mode: 'fluency' }), profile)[0];
+    const produced = gradeAttempt(attempt([green(60)], { mode: 'blank-page' }), profile)[0];
+
+    expect(produced?.evidence.recall).toBe(1);
+    expect(completed?.evidence.recall).toBeLessThan(1);
+    expect(completed?.evidence.recall).toBeGreaterThan(0.5);
+  });
+
+  it('says which rung comes next rather than only marking the gap', () => {
+    const [observation] = gradeAttempt(attempt([green(60)], { mode: 'fluency' }), profile);
+    expect(observation?.reasons.join(' ')).toMatch(/next rung/i);
+  });
+
+  it('does not punish a hinted solve twice for the mode it was in', () => {
+    // The ceiling caps an unhinted completion. A hint already scores below it,
+    // so it must be reported as the hint, not as the ceiling.
+    const [observation] = gradeAttempt(attempt([hint(5, 'language'), green(60)]), profile);
+    expect(observation?.evidence.recall).toBe(0.5);
   });
 
   it('separates application from independence for an assisted solve', () => {

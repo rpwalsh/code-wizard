@@ -119,9 +119,7 @@ export class ExerciseSession {
     };
     this.#hints = orderedHints(exercise);
 
-    for (const file of exercise.starter.files) {
-      this.#editable.set(file.path, file.contents);
-    }
+    this.#loadStartingFiles();
 
     this.#attempt = startAttempt({
       id: this.#deps.newId(),
@@ -227,12 +225,23 @@ export class ExerciseSession {
     this.#emit();
   }
 
-  /** Discard edits and start from the exercise's starter code again. */
+  /** Discard edits and start over from whatever this mode starts you with. */
   resetFiles(): void {
-    for (const file of this.exercise.starter.files) {
-      this.#editable.set(file.path, file.contents);
-    }
+    this.#loadStartingFiles();
     this.#emit();
+  }
+
+  /**
+   * What sits in the editor at the start.
+   *
+   * The paths always come from the exercise even when the contents do not:
+   * blank page withdraws the skeleton, not the file the tests import.
+   */
+  #loadStartingFiles(): void {
+    const withStarter = affordancesFor(this.mode).starterCode;
+    for (const file of this.exercise.starter.files) {
+      this.#editable.set(file.path, withStarter ? file.contents : '');
+    }
   }
 
   #workspace() {

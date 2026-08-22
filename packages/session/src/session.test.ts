@@ -152,6 +152,27 @@ describe('editing', () => {
     );
   });
 
+  it('hands over an empty file on the blank-page rung', () => {
+    const main = begin('blank-page').state.files.find((file) => file.path === 'main.py');
+    // The path survives even though the skeleton does not — the tests import
+    // this module, so withdrawing the file itself would withdraw the exercise.
+    expect(main).toBeDefined();
+    expect(main?.contents).toBe('');
+  });
+
+  it('still shows the tests on the blank-page rung', () => {
+    // They are the specification. Withdrawing them is the rung above.
+    const paths = begin('blank-page').state.files.map((file) => file.path);
+    expect(paths).toContain('tests/test_a.py');
+  });
+
+  it('resets to blank rather than to the starter on the blank-page rung', () => {
+    const session = begin('blank-page');
+    session.updateFile('main.py', 'scribbles');
+    session.resetFiles();
+    expect(session.state.files.find((file) => file.path === 'main.py')?.contents).toBe('');
+  });
+
   it('can be reset back to the starter code', () => {
     const session = begin();
     session.updateFile('main.py', 'scribbles');

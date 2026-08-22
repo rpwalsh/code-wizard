@@ -1,4 +1,5 @@
-import type { MasteryDimension } from '@forge/core';
+import type { MasteryDimension, TrainingMode } from '@forge/core';
+import { affordancesFor } from '@forge/core';
 
 import type { Attempt } from './attempt.ts';
 import type { FluencyMetrics } from './metrics.ts';
@@ -83,7 +84,7 @@ export function gradeAttempt(
   );
 
   // -- recall: could they produce the syntax unaided? ----------------------
-  const recall = recallEvidence(metrics);
+  const recall = recallEvidence(metrics, attempt.mode);
   evidence.recall = recall.value;
   reasons.push(recall.reason);
 
@@ -177,11 +178,46 @@ function debuggingEvidence(
   };
 }
 
-function recallEvidence(metrics: FluencyMetrics): { value: number; reason: string } {
+/**
+ * Full recall means producing the code, not completing it.
+ *
+ * A skeleton in the editor answers half the question before it is asked —
+ * which shape, which signature, which imports. Reading that and filling the
+ * gap is recognition wearing recall's clothes, so a solve with the starter
+ * code in front of you cannot reach the top of this dimension. Only the rungs
+ * that hand you an empty file can.
+ */
+const COMPLETION_CEILING = 0.85;
+
+function recallEvidence(
+  metrics: FluencyMetrics,
+  mode: TrainingMode,
+): { value: number; reason: string } {
   if (!metrics.solved) {
     return { value: 0, reason: 'Could not produce a working solution from memory.' };
   }
-  switch (metrics.deepestHint) {
+
+  if (!affordancesFor(mode).starterCode) {
+    return metrics.deepestHint === null
+      ? { value: 1, reason: 'Produced the whole solution from an empty file.' }
+      : hintedRecall(metrics.deepestHint);
+  }
+
+  const hinted = hintedRecall(metrics.deepestHint);
+  return {
+    value: Math.min(hinted.value, COMPLETION_CEILING),
+    reason:
+      hinted.value > COMPLETION_CEILING
+        ? 'Completed the starter code without a hint. Producing it from nothing is the next rung.'
+        : hinted.reason,
+  };
+}
+
+function hintedRecall(deepestHint: FluencyMetrics['deepestHint']): {
+  value: number;
+  reason: string;
+} {
+  switch (deepestHint) {
     case null:
       return { value: 1, reason: 'Recalled the syntax without any hint.' };
     case 'conceptual':

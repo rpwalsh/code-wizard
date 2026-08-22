@@ -1,13 +1,53 @@
 /**
- * Training modes (spec §9). The mode is not a cosmetic preference: it decides
- * what assistance exists, and therefore how much an attempt tells you about
- * the learner's independent ability.
+ * Training modes. The mode is not a cosmetic preference: it decides what
+ * assistance exists, and therefore how much an attempt tells you about the
+ * learner's independent ability.
+ *
+ * Listed in withdrawal order — each rung removes something the one before it
+ * offered, and nothing is ever added back. That ordering is the product: the
+ * goal is not to solve exercises, it is to still be able to solve them once
+ * the assistance is gone.
+ *
+ *   learn       every affordance available, including the answer
+ *   practice    the answer withdrawn, everything else available
+ *   drafting    hints, documentation and autocomplete withdrawn
+ *   blank-page  the starter code withdrawn — produce it from nothing
+ *   simulation  the tests withdrawn too; you decide when it is correct
  */
-export const trainingModes = ['learn', 'practice', 'fluency', 'simulation'] as const;
+export const trainingModes = [
+  'learn',
+  'practice',
+  'fluency',
+  'blank-page',
+  'simulation',
+] as const;
 
 export type TrainingMode = (typeof trainingModes)[number];
 
+/**
+ * The rung a mode sits on, from 0 (fully assisted) upward.
+ *
+ * Deliberately derived from the declaration order above rather than written
+ * out again, so the ladder cannot disagree with itself.
+ */
+export function rungOf(mode: TrainingMode): number {
+  return trainingModes.indexOf(mode);
+}
+
+/** The next rung up, or null at the top. */
+export function nextRung(mode: TrainingMode): TrainingMode | null {
+  return trainingModes[rungOf(mode) + 1] ?? null;
+}
+
 export interface ModeAffordances {
+  /**
+   * Whether the exercise's starter code is placed in the editor.
+   *
+   * Withdrawing it is the sharpest rung on the ladder. Reading a skeleton and
+   * filling in a gap is recognition; producing the whole shape from an empty
+   * file is the thing that actually degraded.
+   */
+  readonly starterCode: boolean;
   readonly hints: boolean;
   readonly documentation: boolean;
   readonly visibleTestSource: boolean;
@@ -24,6 +64,7 @@ export interface ModeAffordances {
 
 const AFFORDANCES: Readonly<Record<TrainingMode, ModeAffordances>> = Object.freeze({
   learn: {
+    starterCode: true,
     hints: true,
     documentation: true,
     visibleTestSource: true,
@@ -33,6 +74,7 @@ const AFFORDANCES: Readonly<Record<TrainingMode, ModeAffordances>> = Object.free
     evidenceWeight: 0.5,
   },
   practice: {
+    starterCode: true,
     hints: true,
     documentation: true,
     visibleTestSource: true,
@@ -42,6 +84,7 @@ const AFFORDANCES: Readonly<Record<TrainingMode, ModeAffordances>> = Object.free
     evidenceWeight: 0.8,
   },
   fluency: {
+    starterCode: true,
     hints: false,
     documentation: false,
     visibleTestSource: true,
@@ -50,7 +93,20 @@ const AFFORDANCES: Readonly<Record<TrainingMode, ModeAffordances>> = Object.free
     timer: true,
     evidenceWeight: 1,
   },
+  'blank-page': {
+    starterCode: false,
+    hints: false,
+    documentation: false,
+    // The tests stay readable: they are the specification, not a hint. Taking
+    // them away as well is a different exercise, and it is the next rung.
+    visibleTestSource: true,
+    editorAutocomplete: false,
+    solutionReveal: false,
+    timer: true,
+    evidenceWeight: 1,
+  },
   simulation: {
+    starterCode: false,
     hints: false,
     documentation: false,
     visibleTestSource: false,
@@ -70,3 +126,36 @@ export function isClosedBook(mode: TrainingMode): boolean {
   const affordances = AFFORDANCES[mode];
   return !affordances.hints && !affordances.documentation && !affordances.editorAutocomplete;
 }
+
+/** How a mode is named and described where the learner chooses one. */
+export interface ModeDescription {
+  readonly mode: TrainingMode;
+  readonly name: string;
+  /** What this rung withdraws, in the learner's terms. */
+  readonly withdraws: string;
+}
+
+const DESCRIPTIONS: Readonly<Record<TrainingMode, ModeDescription>> = Object.freeze({
+  learn: { mode: 'learn', name: 'Learn', withdraws: 'Nothing. Everything is available.' },
+  practice: { mode: 'practice', name: 'Practice', withdraws: 'The solution.' },
+  fluency: { mode: 'fluency', name: 'Fluency', withdraws: 'Hints, documentation, autocomplete.' },
+  'blank-page': {
+    mode: 'blank-page',
+    name: 'Blank page',
+    withdraws: 'The starter code. An empty file and the tests.',
+  },
+  simulation: {
+    mode: 'simulation',
+    name: 'Simulation',
+    withdraws: 'The tests. You decide when it is right.',
+  },
+});
+
+export function describeMode(mode: TrainingMode): ModeDescription {
+  return DESCRIPTIONS[mode];
+}
+
+/** The ladder, in order, for a mode picker to render. */
+export const withdrawalLadder: readonly ModeDescription[] = Object.freeze(
+  trainingModes.map((mode) => DESCRIPTIONS[mode]),
+);
