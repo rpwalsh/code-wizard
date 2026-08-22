@@ -42,6 +42,7 @@ node packages/cli/dist/main.js exercise validate
 node packages/cli/dist/main.js exercise mutate
 node packages/cli/dist/main.js curriculum check
 node packages/cli/dist/main.js curriculum syllabus
+node packages/cli/dist/main.js curriculum planned
 node packages/cli/dist/main.js plan next
 node packages/cli/dist/main.js content bundle
 ```
@@ -50,9 +51,14 @@ node packages/cli/dist/main.js content bundle
 trips a timeout, and overflows an output buffer, so a pass means the isolation
 works on this machine rather than that the right software is installed.
 
-`curriculum syllabus` reports the gap between the planned course and the
-exercises that exist. A lesson counts only when _every_ skill it names has
-content behind it.
+`curriculum syllabus` reports, per language, the gap between the planned
+course and the exercises that exist. A lesson counts only when _every_ skill it
+names has content behind it.
+
+`curriculum planned` lists the curricula in `curricula/` — designed, and with
+no runtime behind any of them. It is a separate report on purpose: mixing a
+course that cannot be practised into the same table as one with 228 exercises
+behind it would make the difference a percentage rather than a fact.
 
 ---
 
@@ -117,11 +123,19 @@ packages/
   runtime-web/  CPython in WebAssembly, in a worker.
   cli/          The authoring and diagnostic toolkit.
 
-languages/python/
-  src/          The native runtime adapter and the skill graph.
-  runtime/      The `retrainer` package: pytest plugin, assertions, tracer, diagnostics.
-  exercises/    The content.
-  curriculum/   The planned course, one file per stage.
+languages/       Languages that run.
+  python/
+    src/        The native runtime adapter, the skill graph, mutation operators.
+    runtime/    The `retrainer` package: pytest plugin, assertions, tracer, diagnostics.
+    exercises/  The content.
+    curriculum/ The course, one file per stage.
+  javascript/
+    src/        The Node runtime adapter, the skill graph, mutation operators.
+    runtime/    The `retrainer` package: the test registry, assertions, the harness.
+    exercises/  The content.
+    curriculum/ The course, one file per stage.
+
+curricula/       Courses that are designed and cannot be practised yet. Data only.
 
 apps/
   web/          The interface. Static build, runs anywhere.

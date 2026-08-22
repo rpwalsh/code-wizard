@@ -107,8 +107,8 @@ shortcut.
 
 ## The curriculum
 
-**228 lessons, twelve stages**, from the first program you run to a working
-PageRank.
+**Python: 228 lessons, twelve stages**, from the first program you run to a
+working PageRank. Every one of them has exercises behind it.
 
 | Stage                                 |                                                                                          |
 | ------------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -129,6 +129,24 @@ Every exercise has been executed against a real interpreter, and every test
 suite has been checked by deliberately breaking the reference solution to
 confirm the tests notice. A suite that passes a wrong answer is worse than no
 suite, because it tells you that you were right.
+
+**JavaScript: 64 lessons, four stages**, and about a fifth of them written so
+far. Values and equality, data and who is holding it, closures and `this`, and
+a whole stage on asynchrony — chosen from where this language costs people
+time rather than translated from the Python course.
+
+**Sixteen more curricula are designed and cannot be practised yet.**
+TypeScript, Node, React, Angular, SQL, Go, Rust, C, C++, C#, PHP, ASP.NET, and
+four cross-cutting tracks — frontend, backend, middleware and architecture.
+That is 318 skills and 396 lessons of course design with no runtime behind any
+of it.
+
+A language needs three things: a skill graph, a course, and something that can
+execute an attempt and judge it. The first two are finished when they are
+written; the third is an engineering project, and for a compiled language it is
+a toolchain. Each plan states exactly what is missing, and
+`code-retrainer curriculum planned` will tell you plainly that none of them
+run.
 
 ---
 
@@ -157,6 +175,10 @@ CPython runs in the page as WebAssembly. Any free static host will serve it.
 
 **On the desktop.** An Electron app that uses your real Python interpreter,
 which is faster and works with no network at all.
+
+JavaScript currently runs on the desktop only — it uses the Node that the
+toolkit already runs on. The browser version of that runtime is not built yet,
+so the website is Python.
 
 ```bash
 npm install

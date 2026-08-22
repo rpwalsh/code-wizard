@@ -53,7 +53,28 @@ async function bundle(flags: Flags): Promise<number> {
 
   const output = path.resolve(repositoryRoot, flagString(flags, 'out') ?? DEFAULT_OUTPUT);
 
-  const document = toBundle(context.catalog.all(), context.skillGraph.all(), {
+  // A bundle must not contain a language the target cannot run. The website
+  // ships CPython in WebAssembly and nothing else, so bundling JavaScript
+  // there would put skills on the map whose exercises cannot be attempted —
+  // which is a dead end wearing the clothes of a curriculum.
+  const languages = (flagString(flags, 'language') ?? 'python')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const exercises = context.catalog.all().filter((entry) => languages.includes(entry.language));
+  // A skill with no language is a cross-language concept and belongs in every
+  // bundle.
+  const skills = context.skillGraph
+    .all()
+    .filter((skill) => skill.language === null || languages.includes(skill.language));
+
+  if (exercises.length === 0) {
+    console.error(style.red(`No exercises for: ${languages.join(', ')}.`));
+    return 2;
+  }
+
+  const document = toBundle(exercises, skills, {
     relativise: (directory) => relativeToRepository(directory),
   });
 
@@ -67,6 +88,7 @@ async function bundle(flags: Flags): Promise<number> {
       ['exercises', String(document.exercises.length)],
       ['skills', String(document.skills.length)],
       ['size', `${(bytes / 1024).toFixed(1)} KiB`],
+      ['languages', languages.join(', ')],
       ['written to', relativeToRepository(output)],
     ]),
   );

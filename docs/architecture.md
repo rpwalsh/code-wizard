@@ -5,6 +5,27 @@ see the [README](../README.md).
 
 ---
 
+## 0. Three kinds of thing in this repository
+
+**`packages/`** is the platform, and knows about no language at all.
+
+**`languages/`** holds the languages that run: a runtime implementing `LanguageRuntime`, a skill
+graph, a course and its exercises. There are two — Python, with a native interpreter and a
+WebAssembly one, and JavaScript on Node.
+
+**`curricula/`** holds courses that are designed and cannot be practised, entirely as data. A
+language needs a skill graph, a course, and a runtime that can execute an attempt and judge it. The
+first two are design work and are finished when written; the third is an engineering project, and
+for a compiled language it is a toolchain. Keeping the two apart in the filesystem is what stops a
+plan looking like a product, and every manifest carries a required field saying what is missing —
+because "not done yet" with no reason is indistinguishable from forgotten.
+
+A test holds the plans to the same structural standard as the shipped course: real skill ids, an
+acyclic graph, contiguous numbering, and every skill taught before it is depended on. It found
+seven ordering faults the first time it ran, including two dependencies that were simply backwards.
+
+---
+
 ## 1. The one boundary that matters
 
 ```text
@@ -35,8 +56,17 @@ see the [README](../README.md).
 Everything above `LanguageRuntime` is language-agnostic. There is no `if (language === 'python')`
 anywhere outside `languages/` and the one registry call that names the concrete runtimes.
 
-This is not aesthetic, and it is no longer untested. There are two runtimes now: one spawns a real
-interpreter, one runs CPython compiled to WebAssembly. They share the entire Python support layer — the
+This is not aesthetic, and it is no longer untested. There are three runtimes now, across two
+languages: one spawns a real interpreter, one runs CPython compiled to WebAssembly, and one runs
+JavaScript on the Node the toolkit is already running under. Adding the second language changed
+nothing above the boundary — which is the only test of an abstraction that counts.
+
+Both languages' harnesses write the same structured report, which is why that parser lives in
+`packages/core` rather than with either of them: it is the wire format between a runtime and the
+engine, not a fact about Python. Mutation operators go the other way and live with the language they
+mutate, because "the mistakes people make" is a fact about a language. Two of the JavaScript
+operators exist only because of how that language fails: `??` swapped for `||`, and `===` swapped
+for `==`. They share the entire Python support layer — the
 `retrainer` package (`report`, `expect`, `trace`, `diagnose`) runs unmodified in both and emits
 identical structured JSON — and `tests/cross-runtime.test.ts` puts the whole curriculum through
 both and requires identical verdicts.
@@ -322,10 +352,13 @@ stays permanently red, and people stop reading it.
 - **Accounts and sync.** Local-only, with export/import as the transfer mechanism. The shape if it
   is ever wanted is in [deploying.md](deploying.md): opt-in, OAuth rather than passwords, snapshots
   rather than a live connection.
-- **A second language.** The runtime abstraction is tested by two Python runtimes, which exercises
-  the boundary hard but is not the same as a second language. Everything language-specific already
-  lives behind `LanguageRuntime`; what is missing is an implementation of it for anything else, and
-  for compiled languages that means a toolchain, which is a different problem from a curriculum.
+- **JavaScript in the browser.** The JavaScript runtime runs on Node, so it works on the desktop
+  and not on the website. What it needs is module resolution without a filesystem: the specifiers a
+  test file writes have to become blob URLs before anything can be imported. The harness is already
+  split into a runner that knows nothing about files and a Node entry point that does, which is the
+  half of that work worth doing early.
+- **Runtimes for the planned curricula.** Sixteen courses are designed and none can be practised.
+  See `curricula/`, where each one states what specifically is missing.
 - **Recognition grading.** Nothing currently produces evidence for it; it is seeded by the
   onboarding prior and otherwise left alone rather than inferred from unrelated signals. Knowledge
   used to be in the same position and is now earned by prediction.

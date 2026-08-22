@@ -26,7 +26,7 @@
     "verify": "npm run generate:check && npm run lint && npm run typecheck && npm run test",
     "generate": "node scripts/generate-python-sources.mjs",
     "generate:check": "node scripts/generate-python-sources.mjs --check",
-    "bundle": "node packages/cli/dist/main.js content bundle",
+    "bundle": "node packages/cli/dist/main.js content bundle --language python",
     "web": "npm run build && npm run bundle && npm run build --workspace @code-retrainer/web",
     "web:dev": "npm run bundle && npm run dev --workspace @code-retrainer/web",
     "e2e": "npm run web && npm run e2e --workspace @code-retrainer/web",
