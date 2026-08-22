@@ -1,0 +1,77 @@
+id: python.structures.stack-queue
+version: 1
+language: python
+title: Stacks, queues, and the wrong end of a list
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 360
+timeoutMs: 15000
+
+skills:
+  - python.structures.stack-queue
+
+prerequisites:
+  - python.collections.list
+  - python.control.while
+
+learningObjectives:
+  - Use a list as a stack, taking from the end where it is cheap.
+  - Recognise why taking from the front of a list is the wrong operation.
+  - Solve a problem that needs last-in-first-out order.
+
+prompt: |
+  A stack takes from the end. A queue takes from the front. A Python list is
+  excellent at one of those and quietly bad at the other, and knowing which is
+  most of this lesson.
+
+  - `balanced(text)` returns True when every bracket in the text is closed by
+    the matching kind, in the right order. Handle `()`, `[]` and `{}`, and
+    ignore any other character.
+  - `undo(actions)` takes a list of strings where `"undo"` cancels the previous
+    remaining action, and returns what survives, in order. `["a", "b", "undo"]`
+    gives `["a"]`. An `"undo"` with nothing to cancel is ignored.
+  - `queue_order(items, taken)` returns the items left after taking `taken`
+    items from the **front**, plus the list of what was taken, as a tuple.
+  - `stack_order(items, taken)` does the same but takes from the **end**.
+
+  `balanced` is the one that needs a stack, and it is the reason stacks exist.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_structures.py
+    visibility: visible
+    concept: python.structures.stack-queue
+  - path: tests/test_order.py
+    visibility: edge
+    concept: python.structures.stack-queue
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.stack-queue
+
+hints:
+  - level: conceptual
+    text: To check brackets you must remember what is still open, most recent first.
+  - level: structural
+    text: Push the opener; on a closer, the top of the stack must be its partner.
+  - level: language
+    text: '`.append()` and `.pop()` work on the end. `.pop(0)` works on the front and is not free.'
+  - level: syntax
+    text: 'A dictionary from closing bracket to opening bracket saves three branches.'
+  - level: explicit
+    text: 'Text is balanced when nothing mismatched and the stack is empty at the end.'
+
+explanation: |
+  Both ends of a list are not equal. Appending and popping from the end move
+  nothing; removing from the front shifts every remaining element down one, so a
+  queue built on `pop(0)` does n operations per removal instead of one and turns
+  a linear job quadratic. `collections.deque` exists precisely for this, and is
+  the next lesson.
+
+  The bracket checker is worth writing once by hand because it is the smallest
+  problem where a stack is not a choice. You need the most recent unclosed
+  bracket, and "most recent" is exactly what a stack gives you. Any other
+  structure makes you search.
+
+  Finishing with a non-empty stack means something was opened and never closed,
+  which is a different failure from a mismatch and has to be checked separately.

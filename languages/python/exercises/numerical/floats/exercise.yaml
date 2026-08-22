@@ -1,0 +1,79 @@
+id: python.numerical.floats
+version: 1
+language: python
+title: Numbers that are nearly right
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 300
+timeoutMs: 15000
+
+skills:
+  - python.numerical.floats
+  - python.numerical.vectors
+
+prerequisites:
+  - python.idioms.aggregation
+
+learningObjectives:
+  - Compare floating point values with a tolerance instead of for equality.
+  - Normalise a set of weights so they sum to one.
+  - Handle the degenerate case where the total is zero.
+
+prompt: |
+  `0.1 + 0.2` is not `0.3`. It is `0.30000000000000004`, and no amount of
+  care in your code will change that — the value is not representable, and
+  neither is `0.1`. So equality is the wrong question, and this is how to ask a
+  better one.
+
+  - `close_enough(a, b, tolerance)` returns True when the two are within
+    `tolerance` of each other.
+  - `normalise(weights)` takes `{key: number}` and returns a new dictionary
+    scaled so the values sum to 1. If the total is zero, spread the weight
+    evenly instead. An empty input gives an empty result.
+  - `total_error(actual, expected)` returns the sum of the absolute differences
+    between two dictionaries with the same keys.
+  - `settled(before, after, tolerance)` returns True when no key moved by more
+    than `tolerance`. That is the stopping condition for everything that
+    follows.
+
+  `settled` is the one PageRank will need. Write it so it works on
+  dictionaries, not lists.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_floats.py
+    visibility: visible
+    concept: python.numerical.floats
+  - path: tests/test_tolerance.py
+    visibility: edge
+    concept: python.numerical.floats
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.numerical.vectors
+
+hints:
+  - level: conceptual
+    text: Two floats are equal enough when the distance between them is small.
+  - level: structural
+    text: Normalising means dividing every value by the total of all of them.
+  - level: language
+    text: '`abs(a - b) <= tolerance` is the comparison. `sum(weights.values())` is the total.'
+  - level: syntax
+    text: 'Spreading evenly across n keys means each one gets 1 / n.'
+  - level: explicit
+    text: '`settled` is True when every key satisfies `close_enough`.'
+
+explanation: |
+  Floating point is not approximate arithmetic done badly; it is exact
+  arithmetic in binary, where `0.1` has no exact representation any more than
+  `1/3` has a finite decimal one. The errors are tiny and they accumulate, and
+  the only defence is to stop asking whether two values are identical.
+
+  Choosing the tolerance is a real decision, not a formality. Too tight and an
+  iteration never terminates; too loose and it stops before the answer has
+  settled. Both failures look like the code working.
+
+  The zero-total case in `normalise` is the one that gets skipped. Dividing by
+  the total is obvious; noticing that the total can be zero is the part that
+  separates code that works on your test data from code that works.

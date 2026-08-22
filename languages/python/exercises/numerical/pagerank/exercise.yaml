@@ -1,0 +1,105 @@
+id: python.numerical.pagerank
+version: 1
+language: python
+title: PageRank
+kind: focused-problem
+difficulty: 5
+estimatedSeconds: 900
+timeoutMs: 20000
+
+skills:
+  - python.numerical.pagerank
+  - python.numerical.iteration
+
+prerequisites:
+  - python.numerical.vectors
+  - python.structures.graph-representation
+  - python.control.while
+
+learningObjectives:
+  - Loop until a measurement stops changing rather than a fixed number of times.
+  - Handle a node with no outgoing edges, which otherwise leaks rank away.
+  - Verify an iterative result against a case small enough to check by hand.
+
+prompt: |
+  The last one. A graph, a vector, and a loop that stops when nothing moves.
+
+  Every page starts with an equal share of rank. On each round, a page gives
+  its rank away in equal parts to the pages it links to, and receives whatever
+  is sent to it. Repeat until the numbers stop moving.
+
+  Two things stop that from working, and both are in this exercise.
+
+  - `distribute(graph, ranks)` performs **one** round and returns the new ranks.
+    A page with no outgoing links gives its rank to **every** page equally,
+    including itself — otherwise that rank vanishes and the total shrinks every
+    round.
+  - `damped(graph, ranks, damping)` is one round with damping: each page keeps
+    `(1 - damping) / n` regardless, and receives `damping` times its share from
+    `distribute`.
+  - `pagerank(graph, damping=0.85, tolerance=1e-8, limit=100)` runs rounds until
+    no page moves by more than `tolerance`, or `limit` rounds have passed.
+  - `ranking(ranks)` returns the page names from highest rank to lowest, ties
+    broken alphabetically.
+
+  The iteration cap is not decoration. Without it a graph that oscillates runs
+  forever, and you will meet one.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_pagerank.py
+    visibility: visible
+    concept: python.numerical.pagerank
+  - path: tests/test_convergence.py
+    visibility: edge
+    concept: python.numerical.iteration
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.numerical.pagerank
+
+hints:
+  - level: conceptual
+    text: Each round is a whole new vector computed from the old one, not the old one edited in place.
+  - level: structural
+    text: A page with no outgoing links must send its rank somewhere, or the total drains away.
+  - level: language
+    text: 'Compare the old and new vectors with a tolerance; identical floats will not happen.'
+  - level: syntax
+    text: 'Each page sends `ranks[page] / len(links)` to each of its links.'
+  - level: explicit
+    text: 'Damping: `(1 - damping) / n + damping * received`.'
+
+explanation: |
+  The dangling node is the bug everyone writes. A page with no outgoing links
+  has rank and nowhere to send it, so unless you handle it that rank simply
+  disappears — and the total, which should always be 1, shrinks a little every
+  round. The result still looks like a ranking. It is just wrong, and nothing
+  tells you.
+
+  Damping is what makes the iteration converge at all rather than oscillating,
+  and it has an interpretation: 0.85 of the time a reader follows a link, and
+  the rest of the time they jump to a random page. The random jump is also what
+  stops rank pooling forever in a group of pages that only link to each other.
+
+  Stopping when the change falls below a tolerance — rather than after a fixed
+  number of rounds — is the shape worth taking away. It is how numerical methods
+  are written generally, and the iteration cap beside it is what turns "did not
+  converge" from a hang into an answer you can inspect.
+
+mutationExceptions:
+  - path: main.py
+    operator: off-by-one
+    line: 4
+    why: >-
+      A tighter default tolerance converges to the same fixed point, so no
+      input can distinguish 1e-8 from 1e-9. The loosening direction is a
+      different mutant and is caught.
+  - path: main.py
+    operator: off-by-one
+    line: 5
+    why: >-
+      Every graph in the tests converges in far fewer than a hundred rounds
+      under the default damping, so the round limit is never reached and 100
+      cannot be told from 101. Raising damping to 1 makes it observable, and
+      that path is tested with an explicit limit.

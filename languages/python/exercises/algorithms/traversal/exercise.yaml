@@ -1,0 +1,81 @@
+id: python.algorithms.traversal
+version: 1
+language: python
+title: The visited set is the algorithm
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.algorithms.traversal
+
+prerequisites:
+  - python.structures.graph-representation
+  - python.structures.stack-queue
+
+learningObjectives:
+  - Write a traversal that terminates on a graph containing a cycle.
+  - See that breadth-first and depth-first differ only in which end you take from.
+  - Reconstruct a shortest path from the record of where each node came from.
+
+prompt: |
+  A graph is not a tree: it has cycles, and a walk that does not remember where
+  it has been will go round one forever. That memory is the whole algorithm.
+  Everything else is bookkeeping.
+
+  Graphs here are `{node: [neighbour, ...]}` with neighbours already sorted.
+
+  - `reachable(graph, start)` returns the set of nodes reachable from `start`,
+    including `start` itself.
+  - `breadth_first(graph, start)` returns the nodes in visit order, taking from
+    the **front** of the frontier.
+  - `depth_first(graph, start)` returns the nodes in visit order, taking from
+    the **end**.
+  - `shortest_path(graph, start, goal)` returns the shortest route as a list of
+    nodes, or `None` if there is none. `shortest_path(g, "a", "a")` is `["a"]`.
+
+  Write `breadth_first` first. Then copy it, change which end you take from, and
+  read what happened.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_traversal.py
+    visibility: visible
+    concept: python.algorithms.traversal
+  - path: tests/test_cycles.py
+    visibility: edge
+    concept: python.algorithms.traversal
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.algorithms.traversal
+
+hints:
+  - level: conceptual
+    text: Keep a set of what you have already seen, and never queue anything twice.
+  - level: structural
+    text: Mark a node as seen when you add it to the frontier, not when you take it out.
+  - level: language
+    text: '`frontier.pop(0)` takes from the front and `frontier.pop()` takes from the end. That is the only difference.'
+  - level: syntax
+    text: 'For the path, keep `{node: the node it was reached from}` and walk it backwards at the end.'
+  - level: explicit
+    text: 'The start node has no parent, so stop walking backwards when you reach it.'
+
+explanation: |
+  Marking a node when you *enqueue* it rather than when you dequeue it is the
+  detail that decides whether the algorithm is correct or merely usually
+  correct. Mark on removal and a node with two parents gets queued twice; it
+  still comes out once, so small tests pass, and the frontier quietly grows
+  toward the number of edges rather than the number of nodes.
+
+  Breadth-first and depth-first are the same seven lines with `pop(0)` changed
+  to `pop()`. Once you have seen that, they stop being two algorithms to
+  remember and become one algorithm with a choice in it — and the choice is
+  what you want out of it: nearest-first, or follow-one-path-to-the-end.
+
+  Shortest path only works breadth-first, and only on unweighted graphs. The
+  first time BFS reaches a node it did so along the fewest edges, so the parent
+  recorded then is the right one and must never be overwritten. Add weights and
+  that stops being true, which is the next lesson.

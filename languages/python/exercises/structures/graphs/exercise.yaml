@@ -1,0 +1,73 @@
+id: python.structures.graphs
+version: 1
+language: python
+title: A graph is a dictionary
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 360
+timeoutMs: 15000
+
+skills:
+  - python.structures.graph-representation
+
+prerequisites:
+  - python.collections.nested
+  - python.collections.set
+
+learningObjectives:
+  - Build an adjacency structure from a list of edges.
+  - Distinguish a directed edge from an undirected one in the representation.
+  - Convert between an adjacency list and a matrix, and say what each makes cheap.
+
+prompt: |
+  Before any traversal, the graph has to be a shape you can walk. That shape is
+  a dictionary from node to its neighbours.
+
+  - `build_directed(edges)` takes a list of `(source, target)` pairs and returns
+    `{node: sorted list of targets}`. Every node mentioned anywhere must appear
+    as a key, even if it has no outgoing edges.
+  - `build_undirected(edges)` does the same, but each edge goes both ways.
+  - `neighbours_of(graph, node)` returns the neighbour list, or `[]` for a node
+    that is not in the graph.
+  - `to_matrix(graph, order)` returns a list of rows of 0 and 1, where row `i`
+    column `j` is 1 when there is an edge from `order[i]` to `order[j]`.
+
+  The node with no outgoing edges is the one that gets forgotten, and it is the
+  one that makes a traversal crash later.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_graphs.py
+    visibility: visible
+    concept: python.structures.graph-representation
+  - path: tests/test_shape.py
+    visibility: edge
+    concept: python.structures.graph-representation
+  - path: tests/test_hidden.py
+    visibility: hidden
+    concept: python.structures.graph-representation
+
+hints:
+  - level: conceptual
+    text: Every node that appears in any edge needs an entry, including the ones only ever pointed at.
+  - level: structural
+    text: An undirected edge is two directed edges, added at the same time.
+  - level: language
+    text: '`setdefault(node, [])` creates the entry the first time the node is seen.'
+  - level: syntax
+    text: 'Sort each neighbour list at the end so the result is comparable.'
+  - level: explicit
+    text: "For the matrix, build one row per node in `order`, checking membership in that node's neighbours."
+
+explanation: |
+  Forgetting to create an entry for a node that only ever appears as a target is
+  the classic first bug here, and it does not fail where you made it. The graph
+  looks fine, and then a traversal reaches that node, asks for its neighbours,
+  and raises `KeyError` several functions away.
+
+  The two representations make different things cheap. The adjacency dictionary
+  answers "who are this node's neighbours" immediately and uses space
+  proportional to the number of edges. The matrix answers "is there an edge from
+  A to B" immediately and always uses n² space, so it is the right choice for
+  dense graphs and a poor one for sparse graphs — which most real graphs are.
