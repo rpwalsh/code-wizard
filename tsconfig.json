@@ -8,6 +8,7 @@
     { "path": "./packages/curriculum" },
     { "path": "./packages/storage" },
     { "path": "./languages/python" },
+    { "path": "./packages/runtime-web" },
     { "path": "./packages/cli" }
   ]
 }

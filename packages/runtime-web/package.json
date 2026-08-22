@@ -1,5 +1,5 @@
 {
-  "name": "@forge/python",
+  "name": "@forge/runtime-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,18 +10,16 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./report": {
-      "types": "./dist/report-entry.d.ts",
-      "default": "./dist/report-entry.js"
-    },
-    "./support": {
-      "types": "./dist/support-entry.d.ts",
-      "default": "./dist/support-entry.js"
+    "./worker": {
+      "types": "./dist/worker.d.ts",
+      "default": "./dist/worker.js"
     }
   },
   "dependencies": {
     "@forge/core": "*",
-    "@forge/execution": "*"
+    "@forge/execution": "*",
+    "@forge/python": "*",
+    "pyodide": "^314.0.5"
   },
   "scripts": {
     "build": "tsc --build"

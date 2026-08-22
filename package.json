@@ -2,7 +2,7 @@
   "name": "forge",
   "version": "0.1.0",
   "private": true,
-  "description": "Code Fluency Training Platform — a language-agnostic deliberate-practice environment for building independent coding fluency.",
+  "description": "Code Fluency Training Platform \u2014 a language-agnostic deliberate-practice environment for building independent coding fluency.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -23,7 +23,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "forge": "node --experimental-strip-types packages/cli/src/main.ts",
-    "verify": "npm run lint && npm run build && npm run test"
+    "verify": "npm run generate:check && npm run lint && npm run build && npm run test",
+    "generate": "node scripts/generate-python-sources.mjs",
+    "generate:check": "node scripts/generate-python-sources.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -33,5 +35,6 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
     "vitest": "^4.1.11"
-  }
+  },
+  "dependencies": {}
 }

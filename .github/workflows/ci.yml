@@ -39,6 +39,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Check generated Python sources are in sync
+        run: npm run generate:check
+
       - run: npm run lint
 
       - run: npm run format:check

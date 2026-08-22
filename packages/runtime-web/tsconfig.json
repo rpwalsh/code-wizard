@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    // The worker and channel code is written against both the browser and
+    // node:worker_threads, so both sets of ambient types are needed.
+    "lib": ["ES2023", "DOM", "WebWorker"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../execution" },
+    { "path": "../../languages/python" }
+  ]
+}
