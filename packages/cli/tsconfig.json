@@ -12,6 +12,7 @@
     { "path": "../exercises" },
     { "path": "../learning" },
     { "path": "../curriculum" },
-    { "path": "../../languages/python" }
+    { "path": "../../languages/python" },
+    { "path": "../../languages/javascript" }
   ]
 }

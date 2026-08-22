@@ -1,0 +1,93 @@
+id: javascript.syntax.equality
+version: 1
+language: javascript
+title: Equal, or merely similar
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 240
+timeoutMs: 10000
+
+skills:
+  - javascript.syntax.equality
+  - javascript.syntax.nullish
+
+prerequisites: []
+
+learningObjectives:
+  - Recall which values are falsy without checking.
+  - Distinguish absent from empty from zero.
+  - Choose a default without discarding a legitimate value.
+
+prompt: |
+  JavaScript has two kinds of nothing and a list of values that are falsy but
+  entirely present. Most confident wrong answers in this language come from
+  one of those two facts.
+
+  - `isBlank(text)` returns true when the text is empty or only whitespace,
+    and also when it is `null` or `undefined`.
+  - `orDefault(value, fallback)` returns `fallback` **only** when `value` is
+    `null` or `undefined`. A `0`, an empty string and `false` are all real
+    values and must survive.
+  - `sameValue(a, b)` compares without coercion, and treats `NaN` as equal to
+    itself.
+  - `describe(value)` returns one of `"absent"`, `"empty"`, `"zero"`,
+    `"false"` or `"present"`, in that order of precedence.
+
+  `orDefault` is the one worth slowing down for. The obvious answer using `||`
+  is wrong for exactly the values people forget to test.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/equality.test.js
+    visibility: visible
+    concept: javascript.syntax.equality
+  - path: tests/falsy.test.js
+    visibility: edge
+    concept: javascript.syntax.nullish
+  - path: tests/hidden.test.js
+    visibility: hidden
+    concept: javascript.syntax.equality
+
+hints:
+  - level: conceptual
+    text: Falsy is a longer list than most people remember, and only two of its members mean absent.
+  - level: structural
+    text: There is an operator that falls back only for null and undefined, and another that does it for everything falsy.
+  - level: language
+    text: '`??` is the nullish one; `||` is the falsy one. `Object.is` compares without coercion.'
+  - level: syntax
+    text: '`value ?? fallback` leaves 0 and "" alone.'
+  - level: explicit
+    text: 'For `isBlank`, handle absent first, then trim.'
+
+explanation: |
+  `||` falls back for every falsy value, and the falsy list contains `0`, `""`,
+  `false` and `NaN` — all of which are real answers a function might have meant
+  to return. `??` falls back for `null` and `undefined` alone, which is almost
+  always what "no value was supplied" actually means.
+
+  The bug this prevents is quiet and expensive: a quantity of zero, a search
+  box that was deliberately cleared, or a setting explicitly turned off, each
+  silently replaced by a default. Nothing throws, and the wrong number is
+  plausible.
+
+  `Object.is` differs from `===` in exactly two places, and one of them
+  matters: `NaN` is equal to itself under `Object.is` and to nothing at all
+  under `===`, which is why `array.indexOf(NaN)` never finds anything.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 12
+    why: >-
+      `value == null` is true for exactly null and undefined, which is what
+      this pair of strict checks already tests. No input can distinguish the
+      loose form here, and it is the one place loose equality is the right
+      tool rather than a mistake.
+  - path: main.js
+    operator: strictness
+    line: 17
+    why: >-
+      A string length is always a number, so strict and loose comparison to
+      zero agree on every possible input.

@@ -9,6 +9,7 @@ import {
   validateExercise,
 } from '@code-retrainer/exercises';
 
+import { javascriptMutationOperators } from '@code-retrainer/javascript';
 import { pythonMutationOperators } from '@code-retrainer/python';
 
 import { createContext, relativeToRepository } from '../context.ts';
@@ -281,7 +282,7 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
     console.log(heading(exercise.title));
 
     const report = await runMutationTesting(mutable, {
-      operators: pythonMutationOperators,
+      operators: operatorsFor(exercise.language),
       limitPerFile: Number.isFinite(limit) ? limit : 25,
       onProgress: (done, total) => {
         if (process.stdout.isTTY) process.stdout.write(`\r  ${done}/${total} faults tried`);
@@ -358,4 +359,22 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
   }
 
   return holes === 0 ? 0 : 1;
+}
+
+/**
+ * Which faults to introduce, by language.
+ *
+ * The one place the mutation gate names a language. The operators themselves
+ * live with the language they mutate, because "the mistakes people make" is a
+ * fact about a language and not about testing.
+ */
+function operatorsFor(language: string) {
+  switch (language) {
+    case 'python':
+      return pythonMutationOperators;
+    case 'javascript':
+      return javascriptMutationOperators;
+    default:
+      return [];
+  }
 }

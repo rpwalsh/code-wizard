@@ -12,6 +12,12 @@ export default tseslint.config(
       'apps/desktop/content/**',
       'apps/web/public/content/**',
       'apps/web/e2e/.results/**',
+      // Exercise content is teaching material, not platform source. A starter
+      // has unused parameters by design, and a test about equality asserts
+      // things a linter is built to object to. It is graded by
+      // `exercise validate` and `exercise mutate` instead, which check what
+      // actually matters about it.
+      'languages/*/exercises/**',
     ],
   },
   js.configs.recommended,
@@ -21,6 +27,20 @@ export default tseslint.config(
     files: ['scripts/**/*.mjs', 'apps/*/scripts/**/*.mjs'],
     languageOptions: {
       globals: { console: 'readonly', process: 'readonly' },
+    },
+  },
+  {
+    // A language's own runtime support is written in that language and is
+    // shipped to the learner's machine, not compiled with the platform. It is
+    // linted for obvious mistakes and nothing more.
+    files: ['languages/*/runtime/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        performance: 'readonly',
+        globalThis: 'readonly',
+      },
     },
   },
   {

@@ -14,7 +14,8 @@
     "@code-retrainer/exercises": "*",
     "@code-retrainer/python": "*",
     "@code-retrainer/curriculum": "*",
-    "@code-retrainer/learning": "*"
+    "@code-retrainer/learning": "*",
+    "@code-retrainer/javascript": "*"
   },
   "scripts": {
     "build": "tsc --build"

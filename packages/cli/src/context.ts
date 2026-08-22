@@ -5,7 +5,18 @@ import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
 import { LanguageRegistry, SkillGraph as SkillGraphClass } from '@code-retrainer/core';
 import type { ExerciseCatalog } from '@code-retrainer/exercises';
 import { ExerciseCatalog as Catalog } from '@code-retrainer/exercises';
-import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-retrainer/python';
+import {
+  JavaScriptRuntime,
+  javascriptSkills,
+  exercisesDir as javascriptExercisesDir,
+  curriculumDir as javascriptCurriculumDir,
+} from '@code-retrainer/javascript';
+import {
+  PythonRuntime,
+  pythonCurriculumDir,
+  pythonExercisesDir,
+  pythonSkills,
+} from '@code-retrainer/python';
 
 /** Repository root, resolved from this file rather than from the cwd. */
 export const repositoryRoot = path.resolve(
@@ -21,15 +32,26 @@ export const repositoryRoot = path.resolve(
  * platform language-agnostic (spec §15).
  */
 export function buildRegistry(): LanguageRegistry {
-  return new LanguageRegistry().register(new PythonRuntime());
+  return new LanguageRegistry().register(new PythonRuntime()).register(new JavaScriptRuntime());
 }
 
+/**
+ * One graph across every language.
+ *
+ * Skill ids are namespaced by language, so the union is still a DAG and a
+ * cross-language prerequisite is expressible if it ever turns out to be true.
+ */
 export function buildSkillGraph(): SkillGraph {
-  return SkillGraphClass.from([...pythonSkills]);
+  return SkillGraphClass.from([...pythonSkills, ...javascriptSkills]);
 }
 
 export function exerciseRoots(): string[] {
-  return [pythonExercisesDir];
+  return [pythonExercisesDir, javascriptExercisesDir];
+}
+
+/** Where each language keeps its planned course, by language id. */
+export function curriculumRoots(): Readonly<Record<string, string>> {
+  return { python: pythonCurriculumDir, javascript: javascriptCurriculumDir };
 }
 
 export interface CliContext {

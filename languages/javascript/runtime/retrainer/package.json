@@ -1,0 +1,10 @@
+{
+  "name": "retrainer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./test.js": "./test.js",
+    "./expect.js": "./expect.js"
+  }
+}
