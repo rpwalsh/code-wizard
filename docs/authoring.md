@@ -172,3 +172,51 @@ running — the cheapest way to discover you broke it is to still be testing it.
 
 `python.modeling.ledger-1` and `ledger-2` are the worked example. On stage 2's starter, the 11
 regression tests pass and the 23 new ones fail, which is exactly the shape a stage should have.
+
+---
+
+## Checking the tests would catch a wrong answer
+
+`code-retrainer exercise validate` proves the reference solution passes and the starter fails.
+Neither proves the tests are any good: a suite that accepts a _wrong_ solution is worse than no
+suite at all, because it tells the learner they got it right, and every mastery number derived from
+that attempt inherits the lie.
+
+```bash
+code-retrainer exercise mutate            # the whole curriculum
+code-retrainer exercise mutate <id>       # one exercise
+```
+
+This introduces small, plausible faults into the reference solution one at a time — a flipped
+comparison, an off-by-one, an `and` that should be an `or`, a return value replaced by `None` — and
+requires the tests to fail for each. Only the solution is mutated; the tests stay exactly as the
+learner meets them.
+
+A surviving mutant is a hole:
+
+```text
+  ✗ main.py:18 — `or` became `and` (boolean)
+  Each line above is a change the tests accepted. Add a case that would fail.
+```
+
+Nothing inside a string or a comment is ever mutated, so a docstring cannot produce a mutant no
+test could kill.
+
+### Equivalent mutants
+
+Some faults genuinely cannot be caught, because they do not change behaviour. `parts[-1]` and
+`parts[+1]` are the same element whenever there are exactly two parts. Record those in the manifest
+rather than contriving a test to satisfy the tool:
+
+```yaml
+mutationExceptions:
+  - path: main.py
+    operator: arithmetic
+    why: >-
+      Flipping the sign in parts[-1] gives parts[+1], and for any address with a
+      single @ those index the same element. The mutant is equivalent, not
+      uncaught.
+```
+
+`why` is required and must be a sentence. A suppression nobody had to justify is a suppression
+nobody will revisit, and the gate rots quietly behind it.

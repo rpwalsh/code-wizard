@@ -73,3 +73,11 @@ explanation: |
 
   Choose the bracket by the result you want, not by habit: a set comprehension
   is how you say "duplicates are not meaningful here".
+
+mutationExceptions:
+  - path: main.py
+    operator: arithmetic
+    why: >-
+      Flipping the sign in parts[-1] gives parts[+1], and for any address with a
+      single @ those index the same element. The mutant is equivalent, not
+      uncaught, and only a contrived double-@ address could tell them apart.

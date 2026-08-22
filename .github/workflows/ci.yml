@@ -63,6 +63,13 @@ jobs:
       - name: Validate every exercise
         run: node packages/cli/dist/main.js exercise validate
 
+      # A suite that passes a wrong solution is worse than no suite: it tells
+      # the learner they got it right. This breaks the reference solution on
+      # purpose and requires the tests to notice.
+      - name: Check the tests would catch a wrong solution
+        if: matrix.os == 'ubuntu-latest'
+        run: node packages/cli/dist/main.js exercise mutate
+
       - name: Check curriculum health
         run: node packages/cli/dist/main.js curriculum check
 

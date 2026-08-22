@@ -102,6 +102,7 @@ export async function loadExercise(directory: string): Promise<Exercise> {
     hints: manifest.hints,
     ...(manifest.explanation ? { explanation: manifest.explanation.trim() } : {}),
     ...(manifest.timeoutMs ? { timeoutMs: manifest.timeoutMs } : {}),
+    ...(manifest.mutationExceptions ? { mutationExceptions: manifest.mutationExceptions } : {}),
     ...(manifest.continues ? { continues: manifest.continues } : {}),
     source: { directory: path.resolve(directory) },
   };

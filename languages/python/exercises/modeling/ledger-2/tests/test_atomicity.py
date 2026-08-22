@@ -53,3 +53,22 @@ def test_total_money_is_conserved_across_many_transfers(ledger):
         ledger.transfer("alice", "bob", 10)
         ledger.transfer("bob", "alice", 7)
     expect_equal(ledger.balance("alice") + ledger.balance("bob"), total_before)
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_the_smallest_legal_amount_is_one_cent(ledger):
+    """A boundary worth pinning: "positive" starts at 1, not at 2."""
+    ledger.deposit("alice", 1)
+    expect_equal(ledger.balance("alice"), 1001)
+    ledger.withdraw("alice", 1)
+    expect_equal(ledger.balance("alice"), 1000)
+
+
+@pytest.mark.concept("python.errors.validation")
+def test_a_boolean_is_not_a_whole_number_of_cents(ledger):
+    """`bool` is a subclass of `int` in Python, so `isinstance(True, int)` is
+    True and a naive type check lets `deposit(account, True)` through as a
+    one-cent deposit. The amount has to be a number someone meant to write."""
+    expect_raises(ValueError, lambda: ledger.deposit("alice", True))
+    expect_raises(ValueError, lambda: ledger.withdraw("alice", False))
+    expect_equal(ledger.balance("alice"), 1000)

@@ -2,11 +2,14 @@ import type { ValidationIssue, ValidationReport } from '@code-retrainer/exercise
 import {
   attemptWorkspace,
   orderedHints,
+  runMutationTesting,
   solutionWorkspace,
   testVisibility,
   validateCatalog,
   validateExercise,
 } from '@code-retrainer/exercises';
+
+import { pythonMutationOperators } from '@code-retrainer/python';
 
 import { createContext, relativeToRepository } from '../context.ts';
 import { formatTestResult } from '../format-results.ts';
@@ -34,9 +37,13 @@ export async function runExerciseCommand(args: readonly string[], flags: Flags):
       return validate(rest[0], flags);
     case 'run':
       return run(rest[0], flags);
+    case 'mutate':
+      return mutate(rest[0], flags);
     default:
       console.error(style.red(`Unknown exercise command "${subcommand ?? ''}".`));
-      console.error('Try: code-retrainer exercise list | show <id> | validate | run <id>');
+      console.error(
+        'Try: code-retrainer exercise list | show <id> | validate | run <id> | mutate [id]',
+      );
       return 2;
   }
 }
@@ -231,4 +238,120 @@ function reportLoadFailures(failures: readonly { directory: string; message: str
     console.error(indent(style.grey(failure.message), 4));
   }
   return true;
+}
+
+/**
+ * Break the reference solution on purpose and see whether the tests notice.
+ *
+ * An exercise whose tests pass a wrong solution is worse than one with no
+ * tests: it tells the learner they got it right, and every mastery number
+ * derived from that attempt inherits the lie. Each surviving mutant below is a
+ * hole a learner can sit in.
+ *
+ * Slow by nature — one test run per fault — so it is a separate command rather
+ * than part of `validate`.
+ */
+async function mutate(id: string | undefined, flags: Flags): Promise<number> {
+  const context = await createContext();
+  const targets = id
+    ? context.catalog.has(id)
+      ? [context.catalog.get(id)]
+      : []
+    : context.catalog.all();
+
+  if (targets.length === 0) {
+    console.error(style.red(id ? `Unknown exercise "${id}".` : 'No exercises found.'));
+    return 2;
+  }
+
+  const limit = Number(flagString(flags, 'limit') ?? '25');
+  let holes = 0;
+
+  for (const exercise of targets) {
+    const solution = solutionWorkspace(exercise);
+    const runtime = context.runtimeFor(exercise.language);
+
+    // Only the solution is mutated. Breaking a test and watching it fail
+    // proves nothing: the question is whether the tests notice a broken
+    // *solution*, so they have to stay exactly as the learner will meet them.
+    const mutable = solution.files.filter((file) =>
+      exercise.solution.files.some((candidate) => candidate.path === file.path),
+    );
+
+    console.log(heading(exercise.title));
+
+    const report = await runMutationTesting(mutable, {
+      operators: pythonMutationOperators,
+      limitPerFile: Number.isFinite(limit) ? limit : 25,
+      onProgress: (done, total) => {
+        if (process.stdout.isTTY) process.stdout.write(`\r  ${done}/${total} faults tried`);
+      },
+      test: async (mutated) => {
+        const result = await runtime.test({
+          workspace: {
+            ...solution,
+            files: solution.files.map(
+              (file) => mutated.find((candidate) => candidate.path === file.path) ?? file,
+            ),
+          },
+          visibility: testVisibility(exercise),
+          ...(exercise.timeoutMs ? { limits: { timeoutMs: exercise.timeoutMs } } : {}),
+        });
+        return {
+          green: result.outcome === 'completed' && result.failed === 0 && result.errored === 0,
+        };
+      },
+    });
+
+    if (process.stdout.isTTY) process.stdout.write('\r');
+
+    console.log(
+      indent(
+        columns([
+          ['faults introduced', String(report.total)],
+          ['caught', String(report.killed)],
+          ['score', `${Math.round(report.score * 100)}%`],
+        ]),
+      ),
+    );
+
+    const excused = exercise.mutationExceptions ?? [];
+    const surviving = report.survivors.filter(
+      (survivor) =>
+        !excused.some(
+          (exception) =>
+            exception.path === survivor.path && exception.operator === survivor.operator,
+        ),
+    );
+
+    for (const exception of excused) {
+      console.log(
+        indent(
+          style.grey(
+            `${symbol.skip} ${exception.path} — ${exception.operator} mutants excused: ${exception.why}`,
+          ),
+        ),
+      );
+    }
+
+    for (const survivor of surviving) {
+      holes += 1;
+      console.log(
+        indent(
+          `${symbol.fail} ${survivor.path}:${survivor.line} — ${survivor.description} ` +
+            style.grey(`(${survivor.operator})`),
+        ),
+      );
+    }
+
+    if (surviving.length > 0) {
+      console.log(
+        indent(
+          style.grey('Each line above is a change the tests accepted. Add a case that would fail.'),
+        ),
+      );
+    }
+  }
+
+  return holes === 0 ? 0 : 1;
 }

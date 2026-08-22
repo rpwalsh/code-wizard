@@ -62,9 +62,32 @@ export interface Exercise {
   /** Shown after completion. Explains *why*, not just *what*. */
   readonly explanation?: string;
   readonly timeoutMs?: number;
+  /**
+   * Mutants the tests are not expected to catch, each with a stated reason.
+   *
+   * Some faults are genuinely undetectable because they do not change
+   * behaviour: `parts[-1]` and `parts[+1]` are the same value whenever there
+   * are two parts. Equivalent mutants are inherent to the technique, and
+   * without somewhere to record them the score can never reach 100%, the gate
+   * stays permanently red, and people stop reading it — which costs more than
+   * the mutant ever could.
+   *
+   * A reason is required. A suppression nobody had to justify is a suppression
+   * nobody will revisit.
+   */
+  readonly mutationExceptions?: readonly MutationException[];
   /** Progressive systems: the exercise this stage builds on (spec §7.8). */
   readonly continues?: string;
   readonly source: ExerciseSource;
+}
+
+export interface MutationException {
+  /** Workspace-relative path of the solution file. */
+  readonly path: string;
+  /** The operator whose mutant is expected to survive. */
+  readonly operator: string;
+  /** Why no test can kill it. Not optional. */
+  readonly why: string;
 }
 
 /** The files the learner starts from, plus the test files they run against. */

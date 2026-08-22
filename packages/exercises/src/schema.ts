@@ -68,6 +68,18 @@ export const exerciseManifestSchema = z
     hints: z.array(hintSchema).default([]),
     explanation: z.string().optional(),
     timeoutMs: z.number().int().positive().max(120_000).optional(),
+    mutationExceptions: z
+      .array(
+        z
+          .object({
+            path: relativePath,
+            operator: z.string().min(1),
+            // Long enough that it has to be a sentence, not a shrug.
+            why: z.string().min(20),
+          })
+          .strict(),
+      )
+      .optional(),
     continues: identifier.optional(),
   })
   .strict()
