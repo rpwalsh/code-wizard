@@ -1,3 +1,6 @@
+import type { JsonValue } from '@forge/core';
+import { parseJson } from '@forge/core';
+
 import type {
   BootConfig,
   BootResult,
@@ -5,16 +8,29 @@ import type {
   ExecuteResult,
   TestRunResult,
 } from './protocol.ts';
+import { toDiagnoseResult, toExecuteResult, toTestRunResult } from './results.ts';
+
+/**
+ * What a value crossing into Python may be.
+ *
+ * Everything this engine passes is a primitive: payloads are serialised to
+ * JSON first, so no Python object proxy is ever created or has to be freed.
+ */
+export type PyodideGlobal = string | number | boolean;
+
+/** What `runPython` gives back for the expressions this engine evaluates. */
+export type PyodideResult = string | number | boolean | null;
 
 /** The slice of the Pyodide API this engine uses. */
 export interface PyodideApi {
   FS: {
     mkdirTree(path: string): void;
-    writeFile(path: string, data: string, options: { encoding: 'utf8' }): void;
+    // Emscripten encodes string data as UTF-8; there is no encoding option.
+    writeFile(path: string, data: string): void;
   };
-  globals: { set(name: string, value: unknown): void };
-  runPython(code: string): unknown;
-  loadPackage(names: string | string[]): Promise<unknown>;
+  globals: { set(name: string, value: PyodideGlobal): void };
+  runPython(code: string): PyodideResult;
+  loadPackage(names: string | string[]): Promise<void>;
   pyimport(name: string): { install(spec: string): Promise<void> };
 }
 
@@ -77,11 +93,9 @@ export class PyodideEngine {
     report('Preparing the workspace…');
     pyodide.FS.mkdirTree(SUPPORT_DIR);
     for (const [name, source] of Object.entries(config.supportModules)) {
-      pyodide.FS.writeFile(`${SUPPORT_DIR}/${name}`, source, { encoding: 'utf8' });
+      pyodide.FS.writeFile(`${SUPPORT_DIR}/${name}`, source);
     }
-    pyodide.FS.writeFile(`${SUPPORT_DIR}/forge_web.py`, config.forgeWebSource, {
-      encoding: 'utf8',
-    });
+    pyodide.FS.writeFile(`${SUPPORT_DIR}/forge_web.py`, config.forgeWebSource);
 
     pyodide.globals.set('_forge_support_dir', SUPPORT_DIR);
     pyodide.runPython(`
@@ -93,7 +107,7 @@ forge_web.reset_workspace()
 `);
 
     const pythonVersion = String(
-      pyodide.runPython('import sys; ".".join(str(part) for part in sys.version_info[:3])'),
+      pyodide.runPython('import sys; ".".join(str(part) for part in sys.version_info[:3])') ?? '',
     );
     const pytestVersion = String(
       pyodide.runPython(`
@@ -103,7 +117,7 @@ try:
 except Exception:
     _forge_pytest_version = ""
 _forge_pytest_version
-`),
+`) ?? '',
     );
 
     return new PyodideEngine(pyodide, {
@@ -140,8 +154,9 @@ _forge_pytest_version
     this.pyodide.globals.set('_forge_argv', JSON.stringify(request.args));
     this.pyodide.globals.set('_forge_stdin', request.stdin);
     this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
-    return this.#json<ExecuteResult>(
+    return this.#json(
       'import forge_web\nforge_web.run_program(_forge_entry, _forge_argv, _forge_stdin, _forge_limit)',
+      toExecuteResult,
     );
   }
 
@@ -154,8 +169,9 @@ _forge_pytest_version
     this.pyodide.globals.set('_forge_targets', JSON.stringify(request.targets));
     this.pyodide.globals.set('_forge_report_path', REPORT_PATH);
     this.pyodide.globals.set('_forge_limit', request.maxOutputBytes);
-    return this.#json<TestRunResult>(
+    return this.#json(
       'import forge_web\nforge_web.run_tests(_forge_targets, _forge_report_path, _forge_limit)',
+      toTestRunResult,
     );
   }
 
@@ -165,10 +181,21 @@ _forge_pytest_version
   }): DiagnoseResult {
     this.#materialise(request.files);
     this.pyodide.globals.set('_forge_paths', JSON.stringify(request.paths));
-    return this.#json<DiagnoseResult>('import forge_web\nforge_web.diagnose(_forge_paths)');
+    return this.#json('import forge_web\nforge_web.diagnose(_forge_paths)', toDiagnoseResult);
   }
 
-  #json<T>(code: string): T {
-    return JSON.parse(String(this.pyodide.runPython(code))) as T;
+  /**
+   * Evaluate an expression that returns a JSON document, and narrow it.
+   *
+   * The Python side always returns a JSON string; anything else means the
+   * bridge itself is broken, which is worth saying out loud rather than
+   * failing later with a confusing shape.
+   */
+  #json<T>(code: string, narrow: (value: JsonValue) => T): T {
+    const raw = this.pyodide.runPython(code);
+    if (typeof raw !== 'string') {
+      throw new Error(`Expected JSON from Python, received ${typeof raw}.`);
+    }
+    return narrow(parseJson(raw));
   }
 }

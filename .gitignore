@@ -16,3 +16,5 @@ apps/web/public/content/catalog.json
 apps/web/dist/
 apps/desktop/dist/
 apps/desktop/out/
+apps/desktop/renderer/
+apps/desktop/content/

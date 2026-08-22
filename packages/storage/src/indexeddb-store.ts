@@ -6,6 +6,20 @@ import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-s
 import { assertImportable, selectDue, SNAPSHOT_FORMAT } from './progress-store.ts';
 import { LATEST_VERSION } from './version.ts';
 
+/**
+ * What may be written to a store.
+ *
+ * IndexedDB serialises with structured clone, which accepts a wider set than
+ * JSON — but everything Forge stores is plain data, and naming that keeps the
+ * write path checked.
+ */
+type StorableRecord = string | SkillMastery | StoredReview | Attempt;
+
+interface StoreReplacement {
+  readonly store: string;
+  readonly records: readonly (readonly [IDBValidKey, StorableRecord])[];
+}
+
 const DATABASE_NAME = 'forge-progress';
 const DATABASE_VERSION = 1;
 
@@ -86,7 +100,11 @@ export class IndexedDbProgressStore implements ProgressStore {
     return this.#request<T[]>(store, 'readonly', (objectStore) => objectStore.getAll());
   }
 
-  #write(store: string, key: IDBValidKey, value: unknown): Promise<IDBValidKey> {
+  #write<T extends StorableRecord>(
+    store: string,
+    key: IDBValidKey,
+    value: T,
+  ): Promise<IDBValidKey> {
     return this.#request<IDBValidKey>(store, 'readwrite', (objectStore) =>
       objectStore.put(value, key),
     );
@@ -107,7 +125,7 @@ export class IndexedDbProgressStore implements ProgressStore {
   }
 
   /** Clear and repopulate several stores in one transaction. */
-  #replaceAll(entries: readonly { store: string; records: readonly [IDBValidKey, unknown][] }[]) {
+  #replaceAll(entries: readonly StoreReplacement[]) {
     return new Promise<void>((resolve, reject) => {
       const names = entries.map((entry) => entry.store);
       const transaction = this.#database.transaction(names, 'readwrite');

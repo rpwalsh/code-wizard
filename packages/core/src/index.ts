@@ -1,3 +1,4 @@
+export * from './json.ts';
 export * from './workspace.ts';
 export * from './workspace-paths.ts';
 export * from './execution.ts';

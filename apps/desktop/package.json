@@ -1,0 +1,23 @@
+{
+  "name": "@forge/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && electron .",
+    "dev": "node scripts/dev.mjs"
+  },
+  "dependencies": {
+    "@forge/core": "*",
+    "@forge/exercises": "*",
+    "@forge/learning": "*",
+    "@forge/python": "*",
+    "@forge/storage": "*"
+  },
+  "devDependencies": {
+    "electron": "^43.4.1",
+    "esbuild": "^0.25.12"
+  }
+}

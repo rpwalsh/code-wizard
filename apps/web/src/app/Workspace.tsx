@@ -41,7 +41,9 @@ export function Workspace({ platform, exercise, mode, fontSize, onLeave }: Works
 
   const activeFile = state.files.find((file) => file.path === activePath) ?? state.files[0] ?? null;
 
-  const guard = useCallback(async (body: () => Promise<unknown>) => {
+  // Runs an action and shows whatever it refuses to do, rather than letting
+  // a rejected promise disappear into the console.
+  const guard = useCallback(async <T,>(body: () => Promise<T>) => {
     setError(null);
     try {
       await body();

@@ -25,7 +25,7 @@ export interface BootConfig {
  * `Omit` over a union collapses it to the keys they share, which would erase
  * every request's payload. Distributing first keeps each member intact.
  */
-export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+export type DistributiveOmit<T, K extends PropertyKey> = T extends T ? Omit<T, K> : never;
 
 /** A request as the caller writes it: the client assigns the id. */
 export type WorkerCall = DistributiveOmit<WorkerRequest, 'id'>;
@@ -81,8 +81,24 @@ export interface DiagnoseResult {
   readonly diagnostics: readonly Diagnostic[];
 }
 
+/** Which result each request kind produces. */
+export interface WorkerResultMap {
+  readonly boot: BootResult;
+  readonly execute: ExecuteResult;
+  readonly test: TestRunResult;
+  readonly diagnose: DiagnoseResult;
+}
+
+export type WorkerKind = WorkerRequest['kind'];
+
+/** Every result the worker can send back, as one union. */
+export type WorkerResultValue = WorkerResultMap[WorkerKind];
+
+/** The request for one kind, as the caller writes it. */
+export type WorkerCallOf<K extends WorkerKind> = Extract<WorkerCall, { kind: K }>;
+
 export type WorkerResponse =
-  | { readonly id: number; readonly ok: true; readonly value: unknown }
+  | { readonly id: number; readonly ok: true; readonly value: WorkerResultValue }
   | { readonly id: number; readonly ok: false; readonly error: string }
   /** Boot progress, so a five-second first load can say what it is doing. */
   | { readonly id: 0; readonly kind: 'progress'; readonly message: string };

@@ -14,24 +14,12 @@ import type {
   TestResult,
 } from '@forge/core';
 import { SkillGraph } from '@forge/core';
-import type { ContentBundle } from '@forge/exercises';
-import { catalogFromBundle, parseBundle } from '@forge/exercises';
+import { catalogFromBundle } from '@forge/exercises';
 import type { Attempt } from '@forge/learning';
 import type { ProgressSnapshot, ProgressStore, StoredReview } from '@forge/storage';
 
+import type { DesktopBridge } from './bridge.ts';
 import type { Platform, PlatformProgress } from './types.ts';
-
-/**
- * The surface Electron's preload script exposes.
- *
- * A single `invoke` rather than a method per operation: the channel list is
- * whitelisted in the preload, and keeping the bridge this narrow means the
- * renderer is never handed a Node capability it could be tricked into using.
- */
-interface DesktopBridge {
-  invoke(channel: string, payload?: unknown): Promise<unknown>;
-  readonly metadata: LanguageMetadata;
-}
 
 function bridge(): DesktopBridge {
   const found = (window as { forgeDesktop?: DesktopBridge }).forgeDesktop;
@@ -52,96 +40,90 @@ class BridgedRuntime implements LanguageRuntime {
   }
 
   doctor(): Promise<RuntimeDiagnosis> {
-    return bridge().invoke('runtime:doctor') as Promise<RuntimeDiagnosis>;
+    return bridge().invoke('runtime:doctor', undefined);
   }
 
   execute(request: ExecutionRequest): Promise<ExecutionResult> {
-    return bridge().invoke('runtime:execute', request) as Promise<ExecutionResult>;
+    return bridge().invoke('runtime:execute', request);
   }
 
   test(request: TestRequest): Promise<TestResult> {
-    return bridge().invoke('runtime:test', request) as Promise<TestResult>;
+    return bridge().invoke('runtime:test', request);
   }
 
   format(request: FormatRequest): Promise<FormatResult> {
-    return bridge().invoke('runtime:format', request) as Promise<FormatResult>;
+    return bridge().invoke('runtime:format', request);
   }
 
   lint(request: LintRequest): Promise<LintResult> {
-    return bridge().invoke('runtime:lint', request) as Promise<LintResult>;
+    return bridge().invoke('runtime:lint', request);
   }
 
   diagnose(request: LintRequest): Promise<readonly Diagnostic[]> {
-    return bridge().invoke('runtime:diagnose', request) as Promise<readonly Diagnostic[]>;
+    return bridge().invoke('runtime:diagnose', request);
   }
 }
 
 /** A `ProgressStore` backed by the SQLite database in the main process. */
 class BridgedStore implements ProgressStore {
-  #call<T>(channel: string, payload?: unknown): Promise<T> {
-    return bridge().invoke(channel, payload) as Promise<T>;
-  }
-
   getSetting(key: string): Promise<string | null> {
-    return this.#call('store:getSetting', key);
+    return bridge().invoke('store:getSetting', key);
   }
 
   setSetting(key: string, value: string): Promise<void> {
-    return this.#call('store:setSetting', { key, value });
+    return bridge().invoke('store:setSetting', { key, value });
   }
 
   getMastery(skillId: string): Promise<SkillMastery | null> {
-    return this.#call('store:getMastery', skillId);
+    return bridge().invoke('store:getMastery', skillId);
   }
 
   async allMastery(): Promise<Map<string, SkillMastery>> {
-    // Maps do not survive IPC structured clone in every Electron version, so
-    // the bridge carries entries and the map is rebuilt here.
-    return new Map(await this.#call<[string, SkillMastery][]>('store:allMastery'));
+    return new Map(await bridge().invoke('store:allMastery', undefined));
   }
 
   saveMastery(mastery: SkillMastery): Promise<void> {
-    return this.#call('store:saveMastery', mastery);
+    return bridge().invoke('store:saveMastery', mastery);
   }
 
   async allReviews(): Promise<Map<string, StoredReview>> {
-    return new Map(await this.#call<[string, StoredReview][]>('store:allReviews'));
+    return new Map(await bridge().invoke('store:allReviews', undefined));
   }
 
   saveReview(review: StoredReview): Promise<void> {
-    return this.#call('store:saveReview', review);
+    return bridge().invoke('store:saveReview', review);
   }
 
   dueReviews(at: Date): Promise<StoredReview[]> {
-    return this.#call('store:dueReviews', at.toISOString());
+    return bridge().invoke('store:dueReviews', at.toISOString());
   }
 
   getAttempt(id: string): Promise<Attempt | null> {
-    return this.#call('store:getAttempt', id);
+    return bridge().invoke('store:getAttempt', id);
   }
 
   attemptsFor(exerciseId: string): Promise<Attempt[]> {
-    return this.#call('store:attemptsFor', exerciseId);
+    return bridge().invoke('store:attemptsFor', exerciseId);
   }
 
   allAttempts(): Promise<Attempt[]> {
-    return this.#call('store:allAttempts');
+    return bridge().invoke('store:allAttempts', undefined);
   }
 
   saveAttempt(attempt: Attempt): Promise<void> {
-    return this.#call('store:saveAttempt', attempt);
+    return bridge().invoke('store:saveAttempt', attempt);
   }
 
   countAttempts(): Promise<number> {
-    return this.#call('store:countAttempts');
+    return bridge().invoke('store:countAttempts', undefined);
   }
 
   exportAll(): Promise<ProgressSnapshot> {
-    return this.#call('store:exportAll');
+    return bridge().invoke('store:exportAll', undefined);
   }
 
   importAll(snapshot: ProgressSnapshot): Promise<void> {
-    return this.#call('store:importAll', snapshot);
+    return bridge().invoke('store:importAll', snapshot);
   }
 
   close(): Promise<void> {
@@ -154,7 +136,9 @@ export async function createDesktopPlatform(
   report: (progress: PlatformProgress) => void = () => {},
 ): Promise<Platform> {
   report({ stage: 'catalog', message: 'Loading exercises…' });
-  const bundle = parseBundle((await bridge().invoke('content:bundle')) as ContentBundle);
+  // Already a ContentBundle: the main process built it from validated
+  // exercises, so there is nothing left to narrow.
+  const bundle = await bridge().invoke('content:bundle', undefined);
 
   report({ stage: 'ready', message: 'Ready.' });
 

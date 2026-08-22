@@ -1,4 +1,11 @@
-import type { WorkerCall, WorkerRequest, WorkerResponse } from './protocol.ts';
+import type {
+  WorkerCallOf,
+  WorkerKind,
+  WorkerRequest,
+  WorkerResponse,
+  WorkerResultMap,
+  WorkerResultValue,
+} from './protocol.ts';
 import { isProgress } from './protocol.ts';
 
 /**
@@ -78,6 +85,11 @@ export class WorkerCallError extends Error {
   }
 }
 
+interface PendingCall {
+  readonly resolve: (value: WorkerResultValue) => void;
+  readonly reject: (error: Error) => void;
+}
+
 export class WorkerTerminatedError extends Error {
   constructor(message = 'The worker was terminated.') {
     super(message);
@@ -92,10 +104,7 @@ export class WorkerTerminatedError extends Error {
 export class WorkerClient {
   #channel: WorkerChannel | null = null;
   #nextId = 1;
-  readonly #pending = new Map<
-    number,
-    { resolve: (value: unknown) => void; reject: (error: Error) => void }
-  >();
+  readonly #pending = new Map<number, PendingCall>();
 
   constructor(
     private readonly factory: WorkerChannelFactory,
@@ -129,14 +138,24 @@ export class WorkerClient {
     this.#channel = channel;
   }
 
-  call<T>(request: WorkerCall): Promise<T> {
+  /**
+   * Send one request and resolve with the result declared for its kind.
+   *
+   * The kind determines the result type, so callers never say what they expect
+   * and never cast what comes back.
+   */
+  call<K extends WorkerKind>(request: WorkerCallOf<K>): Promise<WorkerResultMap[K]> {
     const channel = this.#channel;
     if (!channel) return Promise.reject(new WorkerTerminatedError('The worker is not running.'));
 
     const id = this.#nextId++;
-    return new Promise<T>((resolve, reject) => {
-      this.#pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
-      channel.post({ ...request, id } as WorkerRequest);
+    return new Promise<WorkerResultMap[K]>((resolve, reject) => {
+      this.#pending.set(id, {
+        resolve: (value) => resolve(value as WorkerResultMap[K]),
+        reject,
+      });
+      const outgoing: WorkerRequest = { ...request, id };
+      channel.post(outgoing);
     });
   }
 

@@ -20,6 +20,7 @@ import type {
 import {
   assertSafeRelativePath,
   redactHiddenTests,
+  toError,
   summarise,
   WorkspacePathError,
 } from '@forge/core';
@@ -29,7 +30,7 @@ import { FORGE_EXPECT_PY, FORGE_REPORT_PY } from '@forge/python/support';
 import type { WorkerChannel } from './channel.ts';
 import { WorkerClient, WorkerTerminatedError } from './channel.ts';
 import { FORGE_WEB_PY } from './python-sources.generated.ts';
-import type { BootResult, DiagnoseResult, ExecuteResult, TestRunResult } from './protocol.ts';
+import type { BootResult, TestRunResult } from './protocol.ts';
 
 export interface PyodideRuntimeOptions {
   /** Creates the worker. Browser and Node hosts differ only here. */
@@ -98,11 +99,11 @@ export class PyodideRuntime implements LanguageRuntime {
     this.#booting ??= this.#boot();
     try {
       return await this.#booting;
-    } catch (error) {
+    } catch (caught) {
       // A failed boot must not poison every later attempt: clear the memo so
       // the next call genuinely retries.
       this.#booting = null;
-      throw error;
+      throw toError(caught);
     }
   }
 
@@ -112,7 +113,7 @@ export class PyodideRuntime implements LanguageRuntime {
     this.#client = client;
 
     const info = await withDeadline(
-      client.call<BootResult>({
+      client.call({
         kind: 'boot',
         config: {
           ...(this.#options.indexUrl ? { indexUrl: this.#options.indexUrl } : {}),
@@ -177,7 +178,7 @@ export class PyodideRuntime implements LanguageRuntime {
     try {
       const result = await this.#guarded(
         (client) =>
-          client.call<ExecuteResult>({
+          client.call({
             kind: 'execute',
             files: toFileMap(request.workspace),
             entryPoint,
@@ -197,9 +198,9 @@ export class PyodideRuntime implements LanguageRuntime {
         truncated: result.truncated,
         durationMs: Math.round(now() - startedAt),
       };
-    } catch (error) {
+    } catch (caught) {
       return {
-        ...failedExecution(outcomeFor(error), describe(error)),
+        ...failedExecution(outcomeFor(toError(caught)), toError(caught).message),
         durationMs: Math.round(now() - startedAt),
       };
     }
@@ -217,7 +218,7 @@ export class PyodideRuntime implements LanguageRuntime {
     try {
       raw = await this.#guarded(
         (client) =>
-          client.call<TestRunResult>({
+          client.call({
             kind: 'test',
             files: toFileMap(request.workspace),
             targets,
@@ -225,11 +226,11 @@ export class PyodideRuntime implements LanguageRuntime {
           }),
         limits.timeoutMs,
       );
-    } catch (error) {
-      const outcome = outcomeFor(error);
+    } catch (caught) {
+      const outcome = outcomeFor(toError(caught));
       return failedTestRun(
         outcome === 'completed' ? 'internal-error' : outcome,
-        describe(error),
+        toError(caught).message,
         Math.round(now() - startedAt),
       );
     }
@@ -252,13 +253,13 @@ export class PyodideRuntime implements LanguageRuntime {
       const document = parseReport(raw.report);
       cases = toTestCases(document, visibility as Readonly<Record<string, TestVisibility>>);
       hadCollectionError = document.collectionErrors.length > 0;
-    } catch (error) {
+    } catch (caught) {
       return {
         ...emptyCounts(),
         ...base,
         outcome: 'internal-error',
         cases: [],
-        stderr: `${base.stderr}\n${String(error)}`.trim(),
+        stderr: `${base.stderr}\n${toError(caught).message}`.trim(),
       };
     }
 
@@ -280,7 +281,7 @@ export class PyodideRuntime implements LanguageRuntime {
     try {
       const result = await this.#guarded(
         (client) =>
-          client.call<DiagnoseResult>({
+          client.call({
             kind: 'diagnose',
             files: toFileMap(request.workspace),
             paths,
@@ -323,7 +324,7 @@ export class PyodideRuntime implements LanguageRuntime {
     let info: BootResult;
     try {
       info = await this.#ensureBooted();
-    } catch (error) {
+    } catch (caught) {
       return {
         language: 'python',
         ready: false,
@@ -332,7 +333,7 @@ export class PyodideRuntime implements LanguageRuntime {
             id: 'pyodide-boot',
             label: 'Python (WebAssembly)',
             status: 'fail',
-            detail: describe(error),
+            detail: toError(caught).message,
             remedy: 'Check the browser console; the Pyodide assets may be unreachable.',
           },
         ],
@@ -436,17 +437,13 @@ export class TimeoutError extends Error {
   }
 }
 
-function outcomeFor(error: unknown): ExecutionResult['outcome'] {
+function outcomeFor(error: Error): ExecutionResult['outcome'] {
   if (error instanceof TimeoutError) return 'timeout';
   if (error instanceof WorkerTerminatedError) return 'timeout';
   // A path that escapes the workspace is broken content, not a runtime that
   // is unavailable, and saying so sends the reader to the right place.
   if (error instanceof WorkspacePathError) return 'internal-error';
   return 'runtime-unavailable';
-}
-
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function toFileMap(workspace: Workspace): Record<string, string> {

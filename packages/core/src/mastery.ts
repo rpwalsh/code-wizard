@@ -42,7 +42,7 @@ export function clamp01(value: number): number {
 }
 
 export function makeMastery(values: Partial<Record<MasteryDimension, number>>): MasteryVector {
-  const vector = { ...zeroMastery } as Record<MasteryDimension, number>;
+  const vector: Record<MasteryDimension, number> = { ...zeroMastery };
   for (const dimension of masteryDimensions) {
     const value = values[dimension];
     if (value !== undefined) vector[dimension] = clamp01(value);

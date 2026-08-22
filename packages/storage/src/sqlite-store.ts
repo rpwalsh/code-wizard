@@ -2,13 +2,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-import type { MasteryVector, SkillMastery, TrainingMode } from '@forge/core';
-import { makeMastery, masteryDimensions } from '@forge/core';
+import type { MasteryDimension, MasteryVector, SkillMastery, TrainingMode } from '@forge/core';
+import {
+  isJsonObject,
+  makeMastery,
+  masteryDimensions,
+  parseJson,
+  trainingModes,
+} from '@forge/core';
 import type { Attempt, AttemptEvent, AttemptOutcome } from '@forge/learning';
 
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
 import { assertImportable, SNAPSHOT_FORMAT } from './progress-store.ts';
-import { LATEST_VERSION, migrate } from './schema.ts';
+import { migrate } from './schema.ts';
+import type { SqlRow } from './sql-rows.ts';
+import { integer, optionalText, text } from './sql-rows.ts';
+import { LATEST_VERSION } from './version.ts';
 
 export interface StoreOptions {
   /** Path to the database file, or `:memory:` for a throwaway store. */
@@ -129,13 +138,13 @@ export class SqliteProgressStore implements ProgressStore {
 
   async getMastery(skillId: string): Promise<SkillMastery | null> {
     const row = this.#database.prepare('SELECT * FROM mastery WHERE skill_id = ?').get(skillId) as
-      MasteryRow | undefined;
+      SqlRow | undefined;
     return row ? toMastery(row) : null;
   }
 
   async allMastery(): Promise<Map<string, SkillMastery>> {
-    const rows = this.#database.prepare('SELECT * FROM mastery').all() as unknown as MasteryRow[];
-    return new Map(rows.map((row) => [row.skill_id, toMastery(row)]));
+    const rows = this.#database.prepare('SELECT * FROM mastery').all() as SqlRow[];
+    return new Map(rows.map((row) => [text(row, 'skill_id'), toMastery(row)]));
   }
 
   // -- reviews ------------------------------------------------------------
@@ -164,14 +173,14 @@ export class SqliteProgressStore implements ProgressStore {
   }
 
   async allReviews(): Promise<Map<string, StoredReview>> {
-    const rows = this.#database.prepare('SELECT * FROM reviews').all() as unknown as ReviewRow[];
-    return new Map(rows.map((row) => [row.skill_id, toReview(row)]));
+    const rows = this.#database.prepare('SELECT * FROM reviews').all() as SqlRow[];
+    return new Map(rows.map((row) => [text(row, 'skill_id'), toReview(row)]));
   }
 
   async dueReviews(at: Date): Promise<StoredReview[]> {
     const rows = this.#database
       .prepare('SELECT * FROM reviews WHERE due_at <= ? ORDER BY due_at ASC')
-      .all(at.toISOString()) as unknown as ReviewRow[];
+      .all(at.toISOString()) as SqlRow[];
     return rows.map(toReview);
   }
 
@@ -221,69 +230,60 @@ export class SqliteProgressStore implements ProgressStore {
 
   async getAttempt(id: string): Promise<Attempt | null> {
     const row = this.#database.prepare('SELECT * FROM attempts WHERE id = ?').get(id) as
-      AttemptRow | undefined;
+      SqlRow | undefined;
     return row ? this.#hydrate(row) : null;
   }
 
   async attemptsFor(exerciseId: string): Promise<Attempt[]> {
     const rows = this.#database
       .prepare('SELECT * FROM attempts WHERE exercise_id = ? ORDER BY started_at ASC')
-      .all(exerciseId) as unknown as AttemptRow[];
+      .all(exerciseId) as SqlRow[];
     return rows.map((row) => this.#hydrate(row));
   }
 
   async allAttempts(): Promise<Attempt[]> {
     const rows = this.#database
       .prepare('SELECT * FROM attempts ORDER BY started_at ASC')
-      .all() as unknown as AttemptRow[];
+      .all() as SqlRow[];
     return rows.map((row) => this.#hydrate(row));
   }
 
   async countAttempts(): Promise<number> {
-    const row = this.#database.prepare('SELECT COUNT(*) AS n FROM attempts').get() as { n: number };
-    return row.n;
+    const row = this.#database.prepare('SELECT COUNT(*) AS n FROM attempts').get() as SqlRow;
+    return integer(row, 'n');
   }
 
-  #hydrate(row: AttemptRow): Attempt {
+  #hydrate(row: SqlRow): Attempt {
+    const id = text(row, 'id');
     const events = this.#database
       .prepare('SELECT type, at, payload FROM attempt_events WHERE attempt_id = ? ORDER BY seq ASC')
-      .all(row.id) as unknown as { type: string; at: string; payload: string }[];
+      .all(id) as SqlRow[];
+
+    const finalFiles = optionalText(row, 'final_files');
 
     return {
-      id: row.id,
-      exerciseId: row.exercise_id,
-      exerciseVersion: row.exercise_version,
-      mode: row.mode as TrainingMode,
-      startedAt: row.started_at,
-      finishedAt: row.finished_at,
-      outcome: row.outcome as AttemptOutcome,
-      events: events.map(
-        (event) =>
-          ({
-            type: event.type,
-            at: event.at,
-            ...(JSON.parse(event.payload) as object),
-          }) as AttemptEvent,
-      ),
-      ...(row.final_files
-        ? { finalFiles: JSON.parse(row.final_files) as Record<string, string> }
-        : {}),
+      id,
+      exerciseId: text(row, 'exercise_id'),
+      exerciseVersion: integer(row, 'exercise_version'),
+      mode: toTrainingMode(text(row, 'mode')),
+      startedAt: text(row, 'started_at'),
+      finishedAt: optionalText(row, 'finished_at'),
+      outcome: toOutcome(text(row, 'outcome')),
+      events: events.map(toAttemptEvent),
+      ...(finalFiles === null ? {} : { finalFiles: toFileMap(finalFiles) }),
     };
   }
 
   // -- portability (spec §42) ---------------------------------------------
 
   async exportAll(): Promise<ProgressSnapshot> {
-    const settings = this.#database.prepare('SELECT key, value FROM settings').all() as unknown as {
-      key: string;
-      value: string;
-    }[];
+    const settings = this.#database.prepare('SELECT key, value FROM settings').all() as SqlRow[];
 
     return {
       format: SNAPSHOT_FORMAT,
       schemaVersion: this.schemaVersion,
       exportedAt: new Date().toISOString(),
-      settings: Object.fromEntries(settings.map((row) => [row.key, row.value])),
+      settings: Object.fromEntries(settings.map((row) => [text(row, 'key'), text(row, 'value')])),
       mastery: [...(await this.allMastery()).values()],
       reviews: [...(await this.allReviews()).values()],
       attempts: await this.allAttempts(),
@@ -308,31 +308,42 @@ export class SqliteProgressStore implements ProgressStore {
   }
 }
 
-interface MasteryRow {
-  skill_id: string;
-  vector: string;
-  observations: number;
-  last_practiced_at: string | null;
+function toTrainingMode(value: string): TrainingMode {
+  const found = trainingModes.find((candidate) => candidate === value);
+  if (!found) throw new Error('Stored attempt has an unrecognised mode: ' + value);
+  return found;
 }
 
-interface ReviewRow {
-  skill_id: string;
-  last_reviewed_at: string;
-  due_at: string;
-  interval_days: number;
-  streak: number;
-  lapses: number;
+const OUTCOMES: readonly AttemptOutcome[] = ['in-progress', 'solved', 'abandoned'];
+
+function toOutcome(value: string): AttemptOutcome {
+  const found = OUTCOMES.find((candidate) => candidate === value);
+  if (!found) throw new Error('Stored attempt has an unrecognised outcome: ' + value);
+  return found;
 }
 
-interface AttemptRow {
-  id: string;
-  exercise_id: string;
-  exercise_version: number;
-  mode: string;
-  started_at: string;
-  finished_at: string | null;
-  outcome: string;
-  final_files: string | null;
+/**
+ * Rebuild one event.
+ *
+ * The event union is discriminated by `type`, and the payload column was
+ * written from that same union by splitting those two fields off — so putting
+ * them back reconstructs the original member.
+ */
+function toAttemptEvent(row: SqlRow): AttemptEvent {
+  const payload = parseJson(text(row, 'payload'));
+  const fields = isJsonObject(payload) ? payload : {};
+  const rebuilt = { type: text(row, 'type'), at: text(row, 'at'), ...fields };
+  return rebuilt as AttemptEvent;
+}
+
+function toFileMap(raw: string): Record<string, string> {
+  const parsed = parseJson(raw);
+  if (!isJsonObject(parsed)) return {};
+  const files: Record<string, string> = {};
+  for (const [path, contents] of Object.entries(parsed)) {
+    if (typeof contents === 'string') files[path] = contents;
+  }
+  return files;
 }
 
 function serialiseVector(vector: MasteryVector): string {
@@ -343,30 +354,36 @@ function serialiseVector(vector: MasteryVector): string {
   );
 }
 
-function toMastery(row: MasteryRow): SkillMastery {
-  let parsed: Partial<Record<string, number>> = {};
+function toMastery(row: SqlRow): SkillMastery {
+  const values: Partial<Record<MasteryDimension, number>> = {};
   try {
-    parsed = JSON.parse(row.vector) as Partial<Record<string, number>>;
+    const parsed = parseJson(text(row, 'vector'));
+    if (isJsonObject(parsed)) {
+      for (const dimension of masteryDimensions) {
+        const value = parsed[dimension];
+        if (typeof value === 'number') values[dimension] = value;
+      }
+    }
   } catch {
     // A corrupt vector must not take the whole profile down with it; a reset
     // skill is recoverable, an unopenable database is not.
-    parsed = {};
   }
+
   return {
-    skillId: row.skill_id,
-    vector: makeMastery(parsed),
-    observations: row.observations,
-    lastPracticedAt: row.last_practiced_at,
+    skillId: text(row, 'skill_id'),
+    vector: makeMastery(values),
+    observations: integer(row, 'observations'),
+    lastPracticedAt: optionalText(row, 'last_practiced_at'),
   };
 }
 
-function toReview(row: ReviewRow): StoredReview {
+function toReview(row: SqlRow): StoredReview {
   return {
-    skillId: row.skill_id,
-    lastReviewedAt: row.last_reviewed_at,
-    dueAt: row.due_at,
-    intervalDays: row.interval_days,
-    streak: row.streak,
-    lapses: row.lapses,
+    skillId: text(row, 'skill_id'),
+    lastReviewedAt: text(row, 'last_reviewed_at'),
+    dueAt: text(row, 'due_at'),
+    intervalDays: integer(row, 'interval_days'),
+    streak: integer(row, 'streak'),
+    lapses: integer(row, 'lapses'),
   };
 }

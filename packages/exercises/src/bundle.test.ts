@@ -117,16 +117,42 @@ describe('content bundling', () => {
     ).toThrow(/missing its exercises/);
   });
 
-  it('rejects a bundle containing a malformed exercise', () => {
+  it('names the exercise and field when one is malformed', () => {
+    expect(
+      () =>
+        parseBundle(
+          JSON.stringify({
+            format: BUNDLE_FORMAT,
+            version: BUNDLE_VERSION,
+            skills: [],
+            exercises: [{ id: 'python.x' }],
+          }),
+        ),
+      // A truncated or stale bundle should say what is wrong with it, not
+      // yield a catalogue that looks fine and behaves strangely.
+    ).toThrow(/exercise "python.x"\.version/);
+  });
+
+  it('rejects an exercise whose nested test entry is wrong', () => {
+    const document = toBundle([exercise('python.demo.one')], skills);
+    const broken = JSON.parse(JSON.stringify(document)) as {
+      exercises: { tests: { visibility: string }[] }[];
+    };
+    broken.exercises[0]!.tests[0]!.visibility = 'sometimes';
+
+    expect(() => parseBundle(JSON.stringify(broken))).toThrow(/visibility/);
+  });
+
+  it('rejects a skill that is missing its category', () => {
     expect(() =>
       parseBundle(
         JSON.stringify({
           format: BUNDLE_FORMAT,
           version: BUNDLE_VERSION,
-          skills: [],
-          exercises: [{ id: 'python.x' }],
+          skills: [{ id: 'python.a', name: 'A', prerequisites: [] }],
+          exercises: [],
         }),
       ),
-    ).toThrow(/malformed exercise/);
+    ).toThrow(/skills\[0\]\.category/);
   });
 });

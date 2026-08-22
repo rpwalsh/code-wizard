@@ -1,5 +1,7 @@
-import type { Skill } from '@forge/core';
+import type { JsonValue, Skill } from '@forge/core';
+import { isJsonObject, parseJson, readNumber, readString, toError } from '@forge/core';
 
+import { toExercise, toSkill } from './bundle-parse.ts';
 import { ExerciseCatalog } from './catalog.ts';
 import type { Exercise } from './model.ts';
 
@@ -22,10 +24,13 @@ export interface ContentBundle {
   readonly exercises: readonly BundledExercise[];
 }
 
-/** An exercise with its authoring path replaced by a portable one. */
-export type BundledExercise = Omit<Exercise, 'source'> & {
-  readonly source: { readonly directory: string };
-};
+/**
+ * An exercise with its authoring path replaced by a portable one.
+ *
+ * Structurally an `Exercise`: only the meaning of `source.directory` changes,
+ * from an absolute authoring path to a repository-relative one.
+ */
+export type BundledExercise = Exercise;
 
 export class BundleError extends Error {
   constructor(message: string) {
@@ -73,47 +78,58 @@ export function toBundle(
  * to fail clearly on a stale, truncated or foreign file rather than to
  * re-litigate content rules the authoring pipeline already enforced.
  */
-export function parseBundle(raw: string | unknown): ContentBundle {
-  let parsed: unknown;
+export function parseBundle(raw: string | JsonValue): ContentBundle {
+  let parsed: JsonValue;
   if (typeof raw === 'string') {
     try {
-      parsed = JSON.parse(raw);
-    } catch (cause) {
-      throw new BundleError(`Content bundle is not valid JSON: ${String(cause)}`);
+      parsed = parseJson(raw);
+    } catch (caught) {
+      throw new BundleError(`Content bundle is not valid JSON: ${toError(caught).message}`);
     }
   } else {
     parsed = raw;
   }
 
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (!isJsonObject(parsed)) {
     throw new BundleError('Content bundle is not an object.');
   }
 
-  const bundle = parsed as Partial<ContentBundle>;
-  if (bundle.format !== BUNDLE_FORMAT) {
-    throw new BundleError(`Not a Forge content bundle (format: ${String(bundle.format)}).`);
+  const format = readString(parsed, 'format');
+  if (format !== BUNDLE_FORMAT) {
+    throw new BundleError(`Not a Forge content bundle (format: ${String(format)}).`);
   }
-  if (bundle.version !== BUNDLE_VERSION) {
+
+  const version = readNumber(parsed, 'version');
+  if (version !== BUNDLE_VERSION) {
     throw new BundleError(
-      `Content bundle is version ${String(bundle.version)}; this build reads version ${BUNDLE_VERSION}. ` +
+      `Content bundle is version ${String(version)}; this build reads version ${BUNDLE_VERSION}. ` +
         'Rebuild the bundle.',
     );
   }
-  if (!Array.isArray(bundle.exercises) || !Array.isArray(bundle.skills)) {
+
+  const exercises = parsed.exercises;
+  const skills = parsed.skills;
+  if (!Array.isArray(exercises) || !Array.isArray(skills)) {
     throw new BundleError('Content bundle is missing its exercises or skills.');
   }
 
-  for (const exercise of bundle.exercises) {
-    if (typeof exercise?.id !== 'string' || !Array.isArray(exercise.tests)) {
-      throw new BundleError('Content bundle contains a malformed exercise.');
-    }
+  try {
+    return {
+      format: BUNDLE_FORMAT,
+      version: BUNDLE_VERSION,
+      generatedAt: readString(parsed, 'generatedAt') ?? '',
+      skills: skills.map(toSkill),
+      exercises: exercises.map(toExercise),
+    };
+  } catch (caught) {
+    throw new BundleError(toError(caught).message);
   }
-
-  return bundle as ContentBundle;
 }
 
 export function catalogFromBundle(bundle: ContentBundle): ExerciseCatalog {
-  return new ExerciseCatalog(bundle.exercises as unknown as Exercise[]);
+  // A bundled exercise differs from a loaded one only in where `source`
+  // points, so it satisfies the catalogue's contract as it stands.
+  return new ExerciseCatalog(bundle.exercises);
 }
 
 /** Transfer size, so the build can report what it asks visitors to download. */

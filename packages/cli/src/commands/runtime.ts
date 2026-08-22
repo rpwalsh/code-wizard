@@ -2,7 +2,15 @@ import { buildRegistry } from '../context.ts';
 import { formatDiagnosis } from '../format-results.ts';
 import { heading, style } from '../terminal.ts';
 
-export type Flags = Record<string, unknown>;
+/**
+ * Parsed command-line flags.
+ *
+ * The shape node:util's parseArgs produces: a declared string option yields a
+ * string, a boolean option a boolean, and a repeated option an array.
+ */
+export type FlagValue = string | boolean | (string | boolean)[];
+
+export type Flags = Record<string, FlagValue | undefined>;
 
 function flagString(flags: Flags, name: string): string | undefined {
   const value = flags[name];

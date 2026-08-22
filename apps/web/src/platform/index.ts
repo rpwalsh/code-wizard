@@ -1,3 +1,4 @@
+import type { DesktopBridge } from './bridge.ts';
 import type { Platform, PlatformProgress } from './types.ts';
 import { createWebPlatform } from './web.ts';
 
@@ -6,7 +7,7 @@ export type { Platform, PlatformProgress } from './types.ts';
 /** Injected by Electron's preload script; absent in a browser. */
 declare global {
   interface Window {
-    forgeDesktop?: unknown;
+    forgeDesktop?: DesktopBridge;
   }
 }
 

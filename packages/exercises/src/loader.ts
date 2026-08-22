@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Workspace, WorkspaceFile } from '@forge/core';
+import type { JsonValue, Workspace, WorkspaceFile } from '@forge/core';
+import { toError } from '@forge/core';
 import { parse as parseYaml } from 'yaml';
 import type { ZodError } from 'zod';
 
@@ -14,7 +15,7 @@ export class ExerciseLoadError extends Error {
   constructor(
     readonly directory: string,
     message: string,
-    options?: { cause?: unknown },
+    options?: { cause?: Error },
   ) {
     super(`${directory}: ${message}`, options);
     this.name = 'ExerciseLoadError';
@@ -28,15 +29,21 @@ export async function loadExercise(directory: string): Promise<Exercise> {
   let raw: string;
   try {
     raw = await fs.readFile(manifestPath, 'utf8');
-  } catch (cause) {
-    throw new ExerciseLoadError(directory, `missing ${MANIFEST_FILENAME}`, { cause });
+  } catch (caught) {
+    throw new ExerciseLoadError(directory, `missing ${MANIFEST_FILENAME}`, {
+      cause: toError(caught),
+    });
   }
 
-  let parsed: unknown;
+  // YAML produces the same closed set of shapes JSON does, so the result is
+  // narrowable rather than opaque.
+  let parsed: JsonValue;
   try {
-    parsed = parseYaml(raw);
-  } catch (cause) {
-    throw new ExerciseLoadError(directory, `${MANIFEST_FILENAME} is not valid YAML`, { cause });
+    parsed = parseYaml(raw) as JsonValue;
+  } catch (caught) {
+    throw new ExerciseLoadError(directory, `${MANIFEST_FILENAME} is not valid YAML`, {
+      cause: toError(caught),
+    });
   }
 
   const result = exerciseManifestSchema.safeParse(parsed);
@@ -64,8 +71,10 @@ export async function loadExercise(directory: string): Promise<Exercise> {
     let contents: string;
     try {
       contents = await fs.readFile(filePath, 'utf8');
-    } catch (cause) {
-      throw new ExerciseLoadError(directory, `test file "${entry.path}" not found`, { cause });
+    } catch (caught) {
+      throw new ExerciseLoadError(directory, `test file "${entry.path}" not found`, {
+        cause: toError(caught),
+      });
     }
     tests.push({
       path: toPosix(entry.path),
