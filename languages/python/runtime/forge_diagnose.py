@@ -75,6 +75,9 @@ def main(argv: list[str]) -> int:
     report_path, *paths = argv
     root = os.getcwd()
     document = {"schema": 1, "diagnostics": diagnose(root, paths)}
+    directory = os.path.dirname(report_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as handle:
         json.dump(document, handle)
     return 0

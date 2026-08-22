@@ -104,9 +104,7 @@ async function show(id: string | undefined): Promise<number> {
 
   console.log(heading('Tests'));
   console.log(
-    columns(
-      exercise.tests.map((test) => [`  ${test.path}`, style.grey(test.visibility)]),
-    ),
+    columns(exercise.tests.map((test) => [`  ${test.path}`, style.grey(test.visibility)])),
   );
 
   const hints = orderedHints(exercise);
@@ -163,15 +161,13 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
     }
   }
 
-  console.log(heading(`Validating ${pluralise(reports.length, 'exercise')}${fast ? ' (fast)' : ''}`));
+  console.log(
+    heading(`Validating ${pluralise(reports.length, 'exercise')}${fast ? ' (fast)' : ''}`),
+  );
 
   const issues: ValidationIssue[] = [];
   for (const report of reports) {
-    const badge = report.ok
-      ? report.issues.length > 0
-        ? symbol.warn
-        : symbol.pass
-      : symbol.fail;
+    const badge = report.ok ? (report.issues.length > 0 ? symbol.warn : symbol.pass) : symbol.fail;
     console.log(`${badge} ${report.exerciseId}`);
     for (const issue of report.issues) {
       const mark = issue.severity === 'error' ? style.red('error') : style.yellow('warn');
@@ -227,9 +223,7 @@ async function run(id: string | undefined, flags: Flags): Promise<number> {
   return result.outcome === 'completed' && result.failed === 0 && result.errored === 0 ? 0 : 1;
 }
 
-function reportLoadFailures(
-  failures: readonly { directory: string; message: string }[],
-): boolean {
+function reportLoadFailures(failures: readonly { directory: string; message: string }[]): boolean {
   if (failures.length === 0) return false;
   console.error(heading(`${pluralise(failures.length, 'exercise')} failed to load`));
   for (const failure of failures) {

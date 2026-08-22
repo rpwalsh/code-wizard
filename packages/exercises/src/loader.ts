@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { Workspace, WorkspaceFile } from '@forge/core';
 import { parse as parseYaml } from 'yaml';
-import { ZodError } from 'zod';
+import type { ZodError } from 'zod';
 
 import type { Exercise, ExerciseTestFile } from './model.ts';
 import { exerciseManifestSchema } from './schema.ts';

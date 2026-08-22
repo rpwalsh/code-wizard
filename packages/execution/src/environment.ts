@@ -32,9 +32,7 @@ export interface EnvironmentOptions {
   readonly source?: NodeJS.ProcessEnv;
 }
 
-export function buildSandboxEnvironment(
-  options: EnvironmentOptions = {},
-): Record<string, string> {
+export function buildSandboxEnvironment(options: EnvironmentOptions = {}): Record<string, string> {
   const source = options.source ?? process.env;
   const allowed = os.platform() === 'win32' ? ALLOWED_KEYS_WINDOWS : ALLOWED_KEYS_POSIX;
   const environment: Record<string, string> = {};

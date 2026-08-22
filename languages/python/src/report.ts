@@ -59,9 +59,7 @@ export function parseReport(raw: string): ForgeReportDocument {
     schema: 1,
     exitStatus: typeof document.exitStatus === 'number' ? document.exitStatus : -1,
     collectionErrors: Array.isArray(document.collectionErrors) ? document.collectionErrors : [],
-    cases: document.cases.filter((testCase): testCase is ForgeReportCase =>
-      isReportCase(testCase),
-    ),
+    cases: document.cases.filter((testCase): testCase is ForgeReportCase => isReportCase(testCase)),
   };
 }
 
@@ -109,7 +107,10 @@ function displayName(testCase: ForgeReportCase): string {
   const raw = testCase.name;
   const bare = raw.includes('::') ? (raw.split('::').at(-1) ?? raw) : raw;
   const [base, parameters] = splitParameters(bare);
-  const pretty = base.replace(/^test_/, '').replace(/_/g, ' ').trim();
+  const pretty = base
+    .replace(/^test_/, '')
+    .replace(/_/g, ' ')
+    .trim();
   const label = pretty.length > 0 ? pretty : bare;
   return parameters ? `${label} [${parameters}]` : label;
 }

@@ -54,9 +54,9 @@ hints:
   - level: language
     text: Python dictionaries have a lookup that already takes a fallback value.
   - level: syntax
-    text: "`dict.get(key, default)` returns `default` instead of raising."
+    text: '`dict.get(key, default)` returns `default` instead of raising.'
   - level: explicit
-    text: "`return accounts.get(account_id, default)`."
+    text: '`return accounts.get(account_id, default)`.'
 
 explanation: |
   `accounts[account_id]` asserts that the key is present. `accounts.get(...)`

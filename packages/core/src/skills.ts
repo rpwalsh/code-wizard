@@ -114,10 +114,7 @@ export class SkillGraph {
   }
 }
 
-function topologicalOrder(
-  skills: readonly Skill[],
-  byId: ReadonlyMap<SkillId, Skill>,
-): SkillId[] {
+function topologicalOrder(skills: readonly Skill[], byId: ReadonlyMap<SkillId, Skill>): SkillId[] {
   const state = new Map<SkillId, 'visiting' | 'done'>();
   const order: SkillId[] = [];
   const stack: SkillId[] = [];

@@ -52,7 +52,11 @@ export const exerciseManifestSchema = z
       'project',
     ]),
     difficulty: z.number().int().min(1).max(5),
-    estimatedSeconds: z.number().int().positive().max(60 * 60 * 4),
+    estimatedSeconds: z
+      .number()
+      .int()
+      .positive()
+      .max(60 * 60 * 4),
     skills: z.array(z.string().min(1)).min(1),
     prerequisites: z.array(z.string().min(1)).default([]),
     learningObjectives: z.array(z.string().min(1)).min(1),

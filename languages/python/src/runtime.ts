@@ -16,6 +16,7 @@ import type {
   TestRequest,
   TestResult,
   TestRunOutcome,
+  TestVisibility,
 } from '@forge/core';
 import { redactHiddenTests, summarise } from '@forge/core';
 import type { ProcessOutcome, Sandbox } from '@forge/execution';
@@ -92,7 +93,8 @@ export class PythonRuntime implements LanguageRuntime {
       id: 'python-present',
       label: 'Python interpreter',
       status: 'pass',
-      detail: `${interpreter.executable} (${interpreter.command} ${interpreter.prefixArgs.join(' ')})`.trim(),
+      detail:
+        `${interpreter.executable} (${interpreter.command} ${interpreter.prefixArgs.join(' ')})`.trim(),
     });
     checks.push({
       id: 'python-version',
@@ -117,8 +119,7 @@ export class PythonRuntime implements LanguageRuntime {
       ...(interpreter.hasRuff || interpreter.hasBlack
         ? {}
         : {
-            remedy:
-              'Optional. Install with: ' + interpreter.command + ' -m pip install ruff',
+            remedy: 'Optional. Install with: ' + interpreter.command + ' -m pip install ruff',
           }),
     });
     checks.push({
@@ -153,7 +154,9 @@ export class PythonRuntime implements LanguageRuntime {
         label: 'Workspace execution',
         status: ok ? 'pass' : 'fail',
         ...(ok ? {} : { detail: result.stderr.trim() || `outcome: ${result.outcome}` }),
-        ...(ok ? {} : { remedy: 'Check that the temp directory is writable and not virus-scanned.' }),
+        ...(ok
+          ? {}
+          : { remedy: 'Check that the temp directory is writable and not virus-scanned.' }),
       };
     } catch (error) {
       return {
@@ -200,7 +203,9 @@ export class PythonRuntime implements LanguageRuntime {
       id: 'output-limit',
       label: 'Output limiting',
       status: ok ? 'pass' : 'fail',
-      ...(ok ? {} : { detail: `captured ${result.stdout.length} bytes, truncated=${result.truncated}` }),
+      ...(ok
+        ? {}
+        : { detail: `captured ${result.stdout.length} bytes, truncated=${result.truncated}` }),
     };
   }
 
@@ -229,12 +234,7 @@ export class PythonRuntime implements LanguageRuntime {
       async (sandbox) => {
         const outcome = await runProcess({
           command: interpreter.command,
-          args: [
-            ...interpreter.prefixArgs,
-            ...BASE_FLAGS,
-            entryPoint,
-            ...(request.args ?? []),
-          ],
+          args: [...interpreter.prefixArgs, ...BASE_FLAGS, entryPoint, ...(request.args ?? [])],
           cwd: sandbox.root,
           env: this.#environment(sandbox),
           timeoutMs: limits.timeoutMs,
@@ -320,7 +320,7 @@ export class PythonRuntime implements LanguageRuntime {
   async #readTestReport(
     sandbox: Sandbox,
     outcome: ProcessOutcome,
-    visibility: Readonly<Record<string, import('@forge/core').TestVisibility>>,
+    visibility: Readonly<Record<string, TestVisibility>>,
   ): Promise<TestResult> {
     const base = {
       stdout: outcome.stdout,
@@ -576,10 +576,7 @@ function executionOutcome(outcome: ProcessOutcome): ExecutionResult['outcome'] {
   return 'completed';
 }
 
-function failedExecution(
-  outcome: ExecutionResult['outcome'],
-  message: string,
-): ExecutionResult {
+function failedExecution(outcome: ExecutionResult['outcome'], message: string): ExecutionResult {
   return {
     outcome,
     exitCode: null,
@@ -633,7 +630,7 @@ function parseRuffJson(stdout: string, root: string): Diagnostic[] {
     ...(entry.location
       ? {
           location: {
-            path: entry.filename.split(/[\\/]/).slice(-1)[0] ?? entry.filename,
+            path: relativeToRoot(entry.filename, root),
             line: entry.location.row,
             column: entry.location.column,
             ...(entry.end_location

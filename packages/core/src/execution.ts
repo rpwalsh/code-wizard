@@ -26,11 +26,7 @@ export interface ExecutionRequest {
   readonly limits?: Partial<ExecutionLimits>;
 }
 
-export type ExecutionOutcome =
-  | 'completed'
-  | 'timeout'
-  | 'runtime-unavailable'
-  | 'internal-error';
+export type ExecutionOutcome = 'completed' | 'timeout' | 'runtime-unavailable' | 'internal-error';
 
 export interface ExecutionResult {
   readonly outcome: ExecutionOutcome;

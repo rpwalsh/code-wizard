@@ -15,8 +15,7 @@ export class WorkspacePathError extends Error {
   }
 }
 
-const WINDOWS_RESERVED =
-  /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
 
 /**
  * Exercise content is data, and data can be hostile or simply wrong (spec §35
@@ -29,11 +28,14 @@ export function assertSafeRelativePath(relativePath: string): string {
   if (path.isAbsolute(relativePath) || /^[A-Za-z]:/.test(relativePath)) {
     throw new WorkspacePathError(relativePath, 'must be relative');
   }
-  if (/^[\/]/.test(relativePath)) {
+  // Both separators, deliberately: Windows exercise content and hand-written
+  // manifests use backslashes, and a guard that only understands `/` would let
+  // `..\escape.py` through.
+  if (/^[\\/]/.test(relativePath)) {
     throw new WorkspacePathError(relativePath, 'must not start with a separator');
   }
 
-  const segments = relativePath.split(/[\/]+/);
+  const segments = relativePath.split(/[\\/]+/);
   for (const segment of segments) {
     if (segment === '' || segment === '.') {
       throw new WorkspacePathError(relativePath, 'contains an empty or "." segment');

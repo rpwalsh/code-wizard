@@ -34,10 +34,7 @@ async function check(): Promise<number> {
   console.log(
     columns([
       [`${symbol.pass} skills`, style.grey(String(context.skillGraph.size))],
-      [
-        `${symbol.pass} acyclic`,
-        style.grey('verified when the graph was built'),
-      ],
+      [`${symbol.pass} acyclic`, style.grey('verified when the graph was built')],
       [`${symbol.pass} exercises`, style.grey(String(context.catalog.size))],
     ]),
   );
