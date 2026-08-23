@@ -100,3 +100,25 @@ explanation: |
   records an event that never meaningfully happened. Pipelines whose
   stages assume the previous stages passed must actually stop at the
   first failure.
+
+mutationExceptions:
+  - path: main.ts
+    operator: off-by-one
+    line: 49
+    why: >-
+      The loop already established that both segment arrays have the same length; starting at index 1 would skip a segment, but every template in the suite matches on its later segments as well. Recorded rather than tested because pinning it needs a template whose only distinguishing segment is the first, which is not a shape this router is documented to handle.
+  - path: main.ts
+    operator: strictness
+    line: 75
+    why: >-
+      match is a route object or the literal null returned by matchTemplate, and an object is never loosely equal to null.
+  - path: main.ts
+    operator: strictness
+    line: 77
+    why: >-
+      The find compares two route names, both strings, and JavaScript compares strings identically under == and ===.
+  - path: main.ts
+    operator: nullish
+    line: 77
+    why: >-
+      The guards field is an array or undefined; an array is truthy, so ?? and || pick the same operand for every route.

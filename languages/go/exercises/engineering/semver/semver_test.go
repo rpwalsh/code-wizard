@@ -37,6 +37,10 @@ func TestCompareOrdersNumerically(t *testing.T) {
 	}{
 		{"equal", "1.2.3", "1.2.3", 0},
 		{"major wins", "2.0.0", "1.99.99", 1},
+		// Both directions: a - b and a + b agree on sign whenever a > b.
+		{"smaller major loses", "1.99.99", "2.0.0", -1},
+		{"smaller minor loses", "1.2.0", "1.10.0", -1},
+		{"smaller patch loses", "1.2.3", "1.2.4", -1},
 		{"minor is numeric", "1.10.0", "1.9.0", 1},
 		{"patch breaks ties", "1.2.3", "1.2.4", -1},
 	}

@@ -223,10 +223,21 @@ A surviving mutant is a hole:
 Nothing inside a string or a comment is ever mutated, so a docstring cannot produce a mutant no
 test could kill.
 
-Mutation operators exist for Python and JavaScript today. The other languages report
-`0 faults introduced`, which is the tool being honest about not testing them rather than a clean
-bill of health — for those, the edge and hidden suites are the whole defense, so write them as if
-no gate stands behind them.
+Every language has operators. They are not one set with different symbols: the
+faults are chosen per language, because "the mistakes people make" is a fact about a language.
+PHP leads with `===` becoming `==`, Go with `err != nil` becoming `err == nil`, Rust with
+`is_some` becoming `is_none`, SQL with `AND` becoming `OR` and `LEFT JOIN` becoming `INNER JOIN`.
+TypeScript, React, Angular and Node share JavaScript's set, and ASP.NET shares C#'s — those are
+the same language wearing a framework.
+
+An operator whose mutants are *always* equivalent is worse than no operator: it reports holes that
+do not exist. `&&` for `and` in PHP was removed for exactly that reason — they differ only in
+precedence against assignment, so inside a condition the swap changes nothing.
+
+Two things are never mutated. Test files, because the question is whether the tests notice a broken
+solution. And any solution file the starter already contains byte for byte — SQL's `schema.sql`,
+C's declaration header — because that is scaffolding the learner was handed, and mutating it
+measures the fixture rather than the reasoning.
 
 ### Equivalent mutants
 

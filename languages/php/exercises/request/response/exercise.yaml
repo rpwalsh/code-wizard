@@ -99,3 +99,17 @@ explanation: |
   parameter cannot touch the caller's array. The function returns
   the new state instead — the same state-in, state-out shape as
   handle itself, which is what makes both testable without a server.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 32
+    why: >-
+      The value was produced by trim((string) ...), so both sides are always
+      strings and neither is numeric — == and === cannot disagree here.
+  - path: main.php
+    operator: nullish
+    line: 37
+    why: >-
+      ?? and ?: differ only for a present falsy value, and every falsy value
+      here (0, null, false, '') adds to 1 exactly as the default 0 does.

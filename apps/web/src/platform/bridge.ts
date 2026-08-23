@@ -27,12 +27,35 @@ import type { ProgressSnapshot, StoredReview } from '@code-retrainer/storage';
 export interface DesktopChannels {
   'content:bundle': { payload: void; result: ContentBundle };
 
-  'runtime:doctor': { payload: void; result: RuntimeDiagnosis };
-  'runtime:execute': { payload: ExecutionRequest; result: ExecutionResult };
-  'runtime:test': { payload: TestRequest; result: TestResult };
-  'runtime:format': { payload: FormatRequest; result: FormatResult };
-  'runtime:lint': { payload: LintRequest; result: LintResult };
-  'runtime:diagnose': { payload: LintRequest; result: readonly Diagnostic[] };
+  /**
+   * Every runtime the main process holds.
+   *
+   * The renderer builds one bridged runtime per entry, so adding a language
+   * to the main process is enough — nothing here enumerates them by name.
+   */
+  'runtime:languages': { payload: void; result: LanguageMetadata[] };
+
+  /*
+   * Every runtime call carries the language it is for. The desktop build has
+   * fourteen runtimes and one IPC channel each; without the id the main
+   * process would have to guess which one a request meant, which is how a
+   * Rust exercise ends up being run by the Python interpreter.
+   */
+  'runtime:doctor': { payload: { language: string }; result: RuntimeDiagnosis };
+  'runtime:execute': {
+    payload: { language: string; request: ExecutionRequest };
+    result: ExecutionResult;
+  };
+  'runtime:test': { payload: { language: string; request: TestRequest }; result: TestResult };
+  'runtime:format': {
+    payload: { language: string; request: FormatRequest };
+    result: FormatResult;
+  };
+  'runtime:lint': { payload: { language: string; request: LintRequest }; result: LintResult };
+  'runtime:diagnose': {
+    payload: { language: string; request: LintRequest };
+    result: readonly Diagnostic[];
+  };
 
   'store:getSetting': { payload: string; result: string | null };
   'store:setSetting': { payload: { key: string; value: string }; result: void };
@@ -61,6 +84,7 @@ export type ResultOf<C extends DesktopChannel> = DesktopChannels[C]['result'];
 /** Every channel name, for the preload's whitelist. */
 export const DESKTOP_CHANNELS: readonly DesktopChannel[] = [
   'content:bundle',
+  'runtime:languages',
   'runtime:doctor',
   'runtime:execute',
   'runtime:test',
@@ -87,5 +111,9 @@ export const DESKTOP_CHANNELS: readonly DesktopChannel[] = [
 /** The surface Electron's preload script exposes to the renderer. */
 export interface DesktopBridge {
   invoke<C extends DesktopChannel>(channel: C, payload: PayloadOf<C>): Promise<ResultOf<C>>;
+  /**
+   * The default language's metadata, kept for the boot screen before the
+   * full list has been fetched. Everything else asks `runtime:languages`.
+   */
   readonly metadata: LanguageMetadata;
 }

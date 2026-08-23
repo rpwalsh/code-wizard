@@ -9,3 +9,5 @@
 -- dee||pending
 -- eli|45|F
 -- fay|70|B
+-- gus|85|A
+-- hal|50|C

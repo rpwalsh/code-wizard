@@ -73,6 +73,19 @@ function codeMask(source: string): boolean[] {
     hide(start, index);
   }
 
+  /*
+   * Angle-bracket spans are not comparisons.
+   *
+   * `<div>` in JSX and `Map<string, number>` in TypeScript both contain a `<`
+   * and a `>`, and mutating one produces `<div>=` — a parse error, or worse a
+   * silent survivor that says nothing about the tests. The pattern requires a
+   * letter immediately after the `<`, so `a < b` and `count > 0` are
+   * untouched.
+   */
+  for (const match of source.matchAll(/<\/?[A-Za-z][\w.]*[^<>]*\/?>/gu)) {
+    if (match.index !== undefined) hide(match.index, match.index + match[0].length);
+  }
+
   return mask;
 }
 
@@ -156,8 +169,31 @@ const comparisons = swapOperator('comparison', [
  *
  * Behaves identically until the day the two sides have different types, which
  * is exactly the day it matters and never the day the test was written.
+ *
+ * Two sites are skipped because no input can distinguish them, and a mutant
+ * nothing can kill is a hole reported where none exists. `typeof x === 'y'`
+ * compares two strings, and JavaScript's `==` between two strings is `===`
+ * exactly — the numeric coercion people remember belongs to other languages.
+ * A comparison against a number literal is the same story on the other side.
  */
-const strictness = swapOperator('strictness', [['===', '==']], { symmetric: false });
+const strictness: MutationOperator = {
+  name: 'strictness',
+  apply(source) {
+    const base = swapOperator('strictness', [['===', '==']], { symmetric: false });
+    const lines = source.split(/\r?\n/u);
+
+    return base.apply(source).filter((change) => {
+      const line = lines[change.line - 1] ?? '';
+      if (/typeof\s/u.test(line)) return false;
+      // `x === 0`, `length === 3`: numbers compare identically either way.
+      if (/===\s*-?\d/u.test(line)) return false;
+      // `x === 'draft'`: == coerces the other side to a primitive, and a
+      // string literal is never loosely equal to null or undefined, so the
+      // two agree for every value a typed program can put on the left.
+      return !/===\s*['"`]/u.test(line);
+    });
+  },
+};
 
 const arithmetic = swapOperator('arithmetic', [
   ['+', '-'],
@@ -174,7 +210,24 @@ const logical = swapOperator('logical', [['&&', '||']]);
  */
 const nullish = swapOperator('nullish', [['??', '||']], { symmetric: false });
 
-const constants = swapOperator('constant', [['true', 'false']], { boundary: true });
+/**
+ * A boolean flipped.
+ *
+ * Skipped in type positions: `readonly ok: true` is a discriminated union's
+ * tag, erased before anything runs, so no test could ever notice. `readonly`
+ * is the giveaway — it exists only in TypeScript's type syntax.
+ */
+const constants: MutationOperator = {
+  name: 'constant',
+  apply(source) {
+    const base = swapOperator('constant', [['true', 'false']], { boundary: true });
+    const lines = source.split(/\r?\n/u);
+
+    return base
+      .apply(source)
+      .filter((change) => !/\breadonly\b/u.test(lines[change.line - 1] ?? ''));
+  },
+};
 
 function rewrite(
   name: string,

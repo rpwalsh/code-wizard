@@ -91,6 +91,7 @@ const SPELLINGS = {
   containerise: 'containerize', containerised: 'containerized',
   neutralise: 'neutralize', neutralised: 'neutralized',
   parameterise: 'parameterize', parameterised: 'parameterized',
+  parameterisation: 'parameterization', parameterisations: 'parameterizations',
   penalise: 'penalize', penalised: 'penalized',
   pluralise: 'pluralize', pluralised: 'pluralized', pluralising: 'pluralizing',
   publicise: 'publicize', randomise: 'randomize', randomised: 'randomized',

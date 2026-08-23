@@ -21,6 +21,13 @@ RETRAINER_TEST(an_empty_array_counts_nothing, "c.basics.control") {
     RETRAINER_ASSERT_INT(average_sign(NULL, 0), 0);
 }
 
+RETRAINER_TEST(the_first_element_is_counted, "c.basics.control") {
+    /* A loop starting at index 1 skips the first element, and every test
+       whose first value falls outside the range would never notice. */
+    int values[] = {7, 100, 200};
+    RETRAINER_ASSERT_INT((int)count_between(values, 3, 5, 15), 1);
+}
+
 RETRAINER_TEST(a_sum_too_big_for_int_keeps_its_sign, "c.basics.types") {
     /* Three of these overflow an int sum; a long long holds them easily. */
     int big[] = {2000000000, 2000000000, 2000000000};

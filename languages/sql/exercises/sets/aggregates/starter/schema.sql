@@ -13,5 +13,9 @@ INSERT INTO orders (customer, amount, shipped_at) VALUES
   ('bo',  120, NULL),
   ('bo',  110, '2026-02-11'),
   ('cy',  900, '2026-03-01'),
+  -- Exactly on the threshold and exactly one past it: without this pair,
+  -- > 100 and >= 100 select the same rows and the boundary is untested.
+  ('cy',  100, '2026-03-05'),
+  ('cy',  101, '2026-03-06'),
   ('dee',  90, '2026-03-02'),
   ('dee',  80, NULL);

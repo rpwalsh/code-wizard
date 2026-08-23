@@ -15,6 +15,16 @@ fn saturation_never_wraps() {
 }
 
 #[test]
+fn a_huge_first_step_still_leaves_room_to_finish() {
+    // Queued caps at 99, not 100: Running is a state that has not finished,
+    // and a Running{percent: 100} would be a contradiction on screen.
+    match advance(Transfer::Queued, 200) {
+        Transfer::Running { percent } => assert_eq!(percent, 99),
+        other => panic!("expected Running, got {other:?}"),
+    }
+}
+
+#[test]
 fn finished_states_pass_through() {
     assert_eq!(
         advance(Transfer::Done { bytes: 7 }, 50),

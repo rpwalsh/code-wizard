@@ -22,12 +22,33 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+
+/**
+ * Dismiss the first-run tour.
+ *
+ * A real learner meets it once and skips or reads it; every test after this
+ * point is the second visit. Doing it through the button rather than a
+ * storage poke means the tour's own dismissal is exercised on every run.
+ */
+async function skipTour(page: Page): Promise<void> {
+  // The tour appears only after the stored answer has been read, so a bare
+  // count() can run before it exists and skip nothing. Wait for it, dismiss
+  // it, and wait for it to leave.
+  const tour = page.getByRole('dialog', { name: 'Welcome' });
+  await tour.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
+  if (await tour.count()) {
+    await page.getByRole('button', { name: 'Skip' }).click();
+    await tour.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => undefined);
+  }
+}
+
 /** Answer the first-run questions and land on the dashboard. */
 async function start(page: Page, choice = 'I program, but not in Python'): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: /^Python/ }).click();
   await page.getByRole('button', { name: choice }).click();
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
+  await skipTour(page);
 }
 
 test('asks where the learner is starting from, once', async ({ page }) => {
@@ -46,10 +67,16 @@ test('asks where the learner is starting from, once', async ({ page }) => {
   await page.getByRole('button', { name: 'I program, but not in Python' }).click();
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
 
+  // The tour greets a first visit, and leaves for good when dismissed.
+  await expect(page.getByRole('dialog', { name: 'Welcome' })).toBeVisible();
+  await skipTour(page);
+  await expect(page.getByRole('dialog', { name: 'Welcome' })).toHaveCount(0);
+
   // Reloading must not ask again: the answer is stored, not inferred.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
   await expect(page.getByText('How much Python have you written?')).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Welcome' })).toHaveCount(0);
 });
 
 test('boots and shows the instrument', async ({ page }) => {

@@ -77,3 +77,17 @@ explanation: |
   deduplicates, and the duplicate-reference arm is *supposed* to report two
   identical rows — one per copy. Deduplicating an audit is how a report
   undercounts exactly the problem it was written to find.
+
+mutationExceptions:
+  - path: main.sql
+    operator: off-by-one
+    line: 11
+    why: >-
+      EXISTS ignores its select list entirely — SELECT 1 and SELECT 2 ask the
+      same question, and no data can tell them apart.
+  - path: main.sql
+    operator: distinctness
+    line: 13
+    why: >-
+      The two arms this joins carry different constant problem strings, so
+      they can never produce a duplicate row for UNION to collapse.

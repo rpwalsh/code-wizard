@@ -80,6 +80,37 @@ an empty editor. That ceiling is enforced by a test, not by a convention.
   quite enough pressure already.
 - **Not punitive.** The practice log counts days practiced, and that number
   only ever goes up. Miss a week and you lose nothing you earned.
+- **Not an account.** There is no sign-up, no email, no password. Nothing to
+  create before you start, and nothing of yours leaves the machine.
+
+---
+
+## Where your work is kept
+
+On your machine, and nowhere else.
+
+In the browser it is **IndexedDB** — the database built into the browser
+itself, which survives closing the tab, closing the browser and restarting the
+computer. On the desktop it is a **SQLite file** in your user data directory.
+Both hold the same thing: every attempt, the mastery model derived from it, the
+review schedule and your preferences.
+
+Not `localStorage`. That is a five-megabyte synchronous string bucket, and an
+attempt carries its whole event log; it is also the first thing a "clear
+cookies" sweep takes. One screen used to keep its practice count there and no
+longer does — everything now goes through one store, which means everything
+also travels with an export.
+
+Two consequences worth stating plainly. **Private windows forget.** A browser
+that refuses storage gets a banner saying so at the top of the app rather than
+a silent surprise later. And because the data is local, **it is local to that
+browser** — Firefox on your laptop and Chrome on your desktop are two separate
+histories.
+
+Moving between them is a file. Press <kbd>Ctrl K</kbd> and choose **Save my
+progress to a file**; on the other machine, **Load progress from a file**. The
+same file restores into the browser build or the desktop app, and it never
+goes anywhere you do not send it.
 
 ---
 

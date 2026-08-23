@@ -84,3 +84,20 @@ explanation: |
   billion; five hundred values of a hundred million each overflow int
   midway, and signed overflow in C is not "wraps around" — it is
   undefined behavior, which optimizing compilers exploit with glee.
+
+mutationExceptions:
+  - path: main.c
+    operator: comparison
+    line: 11
+    why: >-
+      value < lowest and value <= lowest differ only when they are equal, and both paths then yield lowest — the same number.
+  - path: main.c
+    operator: comparison
+    line: 14
+    why: >-
+      value > highest and value >= highest differ only when they are equal, and both paths then yield highest.
+  - path: main.c
+    operator: bitwise
+    line: 25
+    why: >-
+      Both operands are the 0 or 1 a C comparison yields, and & and && agree on every combination of those two values.

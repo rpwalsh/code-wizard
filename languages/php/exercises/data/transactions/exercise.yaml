@@ -92,3 +92,20 @@ explanation: |
   within 0.3. Having computed it once, composer.json constraints
   stop being incantations: they are ranges you can evaluate in your
   head.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 14
+    why: >-
+      fetchColumn returns a string or the boolean false, and PHP 8 compares a non-numeric string to false the same way under == and ===.
+  - path: main.php
+    operator: constant
+    line: 14
+    why: >-
+      A row that exists returns its balance as a string, never a boolean, so comparing against true instead of false can never match either.
+  - path: main.php
+    operator: strictness
+    line: 19
+    why: >-
+      Same shape as line 14: a column value or the boolean false, and the two comparisons agree on both.

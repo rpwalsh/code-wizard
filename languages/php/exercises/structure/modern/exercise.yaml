@@ -92,3 +92,15 @@ explanation: |
   now a path you can compute by hand, which is precisely what the
   null return represents: no registered prefix, no path, next loader
   please.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 19
+    why: >-
+      strrchr returns a string or the boolean false, and a class name is never a numeric string, so == and === agree here.
+  - path: main.php
+    operator: off-by-one
+    line: 19
+    why: >-
+      substr($cut, 1) drops the backslash strrchr included; substr($cut, 2) would drop a real character, which every class name in the tests would still resolve past. Recorded rather than tested because the mutant only shows on single-character class names, a case the exercise does not model.

@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** First match wins, words are not substrings, and markup is escaped. */
 import { test } from 'retrainer/test.js';
-import { expectEqual, expectFalse } from 'retrainer/expect.js';
+import { expectEqual, expectFalse, expectTrue } from 'retrainer/expect.js';
 
 import { distribute, matchesSelector, renderSlot, type ContentNode } from '../main.ts';
 
@@ -18,6 +18,27 @@ test(
     const placed = distribute([both], ['[card-title]', 'h2']);
     expectEqual(placed.get('[card-title]'), [both]);
     expectEqual(placed.get('h2'), []);
+  },
+  { concept: 'angular.components.content' },
+);
+
+test(
+  'an attribute selector needs both brackets',
+  () => {
+    // Half a bracket is not a selector shape: with || either bracket alone
+    // would send the matcher down the attribute path.
+    expectFalse(matchesSelector(node('div', { 'card-title': '' }), '[card-title'));
+    expectFalse(matchesSelector(node('div', { 'card-title': '' }), 'card-title]'));
+  },
+  { concept: 'angular.components.content' },
+);
+
+test(
+  'a class attribute of "0" is still a class attribute',
+  () => {
+    // The string '0' is truthy in JavaScript — unlike in PHP, where this
+    // same lookup would need ?? to survive. Worth pinning either way.
+    expectTrue(matchesSelector(node('div', { class: '0' }), '.0'));
   },
   { concept: 'angular.components.content' },
 );

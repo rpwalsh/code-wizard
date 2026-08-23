@@ -2,9 +2,23 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import type { LanguageRuntime, Skill } from '@code-retrainer/core';
 import type { ContentBundle } from '@code-retrainer/exercises';
 import { ExerciseCatalog, parseBundle, toBundle } from '@code-retrainer/exercises';
 import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-retrainer/python';
+import * as angular from '@code-retrainer/lang-angular';
+import * as aspnet from '@code-retrainer/lang-aspnet';
+import * as c from '@code-retrainer/lang-c';
+import * as cpp from '@code-retrainer/lang-cpp';
+import * as csharp from '@code-retrainer/lang-csharp';
+import * as go from '@code-retrainer/lang-go';
+import * as javascript from '@code-retrainer/javascript';
+import * as node from '@code-retrainer/lang-node';
+import * as php from '@code-retrainer/lang-php';
+import * as react from '@code-retrainer/lang-react';
+import * as rust from '@code-retrainer/lang-rust';
+import * as sql from '@code-retrainer/lang-sql';
+import * as typescript from '@code-retrainer/lang-typescript';
 import { SqliteProgressStore } from '@code-retrainer/storage/sqlite';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 
@@ -22,7 +36,81 @@ const repositoryRoot = path.resolve(here, '..', '..', '..');
  * holding the learner's work, and learner code is arbitrary code — running it
  * there would put the two in the same place.
  */
-const runtime = new PythonRuntime();
+/**
+ * Every language this build can run.
+ *
+ * The desktop app is the one that reaches a real toolchain, so unlike the
+ * browser it carries all fourteen. A language missing its compiler is not a
+ * missing entry here — it is an entry whose `doctor()` reports what to
+ * install, which is the difference between "we do not support Rust" and
+ * "rustc is not on this machine".
+ */
+const LANGUAGES: readonly {
+  readonly runtime: LanguageRuntime;
+  readonly exercisesDir: string;
+  readonly skills: readonly Skill[];
+}[] = [
+  { runtime: new PythonRuntime(), exercisesDir: pythonExercisesDir, skills: [...pythonSkills] },
+  {
+    runtime: new javascript.JavaScriptRuntime(),
+    exercisesDir: javascript.exercisesDir,
+    skills: [...javascript.javascriptSkills],
+  },
+  {
+    runtime: typescript.createTypeScriptRuntime(),
+    exercisesDir: typescript.exercisesDir,
+    skills: [...typescript.typescriptSkills],
+  },
+  {
+    runtime: react.createReactRuntime(),
+    exercisesDir: react.exercisesDir,
+    skills: [...react.reactSkills],
+  },
+  {
+    runtime: angular.createAngularRuntime(),
+    exercisesDir: angular.exercisesDir,
+    skills: [...angular.angularSkills],
+  },
+  {
+    runtime: node.createNodeRuntime(),
+    exercisesDir: node.exercisesDir,
+    skills: [...node.nodeSkills],
+  },
+  { runtime: sql.createSqlRuntime(), exercisesDir: sql.exercisesDir, skills: [...sql.sqlSkills] },
+  { runtime: go.createGoRuntime(), exercisesDir: go.exercisesDir, skills: [...go.goSkills] },
+  {
+    runtime: rust.createRustRuntime(),
+    exercisesDir: rust.exercisesDir,
+    skills: [...rust.rustSkills],
+  },
+  { runtime: c.createCRuntime(), exercisesDir: c.exercisesDir, skills: [...c.cSkills] },
+  { runtime: cpp.createCppRuntime(), exercisesDir: cpp.exercisesDir, skills: [...cpp.cppSkills] },
+  {
+    runtime: csharp.createCSharpRuntime(),
+    exercisesDir: csharp.exercisesDir,
+    skills: [...csharp.csharpSkills],
+  },
+  {
+    runtime: aspnet.createAspNetRuntime(),
+    exercisesDir: aspnet.exercisesDir,
+    skills: [...aspnet.aspnetSkills],
+  },
+  { runtime: php.createPhpRuntime(), exercisesDir: php.exercisesDir, skills: [...php.phpSkills] },
+];
+
+const runtimes = new Map<string, LanguageRuntime>(
+  LANGUAGES.map((entry) => [entry.runtime.metadata().id, entry.runtime]),
+);
+
+/** The runtime for one request, or a refusal naming the language. */
+function runtimeFor(language: string): LanguageRuntime {
+  const found = runtimes.get(language);
+  if (!found) {
+    throw new Error(`No runtime registered for ${language}.`);
+  }
+  return found;
+}
+
 let store: SqliteProgressStore | null = null;
 
 function progressStore(): SqliteProgressStore {
@@ -41,7 +129,7 @@ function progressStore(): SqliteProgressStore {
  * the bundle the web build already produces.
  */
 async function loadBundle(): Promise<ContentBundle> {
-  const report = await ExerciseCatalog.load([pythonExercisesDir]);
+  const report = await ExerciseCatalog.load(LANGUAGES.map((entry) => entry.exercisesDir));
 
   if (report.catalog.size > 0) {
     if (report.failures.length > 0) {
@@ -52,7 +140,7 @@ async function loadBundle(): Promise<ContentBundle> {
           report.failures.map((failure) => `  ${failure.directory}: ${failure.message}`).join('\n'),
       );
     }
-    return toBundle(report.catalog.all(), [...pythonSkills], {
+    return toBundle(report.catalog.all(), LANGUAGES.flatMap((entry) => entry.skills), {
       relativize: (directory) => path.relative(repositoryRoot, directory),
     });
   }
@@ -77,12 +165,16 @@ function handle<C extends DesktopChannel>(
 function registerHandlers(): void {
   handle('content:bundle', loadBundle);
 
-  handle('runtime:doctor', () => runtime.doctor());
-  handle('runtime:execute', (request) => runtime.execute(request));
-  handle('runtime:test', (request) => runtime.test(request));
-  handle('runtime:format', (request) => runtime.format(request));
-  handle('runtime:lint', (request) => runtime.lint(request));
-  handle('runtime:diagnose', (request) => runtime.diagnose(request));
+  handle('runtime:languages', () => LANGUAGES.map((entry) => entry.runtime.metadata()));
+
+  // Every call names its language: fourteen runtimes behind one channel each,
+  // and no guessing about which one a request meant.
+  handle('runtime:doctor', ({ language }) => runtimeFor(language).doctor());
+  handle('runtime:execute', ({ language, request }) => runtimeFor(language).execute(request));
+  handle('runtime:test', ({ language, request }) => runtimeFor(language).test(request));
+  handle('runtime:format', ({ language, request }) => runtimeFor(language).format(request));
+  handle('runtime:lint', ({ language, request }) => runtimeFor(language).lint(request));
+  handle('runtime:diagnose', ({ language, request }) => runtimeFor(language).diagnose(request));
 
   handle('store:getSetting', (key) => progressStore().getSetting(key));
   handle('store:setSetting', ({ key, value }) => progressStore().setSetting(key, value));

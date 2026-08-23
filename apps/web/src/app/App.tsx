@@ -13,6 +13,7 @@ import { Palette, usePaletteShortcut } from '../components/Palette.tsx';
 import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
 import { fetchActivities } from '../platform/activities.ts';
+import { exportProgress, importProgress, pickJsonFile } from '../platform/transfer.ts';
 import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import type { Demonstration } from '@code-retrainer/curriculum';
@@ -26,12 +27,15 @@ import type { LanguageOption, Section } from '../components/layout/TopBar.tsx';
 import { TopBar } from '../components/layout/TopBar.tsx';
 import { Footer } from '../components/layout/Footer.tsx';
 import { ToastProvider, useToasts } from '../components/layout/Toasts.tsx';
+import { Tour } from '../components/layout/Tour.tsx';
 import { PracticeView } from './PracticeView.tsx';
 import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
 
 /** Set once the learner has answered the first-run questions. */
 const ONBOARDED_KEY = 'onboarding.level';
+/** Set once the tour has been seen or skipped. Stored, never inferred. */
+const TOUR_KEY = 'onboarding.tour';
 const LANGUAGE_KEY = 'preferences.language';
 const TIMER_KEY = 'preferences.timer';
 const THEME_KEY = 'preferences.theme';
@@ -79,6 +83,7 @@ function AppInner() {
   const [theme, setTheme] = useState<ThemeChoice>('system');
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const [language, setLanguage] = useState<string>('python');
+  const [tourSeen, setTourSeen] = useState<boolean | null>(null);
   const [courses, setCourses] = useState<readonly { id: string; title: string }[]>([]);
   const [fontSize, setFontSize] = useState(14);
 
@@ -184,6 +189,11 @@ function AppInner() {
         // A preference that cannot be read is not worth an error on screen.
       });
     void platform.store
+      .getSetting(TOUR_KEY)
+      .then((value) => setTourSeen(value !== null))
+      // Unreadable storage should not trap someone in a tour forever.
+      .catch(() => setTourSeen(true));
+    void platform.store
       .getSetting(TIMER_KEY)
       .then((value) => {
         if (value !== null && isTimerMode(value)) setTimerMode(value);
@@ -198,6 +208,13 @@ function AppInner() {
         }
       })
       .catch(() => undefined);
+  }, [platform]);
+
+  const finishTour = useCallback(() => {
+    setTourSeen(true);
+    void platform?.store.setSetting(TOUR_KEY, new Date().toISOString()).catch(() => {
+      // Seeing it twice is a small cost; blocking the app is not.
+    });
   }, [platform]);
 
   const chooseTheme = useCallback(
@@ -292,6 +309,35 @@ function AppInner() {
       { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
       { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
       { id: 'go-practice', name: 'Open practice', run: () => setScreen({ kind: 'practice' }) },
+      { id: 'tour', name: 'Show the welcome tour again', run: () => setTourSeen(false) },
+      {
+        id: 'export-progress',
+        name: 'Save my progress to a file',
+        run: () => {
+          if (!platform) return;
+          void exportProgress(platform.store).then(
+            (name) => toast(`Saved ${name}`, 'success'),
+            () => toast('Could not save your progress', 'error'),
+          );
+        },
+      },
+      {
+        id: 'import-progress',
+        name: 'Load progress from a file (replaces what is here)',
+        run: () => {
+          if (!platform) return;
+          void pickJsonFile().then((file) => {
+            if (!file) return;
+            void importProgress(platform.store, file).then(
+              async () => {
+                await refresh();
+                toast('Progress restored', 'success');
+              },
+              (error: Error) => toast(error.message, 'error'),
+            );
+          });
+        },
+      },
       ...languages.map((option) => ({
         id: `language-${option.id}`,
         name: `Language: ${option.title}`,
@@ -342,6 +388,9 @@ function AppInner() {
     chooseTheme,
     chooseLanguage,
     cycleTimer,
+    platform,
+    refresh,
+    toast,
   ]);
 
   if (failure) {
@@ -418,7 +467,9 @@ function AppInner() {
           />
         ) : null}
 
-        {screen.kind === 'practice' ? <PracticeView language={language} /> : null}
+        {screen.kind === 'practice' ? (
+          <PracticeView store={platform.store} language={language} />
+        ) : null}
 
         {screen.kind === 'map' ? (
           <SkillMapView
@@ -473,6 +524,8 @@ function AppInner() {
       </div>
 
       {screen.kind !== 'workspace' ? <Footer /> : null}
+
+      {tourSeen === false ? <Tour onClose={finishTour} /> : null}
 
       <Palette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
     </div>

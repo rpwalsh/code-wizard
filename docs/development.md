@@ -77,11 +77,16 @@ solution must pass and the starter must fail. A broken exercise is worse than
 a missing one.
 
 **`exercise mutate`** breaks the reference solution on purpose — a flipped
-comparison, an off-by-one, a return value replaced by `None` — and requires
-the tests to notice. A suite that passes a wrong solution tells the learner
-they were right, and every mastery number derived from that attempt inherits
-the lie. Faults that genuinely cannot be detected are recorded in the manifest
-with a required reason; see [authoring.md](authoring.md).
+comparison, an off-by-one, a return value discarded — and requires the tests
+to notice. A suite that passes a wrong solution tells the learner they were
+right, and every mastery number derived from that attempt inherits the lie.
+All fourteen languages have operators, chosen per language rather than
+translated between them. Faults that genuinely cannot be detected are recorded
+in the manifest with a required reason; see [authoring.md](authoring.md).
+
+The number to read is the count of *unexplained* survivors, not the
+percentage: an excused mutant is neither caught nor a hole, so a suite with
+every survivor accounted for can sit below 100% and still be finished.
 
 **`tests/cross-runtime.test.ts`** puts the whole curriculum through both
 runtimes and requires identical verdicts. A learner on the website and one on

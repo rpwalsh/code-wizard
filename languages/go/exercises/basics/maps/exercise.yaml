@@ -81,3 +81,35 @@ explanation: |
   than nil for a zero limit keeps the caller's `range` and `len` code on one
   path — nil ranges fine too, but an API that sometimes returns nil and
   sometimes empty makes every caller ask which.
+
+mutationExceptions:
+  - path: main.go
+    operator: comparison
+    line: 37
+    why: >-
+      The enclosing if already established that the two counts differ, so
+      > and >= cannot disagree on any pair the comparator reaches.
+  - path: main.go
+    operator: comparison
+    line: 39
+    why: >-
+      Reached only when the counts are equal, and map keys are distinct, so
+      the two words always differ and < and <= agree.
+  - path: main.go
+    operator: comparison
+    line: 42
+    why: >-
+      limit < 0 and limit <= 0 both leave limit at 0 for the only value they
+      disagree about, which is 0 itself.
+  - path: main.go
+    operator: off-by-one
+    line: 42
+    why: >-
+      limit < 1 and limit < 0 differ only for limit == 0, where both paths
+      end with limit == 0. No integer lies between them.
+  - path: main.go
+    operator: comparison
+    line: 45
+    why: >-
+      They differ only when limit == len(words), where the clamp assigns
+      len(words) — the value limit already held.

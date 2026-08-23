@@ -79,3 +79,23 @@ explanation: |
   `declare(strict_types=1)` is what makes the annotations enforcement rather
   than documentation. Without it, passing `'8'` to an `int` parameter silently
   coerces, and the signature describes an intention nobody checks.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 38
+    why: >-
+      trim always returns a string and the comparison is against a string literal, so no input makes == and === disagree.
+  - path: main.php
+    operator: strictness
+    line: 50
+    why: >-
+      The value is compared against the null literal after is_bool and is_array already ran, and every remaining falsy value is caught identically by both forms.
+  - path: main.php
+    operator: logical
+    line: 50
+    why: >-
+      Weakening the second || leaves arrays to fall through to the parse
+      below, which rejects them too — the early guard is a clearer,
+      warning-free exit rather than the only thing standing between an array
+      and a wrong answer, so no return value distinguishes the two.

@@ -85,3 +85,10 @@ explanation: |
   a visible cost when you get it wrong. Fixing one problem to be shown the next
   one turns a single correction into a sequence of round trips, and it makes
   the form feel like it is arguing rather than helping.
+
+mutationExceptions:
+  - path: main.ts
+    operator: strictness
+    line: 16
+    why: >-
+      Loose equality against null matches undefined too, so == null on the first clause already decides both cases the two clauses decide together — every value takes the same branch.

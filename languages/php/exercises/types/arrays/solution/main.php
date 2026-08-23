@@ -16,13 +16,26 @@ function totals_by_category(array $expenses): array
 
 function top_spenders(array $totals, int $count): array
 {
+    // Named, not positional. [$b[1], $a[0]] <=> [$a[1], $b[0]] does this job
+    // in one line and hides which index means what — a wrong index there is
+    // plausible-looking code that sorts almost correctly, which is the worst
+    // kind of wrong. With names there is no index to get wrong.
     $pairs = [];
     foreach ($totals as $category => $amount) {
-        $pairs[] = [$category, $amount];
+        $pairs[] = ['category' => $category, 'amount' => $amount];
     }
-    usort($pairs, fn (array $a, array $b) => [$b[1], $a[0]] <=> [$a[1], $b[0]]);
 
-    return array_map(fn (array $pair) => $pair[0], array_slice($pairs, 0, max(0, $count)));
+    usort($pairs, function (array $a, array $b): int {
+        if ($a['amount'] !== $b['amount']) {
+            return $b['amount'] <=> $a['amount'];
+        }
+        return $a['category'] <=> $b['category'];
+    });
+
+    return array_map(
+        fn (array $pair) => $pair['category'],
+        array_slice($pairs, 0, max(0, $count)),
+    );
 }
 
 function above(array $amounts, int $threshold): array

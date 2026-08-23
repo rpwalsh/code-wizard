@@ -14,6 +14,7 @@ import {
   verdict,
 } from '@code-retrainer/activities';
 import type { JsonValue } from '@code-retrainer/core';
+import type { ProgressStore } from '@code-retrainer/storage';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ActivityCard } from '../components/ActivityCard.tsx';
@@ -37,14 +38,23 @@ const SEEN_KEY = 'practice.seen';
  * showed up, what held, what needed a second look. There is no score, no
  * league table and nobody else in it.
  */
-export function PracticeView({ language }: { readonly language?: string } = {}) {
+export function PracticeView({
+  store,
+  language,
+}: {
+  readonly store: ProgressStore;
+  readonly language?: string;
+}) {
   const [sets, setSets] = useState<readonly CurriculumActivities[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [finishedAt, setFinishedAt] = useState<string | null>(null);
 
-  const [log, setLog] = useState<PracticeLog>(() => readLog());
-  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set(readSeen()));
+  // Read from the store, which is asynchronous — so these start empty and
+  // fill in. An empty practice log renders as "no practice logged yet",
+  // which is also the truth on a first visit.
+  const [log, setLog] = useState<PracticeLog>(() => newPracticeLog());
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
 
   useEffect(() => {
     let canceled = false;
@@ -61,11 +71,20 @@ export function PracticeView({ language }: { readonly language?: string } = {}) 
     };
   }, []);
 
-  // A run stored yesterday and read today is not still today's. Applied on
-  // load so the number on screen is never the stale one.
+  // A run stored yesterday and read today is not still today's, so the log
+  // is carried forward as it loads and the number on screen is never stale.
   useEffect(() => {
-    setLog((current) => carryForward(current, dayOf(new Date())));
-  }, []);
+    let canceled = false;
+    void readLog(store).then((stored) => {
+      if (!canceled) setLog(carryForward(stored, dayOf(new Date())));
+    });
+    void readSeen(store).then((ids) => {
+      if (!canceled) setSeen(new Set(ids));
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [store]);
 
   const begin = (set: CurriculumActivities): void => {
     const activities = drawRun(set, RUN_SIZE, seen);
@@ -85,7 +104,7 @@ export function PracticeView({ language }: { readonly language?: string } = {}) 
       if (activity) {
         setSeen((previous) => {
           const next = new Set(previous).add(activity.id);
-          writeSeen([...next]);
+          writeSeen(store, [...next]);
           return next;
         });
       }
@@ -95,7 +114,7 @@ export function PracticeView({ language }: { readonly language?: string } = {}) 
         setFinishedAt(new Date().toISOString());
         setLog((entry) => {
           const updated = recordRun(carryForward(entry, dayOf(new Date())), new Date());
-          writeLog(updated);
+          writeLog(store, updated);
           return updated;
         });
       }
@@ -250,15 +269,21 @@ function formatDuration(seconds: number): string {
 }
 
 /**
- * Persistence, deliberately forgiving.
+ * Persistence, through the same store as everything else.
  *
- * Anything unreadable is treated as "no history" rather than an error. Losing
- * a practice count is a shrug; a screen that refuses to load because of it is
- * not.
+ * Not localStorage. A practice log kept there would survive a reload and
+ * nothing else: it would not travel with an export, would not come back from
+ * an import, and would sit somewhere other than the attempts it belongs
+ * beside. The store is IndexedDB in the browser and SQLite on the desktop,
+ * and both outlive the window being closed.
+ *
+ * Reads stay deliberately forgiving. Anything unreadable is treated as "no
+ * history" rather than an error: losing a practice count is a shrug, and a
+ * screen that refuses to load because of one is not.
  */
-function readLog(): PracticeLog {
+async function readLog(store: ProgressStore): Promise<PracticeLog> {
   try {
-    const raw = window.localStorage.getItem(LOG_KEY);
+    const raw = await store.getSetting(LOG_KEY);
     if (!raw) return newPracticeLog();
     const parsed = JSON.parse(raw) as JsonValue;
     return isLog(parsed) ? parsed : newPracticeLog();
@@ -276,17 +301,15 @@ function isLog(value: JsonValue): value is PracticeLog & JsonValue {
   );
 }
 
-function writeLog(log: PracticeLog): void {
-  try {
-    window.localStorage.setItem(LOG_KEY, JSON.stringify(log));
-  } catch {
+function writeLog(store: ProgressStore, log: PracticeLog): void {
+  void store.setSetting(LOG_KEY, JSON.stringify(log)).catch(() => {
     // A browser refusing storage is not a reason to stop practicing.
-  }
+  });
 }
 
-function readSeen(): readonly string[] {
+async function readSeen(store: ProgressStore): Promise<readonly string[]> {
   try {
-    const raw = window.localStorage.getItem(SEEN_KEY);
+    const raw = await store.getSetting(SEEN_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as JsonValue;
     return Array.isArray(parsed)
@@ -297,10 +320,8 @@ function readSeen(): readonly string[] {
   }
 }
 
-function writeSeen(ids: readonly string[]): void {
-  try {
-    window.localStorage.setItem(SEEN_KEY, JSON.stringify(ids));
-  } catch {
+function writeSeen(store: ProgressStore, ids: readonly string[]): void {
+  void store.setSetting(SEEN_KEY, JSON.stringify(ids)).catch(() => {
     // As above.
-  }
+  });
 }

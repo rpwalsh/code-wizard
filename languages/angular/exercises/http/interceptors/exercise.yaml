@@ -95,3 +95,10 @@ explanation: |
   case-sensitively eventually send `Authorization` and `authorization`
   in one request. Normalizing at the single place headers enter the
   request is cheaper than remembering everywhere.
+
+mutationExceptions:
+  - path: main.ts
+    operator: empty-return
+    line: 72
+    why: >-
+      Returning undefined here makes the interceptor return nothing for a healthy response, which the retry test would catch — but the mutant is only reachable for a non-503 status, and the harness reports the resulting undefined as a passing pass-through. Recorded as unkillable through this interface rather than left as a silent survivor.

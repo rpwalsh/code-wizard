@@ -28,6 +28,15 @@ async function start(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: /^Python/ }).click();
   await page.getByRole('button', { name: 'I have written Python, a while ago' }).click();
+
+  // The screenshots document the app, not its welcome mat.
+  const tour = page.getByRole('dialog', { name: 'Welcome' });
+  await tour.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
+  if (await tour.count()) {
+    await page.getByRole('button', { name: 'Skip' }).click();
+    await tour.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => undefined);
+  }
+
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }

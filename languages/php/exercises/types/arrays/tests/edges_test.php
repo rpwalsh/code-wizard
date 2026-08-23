@@ -26,6 +26,26 @@ retrainer_test('asking for more spenders than exist returns them all', function 
     assert_equal([], top_spenders([], 3));
 }, 'php.types.arrays');
 
+retrainer_test('asking for no spenders returns none', function () {
+    // max(0, $count) has to clamp to zero, not to one: a report asked for
+    // nothing must not quietly return the top row.
+    assert_equal([], top_spenders(['rent' => 900, 'food' => 55], 0));
+    assert_equal([], top_spenders(['rent' => 900], -3));
+}, 'php.types.arrays');
+
+retrainer_test('the threshold itself is not above the threshold', function () {
+    // Without a value sitting exactly on the line, > and >= agree and the
+    // comparison is never tested.
+    assert_equal([300], above([100, 150, 300], 150));
+}, 'php.types.arrays');
+
+retrainer_test('the ranking compares amounts to amounts', function () {
+    // A comparator that reached for the wrong tuple index would rank by
+    // category text, or by an index that does not exist.
+    $totals = ['aaa' => 10, 'zzz' => 900, 'mmm' => 500];
+    assert_equal(['zzz', 'mmm', 'aaa'], top_spenders($totals, 3));
+}, 'php.types.arrays');
+
 retrainer_test('two accumulators are independent', function () {
     $first = make_accumulator();
     $second = make_accumulator();

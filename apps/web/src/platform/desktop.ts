@@ -36,32 +36,43 @@ function bridge(): DesktopBridge {
  * real sandbox, timeouts and process-tree termination live.
  */
 class BridgedRuntime implements LanguageRuntime {
+  readonly #metadata: LanguageMetadata;
+
+  constructor(metadata: LanguageMetadata) {
+    this.#metadata = metadata;
+  }
+
   metadata(): LanguageMetadata {
-    return bridge().metadata;
+    return this.#metadata;
+  }
+
+  // Every call names its language, so one bridge serves fourteen runtimes.
+  #language(): string {
+    return this.#metadata.id;
   }
 
   doctor(): Promise<RuntimeDiagnosis> {
-    return bridge().invoke('runtime:doctor', undefined);
+    return bridge().invoke('runtime:doctor', { language: this.#language() });
   }
 
   execute(request: ExecutionRequest): Promise<ExecutionResult> {
-    return bridge().invoke('runtime:execute', request);
+    return bridge().invoke('runtime:execute', { language: this.#language(), request });
   }
 
   test(request: TestRequest): Promise<TestResult> {
-    return bridge().invoke('runtime:test', request);
+    return bridge().invoke('runtime:test', { language: this.#language(), request });
   }
 
   format(request: FormatRequest): Promise<FormatResult> {
-    return bridge().invoke('runtime:format', request);
+    return bridge().invoke('runtime:format', { language: this.#language(), request });
   }
 
   lint(request: LintRequest): Promise<LintResult> {
-    return bridge().invoke('runtime:lint', request);
+    return bridge().invoke('runtime:lint', { language: this.#language(), request });
   }
 
   diagnose(request: LintRequest): Promise<readonly Diagnostic[]> {
-    return bridge().invoke('runtime:diagnose', request);
+    return bridge().invoke('runtime:diagnose', { language: this.#language(), request });
   }
 }
 
@@ -139,17 +150,24 @@ export async function createDesktopPlatform(
   report({ stage: 'catalog', message: 'Loading exercises…' });
   // Already a ContentBundle: the main process built it from validated
   // exercises, so there is nothing left to narrow.
-  const bundle = await bridge().invoke('content:bundle', undefined);
+  const [bundle, languages] = await Promise.all([
+    bridge().invoke('content:bundle', undefined),
+    bridge()
+      .invoke('runtime:languages', undefined)
+      // An older main process without the channel still boots, with the one
+      // language its preload advertises.
+      .catch(() => [bridge().metadata]),
+  ]);
 
   report({ stage: 'ready', message: 'Ready.' });
 
   return {
     kind: 'desktop',
-    // One entry today. The main process holds all fourteen runtimes, but the
-    // preload bridge still exposes a single one, so widening this means
-    // widening the IPC contract to carry a language id — the next step for
-    // the desktop build, and the reason the type here is already a map.
-    runtimes: new Map([[bridge().metadata.id, new BridgedRuntime()]]),
+    // One bridged runtime per language the main process holds. Adding a
+    // language there is enough — nothing here names them.
+    runtimes: new Map(
+      languages.map((metadata) => [metadata.id, new BridgedRuntime(metadata)] as const),
+    ),
     store: new BridgedStore(),
     catalog: catalogFromBundle(bundle),
     skillGraph: SkillGraph.from(bundle.skills),

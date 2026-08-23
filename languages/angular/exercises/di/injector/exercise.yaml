@@ -88,3 +88,15 @@ explanation: |
   and non-multi cannot share a token — enforced at registration, loudly —
   is the kind of early error that saves an afternoon: the alternative is
   a resolve that sometimes returns an array and sometimes a value.
+
+mutationExceptions:
+  - path: main.ts
+    operator: strictness
+    line: 33
+    why: >-
+      Map.get returns the stored provider or undefined and never null, so == undefined and === undefined agree on every lookup.
+  - path: main.ts
+    operator: strictness
+    line: 42
+    why: >-
+      Same lookup, same reason: the only absent value a Map can produce is undefined.

@@ -93,3 +93,17 @@ explanation: |
   smallest possible box of state, and the same idea as Rust's
   move-vs-borrow or JS's always-by-reference, made explicit per
   variable.
+
+mutationExceptions:
+  - path: main.php
+    operator: nullish
+    line: 12
+    why: >-
+      The default is 0 and the only falsy value the lookup can hold is 0, so
+      ?? and ?: contribute the same number to the sum.
+  - path: main.php
+    operator: strictness
+    line: 29
+    why: >-
+      Both sides are the integer totals this function computed, so == and ===
+      agree for every input the comparator can be handed.

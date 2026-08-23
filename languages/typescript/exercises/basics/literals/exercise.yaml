@@ -86,3 +86,10 @@ explanation: |
   first time a query string holds 'verbose'. The predicate checks, and
   its `value is Level` return type teaches the compiler to narrow at
   every call site. Assertions promise; guards prove.
+
+mutationExceptions:
+  - path: main.ts
+    operator: empty-return
+    line: 27
+    why: >-
+      The line returns the never-typed exhaustiveness witness, which is unreachable by construction — if it ever ran the switch would already have failed to compile.

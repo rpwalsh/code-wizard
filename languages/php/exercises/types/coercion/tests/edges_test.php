@@ -34,3 +34,13 @@ retrainer_test('negative and zero parse', function () {
     assert_equal(-7, to_int('-7'));
     assert_equal(0, to_int('0'));
 }, 'php.types.declarations');
+
+retrainer_test('each unconvertible kind is refused on its own', function () {
+    // The guard is a chain of ORs: with an AND, a value would have to be a
+    // bool and an array and null at once to be refused, so nothing would be.
+    assert_equal(null, to_int(true));
+    assert_equal(null, to_int(false));
+    assert_equal(null, to_int([1, 2]));
+    assert_equal(null, to_int([]));
+    assert_equal(null, to_int(null));
+}, 'php.types.coercion');

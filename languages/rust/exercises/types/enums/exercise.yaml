@@ -92,3 +92,12 @@ explanation: |
   `&mut self` machines and move machines are both idiomatic, but only
   one of them lets old states be kept for an undo history without
   cloning.
+
+mutationExceptions:
+  - path: main.rs
+    operator: saturating
+    line: 27
+    why: >-
+      The base is the literal 0, so 0.wrapping_add(step) and
+      0.saturating_add(step) agree for every u8 step — no input can
+      distinguish them here.

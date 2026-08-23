@@ -12,6 +12,13 @@ import {
 
 import { javascriptMutationOperators } from '@code-retrainer/javascript';
 import { pythonMutationOperators } from '@code-retrainer/python';
+import { cMutationOperators } from '@code-retrainer/lang-c';
+import { cppMutationOperators } from '@code-retrainer/lang-cpp';
+import { csharpMutationOperators } from '@code-retrainer/lang-csharp';
+import { goMutationOperators } from '@code-retrainer/lang-go';
+import { phpMutationOperators } from '@code-retrainer/lang-php';
+import { rustMutationOperators } from '@code-retrainer/lang-rust';
+import { sqlMutationOperators } from '@code-retrainer/lang-sql';
 
 import type { CliContext } from '../context.ts';
 import { createContext, relativeToRepository } from '../context.ts';
@@ -301,11 +308,23 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
     const solution = solutionWorkspace(exercise);
     const runtime = context.runtimeFor(exercise.language);
 
-    // Only the solution is mutated. Breaking a test and watching it fail
-    // proves nothing: the question is whether the tests notice a broken
-    // *solution*, so they have to stay exactly as the learner will meet them.
-    const mutable = solution.files.filter((file) =>
-      exercise.solution.files.some((candidate) => candidate.path === file.path),
+    /*
+     * Only the solution is mutated. Breaking a test and watching it fail
+     * proves nothing: the question is whether the tests notice a broken
+     * *solution*, so they have to stay exactly as the learner will meet them.
+     *
+     * And only the parts of the solution that ARE the answer. A file the
+     * starter already contains byte for byte is scaffolding the learner was
+     * handed — SQL's schema.sql, C's declaration header — and mutating it
+     * measures the fixture rather than the reasoning. Those mutants survive
+     * for reasons that say nothing about the tests, which is exactly the
+     * false report this gate exists to avoid producing.
+     */
+    const given = new Map(exercise.starter.files.map((file) => [file.path, file.contents]));
+    const mutable = solution.files.filter(
+      (file) =>
+        exercise.solution.files.some((candidate) => candidate.path === file.path) &&
+        given.get(file.path) !== file.contents,
     );
 
     console.log(heading(exercise.title));
@@ -401,8 +420,35 @@ function operatorsFor(language: string) {
   switch (language) {
     case 'python':
       return pythonMutationOperators;
+
+    // One family, one operator set: TypeScript, React, Angular and Node are
+    // JavaScript with more types, and their programmers make JavaScript's
+    // mistakes.
     case 'javascript':
+    case 'typescript':
+    case 'react':
+    case 'angular':
+    case 'node':
       return javascriptMutationOperators;
+
+    case 'c':
+      return cMutationOperators;
+    case 'cpp':
+      return cppMutationOperators;
+    // ASP.NET exercises are C# files; the language above the framework is
+    // what the mutations are about.
+    case 'csharp':
+    case 'aspnet':
+      return csharpMutationOperators;
+    case 'go':
+      return goMutationOperators;
+    case 'rust':
+      return rustMutationOperators;
+    case 'php':
+      return phpMutationOperators;
+    case 'sql':
+      return sqlMutationOperators;
+
     default:
       return [];
   }

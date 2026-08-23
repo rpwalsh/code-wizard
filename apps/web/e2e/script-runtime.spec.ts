@@ -20,6 +20,12 @@ test.describe('the browser runtimes', () => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Python/ }).click();
     await page.getByRole('button', { name: 'I have written Python, a while ago' }).click();
+    const tour = page.getByRole('dialog', { name: 'Welcome' });
+    await tour.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
+    if (await tour.count()) {
+      await page.getByRole('button', { name: 'Skip' }).click();
+      await tour.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => undefined);
+    }
     await expect(page.getByRole('heading', { name: /Python|JavaScript/ }).first()).toBeVisible();
   });
 
@@ -195,6 +201,12 @@ test.describe('the vendored interpreter', () => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Python/ }).click();
     await page.getByRole('button', { name: 'I have written Python, a while ago' }).click();
+    const tour = page.getByRole('dialog', { name: 'Welcome' });
+    await tour.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
+    if (await tour.count()) {
+      await page.getByRole('button', { name: 'Skip' }).click();
+      await tour.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => undefined);
+    }
   });
 
   test('runs Python with no network', async ({ page }) => {

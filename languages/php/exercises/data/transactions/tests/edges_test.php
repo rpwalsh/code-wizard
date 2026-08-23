@@ -23,6 +23,16 @@ retrainer_test('an unknown account rolls back by name', function () {
     assert_equal(100, (int) $read->fetchColumn());
 }, 'php.data.transactions');
 
+retrainer_test('transferring the entire balance is allowed', function () {
+    // Exactly the balance is enough; only a strictly larger amount is not.
+    $pdo = fresh_bank();
+    assert_true(transfer($pdo, 'bo', 'ada', 200), 'the whole balance should move');
+    assert_equal(0, balance($pdo, 'bo'));
+    assert_equal(1200, balance($pdo, 'ada'));
+
+    assert_throws(RuntimeException::class, fn () => transfer($pdo, 'bo', 'ada', 1));
+}, 'php.data.transactions');
+
 retrainer_test('the user-safe message passes through', function () {
     $shown = safe_message(new RuntimeException('insufficient funds'), fn () => null);
     assert_equal('insufficient funds', $shown);

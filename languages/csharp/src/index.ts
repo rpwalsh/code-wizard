@@ -7,3 +7,4 @@ export {
   supportDir,
 } from './runtime.ts';
 export { csharpSkills, csharpSkillGraph } from './skills.ts';
+export { csharpMutationOperators } from './mutations.ts';

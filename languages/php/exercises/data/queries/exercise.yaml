@@ -78,4 +78,23 @@ explanation: |
   Escaping fails for a reason worth understanding: it is a filter you must
   apply correctly, in the right character set, every single time, forever. One
   missed call is one vulnerability, and there is no way to prove you have not
-  missed one. Parameterisation removes the question.
+  missed one. Parameterization removes the question.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 18
+    why: >-
+      fetch returns an array or the boolean false; an array is never loosely equal to false unless empty, and a selected row always has columns.
+  - path: main.php
+    operator: strictness
+    line: 29
+    why: >-
+      Both sides are arrays, and PHP compares arrays by contents under == and by contents plus order under ===; for the empty array they agree.
+  - path: main.php
+    operator: off-by-one
+    line: 33
+    why: >-
+      array_fill's first argument is the starting key, and implode discards
+      keys — array_fill(1, n, '?') and array_fill(0, n, '?') both produce n
+      question marks in the same order.

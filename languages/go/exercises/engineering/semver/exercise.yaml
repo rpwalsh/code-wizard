@@ -82,3 +82,20 @@ explanation: |
   moment any part reaches two digits. The zero value pays off here
   too — a failed parse returns `Version{}`, and because the error is
   checked first, that zero never masquerades as v0.0.0 in real use.
+
+mutationExceptions:
+  - path: main.go
+    operator: off-by-one
+    line: 21
+    why: >-
+      The int returned alongside a non-nil error is never read: every caller checks err first, which is the convention the signature exists to support.
+  - path: main.go
+    operator: off-by-one
+    line: 26
+    why: >-
+      Same as line 21 — the value beside a non-nil error is not part of the contract.
+  - path: main.go
+    operator: off-by-one
+    line: 40
+    why: >-
+      The slice is indexed at 0, 1 and 2 regardless of its length, so a fourth unused slot changes nothing but the allocation size.

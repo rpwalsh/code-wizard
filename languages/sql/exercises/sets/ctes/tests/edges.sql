@@ -8,6 +8,16 @@ WITH team_totals AS (
 )
 SELECT AVG(total) FROM team_totals;
 
+-- test: a team exactly on the average is not above it
+-- concept: sql.sets.ctes
+-- expect:
+-- data|550
+WITH team_totals AS (
+  SELECT team, SUM(amount) AS total FROM expenses GROUP BY team
+)
+SELECT team, total FROM team_totals
+WHERE total = (SELECT AVG(total) FROM team_totals);
+
 -- test: the same question as a correlated subquery
 -- concept: sql.sets.subqueries
 -- expect:
@@ -19,5 +29,5 @@ GROUP BY team;
 -- test: a scalar subquery in the select list
 -- concept: sql.sets.subqueries
 -- expect:
--- 7|1650
+-- 9|2200
 SELECT COUNT(*), (SELECT SUM(amount) FROM expenses) FROM expenses;

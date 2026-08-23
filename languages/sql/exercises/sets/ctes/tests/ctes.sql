@@ -1,5 +1,5 @@
 -- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
--- test: the teams above the average
+-- test: the teams strictly above the average
 -- concept: sql.sets.ctes
 -- uses: main.sql
 -- expect:

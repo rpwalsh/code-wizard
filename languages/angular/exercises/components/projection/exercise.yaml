@@ -91,3 +91,28 @@ explanation: |
   the one function that produces markup is what makes it impossible to
   forget at a call site. Angular's template compiler does exactly this
   on your behalf; this is what "the framework escapes by default" means.
+
+mutationExceptions:
+  - path: main.ts
+    operator: strictness
+    line: 22
+    why: >-
+      Both sides are strings, and JavaScript compares two strings identically under == and === — the numeric coercion people remember is PHP.
+  - path: main.ts
+    operator: nullish
+    line: 35
+    why: >-
+      find returns a selector or undefined, and the only falsy selector is the empty string, which matches no node — so ?? and || cannot disagree.
+  - path: main.ts
+    operator: logical
+    line: 13
+    why: >-
+      The two bracket checks disagree only for a half-bracketed selector like
+      '[card-title', which is outside the three shapes this function accepts.
+      For every documented selector the guard is true or false under both.
+  - path: main.ts
+    operator: nullish
+    line: 19
+    why: >-
+      The only falsy string in JavaScript is the empty string, and '' ?? ''
+      and '' || '' are both '' — no attribute value distinguishes them.
