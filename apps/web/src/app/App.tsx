@@ -212,11 +212,28 @@ function AppInner() {
       .catch(() => undefined);
   }, [platform]);
 
+  /**
+   * Dismiss the tour, and make sure that is remembered.
+   *
+   * The write is awaited before the card leaves. Fire and forget lost a race:
+   * dismiss, reload immediately, and the tour came back, because the reload
+   * beat an IndexedDB write that had not been waited on. It is a sub-
+   * millisecond write and nobody perceives the difference, but the difference
+   * between "dismissed" and "dismissed and stored" is the whole feature.
+   *
+   * A store that refuses the write still dismisses. Seeing the tour twice is a
+   * small cost; a card that cannot be closed is not.
+   */
   const finishTour = useCallback(() => {
-    setTourSeen(true);
-    void platform?.store.setSetting(TOUR_KEY, new Date().toISOString()).catch(() => {
-      // Seeing it twice is a small cost; blocking the app is not.
-    });
+    const store = platform?.store;
+    if (!store) {
+      setTourSeen(true);
+      return;
+    }
+    void store
+      .setSetting(TOUR_KEY, new Date().toISOString())
+      .catch(() => undefined)
+      .then(() => setTourSeen(true));
   }, [platform]);
 
   const chooseTheme = useCallback(

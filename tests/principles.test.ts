@@ -271,6 +271,13 @@ describe('free forever, as an architectural constraint', () => {
       'react.dev',
       // The SVG namespace. A constant string, never fetched by anything.
       'www.w3.org',
+      // The PHP engine emulates a web server so that PHP's superglobals have
+      // something to describe. These two are the virtual host names it fills
+      // $_SERVER with — a default and a placeholder for the request it is
+      // pretending to serve. Nothing resolves them, and under the policy
+      // nothing could reach them if it tried.
+      'example.com',
+      'playground.internal',
     ]);
 
     const { globby } = await import('globby');

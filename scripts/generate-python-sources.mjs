@@ -69,6 +69,17 @@ const targets = [
       { constant: 'SQL_RUN_PY', source: 'languages/sql/runtime/run.py' },
     ],
   },
+  {
+    output: 'apps/web/src/platform/php-sources.generated.ts',
+    banner: [
+      'The PHP harness, inlined for the browser.',
+      '',
+      'The same single file the desktop hands to a real PHP binary. It needs no',
+      'Composer and no PHPUnit, which is what makes it portable to a PHP',
+      'compiled to WebAssembly without changing a line of it.',
+    ].join('\n'),
+    files: [{ constant: 'PHP_HARNESS', source: 'languages/php/runtime/harness.php' }],
+  },
 ];
 
 /** Embed as a JSON string literal: no escaping surprises, no template-literal traps. */

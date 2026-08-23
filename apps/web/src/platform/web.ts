@@ -5,6 +5,7 @@ import { catalogFromBundle, parseBundle } from '@code-retrainer/exercises';
 import { browserChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
 
 import { createScriptRuntimes } from './script-runtimes.ts';
+import { PhpWebRuntime } from './php-runtime.ts';
 import { SqlWebRuntime } from './sql-runtime.ts';
 
 // Vite's `?worker` suffix compiles the module as a worker entry and hands back
@@ -72,6 +73,14 @@ export async function createWebPlatform(
   // second WebAssembly build, and no second dialect to keep in step.
   const sql = new SqlWebRuntime(runtime);
   runtimes.set(sql.metadata().id, sql);
+
+  // PHP is a real PHP compiled to WebAssembly, and it is nineteen megabytes.
+  // It boots on first use rather than at page load, so the download is paid
+  // by the people who open PHP and by nobody else.
+  const php = new PhpWebRuntime({
+    onProgress: (message) => report({ stage: 'runtime', message }),
+  });
+  runtimes.set(php.metadata().id, php);
   for (const script of createScriptRuntimes()) {
     runtimes.set(script.metadata().id, script);
   }

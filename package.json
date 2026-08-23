@@ -2,7 +2,7 @@
   "name": "code-retrainer",
   "version": "0.1.0",
   "private": true,
-  "description": "Code Fluency Training Platform \u2014 a language-agnostic deliberate-practice environment for building independent coding fluency.",
+  "description": "Code Fluency Training Platform — a language-agnostic deliberate-practice environment for building independent coding fluency.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@php-wasm/web": "^3.1.50",
     "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.2",
     "esbuild-wasm": "^0.25.12",
@@ -48,6 +49,8 @@
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0",
     "vitest": "^4.1.11"
   },
   "allowScripts": {
