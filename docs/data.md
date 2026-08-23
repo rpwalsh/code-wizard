@@ -95,39 +95,54 @@ answer is gone rather than hidden.
 
 ---
 
-## How far the enforcement actually reaches
+## What enforces it
 
-Each of these is a case the checks above do not cover. None of them is data
-going somewhere today; all of them are the distance between what a test proves
-and what its name suggests.
+Five checks, at four levels. They are independent on purpose: a mistake has to
+defeat all of them to ship.
 
-**The static check reads source, not the shipped bundle.** The built output
-contains `cdn.jsdelivr.net` twice — Monaco's editor loader default and
-Pyodide's package fallback. Both are overridden
-([Editor.tsx](../apps/web/src/components/Editor.tsx) pins Monaco to the bundled
-copy, [web.ts](../apps/web/src/platform/web.ts) points Pyodide at the vendored
-files), so neither is ever fetched. But they are switched off by configuration,
-not by absence: drop one of those lines in a refactor and the editor quietly
-pulls three megabytes from a CDN, with the static check none the wiser, because
-the URL is in a dependency rather than in `apps/web/src`.
+**The browser refuses.** The production build carries a Content Security Policy
+with no host in any directive
+([apps/web/security-policy.ts](../apps/web/security-policy.ts)). Every way a
+page can speak to a server — fetch, XHR, WebSocket, EventSource, sendBeacon,
+an image, an injected script — is governed by it, and a request off this origin
+is refused before it is made, whoever wrote the code that asked. Every
+relaxation in the policy is a scheme rather than a host, so none of them can
+name somewhere else.
 
-**The URL pattern misses protocol-relative addresses.** `//example.com/x` is a
-valid absolute URL with the scheme omitted; the pattern requires `http(s)://`
-and lets it through. That is the honest-mistake case these guards exist for.
+That is the check that matters, because it holds for code this repository did
+not write. The rest exist so a regression is caught early and named precisely.
 
-**Browser storage is scoped by origin, which means hostname, not path.** On a
-shared static-hosting domain, every project published under the same account
-shares one origin and can read this application's database. It is all
-first-party code, so nothing escapes — but "isolated to this app" is a weaker
-statement than it sounds, and it argues for a dedicated subdomain before any
-public deployment.
+1. **No external address in the source.** Every TypeScript, TSX, CSS and HTML
+   file in the browser app, checked for absolute *and* protocol-relative URLs —
+   `//example.com` is a complete address with the scheme left off, and it is
+   the form somebody writes by accident.
+2. **No new external host in the shipped bundle.** The built output is scanned
+   against a recorded list. Two entries on it are real: the editor's loader and
+   the Python runtime both default to a CDN and are both pointed at bundled
+   copies instead. They are unreachable under the policy above, and this check
+   exists so the day a dependency adds a telemetry endpoint, the build fails and
+   somebody reads the diff.
+3. **No dependency that would want to phone home.** No analytics, payment,
+   telemetry or model-client package in any manifest or in the installed tree.
+4. **The policy is enforced, not merely present.** A browser test asks the page
+   to fetch, to load an image, and to inject a script from another origin, and
+   asserts the browser raised a policy violation for each. The first version of
+   that test passed with the policy removed — a cross-origin request fails on
+   its own — so it now watches for the violation event itself, which fires only
+   when a policy refuses something.
+5. **No screen talks to anyone.** A browser test walks the whole application —
+   dashboard, skill map, practice, an answered activity, the data panel, the
+   workspace, a real test run — with a request recorder attached throughout, and
+   fails on a single request off this origin.
 
-**The runtime check covers one flow.** It proves a Python run makes no outside
-request. It does not sweep every screen. "Makes no requests" is proven for that
-path and inferred for the rest.
+## The one thing outside the software
 
-**Server logs exist at the hosting layer.** Whoever serves the files keeps their
-own request logs — addresses, timestamps, paths — the same as any website. The
-application neither reads them nor adds to them, and nothing in this repository
-changes them. The desktop build is served from nowhere and makes no requests at
-all.
+Whoever serves the files keeps their own web server logs: addresses,
+timestamps, paths, the same as any website. The application neither reads them
+nor adds to them, and nothing in this repository changes them.
+
+Two consequences worth acting on. Browser storage is scoped by hostname rather
+than by path, so a deployment must have an origin of its own — on shared static
+hosting, every project under the same account shares one storage area. And the
+desktop build is served from nowhere and makes no requests at all, which is the
+option when even a server log is too much.

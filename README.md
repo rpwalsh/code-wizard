@@ -262,9 +262,11 @@ their exercises need fixtures rather than a compiler.
 
 - **No AI.** No generated hints, no completion, no chatbot, no model anywhere
   in the product. A test in this repository fails the build if an LLM client
-  appears in the dependency tree, and a browser test asserts the running app
-  makes no network request off its own origin at all — the Python interpreter
-  is vendored with the site, so there is nothing to fetch.
+  appears in the dependency tree; the shipped page carries a content security
+  policy naming no host, so the browser refuses an off-origin request before it
+  is made; and a browser test walks every screen with a request recorder
+  attached and fails on a single one. The Python interpreter is vendored with
+  the site, so there is nothing to fetch.
 - **No account.** No sign-in, no email, no identity. Your progress lives in
   your browser or on your disk; saving, loading and deleting it are all things
   you do yourself, from the footer. See [docs/data.md](docs/data.md).

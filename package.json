@@ -23,7 +23,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "code-retrainer": "node --experimental-strip-types packages/cli/src/main.ts",
-    "verify": "npm run generate:check && npm run copyright:check && npm run spelling:check && npm run lint && npm run typecheck && npm run test",
+    "verify": "npm run generate:check && npm run copyright:check && npm run spelling:check && npm run lint && npm run typecheck && npm run web && npm run test",
     "generate": "node scripts/generate-python-sources.mjs",
     "generate:check": "node scripts/generate-python-sources.mjs --check",
     "bundle": "node packages/cli/dist/main.js content bundle --language python,javascript,typescript,react,angular,node && node packages/cli/dist/main.js content activities && npm run bundle:desktop",

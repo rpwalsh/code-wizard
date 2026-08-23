@@ -542,3 +542,116 @@ test('the task panel can be resized, by pointer and by keyboard', async ({ page 
   await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
   expect(Math.abs((await settledWidth()) - widened)).toBeLessThan(4);
 });
+
+/**
+ * The policy, enforced by the browser rather than asserted by a grep.
+ *
+ * The obvious version of this test is a lie: a cross-origin fetch from the
+ * test server fails on its own — no CORS headers, no network — so asserting
+ * "the request did not succeed" passes just as happily with no policy at all.
+ * It was written that way first, and it passed with the policy removed, which
+ * is how it got rewritten.
+ *
+ * The signal that actually distinguishes the two is the browser's own
+ * `securitypolicyviolation` event. It fires when, and only when, a policy
+ * refuses something. No policy, no event, and this test fails — which is the
+ * property that makes it worth having.
+ */
+test('the browser refuses to let the page call anywhere else', async ({ page }) => {
+  await start(page);
+
+  const violations = await page.evaluate(async () => {
+    const seen: { directive: string; blocked: string }[] = [];
+    const record = (event: SecurityPolicyViolationEvent): void => {
+      seen.push({ directive: event.violatedDirective, blocked: event.blockedURI });
+    };
+    document.addEventListener('securitypolicyviolation', record);
+
+    // Every route out that does not need a fetch, tried in earnest.
+    await fetch('https://example.com/collect', { method: 'POST', body: 'x' }).catch(
+      () => undefined,
+    );
+
+    await new Promise<void>((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve();
+      image.onerror = () => resolve();
+      image.src = 'https://example.com/pixel.gif';
+      setTimeout(resolve, 2000);
+    });
+
+    await new Promise<void>((resolve) => {
+      const script = document.createElement('script');
+      script.onload = () => resolve();
+      script.onerror = () => resolve();
+      script.src = 'https://example.com/tracker.js';
+      document.head.append(script);
+      setTimeout(resolve, 2000);
+    });
+
+    // The event is dispatched asynchronously; give it a turn to arrive.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    document.removeEventListener('securitypolicyviolation', record);
+    return seen;
+  });
+
+  const directives = violations.map((violation) => violation.directive);
+  expect(directives).toContain('connect-src');
+  expect(directives).toContain('img-src');
+  expect(directives).toContain('script-src-elem');
+  expect(violations.every((violation) => violation.blocked.includes('example.com'))).toBe(true);
+});
+
+/**
+ * Every screen, watched for a single request off this origin.
+ *
+ * The runtime check used to cover one flow: a Python run. That proved the
+ * interpreter is local and inferred the rest of the application. This walks
+ * the whole app — dashboard, skill map, practice, an activity, the workspace,
+ * the data panel, the command palette — with a recorder attached the entire
+ * time, so "the app talks to nobody" stops being an inference.
+ */
+test('no screen in the app talks to anywhere else', async ({ page }) => {
+  test.slow();
+
+  const external: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.protocol === 'data:' || url.protocol === 'blob:') return;
+    if (url.host !== '127.0.0.1:4173') external.push(`${url.host} (${request.resourceType()})`);
+  });
+
+  await start(page);
+
+  // The dashboard, and the map it links to.
+  await expect(page.getByText('Independent fluency')).toBeVisible();
+  await page.getByRole('button', { name: 'Skill map' }).click();
+  await expect(page.locator('.dag svg')).toBeVisible();
+
+  // Practice, including an activity actually answered.
+  await page.getByRole('button', { name: 'Practice', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Practice' })).toBeVisible();
+  await page.getByRole('button', { name: /^Rust/ }).click();
+  await expect(page.locator('.activity')).toBeVisible();
+  await page.locator('.activity__option').first().click();
+  await page.getByRole('button', { name: 'Check' }).click();
+  await expect(page.locator('.activity__explanation')).toBeVisible();
+
+  // The data panel, which is the one screen that touches stored progress.
+  await page.getByRole('button', { name: 'Today' }).first().click();
+  await page.getByRole('button', { name: 'Your data stays on this device' }).click();
+  await expect(page.getByRole('dialog', { name: 'Your data' })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // The workspace, with the editor loaded and a real test run.
+  await page
+    .getByRole('button', { name: /Safe account lookup/ })
+    .first()
+    .click();
+  await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
+  await expect(page.locator('.monaco-editor').first()).toBeVisible();
+  await page.getByRole('button', { name: /^Test/ }).click();
+  await expect(page.locator('.result--failed').first()).toBeVisible({ timeout: 220_000 });
+
+  expect(external).toEqual([]);
+});

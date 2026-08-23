@@ -120,6 +120,17 @@ yet.
 
 ---
 
+## Give it an origin of its own
+
+A requirement, not a preference. Browser storage is scoped by hostname and not
+by path, so every project published under the same account on a shared static
+host shares one storage area, and any page there can read this application's
+progress database.
+
+It is all first-party code, so nothing escapes — but "isolated to this app" is
+weaker than it sounds, and the fix costs nothing: a project subdomain, or a
+custom domain. Do that before a public deployment.
+
 ## Progress, accounts and sync
 
 There are none, deliberately.

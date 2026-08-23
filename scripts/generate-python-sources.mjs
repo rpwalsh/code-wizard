@@ -54,6 +54,21 @@ const targets = [
     banner: 'The in-WASM host helpers, inlined as a string.',
     files: [{ constant: 'PYODIDE_HOST_PY', source: 'packages/runtime-web/python/pyodide_host.py' }],
   },
+  {
+    output: 'apps/web/src/platform/sql-sources.generated.ts',
+    banner: [
+      'The SQL harness, inlined for the browser.',
+      '',
+      'These are the same two files the desktop runtime hands to a real Python',
+      'process. The browser writes them into the interpreter it already has, so',
+      'a query graded in a tab is graded by the identical code that grades it on',
+      'the desktop -- not by a second implementation that agrees until it does not.',
+    ].join('\n'),
+    files: [
+      { constant: 'SQL_HARNESS_PY', source: 'languages/sql/runtime/harness.py' },
+      { constant: 'SQL_RUN_PY', source: 'languages/sql/runtime/run.py' },
+    ],
+  },
 ];
 
 /** Embed as a JSON string literal: no escaping surprises, no template-literal traps. */

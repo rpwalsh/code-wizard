@@ -5,6 +5,7 @@ import { catalogFromBundle, parseBundle } from '@code-retrainer/exercises';
 import { browserChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
 
 import { createScriptRuntimes } from './script-runtimes.ts';
+import { SqlWebRuntime } from './sql-runtime.ts';
 
 // Vite's `?worker` suffix compiles the module as a worker entry and hands back
 // a constructor, which guarantees it is in the build.
@@ -65,6 +66,12 @@ export async function createWebPlatform(
   // Python is the one that needs an interpreter downloaded; the rest are the
   // browser itself. Both kinds are the same interface from here on.
   const runtimes = new Map<string, LanguageRuntime>([[runtime.metadata().id, runtime]]);
+
+  // SQL rides on the same interpreter: CPython bundles SQLite, so the engine
+  // is already in the page and the harness is the desktop's own file. No
+  // second WebAssembly build, and no second dialect to keep in step.
+  const sql = new SqlWebRuntime(runtime);
+  runtimes.set(sql.metadata().id, sql);
   for (const script of createScriptRuntimes()) {
     runtimes.set(script.metadata().id, script);
   }
