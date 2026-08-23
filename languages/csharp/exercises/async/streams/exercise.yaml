@@ -1,0 +1,98 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.async.streams
+version: 1
+language: csharp
+title: Awaiting many things, one at a time or all at once
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - csharp.async.await
+  - csharp.async.streams
+  - csharp.async.deadlock
+
+prerequisites: []
+
+learningObjectives:
+  - Choose between sequential await and Task.WhenAll, and know what each costs.
+  - Produce and consume IAsyncEnumerable with await foreach.
+  - State why blocking on async code deadlocks, and write code that never blocks.
+
+prompt: |
+  In `Fetch.cs`:
+
+  - `static async Task<int> TotalSequentialAsync(
+    IReadOnlyList<Func<Task<int>>> sources)` — start each source only
+    after the previous finished, sum the results. Sequential on
+    purpose: the next call may depend on the last one's side effects.
+  - `static async Task<int> TotalParallelAsync(...)` — same signature:
+    start *every* source, then `Task.WhenAll`, then sum. Independent
+    work should overlap; the visible test proves the overlap by
+    timing counters, not wall clocks.
+  - `static async IAsyncEnumerable<int> RunningTotalsAsync(
+    IAsyncEnumerable<int> values)` — an async stream transformer:
+    yield the running total after each value. `await foreach` in,
+    `yield return` out.
+  - `static async Task<List<int>> CollectAsync(
+    IAsyncEnumerable<int> values, int limit)` — the consumer: up to
+    `limit` values into a list, stopping early without draining the
+    rest.
+  - `static Task<int> NeverBlockAsync(Func<Task<int>> source)` — the
+    deadlock lesson as API: return the task *unwrapped* — this method
+    adds a continuation doubling the result using `await`, and its
+    body must contain no `.Result`, no `.Wait()`, no
+    `.GetAwaiter().GetResult()`. The hidden test greps the learner's
+    source for those spellings — the one place a text assertion is
+    the honest check, because the deadlock itself needs a
+    single-threaded SynchronizationContext to demonstrate.
+
+entryPoint: Fetch.cs
+
+tests:
+  - path: tests/StreamTests.cs
+    visibility: visible
+    concept: csharp.async.streams
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.async.deadlock
+
+hints:
+  - level: conceptual
+    text: "Sequential await is a dependency claim; WhenAll is an independence claim. The bug is making the wrong claim, in either direction."
+  - level: structural
+    text: "TotalParallelAsync: var tasks = sources.Select(s => s()).ToList(); starts everything — the awaiting comes after all the starting."
+  - level: language
+    text: "IAsyncEnumerable methods use [EnumeratorCancellation] in real APIs; here the simple form suffices: await foreach (var v in values) yield the total."
+  - level: syntax
+    text: "CollectAsync: await foreach with a counter; break at limit — breaking disposes the source enumerator, which is the early-stop contract."
+  - level: explicit
+    text: "NeverBlockAsync: return DoubleAsync(source); with a local async function that awaits source() and returns the double. No blocking call has a reason to exist."
+
+explanation: |
+  The classic deadlock deserves its full mechanism, since the exercise
+  bans its ingredients: on a UI or classic ASP.NET thread, `task.
+  Result` blocks the only thread the context has — and the await
+  inside that task wants to *resume on that same context* to finish.
+  Each waits for the other, forever, and the fix is structural:
+  async all the way up. Modern server frameworks removed the
+  single-thread context, which softened the trap without unmaking
+  it — libraries still meet UI apps. The greppable rule — no .Result,
+  no .Wait() in async paths — survives because the deadlock's
+  preconditions are invisible at the call site.
+
+  Sequential versus WhenAll is the claim-making framing: awaiting in
+  a loop asserts each call depends on its predecessor; WhenAll
+  asserts they are independent. Wrong in one direction wastes time
+  (independent work serialized); wrong in the other breaks
+  correctness (dependent calls racing). The test measures overlap by
+  counting concurrently-started sources — timing-free, so it cannot
+  flake.
+
+  Async streams complete the toolkit: IAsyncEnumerable is a sequence
+  whose *next element* may take time — rows from a database, messages
+  from a queue. The transformer shape (await foreach in, yield return
+  out) composes like LINQ, and breaking out of the loop disposes the
+  producer — early termination is part of the contract, which
+  CollectAsync's limit proves.

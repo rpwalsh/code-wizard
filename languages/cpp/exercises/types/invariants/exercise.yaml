@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.invariants
+version: 1
+language: cpp
+title: A class that cannot be wrong
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - cpp.types.classes
+  - cpp.lifetime.rule
+  - cpp.values.const
+
+prerequisites: []
+
+learningObjectives:
+  - Hold an invariant with a constructor and methods, never with caller discipline.
+  - Follow the rule of zero — own resources through members that manage themselves.
+  - Mark every non-mutating method const, and know what that promises callers.
+
+prompt: |
+  A class earns its keep by making a wrong state unrepresentable. This
+  one is an `Inventory`: item names to non-negative counts, where "in
+  the map" *means* "count above zero" — that is the invariant, and
+  every method preserves it.
+
+  In `main.cpp` (declarations in `main.hpp`):
+
+  - `void add(const std::string &name, int count)` — adds; count <= 0
+    is ignored entirely.
+  - `bool remove(const std::string &name, int count)` — removes up to
+    `count`; returns false (and changes nothing) when there is not
+    enough or count <= 0. When a removal empties an item, the item
+    leaves the map — `distinct()` must not count ghosts at zero.
+  - `int count(const std::string &name) const` — 0 for absent items.
+    Careful: `operator[]` on a map *inserts* — a const method cannot
+    use it, which is the language enforcing your invariant for you.
+  - `int total() const`, `int distinct() const` — sum of counts,
+    number of items.
+  - `std::vector<std::string> names_sorted() const` — the names,
+    sorted.
+
+  Rule of zero: the class declares *no* destructor, copy or move
+  anything — `std::map` manages itself, so copying an Inventory just
+  works. The edge test copies one and proves independence.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/invariants_test.cpp
+    visibility: visible
+    concept: cpp.types.classes
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.const
+
+hints:
+  - level: conceptual
+    text: "The invariant is one sentence — present means positive — and every method is judged by whether it can break it."
+  - level: structural
+    text: "One private std::map<std::string, int>. add and remove maintain it; everything else reads."
+  - level: language
+    text: "map::find in const methods: operator[] default-inserts, so the compiler refuses it on a const map — that refusal is the invariant being protected."
+  - level: syntax
+    text: "auto it = items_.find(name); return it == items_.end() ? 0 : it->second;"
+  - level: explicit
+    text: "remove: find; if absent or it->second < count or count <= 0 return false; subtract; if zero, items_.erase(it); return true."
+
+explanation: |
+  "Present means positive" is a real invariant because two methods
+  conspire to keep it: add refuses non-positive counts, and remove
+  erases on reaching zero. Every reader — total, distinct,
+  names_sorted — is then simpler, because a whole state (zombie
+  entries at 0) does not exist to handle. That is what invariants buy:
+  not safety in the abstract, but fewer cases in every function that
+  follows.
+
+  The const story has a beautiful enforcement moment here: `count`
+  wants `items_[name]`, and the compiler says no — because
+  `operator[]` inserts a default when the key is absent, and a const
+  method may not mutate. The convenient operator is the invariant
+  breaker, and const-correctness catches it at compile time. Marking
+  methods const is not documentation; it is the compiler auditing
+  which methods can touch state.
+
+  The rule of zero is the modern C++ ownership answer: this class
+  owns memory (the map's nodes) and declares no destructor, no copy
+  constructor, nothing — because its member manages itself, and the
+  compiler-generated operations compose member operations correctly.
+  The moment you write one of the five special members by hand, you
+  own all five (the rule of five); the skill is designing so you
+  never need to.

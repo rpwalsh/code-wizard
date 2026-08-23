@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.config.declarations
+version: 1
+language: typescript
+title: Types for code you do not control
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - typescript.config.declaration
+  - typescript.boundaries.validation
+
+prerequisites: []
+
+learningObjectives:
+  - Write the interface layer a declaration file provides — types for someone else's API.
+  - Wrap an untyped surface once, so the rest of the codebase imports only the typed one.
+  - Verify the declared types against reality, because a wrong declaration is worse than none.
+
+prompt: |
+  `vendor.ts` (provided, read-only in spirit) is a stand-in for every
+  untyped library you will ever install: its exports are typed as the
+  JSON-ish blobs they really are, and using it directly spreads that
+  untypedness everywhere. The fix is the declaration-file discipline:
+  one module that declares what the vendor's shapes *are* and wraps
+  its surface, so everything else imports the typed wrapper.
+
+  In `main.ts`:
+
+  - Declare the interfaces the vendor's data actually has (this is
+    the `.d.ts` skill — you are writing the types for an API you do
+    not own):
+    - `VendorUser` — `id: number`, `login: string`,
+      `plan: 'free' | 'pro'`.
+    - `VendorEvent` — `kind: string`, `at: string` (ISO date),
+      `payload: Record<string, string>`.
+  - `isVendorUser(value: VendorShape): value is VendorUser` and
+    `isVendorEvent(value: VendorShape): value is VendorEvent` — the
+    verification layer. `VendorShape` is the vendor's own loose
+    export type (import it). A declaration is a *claim* about
+    someone else's code; the guards are what keep the claim honest
+    when the vendor ships v2.
+  - `getUser(id: number): VendorUser` — wraps `vendor.fetchUser`,
+    passing its result through `isVendorUser`; a shape mismatch
+    throws `Error('vendor contract violation: user')` — loudly, at
+    the boundary, naming the shape. (`fetchUser(3)` returns a
+    deliberately broken record — the vendor lies sometimes, and the
+    wrapper is where the lie is caught.)
+  - `recentEvents(since: string): VendorEvent[]` — wraps
+    `vendor.listEvents`, validating *each* element, dropping (not
+    throwing on) the malformed ones — a feed tolerates bad entries;
+    a user lookup does not — and filtering to `at >= since` (ISO
+    strings compare correctly as strings).
+  - `planLabel(user: VendorUser): string` — `'Free plan'` /
+    `'Pro plan'` — an exhaustive switch on the union, the payoff:
+    downstream code branching on a *declared* literal union of a
+    vendor value.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/declarations.test.ts
+    visibility: visible
+    concept: typescript.config.declaration
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.boundaries.validation
+
+hints:
+  - level: conceptual
+    text: "A declaration file is a promise made on someone else's behalf. The guards are how you keep a promise you cannot enforce."
+  - level: structural
+    text: "One wrapper module: interfaces at the top, guards below them, wrapped functions at the bottom. Nothing else ever imports vendor directly."
+  - level: language
+    text: "The plan check inside isVendorUser: value['plan'] === 'free' || value['plan'] === 'pro' — the literal union is declared by you and verified by you."
+  - level: syntax
+    text: "recentEvents: vendor.listEvents().filter(isVendorEvent).filter((event) => event.at >= since)"
+  - level: explicit
+    text: "getUser: const raw = vendor.fetchUser(id); if (!isVendorUser(raw)) throw new Error('vendor contract violation: user'); return raw;"
+
+explanation: |
+  This wrapper module IS a declaration file with a pulse. A real
+  `.d.ts` declares the same interfaces with no runtime behind them —
+  pure claims, trusted absolutely by the compiler. That absoluteness
+  is the danger DefinitelyTyped lives with daily: a declaration that
+  says `plan: 'free' | 'pro'` while the vendor started shipping
+  `'enterprise'` produces code that type-checks perfectly and
+  breaks at runtime. Pairing the declaration with guards at the
+  boundary is the antidote: the claim is written once AND checked
+  once, and a vendor v2 announces itself as a thrown contract
+  violation instead of an undefined spreading quietly.
+
+  The throw-versus-drop split between getUser and recentEvents is
+  boundary policy by data criticality, the same decision the
+  TypeScript validation exercise made for config versus feeds: a
+  user lookup that returns garbage must stop the line; a feed with
+  one malformed event among fifty should deliver forty-nine.
+
+  planLabel is the payoff made visible: because YOU declared plan as
+  a literal union — not string — the switch is exhaustive, the
+  compiler flags a missing case, and vendor data gets the same
+  never-check safety as your own types. Declarations do not just
+  silence errors about untyped imports; done well, they extend your
+  type system's guarantees over code you cannot edit.

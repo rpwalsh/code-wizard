@@ -1,0 +1,95 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.memory.disposal
+version: 1
+language: csharp
+title: Cleaned up, exactly once, even when it throws
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - csharp.memory.disposal
+  - csharp.memory.spans
+  - csharp.errors.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Implement IDisposable so using guarantees cleanup on every path.
+  - Refuse use-after-dispose with ObjectDisposedException.
+  - Parse with ReadOnlySpan slices instead of Substring allocations.
+
+prompt: |
+  In `Resources.cs`:
+
+  - `class Lease : IDisposable` — a named resource with an
+    `Action<string> onRelease` callback (constructor parameters).
+    Dispose calls `onRelease(name)` exactly once — a second Dispose
+    is a no-op, per the IDisposable contract. `Use()` returns
+    `"using NAME"` and throws `ObjectDisposedException` after
+    disposal.
+  - `static string WithLease(string name, Action<string> onRelease,
+    Func<Lease, string> body)` — creates the lease in a `using`,
+    runs the body, returns its result — and when the body throws,
+    the lease is *still released* before the exception escapes: the
+    edge test throws on purpose and watches the callback fire.
+  - Spans: `static int SumCsv(ReadOnlySpan<char> line)` — sum of
+    comma-separated integers, parsed with `int.Parse` over span
+    *slices* — no Substring, no Split: `Slice` and `IndexOf` walk
+    the line with zero allocations. Empty span: 0. Whitespace
+    around numbers is tolerated (`int.Parse` trims). A malformed
+    field throws FormatException — Parse's own, undecorated.
+  - `static bool TryFirstField(ReadOnlySpan<char> line,
+    out int value)` — the first field only, `int.TryParse`, false
+    for an empty or unparsable head.
+
+entryPoint: Resources.cs
+
+tests:
+  - path: tests/DisposalTests.cs
+    visibility: visible
+    concept: csharp.memory.disposal
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.memory.spans
+
+hints:
+  - level: conceptual
+    text: "using is try/finally with a name. The finally calls Dispose, and everything the type guarantees hangs off that call happening."
+  - level: structural
+    text: "Lease keeps a bool disposed; Dispose checks-and-sets it before calling back; Use throws when it is set."
+  - level: language
+    text: "ObjectDisposedException.ThrowIf(disposed, this) is the modern guard; the explicit throw works identically."
+  - level: syntax
+    text: "SumCsv: var comma = line.IndexOf(','); the head is line.Slice(0, comma), the rest is line.Slice(comma + 1) — a loop, no allocations."
+  - level: explicit
+    text: "WithLease: using var lease = new Lease(name, onRelease); return body(lease); — the using disposes on return AND on throw; that is the whole method."
+
+explanation: |
+  `using` compiles to try/finally, and that equivalence is the entire
+  guarantee: the body throwing, returning early or finishing normally
+  all route through Dispose. WithLease demonstrates the shape all
+  resource-holding code wants — acquisition in the using declaration,
+  use in the body, release implicit and unskippable. The
+  exactly-once and throw-after-dispose rules are the IDisposable
+  contract's fine print: real handles double-free badly, and
+  use-after-dispose returning garbage quietly is far worse than
+  ObjectDisposedException loudly.
+
+  The Span half is the allocation story from the values exercise,
+  applied to parsing. `line.Substring(0, comma)` allocates a string
+  per field — a CSV parser that heap-allocates every cell runs the
+  collector as a co-processor. `Slice` is a window onto the same
+  memory: same digits, zero bytes allocated, and int.Parse accepts
+  spans natively since .NET Core 2.1. The discipline mirrors
+  string_view and &str exactly — a span must not outlive its
+  backing memory, and `ref struct` enforcement means the compiler
+  polices it.
+
+  Letting FormatException fly undecorated is a deliberate contrast
+  with the wrap-and-contextualize pattern elsewhere: here the parse
+  IS the operation, the input is the caller's own line, and Parse's
+  message already names the offending text. Wrapping would add a
+  layer without adding a fact. Context is added where context
+  exists; ceremony is not context.

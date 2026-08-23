@@ -55,9 +55,9 @@ wrong option was tempting.
 
 **Exercises** — write the code yourself, against tests, with the starter
 material progressively withdrawn. This is the part that measures fluency. Every
-language has a runtime behind it; how far the _content_ has got varies, and
-`code-retrainer curriculum syllabus` prints the gap per language rather than
-rounding it up.
+language has a runtime behind it, and every skill in every language has at
+least one exercise behind it — `code-retrainer curriculum syllabus` reports
+the coverage per language, and today every row reads 100%.
 
 The two are not interchangeable and the software will not pretend they are.
 Activities can move `knowledge`, `recognition`, `recall` and `debugging`. They
@@ -190,10 +190,10 @@ time rather than translated from the Python course.
 
 **Fourteen languages, each with a runtime that can execute an attempt and
 judge it.** Python, JavaScript, TypeScript, Node, React, Angular, SQL, C, C++,
-C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 81 machine-graded
-exercises and 151 activities. Every exercise ships with a reference solution
-that has been executed against its own tests, and every language has at least
-two beyond the diagnostic.
+C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 147 machine-graded
+exercises and 151 activities. Every one of the 347 skills has at least one
+exercise behind it, and every exercise ships with a reference solution that
+has been executed against its own tests.
 
 Six of those run with nothing to install beyond what the toolkit already
 needs. TypeScript, Node, React and Angular use the Node that runs the app

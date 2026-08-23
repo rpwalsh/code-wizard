@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.request.response
+version: 1
+language: php
+title: From request to response without leaking anything
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - php.request.lifecycle
+  - php.request.output
+  - php.request.sessions
+
+prerequisites: []
+
+learningObjectives:
+  - Model the request-to-response pipeline as data in, data out.
+  - Escape for HTML at the output boundary, once, and nowhere else.
+  - Treat the session as versioned state with regeneration on privilege change.
+
+prompt: |
+  PHP's request lifecycle is a pure function wearing superglobals:
+  request in, response out, and everything testable once you write it
+  that way.
+
+  In `main.php`:
+
+  - `function e(string $text): string` — THE escape helper:
+    htmlspecialchars with ENT_QUOTES and UTF-8. Two characters long
+    in every real codebase, because escaping that is annoying to
+    type gets skipped.
+  - `function render_greeting(string $name): string` —
+    `<p>Hello, NAME!</p>` with the name escaped — `<script>` in a
+    name must come out inert. Escaping happens *here*, at output —
+    never at storage, where it double-escapes on the second pass.
+  - `function handle(array $request, array $session): array` — the
+    lifecycle as a function. `$request` is
+    `['method' => ..., 'path' => ..., 'post' => [...]]`; returns
+    `['status' => int, 'body' => string, 'session' => array]`:
+    - `GET /` → 200, `render_greeting` of the session's `user` (or
+      `'guest'`), session unchanged.
+    - `POST /login` with `post['user']` non-empty → 200, body
+      `logged in`, and the returned session is a *fresh* array:
+      `['user' => ..., 'version' => old version + 1]` — the version
+      bump models session-id regeneration; carrying anything else
+      over from the old session is the fixation bug.
+    - `POST /login` with a missing or empty user → 422, `who?`,
+      session unchanged.
+    - `POST /logout` → 200, `bye`, session `['version' => old + 1]`
+      — the user is *gone*, not blanked.
+    - anything else → 404, `not found`, session unchanged.
+  - `function session_flash(array $session, string $key): array` —
+    returns `[value or null, session without the key]` — read-once
+    state, the flash-message pattern: consuming it removes it.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/response_test.php
+    visibility: visible
+    concept: php.request.lifecycle
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.request.output
+
+hints:
+  - level: conceptual
+    text: "Escape at output, version the session at privilege changes, and the lifecycle is just routing on method and path."
+  - level: structural
+    text: "handle: match on [method, path] pairs; every branch builds its response array explicitly."
+  - level: language
+    text: "htmlspecialchars($text, ENT_QUOTES, 'UTF-8') — ENT_QUOTES covers attributes; the default leaves single quotes alive."
+  - level: syntax
+    text: "The fresh session: ['user' => $user, 'version' => ($session['version'] ?? 0) + 1] — built new, never spread from the old."
+  - level: explicit
+    text: "session_flash: $value = $session[$key] ?? null; unset($session[$key]); return [$value, $session]; — PHP arrays are copied on assignment, so the caller's original is untouched."
+
+explanation: |
+  Escape-at-output is the XSS discipline in one sentence: data is
+  stored raw and escaped exactly where it meets HTML, because
+  storage-time escaping double-encodes on the second render and —
+  worse — trains people to trust "already escaped" data that
+  sometimes is not. The `e()` helper being two characters is part of
+  the design: the safe path must be the lazy path.
+
+  The fresh-session-on-login rule models what session_regenerate_id
+  does at the infrastructure level: a privilege change gets new
+  state, carrying over only what the new privilege level explicitly
+  claims. Spreading the old session into the new one would carry an
+  attacker-planted key straight across the login boundary — the
+  fixation bug from this course's earlier activity, now visible in
+  pure data.
+
+  session_flash is the read-once pattern every framework ships as
+  "flash messages", and its PHP implementation leans on a language
+  fact worth knowing: arrays assign by copy, so unset on the local
+  parameter cannot touch the caller's array. The function returns
+  the new state instead — the same state-in, state-out shape as
+  handle itself, which is what makes both testable without a server.

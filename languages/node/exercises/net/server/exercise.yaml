@@ -1,0 +1,99 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.net.http-server
+version: 1
+language: node
+title: A real server, a real client, and the clock on both
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - node.net.http-server
+  - node.net.http-client
+  - node.operations.testing
+  - node.operations.performance
+
+prerequisites: []
+
+learningObjectives:
+  - Serve real HTTP from node:http, routed and JSON-shaped.
+  - Call it with fetch, timeouts included, and close everything down.
+  - Measure a duration with the monotonic clock, never with Date.
+
+prompt: |
+  No mocks in this exercise: the tests start your actual server on an
+  ephemeral port, hit it with your actual client, and shut it down.
+  That loop — the same one integration tests run in CI — is the
+  operations half of Node in one file.
+
+  In `main.js`:
+
+  - `createApp()` — an `http.Server` (not yet listening):
+    - `GET /health` → 200, `{"ok":true}`, content-type
+      `application/json`.
+    - `GET /echo?msg=hello` → 200, `{"echo":"hello"}` — the query
+      parsed with the WHATWG `URL` class, absent msg defaulting to
+      `""`.
+    - `POST /sum` with a JSON array body → `{"sum": total}`;
+      a malformed body → 400 `{"error":"bad json"}`.
+    - anything else → 404 `{"error":"not found"}`.
+  - `startServer(app)` — listen on port 0 — the OS assigns a free
+    port, which is what makes parallel test runs possible — and
+    resolve to `{ port, close }`, close returning a promise.
+  - `fetchJson(url, options)` — fetch with a timeout: an
+    `AbortController`, `timeoutMs` from options (default 2000),
+    the timer cleared once the response lands. Non-JSON responses
+    reject; the parsed body and status return as
+    `{ status, body }`.
+  - `timed(fn)` — run the async fn, return
+    `{ result, elapsedMs }` measured with `performance.now()` —
+    monotonic, unlike Date.now, which walks backward under NTP
+    correction exactly often enough to produce negative latencies
+    in production dashboards.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/server.test.js
+    visibility: visible
+    concept: node.net.http-server
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.operations.testing
+
+hints:
+  - level: conceptual
+    text: "Port 0 is the whole testing trick: the OS picks a free port, the server reports it, and no two test runs can collide."
+  - level: structural
+    text: "createApp routes on method + parsed URL pathname; each branch writes a status, a content-type and one JSON body."
+  - level: language
+    text: "new URL(request.url, 'http://localhost') — request.url is just the path, and the URL class needs a base to parse it."
+  - level: syntax
+    text: "startServer: app.listen(0, () => resolve({ port: app.address().port, close: () => new Promise(r => app.close(r)) }))"
+  - level: explicit
+    text: "POST body: collect chunks into a string, JSON.parse in a try, sum with reduce; the catch writes the 400."
+
+explanation: |
+  Port 0 deserves its fame: hardcoded test ports collide — with other
+  test runs, with the dev server someone left up, with CI's parallel
+  shards — and the failures are intermittent, which is the worst
+  kind. Asking the OS for any free port and *reading back* which one
+  makes every run self-contained. The close-returning-a-promise
+  detail is the other half of clean tests: a server left listening
+  keeps the process alive, and the test suite that "hangs at the
+  end" almost always forgot one.
+
+  The AbortController timeout is the client-side discipline fetch
+  does not give you by default: without it, a hung server holds your
+  request forever, and whatever awaited it leaks with it. Clearing
+  the timer on completion matters too — a fired-and-forgotten
+  timeout keeps the event loop alive past the last test, the mirror
+  image of the unclosed server.
+
+  performance.now over Date.now is one of those one-line judgments
+  that separates dashboards you can trust from ones you cannot:
+  Date.now is wall-clock time, and NTP corrections step it backward;
+  performance.now is monotonic by contract. A duration computed from
+  wall-clock time is eventually negative somewhere in your fleet,
+  and every percentile computed from it after that is fiction.

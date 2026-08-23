@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.pipeline.binding
+version: 1
+language: aspnet
+title: From route template to typed arguments
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - aspnet.pipeline.routing
+  - aspnet.pipeline.binding
+
+prerequisites: []
+
+learningObjectives:
+  - Match paths against route templates with parameters and constraints.
+  - Bind route and query values into a typed record, reporting every failure.
+  - Keep the framework's binding order — route first, then query — on purpose.
+
+prompt: |
+  Between the URL and your handler's typed parameters sit two framework
+  services: routing (which template matches) and binding (strings into
+  types). Build both, framework-free, in `Routing.cs`:
+
+  - `static RouteMatch? MatchTemplate(string template, string path)` —
+    templates like `products/{id:int}/reviews/{page}`: literal
+    segments match exactly (case-insensitive), `{name}` captures
+    anything non-empty, `{name:int}` captures only when the segment
+    parses as an integer — a *constraint failure is a non-match*, not
+    an error: `products/abc` simply does not match a template with
+    `{id:int}`, leaving other routes their turn. Returns a
+    `RouteMatch(Dictionary<string, string> Values)` or null.
+  - `static Bound BindListQuery(RouteMatch match,
+    IReadOnlyDictionary<string, string> query)` — bind a listing
+    request from a matched `category/{name}` route plus query:
+    `Name` from the route; `Page` (int >= 1, default 1) and
+    `PerPage` (int 1..100, default 20) from the query. `Bound` is
+    either `Ok(ListQuery)` or `Invalid(IReadOnlyList<string>
+    errors)` — every problem reported at once, each naming the
+    field, the same all-at-once shape as the validation exercise.
+  - `static string CanonicalPath(string template,
+    IReadOnlyDictionary<string, string> values)` — the reverse map:
+    fill the template's parameters (constraints stripped) from
+    values, throwing `ArgumentException` naming any parameter left
+    unfilled. Routing backward is how frameworks generate links, and
+    it is the same template doing both jobs.
+
+entryPoint: Routing.cs
+
+tests:
+  - path: tests/BindingTests.cs
+    visibility: visible
+    concept: aspnet.pipeline.binding
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.pipeline.routing
+
+hints:
+  - level: conceptual
+    text: "A constraint failing is silence, not an error: the router's contract is to keep trying templates, and only a matched route ever reaches binding."
+  - level: structural
+    text: "Split template and path on '/'; walk the segments in step; a {name:int} segment is a capture plus an int.TryParse gate."
+  - level: language
+    text: "StringComparison.OrdinalIgnoreCase for the literals — URLs arrive in every casing and routing is defined to be case-insensitive."
+  - level: syntax
+    text: "The constraint split: parameter.Contains(':') ? parameter.Split(':', 2) : just the name."
+  - level: explicit
+    text: "BindListQuery: collect errors in a list; Page and PerPage each try-parse with their range check; return errors.Count > 0 ? Bound.Invalid(errors) : Bound.Ok(new ListQuery(...))."
+
+explanation: |
+  The constraint-failure-is-a-non-match rule is routing's quiet
+  contract, and getting it wrong breaks sites in a subtle way:
+  `products/{id:int}` and `products/{slug}` can coexist precisely
+  because `products/abc` slides off the first and lands on the
+  second. If a constraint failure were a 400, the slug route would
+  be unreachable. Constraints are matching predicates, not
+  validators — validation happens after routing has chosen, in
+  binding, where a failure IS an error.
+
+  The all-at-once error list in binding repeats the validation
+  exercise's lesson at the pipeline layer because the framework
+  itself works this way: ModelState accumulates every binding
+  failure, and handlers check the whole state once. Page=0 and
+  PerPage=lots produce two entries, not a first-error-wins
+  round trip.
+
+  CanonicalPath — the reverse map — is the underrated half of
+  routing. Link generation from the same template that matches
+  means URLs cannot drift from routes: rename a parameter and both
+  directions break together, loudly, in the same file. Frameworks
+  call this UrlHelper or LinkGenerator; the mechanism is a fill-in
+  walk of the same segments, and the throw-on-missing rule is what
+  turns a typo'd parameter into a test failure instead of a
+  half-built href in production.

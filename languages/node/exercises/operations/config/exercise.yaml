@@ -1,0 +1,91 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.operations.config
+version: 1
+language: node
+title: The environment is a map of strings, and everything else is you
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - node.operations.config
+  - node.operations.logging
+  - node.runtime.process
+
+prerequisites: []
+
+learningObjectives:
+  - Read configuration from an env map with types, defaults and loud failures.
+  - Emit one-line JSON logs that a machine can filter and a human can read.
+  - Treat process.env and argv as injectable inputs, not ambient truths.
+
+prompt: |
+  Every value in `process.env` is a string or absent — the same
+  boundary discipline as HTTP input, wearing operations clothes. The
+  functions all take the env/argv *as parameters*: code that reaches
+  for the globals directly is code that needs a deployment to test.
+
+  In `main.js`:
+
+  - `loadConfig(env)` — reads `PORT` (integer 1..65535, default
+    8080), `LOG_LEVEL` (`debug|info|warn|error`, default `info`),
+    `FEATURES` (comma-separated list, default empty; blank entries
+    dropped, whitespace trimmed). Malformed values throw an `Error`
+    naming the variable — a server must die loudly at boot, not
+    limp on defaults it was not given.
+  - `logLine(level, message, fields)` — one JSON line:
+    `level`, `message`, then the fields object spread in — but
+    `level` and `message` must win a collision with fields, and an
+    `Error` value in fields is serialized as its message (errors
+    JSON-stringify to `{}`, the classic empty-log bug).
+  - `parseArgs(argv)` — long flags only: `--name value` pairs and
+    bare `--flag` booleans (a flag followed by another flag, or by
+    nothing, is `true`). Returns the map. `--` ends parsing; the
+    rest lands in a `_` array.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/config.test.js
+    visibility: visible
+    concept: node.operations.config
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.operations.logging
+
+hints:
+  - level: conceptual
+    text: "Defaults are for absence; garbage dies at boot. A server limping on port 8080 because PORT was '80O0' is an outage with a delay."
+  - level: structural
+    text: "loadConfig: one small reader per variable, each with its own default-or-throw; compose the object at the end."
+  - level: language
+    text: "JSON.stringify(new Error('x')) is '{}' — an Error's message and stack are non-enumerable. Serialize error.message yourself."
+  - level: syntax
+    text: "logLine: JSON.stringify({ ...cleanedFields, level, message }) — spread first, then the reserved keys, so the reserved keys win."
+  - level: explicit
+    text: "parseArgs: walk the array; '--' pushes the rest into _; '--x' peeks at the next token — starts with '--' or missing means boolean true, else consume it as the value."
+
+explanation: |
+  The die-at-boot rule for config is operations wisdom encoded as a
+  throw: a typo'd PORT that silently becomes the default is a service
+  listening on the wrong port with valid-looking logs — the failure
+  surfaces hours later, in a load balancer, as somebody else's
+  mystery. Boot is the one moment a config error is cheap: the deploy
+  fails, the old version keeps serving, the fix is one redeploy away.
+
+  The Error-in-fields detail is the most common structured-logging
+  bug in Node: `JSON.stringify(new Error('boom'))` is `{}` because
+  message and stack are non-enumerable, so the log line that should
+  explain the outage says nothing. Serializing `error.message`
+  explicitly — and letting level/message win key collisions so a
+  field cannot spoof severity — is what makes the line trustworthy
+  enough to alert on.
+
+  Passing env and argv as parameters is the testability move the
+  whole exercise models: process.env is a global, and globals make
+  every test an integration test. The pattern costs one parameter
+  and buys deterministic tests, per-call overrides, and honesty
+  about what the function actually consumes — the same injection
+  idea as the PHP logger callable and the C# clock, at process
+  scale.

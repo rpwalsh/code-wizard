@@ -1,0 +1,99 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.errors.guarantees
+version: 1
+language: cpp
+title: Fail without breaking anything
+kind: micro-problem
+difficulty: 5
+estimatedSeconds: 660
+timeoutMs: 60000
+
+skills:
+  - cpp.errors.exceptions
+  - cpp.errors.guarantees
+  - cpp.types.polymorphism
+  - cpp.std.strings
+
+prerequisites: []
+
+learningObjectives:
+  - Throw and catch typed exceptions at the right layers.
+  - Give a mutating operation the strong guarantee — commit or no effect.
+  - Dispatch through virtual functions and destroy through virtual destructors.
+  - Parse with string_view without allocating.
+
+prompt: |
+  In `main.hpp`/`main.cpp`:
+
+  - `class Account` — a name and a balance (`long cents`). `withdraw`
+    throws `std::invalid_argument` for amounts <= 0 and
+    `std::runtime_error` (message containing `"insufficient"`) when
+    the balance is short. Successful withdrawal returns the new
+    balance.
+  - `bool transfer(Account &from, Account &to, long cents)` — the
+    strong guarantee: withdraw, then deposit — and if the deposit
+    could throw (here it does for a closed account, method
+    `deposit` throwing `std::runtime_error` when `closed()`), the
+    withdrawal is rolled back before the exception escapes. Returns
+    true on success; the exception propagates after rollback (the
+    caller sees the error AND unchanged balances).
+  - Polymorphism: `struct Fee` with virtual
+    `long apply(long cents) const` (returns the fee) and a virtual
+    destructor; `FlatFee(long)` and `PercentFee(int percent)`
+    (`cents * percent / 100`). `long total_fees(const
+    std::vector<std::unique_ptr<Fee>> &fees, long cents)` — sum
+    through the base.
+  - `std::string_view trim(std::string_view text)` — both ends,
+    spaces and tabs, zero allocations: the returned view points into
+    the input.
+  - `long parse_cents(std::string_view text)` — `"12.50"` → 1250,
+    `"7"` → 700; a leading minus allowed; anything else (empty,
+    letters, two dots, more than 2 decimals) throws
+    `std::invalid_argument` naming the input.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/guarantees_test.cpp
+    visibility: visible
+    concept: cpp.errors.guarantees
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.strings
+
+hints:
+  - level: conceptual
+    text: "The strong guarantee is transactional thinking: either the operation completed, or the observable state is exactly as before. Do the risky part first, or roll back."
+  - level: structural
+    text: "transfer: from.withdraw(cents); then try { to.deposit(cents); } catch (...) { from.deposit(cents); throw; }"
+  - level: language
+    text: "catch (...) with a bare throw; re-raises the original exception unchanged — the rollback happens in between."
+  - level: syntax
+    text: "trim: find_first_not_of(\" \\t\") and find_last_not_of; substr on the view is free — it just moves the pointer and length."
+  - level: explicit
+    text: "parse_cents: split on '.', digits-only both parts (after the sign), fraction at most 2 digits padded to 2; whole * 100 + fraction, negated when signed."
+
+explanation: |
+  The rollback in `transfer` is the strong guarantee earned by hand:
+  withdraw succeeded, deposit threw, and without the catch/rollback
+  the money has left one account and reached nowhere — the corrupted
+  middle state every banking bug story features. `catch (...)` plus
+  bare `throw` is the C++ idiom for "undo my half-done work and let
+  the error keep traveling"; the caller gets the exception *and* a
+  world in its original state, which is what lets them retry safely.
+
+  The virtual destructor on `Fee` is the polymorphism rule that bites
+  silently: deleting a `PercentFee` through a `Fee*` without one is
+  undefined behavior — typically the derived part simply never
+  destructs. One line — `virtual ~Fee() = default;` — and unique_ptr
+  through the base becomes correct. Any class with one virtual
+  function should have a virtual destructor; the compiler will not
+  remind you.
+
+  string_view's zero-allocation trim is the type doing exactly what
+  it advertises: a pointer and a length into someone else's memory.
+  substr on a view moves the pointer — no copy, no heap — which is
+  why parsers pass views down their whole call chain. The cost is the
+  same lifetime contract references carry: the view must not outlive
+  the string it watches, and the function signature — view in, view
+  out — keeps the caller holding the owner.

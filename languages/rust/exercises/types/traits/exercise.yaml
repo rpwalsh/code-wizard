@@ -1,0 +1,88 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.types.traits
+version: 1
+language: rust
+title: Behavior as a bound
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - rust.types.traits
+  - rust.types.generics
+  - rust.own.lifetimes
+
+prerequisites: []
+
+learningObjectives:
+  - Define a trait and implement it for several types, yours and the library's.
+  - Write generic functions whose bounds say exactly what they use.
+  - Read and write the lifetime that ties a returned reference to its source.
+
+prompt: |
+  A trait is a bound you can demand: "give me anything that can do
+  *this*". These functions each demand exactly what they use, and one
+  of them has to say — in a lifetime — whose memory its answer lives in.
+
+  In `main.rs`:
+
+  - `trait Sized2d` — one required method `area(&self) -> f64`, one
+    *provided* method `describe(&self) -> String` returning
+    `"area 12.5"` (one decimal place) that implementors get for free.
+  - Implement it for `Rect { width: f64, height: f64 }` and
+    `Circle { radius: f64 }` (area `3.14159 * r * r` — that constant,
+    so tests are exact).
+  - `fn total_area(shapes: &[Box<dyn Sized2d>]) -> f64` — dynamic
+    dispatch: a mixed bag of shapes summed through the trait object.
+  - `fn largest<T: PartialOrd>(items: &[T]) -> Option<&T>` — generic
+    over anything comparable, returning a *reference* into the slice;
+    the elided lifetime ties the answer to the input, and the test
+    proves it works for both numbers and strings.
+  - `fn longer<'a>(left: &'a str, right: &'a str) -> &'a str` — the
+    canonical lifetime signature, written out: the longer string, the
+    left on a tie. The annotation is the exercise — it says the result
+    lives as long as the *shorter-lived* of the two inputs.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/traits_test.rs
+    visibility: visible
+    concept: rust.types.traits
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.own.lifetimes
+
+hints:
+  - level: conceptual
+    text: "A provided method is the trait's own code running on any implementor — define describe once, in the trait, calling self.area()."
+  - level: structural
+    text: "total_area iterates and calls .area() through the Box — dyn Sized2d picks the right area at runtime, per element."
+  - level: language
+    text: "largest needs only PartialOrd — demanding Ord or Copy would turn away f64 and String respectively, callers the body handles fine."
+  - level: syntax
+    text: "fn largest<T: PartialOrd>(items: &[T]) -> Option<&T> — the elided lifetime is real; written out it is fn largest<'a, T:...>(items: &'a [T]) -> Option<&'a T>."
+  - level: explicit
+    text: "largest: items.iter().fold over a candidate, or a loop keeping the index of the best; return items.first() shape for empty via Option."
+
+explanation: |
+  The provided method is the half of traits people underuse: `describe`
+  is written once, in the trait, in terms of `area` — and every
+  implementor present and future inherits it. That is how the standard
+  library gives you dozens of Iterator methods for the price of one
+  `next`; the pattern scales from two shapes to an ecosystem.
+
+  `largest` demanding only `PartialOrd` is bound minimalism, and it is
+  a compatibility promise: every bound you add turns away callers. Ord
+  would reject f64 (NaN broke total ordering); Copy would reject
+  String. The body compares — so the bound says compares, and nothing
+  else. Returning `Option<&T>` rather than `&T` makes the empty slice
+  a value instead of a panic, the same honesty Option always buys.
+
+  The `'a` in `longer` is the one lifetime everyone must eventually
+  write, and what it *means* matters more than the syntax: the caller
+  may keep the result only while both inputs live, because the
+  compiler cannot know which one came back. The test that stores the
+  result and drops nothing is the happy case; the commented-out
+  version that would not compile is the lesson working.

@@ -1,0 +1,95 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.types.arrays
+version: 1
+language: php
+title: One array, wearing both hats
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 60000
+
+skills:
+  - php.types.arrays
+  - php.structure.functions
+
+prerequisites: []
+
+learningObjectives:
+  - Work with PHP's one array as both list and dictionary, deliberately.
+  - Use array_map, array_filter and array_reduce where loops would blur intent.
+  - Close over state with closures, and know use-by-value from use-by-reference.
+
+prompt: |
+  PHP has one array type that is simultaneously a list and an ordered
+  dictionary, and half of PHP fluency is knowing which hat it is
+  wearing — and which function preserves keys when you did not want
+  them.
+
+  In `main.php`:
+
+  - `function totals_by_category(array $expenses): array` — expenses
+    are `['category' => string, 'amount' => int]` rows; return
+    category => summed amount, categories in first-seen order (which
+    PHP arrays keep for free).
+  - `function top_spenders(array $totals, int $count): array` — from
+    a category => amount map: the top `$count` categories by amount
+    as a *list* of category names, ties broken alphabetically.
+    arsort keeps keys; the tie rule needs uksort or a sort on pairs.
+  - `function above(array $amounts, int $threshold): array` — the
+    values strictly above, as a re-indexed list — array_filter keeps
+    keys, and the json edge test shows why that matters:
+    `[1 => 200]` serializes as an object, not an array.
+  - `function make_accumulator(): callable` — returns a closure with
+    its own running total: `$acc(5)` returns 5, `$acc(3)` returns 8.
+    Two accumulators are independent. `use (&$total)` — by
+    reference, since by-value closes over a copy frozen at creation.
+  - `function apply_discounts(array $prices, callable $rule): array`
+    — map the rule over price values, keys preserved (a keyed map
+    stays keyed).
+
+entryPoint: main.php
+
+tests:
+  - path: tests/arrays_test.php
+    visibility: visible
+    concept: php.types.arrays
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.structure.functions
+
+hints:
+  - level: conceptual
+    text: "The question to ask every array function: what does it do to keys? filter and arsort keep them; array_values resets them; map keeps them."
+  - level: structural
+    text: "totals_by_category: one foreach with $totals[$row['category']] = ($totals[$row['category']] ?? 0) + $row['amount'];"
+  - level: language
+    text: "use (&$total) closes by reference; use ($total) copies at creation and the closure never sees later changes."
+  - level: syntax
+    text: "above: array_values(array_filter($amounts, fn ($a) => $a > $threshold)) — the array_values is the half people forget."
+  - level: explicit
+    text: "top_spenders: build [category, amount] pairs, usort by amount desc then category asc, array_slice, then map out the names."
+
+explanation: |
+  The keys question is the discipline this exercise drills.
+  array_filter preserving keys is correct for maps and a trap for
+  lists: filter [100, 200, 300] and the survivors keep indexes 0 and
+  2, and json_encode — seeing a gap — emits {"0":100,"2":300}, an
+  object where every consumer expected an array. The API contract
+  broke at a distance, through a serializer, because of a key detail
+  three calls earlier. array_values is one word and it is the fix;
+  knowing *when* it is needed is the skill.
+
+  First-seen-order in totals_by_category is PHP's ordered-dictionary
+  nature doing real work: insertion order is preserved through
+  foreach, so a report groups in the order the data arrived with no
+  extra bookkeeping. Languages with unordered maps make you carry
+  that order separately; PHP's one-array-for-everything design pays
+  for its oddities here.
+
+  The `use (&$total)` in make_accumulator is the closure model in one
+  character: PHP closures capture by value at creation unless told
+  otherwise, which makes them predictable but stateless. The
+  ampersand opts one variable into shared, mutable capture — the
+  smallest possible box of state, and the same idea as Rust's
+  move-vs-borrow or JS's always-by-reference, made explicit per
+  variable.

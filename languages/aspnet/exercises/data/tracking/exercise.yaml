@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.data.tracking
+version: 1
+language: aspnet
+title: What SaveChanges actually saves
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - aspnet.data.tracking
+  - aspnet.data.queries
+  - aspnet.data.migrations
+
+prerequisites: []
+
+learningObjectives:
+  - Build the snapshot-diff machinery a change tracker runs on.
+  - Keep no-tracking reads cheap and honest — mutations to them save nothing.
+  - Compute a migration plan as the diff between two schemas.
+
+prompt: |
+  EF's magic is a diff. `SaveChanges` compares what you loaded against
+  what you changed and emits exactly the updates. Build the diff, in
+  `Tracker.cs`:
+
+  - `class ChangeTracker` — over `Row(string Id, Dictionary<string,
+    string> Fields)` values:
+    - `Attach(row)` — snapshot the fields (a *copy* — the whole
+      design fails if the snapshot aliases the live object) and
+      return the tracked row.
+    - `AttachNoTracking(row)` — returns the row untouched, no
+      snapshot: reads that will never save should not pay for
+      bookkeeping.
+    - `DetectChanges()` — for each tracked row, the fields whose
+      current value differs from the snapshot:
+      `Change(string Id, string Field, string? Before, string?
+      After)` — added fields have Before null, removed fields have
+      After null. Ordered by Id, then Field.
+    - `SaveChanges()` — returns the change count and re-snapshots,
+      so a second save is zero changes.
+  - `static List<string> PlanMigration(Dictionary<string, string>
+    current, Dictionary<string, string> target)` — column name →
+    type maps; emit steps, sorted: `ADD name type` for new columns,
+    `DROP name` for removed, `ALTER name from -> to` for retyped.
+    Identical schemas: empty plan — a migration that does nothing
+    should say nothing.
+
+entryPoint: Tracker.cs
+
+tests:
+  - path: tests/TrackingTests.cs
+    visibility: visible
+    concept: aspnet.data.tracking
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.data.migrations
+
+hints:
+  - level: conceptual
+    text: "A tracker is a memory of how things looked. Every feature — dirty checks, updates, no-tracking's cheapness — falls out of whether that memory exists."
+  - level: structural
+    text: "Attach: store new Dictionary<string,string>(row.Fields) keyed by Id, alongside the live row reference."
+  - level: language
+    text: "The copy is the point: snapshotting the reference would make every row permanently clean, since the 'snapshot' would mutate in step with the row."
+  - level: syntax
+    text: "DetectChanges: union the snapshot's and current's keys; before = snapshot.GetValueOrDefault(key), after = current.GetValueOrDefault(key); emit when different."
+  - level: explicit
+    text: "PlanMigration: keys only in target are ADDs, only in current are DROPs, in both with different types are ALTERs; sort each group, concatenate ADDs, ALTERs, DROPs? No — one sorted list of steps, ordered by the step text."
+
+explanation: |
+  The snapshot-must-copy rule is the entire trick, and the bug when
+  it aliases is instructive: a snapshot holding the same dictionary
+  the caller mutates is a memory that updates itself to match the
+  present — every row reads clean forever, SaveChanges writes
+  nothing, and no error appears anywhere. Data loss with a green
+  test suite. EF's tracker deep-snapshots on materialization for
+  exactly this reason, and its per-row memory is also its cost —
+  which is what AsNoTracking opts out of, and why this exercise's
+  no-tracking rows are deliberately invisible to DetectChanges:
+  cheap reads are reads the tracker never met.
+
+  Re-snapshotting on SaveChanges models EF's accepted-changes
+  semantics: after a save, the present becomes the new baseline,
+  and saving twice in a row writes once. Skipping that step
+  double-writes every change on the next save — harmless for
+  idempotent updates, catastrophic for counters.
+
+  The migration planner is schema evolution reduced to its actual
+  computation: a dictionary diff with three verbs. Real migration
+  tools add ordering constraints, data transforms and rollback
+  scripts, but the core — current versus target, emit the
+  difference — is this function, and the empty-plan-for-identical-
+  schemas rule is the property that makes migrations idempotent to
+  generate.

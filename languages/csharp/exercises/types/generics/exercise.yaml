@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.types.generics
+version: 1
+language: csharp
+title: An interface, and the constraint that uses it
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - csharp.types.interfaces
+  - csharp.types.generics
+  - csharp.errors.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Define a small interface and program against it, not its implementors.
+  - Constrain generic methods to exactly what their bodies use.
+  - Throw the right exception type with the offending value in the message.
+
+prompt: |
+  In `Store.cs`:
+
+  - `interface IEntity` — one member: `string Id { get; }`.
+  - `class MemoryStore<T> where T : IEntity` — a dictionary-backed
+    store:
+    - `void Save(T entity)` — insert or replace by Id. A null entity
+      throws `ArgumentNullException`; an entity whose Id is null or
+      empty throws `ArgumentException` mentioning `"Id"`.
+    - `T Get(string id)` — the entity, or throws
+      `KeyNotFoundException` whose message contains the id.
+    - `bool TryGet(string id, out T entity)` — the non-throwing twin.
+    - `int Count { get; }`
+  - `static class Repository` — generic helpers:
+    - `static T Newest<T>(IEnumerable<T> items) where T : IEntity,
+      IComparable<T>` — the maximum by CompareTo; throws
+      `InvalidOperationException` on empty. The double constraint is
+      the point: the body compares *and* reads Ids, so it demands
+      both.
+    - `static Dictionary<string, T> ById<T>(IEnumerable<T> items)
+      where T : IEntity` — keyed by Id; a duplicate Id throws
+      `ArgumentException` naming it.
+  - `record Document(string Id, int Version) : IEntity,
+    IComparable<Document>` — CompareTo by Version. Provided in the
+    starter, implemented by you.
+
+entryPoint: Store.cs
+
+tests:
+  - path: tests/StoreTests.cs
+    visibility: visible
+    concept: csharp.types.generics
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.errors.exceptions
+
+hints:
+  - level: conceptual
+    text: "A constraint is a claim about what the body does. Newest compares and reads Ids, so it demands IComparable and IEntity — and nothing else."
+  - level: structural
+    text: "MemoryStore wraps a Dictionary<string, T>; Save validates, then indexes; Get looks up and throws with context."
+  - level: language
+    text: "ArgumentNullException.ThrowIfNull(entity) is the modern one-liner; throwing manually with the parameter name works too."
+  - level: syntax
+    text: "TryGet: return _items.TryGetValue(id, out entity!); — the store's dictionary is the store."
+  - level: explicit
+    text: "Newest: iterate keeping the best; best.CompareTo(item) < 0 replaces it. Seed from the first element or throw InvalidOperationException(\"no items\")."
+
+explanation: |
+  The interface at one member is deliberate: IEntity promises exactly
+  what the store consumes — an Id — and nothing more, so any type
+  with an Id can live in a MemoryStore without inheriting a
+  framework's base class. Small interfaces compose; fat ones
+  conscript. (This is the same judgment Go's io.Reader institutional-
+  ized and C# inherited as a style.)
+
+  The generic constraints read as requirements documentation the
+  compiler enforces. `where T : IEntity, IComparable<T>` on Newest
+  is precisely its body's needs — compare to rank, Id to exist in
+  the store's world. Dropping IComparable would fail compilation *in
+  the body*; demanding more (say, `new()`) would turn away types the
+  body handles fine. Same bound-minimalism as every generics system;
+  C# spells it with where.
+
+  The exception etiquette carries the third skill: Argument-flavored
+  exceptions for caller mistakes (null, empty Id) at the door,
+  KeyNotFoundException — the BCL's own vocabulary — for a miss, and
+  the offending value in every message. TryGet as the non-throwing
+  twin completes the convention pair the BCL uses everywhere:
+  exceptions for the exceptional, Try for the expected miss, and the
+  caller chooses which question they are asking.

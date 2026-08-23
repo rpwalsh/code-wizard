@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.data.transactions
+version: 1
+language: php
+title: All of it, or none of it, and a version rule to depend on
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - php.data.transactions
+  - php.errors.handling
+  - php.engineering.testing
+  - php.engineering.composer
+
+prerequisites: []
+
+learningObjectives:
+  - Wrap multi-statement work in a transaction that rolls back on any throw.
+  - Convert exceptions to safe user messages while logging the truth.
+  - Implement caret version matching — the rule composer runs on.
+
+prompt: |
+  In `main.php`:
+
+  - `function transfer(PDO $pdo, string $from, string $to, int
+    $cents): bool` — accounts table (name, balance). Inside a
+    transaction: debit, credit, commit. Throw
+    `RuntimeException('insufficient funds')` when the source is
+    short — and the transaction rolls back before the throw
+    escapes: the visible test watches balances survive a failed
+    transfer. Unknown accounts: `RuntimeException('no such
+    account: NAME')`, rolled back likewise.
+  - `function safe_message(Throwable $error, callable $log):
+    string` — the error boundary: `$log` receives the full
+    `get_class: message` line; the *returned* user message is
+    `'insufficient funds'` passed through verbatim (it is
+    user-safe by design), anything else becomes `'something went
+    wrong'`. The distinction: messages written *for* users pass;
+    internals never do.
+  - `function satisfies(string $version, string $constraint): bool`
+    — composer's caret rule, the part everyone uses:
+    `^1.2.3` accepts >= 1.2.3 and < 2.0.0; `^0.3.1` accepts
+    >= 0.3.1 and < 0.4.0 (the zero-major special case). Exact
+    constraints (`1.2.3`) match exactly. Versions are
+    `major.minor.patch` integers.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/transactions_test.php
+    visibility: visible
+    concept: php.data.transactions
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.engineering.composer
+
+hints:
+  - level: conceptual
+    text: "beginTransaction, try, commit — catch, rollBack, rethrow. The shape never varies; only the work inside does."
+  - level: structural
+    text: "transfer: SELECT the source balance FOR the check, UPDATE both rows, throw before commit on any problem."
+  - level: language
+    text: "PDO::ERRMODE_EXCEPTION is already set by the harness — SQL failures arrive as exceptions, which is what makes the catch-and-rollback shape complete."
+  - level: syntax
+    text: "satisfies: split both on dots to ints; caret with major > 0: same major and [minor, patch] >= constraint's; caret with major 0: same major AND same minor, patch >=."
+  - level: explicit
+    text: "safe_message: $log(get_class($error) . ': ' . $error->getMessage()); return $error->getMessage() === 'insufficient funds' ? 'insufficient funds' : 'something went wrong';"
+
+explanation: |
+  The transaction shape — begin, try, commit, catch, roll back,
+  rethrow — is load-bearing in every branch. Rolling back without
+  rethrowing swallows the failure; rethrowing without rolling back
+  leaves half a transfer visible to the next query on the same
+  connection. Both halves, always, and the test that checks balances
+  after a failed transfer is checking exactly the half people forget.
+
+  safe_message draws the line the earlier activity described:
+  internals leak through error messages, so the boundary logs
+  everything and shows almost nothing. The pass-through list — here,
+  one message written deliberately for users — is the honest design:
+  an allowlist of user-safe messages, not a blocklist of secrets you
+  hope you enumerated. The `$log` callable makes the function
+  testable without touching a real logger, which is the
+  dependency-injection habit at its smallest.
+
+  The caret rule is semver's compatibility promise as arithmetic:
+  same major means compatible API, so ^1.2.3 ranges to the next
+  major. The zero-major exception encodes semver's own fine print —
+  0.x releases promise nothing across minors, so ^0.3.1 stays
+  within 0.3. Having computed it once, composer.json constraints
+  stop being incantations: they are ranges you can evaluate in your
+  head.

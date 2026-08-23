@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.errors.types
+version: 1
+language: rust
+title: An error worth matching on
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - rust.errors.types
+  - rust.errors.boundaries
+  - rust.types.question
+
+prerequisites: []
+
+learningObjectives:
+  - Define an error enum with a variant per failure a caller might handle differently.
+  - Implement Display and From so ? converts errors at the boundary.
+  - Map rich errors to a flat boundary (exit codes) without losing the message.
+
+prompt: |
+  A good error type answers two audiences at once: code matches on the
+  variant, humans read the Display. Build one for a config parser.
+
+  In `main.rs`:
+
+  - `enum ConfigError` — `Missing { key: String }`,
+    `NotANumber { key: String, value: String }`,
+    `OutOfRange { key: String, value: i64, low: i64, high: i64 }`.
+    Implement `Display` (and `std::error::Error`):
+    `missing key: NAME`, `KEY is not a number: VALUE`,
+    `KEY out of range: VALUE (expected LOW..=HIGH)`.
+  - `fn get_port(pairs: &[(String, String)]) -> Result<u16, ConfigError>`
+    — find the `"port"` key, parse it, require 1..=65535. Three
+    failure paths, three variants. Use `?` where a helper returns
+    Result — which brings in:
+  - `impl From<std::num::ParseIntError> for ConfigError` — no: the
+    From needs the key and value, which ParseIntError does not carry —
+    so instead write `fn parse_number(key: &str, value: &str) ->
+    Result<i64, ConfigError>` mapping the parse error by hand with
+    `.map_err(...)`. The lesson is knowing when From fits (context
+    already complete) and when map_err must add context.
+  - `fn exit_code(result: &Result<u16, ConfigError>) -> i32` — the
+    boundary: Ok is 0, Missing 2, NotANumber 3, OutOfRange 4 — the
+    kind of flattening a main() does for a shell, one match, total.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/errors_test.rs
+    visibility: visible
+    concept: rust.errors.types
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.errors.boundaries
+
+hints:
+  - level: conceptual
+    text: "One variant per distinct caller reaction. If two failures would always be handled identically, they are one variant with a field."
+  - level: structural
+    text: "get_port is three steps — find, parse, range-check — each returning early with its variant via ?."
+  - level: language
+    text: "impl std::fmt::Display for ConfigError, then impl std::error::Error for ConfigError {} — the empty impl is real: Error's methods all have defaults."
+  - level: syntax
+    text: "value.parse::<i64>().map_err(|_| ConfigError::NotANumber { key: key.to_string(), value: value.to_string() })"
+  - level: explicit
+    text: "exit_code: match result { Ok(_) => 0, Err(ConfigError::Missing { .. }) => 2, ... } — .. ignores the fields; the variant alone decides."
+
+explanation: |
+  The variant-per-reaction rule is the design principle that keeps
+  error enums from bloating or collapsing. Missing config might be
+  defaulted; a typo'd number needs a human; out-of-range suggests a
+  units mistake — three different reactions, three variants. The
+  fields carry what each reaction needs (the key to report, the range
+  to display), so no caller re-parses a message to learn what the
+  type already knew.
+
+  The From-versus-map_err decision is the boundary lesson in
+  miniature. `?` auto-converts through From — gorgeous when the lower
+  error carries everything (io::Error into a wrapper). But
+  ParseIntError does not know *which key* failed, and a From cannot
+  invent it; map_err at the call site is where the context lives.
+  Reaching for From everywhere produces error types full of
+  contextless wrappers; the skill is knowing which tool this boundary
+  needs.
+
+  exit_code is the flattening every program does at its outermost
+  edge — rich types inside, an i32 for the shell. Doing it in one
+  exhaustive match keeps the mapping total: add a variant and this
+  match breaks until you assign its code, which is exactly the
+  reminder you want.

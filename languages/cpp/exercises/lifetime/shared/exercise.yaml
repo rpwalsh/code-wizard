@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.lifetime.shared
+version: 1
+language: cpp
+title: Shared until the cycle
+kind: micro-problem
+difficulty: 5
+estimatedSeconds: 660
+timeoutMs: 60000
+
+skills:
+  - cpp.lifetime.shared
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Share ownership with shared_ptr and read use_count as evidence, not decoration.
+  - Break parent/child cycles with weak_ptr, and check before using.
+  - Return references only to memory whose lifetime the caller controls.
+
+prompt: |
+  `shared_ptr` keeps its object alive while anyone holds it — which is
+  exactly the bug when two objects hold each other. A parent/child
+  tree is the canonical case, and `weak_ptr` is the canonical repair.
+
+  In `main.hpp` (header-only):
+
+  - `struct Node` — `std::string name`, a
+    `std::vector<std::shared_ptr<Node>> children`, and a
+    `std::weak_ptr<Node> parent` — weak, because the child must not
+    keep the parent alive: parent-owns-child is the ownership
+    direction, and the back edge is only an observation.
+  - `std::shared_ptr<Node> make_tree(const std::string &root_name,
+    const std::vector<std::string> &child_names)` — a root with one
+    child per name, every child's parent wired.
+  - `std::string parent_name(const Node &node)` — the parent's name,
+    or `"(root)"` — `lock()` first, because a weak_ptr may have
+    outlived its target; the empty case IS the exercise.
+  - `int family_size(const std::shared_ptr<Node> &root)` — nodes in
+    the tree, recursively (a node with no children counts 1).
+  - `const std::string &name_of(const Node &node)` — return the name
+    by const reference: no copy, and safe *because the caller holds
+    the node*. The contrast function
+    `std::string name_copy(const Node &node)` returns by value; the
+    explanation says when each is right.
+
+entryPoint: main.hpp
+
+tests:
+  - path: tests/shared_test.cpp
+    visibility: visible
+    concept: cpp.lifetime.shared
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "Ownership has a direction. Parents own children (shared_ptr down); children observe parents (weak_ptr up). Draw the arrows and the cycle disappears."
+  - level: structural
+    text: "make_tree: create the root, loop the names, push each child and set child->parent = root."
+  - level: language
+    text: "auto held = node.parent.lock(); — lock() returns a shared_ptr that is empty when the parent died; check it like a pointer."
+  - level: syntax
+    text: "family_size: 1 plus the recursive sum over root->children."
+  - level: explicit
+    text: "parent_name: auto held = node.parent.lock(); return held ? held->name : \"(root)\";"
+
+explanation: |
+  The cycle this exercise avoids is invisible in testing and fatal in
+  production: parent holds child via shared_ptr, child holds parent
+  via shared_ptr, and when the last outside handle drops, the two
+  keep each other alive forever — use_count never reaches zero, the
+  destructor never runs, and no tool but a heap profiler will tell
+  you. The weak back edge encodes the design truth that the child
+  *observes* its parent without owning it, and the leak becomes
+  unrepresentable.
+
+  `lock()` is weak_ptr's whole API philosophy: you cannot use a weak
+  pointer directly, because its target may be gone; you can only ask
+  for a temporary shared_ptr and check. That check-shaped API is what
+  makes the dangling case impossible to forget — compare raw back
+  pointers, where the check is a comment and the crash is a Tuesday.
+
+  The reference-returning pair teaches the lifetime contract in
+  miniature. `name_of` returning `const std::string &` is free and
+  safe because the caller necessarily holds the Node — the reference
+  cannot outlive what they already own. Returning a reference into a
+  *local* would be the dangling bug; returning by value (`name_copy`)
+  is the right call when the caller may outlive the source. The rule:
+  return a reference when the caller controls the owner's lifetime,
+  a value when they do not.

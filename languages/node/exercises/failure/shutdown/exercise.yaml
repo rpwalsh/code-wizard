@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.failure.shutdown
+version: 1
+language: node
+title: Stopping is a feature
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - node.failure.shutdown
+  - node.io.pipelines
+  - node.runtime.eventloop
+
+prerequisites: []
+
+learningObjectives:
+  - Drain in-flight work on shutdown while refusing new work.
+  - Run stream pipelines whose cleanup fires on failure too.
+  - Predict the event loop's ordering of microtasks, timers and immediates.
+
+prompt: |
+  A process that exits on SIGTERM by vanishing drops every request it
+  was holding. The graceful version is a small state machine, and it
+  is buildable and testable as one.
+
+  In `main.js`:
+
+  - `createWorkTracker()` — `{ begin, shuttingDown, shutdown }`:
+    - `begin()` — returns a `done` function for one unit of work, or
+      `null` when shutdown has begun — the refusal half. `done` is
+      idempotent: calling it twice counts once.
+    - `shutdown()` — flips the state and resolves when every begun
+      unit has called done (immediately when idle). Multiple calls
+      return the same promise.
+  - `runPipeline(chunks, transform)` — `stream.pipeline` (promise
+    form) over Readable.from(chunks), a Transform built from the
+    `transform(chunk)` function, and a collecting Writable; resolves
+    to the array of transformed chunks. When `transform` throws, the
+    pipeline rejects with that error — and pipeline's own teardown
+    (the reason it exists over .pipe) destroys the source; the test
+    proves the rejection carries the message.
+  - `observeOrder()` — resolves to the ordering the event loop
+    actually ran. Push labels: `'sync'` inline, `'microtask'` in
+    `queueMicrotask`, `'timeout'` in `setTimeout(0)`, `'immediate'`
+    in `setImmediate`; resolve after all four fired. Sync and
+    microtask lead, always. The last two are the famous exception:
+    from the main context, timeout-versus-immediate is a documented
+    race, and the test asserts exactly that — both ran, in either
+    order — because a test asserting more would flake.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/shutdown.test.js
+    visibility: visible
+    concept: node.failure.shutdown
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.runtime.eventloop
+
+hints:
+  - level: conceptual
+    text: "Graceful shutdown is two rules: no new work after the signal, and the promise resolves when the count of in-flight work hits zero."
+  - level: structural
+    text: "The tracker: a count, a flag, and a resolve function captured from the shutdown promise; done() decrements and resolves at zero while shutting down."
+  - level: language
+    text: "stream.pipeline (from node:stream/promises) propagates the first error and destroys every stream — the cleanup .pipe never did."
+  - level: syntax
+    text: "new Transform({ objectMode: true, transform(chunk, _enc, cb) { try { cb(null, fn(chunk)); } catch (e) { cb(e); } } })"
+  - level: explicit
+    text: "observeOrder: push 'sync', queueMicrotask push, setTimeout push, setImmediate push; then await new Promise(r => setImmediate(() => setTimeout(r, 1))) or simply await both a timer and an immediate before returning the array."
+
+explanation: |
+  The tracker is the heart of every graceful-shutdown implementation:
+  an atomic pair of "may I start?" and "I finished", with shutdown
+  as the moment the first question's answer changes. The idempotent
+  done matters because real handlers finish twice — a response
+  handler and an error handler both firing — and a double decrement
+  makes shutdown resolve with work still running, which is the
+  dropped-request bug wearing a subtler mask.
+
+  stream.pipeline over .pipe is the API lesson: .pipe forwards data
+  but not errors — a failing destination leaves the source flowing
+  into nothing, leaking file descriptors until the process dies.
+  pipeline wires error propagation and teardown across the whole
+  chain, and its promise form makes failure a rejection you can
+  catch in one place. The transform-throws test is exactly the path
+  .pipe gets wrong.
+
+  observeOrder pins the scheduling model where it is firm and admits
+  the race where it is not. Firm: microtasks (promises,
+  queueMicrotask) drain completely after the current stack, before
+  any macrotask — a microtask loop can starve the event loop
+  entirely. The race: setTimeout(0) versus setImmediate from the
+  main context depends on process startup timing, and Node's own
+  docs call it nondeterministic. (Inside an I/O callback the answer
+  becomes firm again: setImmediate wins, always.) Knowing which
+  facts are guarantees and which are races is the difference between
+  reasoning about the loop and gambling on it.

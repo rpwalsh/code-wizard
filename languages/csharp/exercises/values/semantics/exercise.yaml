@@ -1,0 +1,92 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.values.semantics
+version: 1
+language: csharp
+title: Copied, or shared — the type decides
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 60000
+
+skills:
+  - csharp.values.types
+  - csharp.values.structs
+  - csharp.memory.gc
+
+prerequisites: []
+
+learningObjectives:
+  - Predict when assignment copies and when it aliases, from the type alone.
+  - Design a readonly struct for a small value that should behave like a number.
+  - Know what makes a struct pay and what makes it cost.
+
+prompt: |
+  `struct` copies; `class` shares. Every C# bug that "changed on its
+  own" or "refused to change" is one of those two facts meeting an
+  expectation built on the other.
+
+  In `Values.cs`:
+
+  - `readonly struct Point(int X, int Y)` — as a readonly record
+    struct: value equality, no mutation, and cheap — no heap
+    allocation ever, no collector involvement, which is the entire
+    reason to reach for a struct for a two-int value.
+  - `static Point Move(Point point, int dx, int dy)` — a new Point;
+    the argument is a copy, so the caller's original is untouched *by
+    construction*, and the test proves it.
+  - `class Counter` — mutable class with `Increment()` and `Count`.
+    `static void Bump(Counter counter)` — increments through the
+    reference: same object, visible to the caller — the sharing half
+    of the lesson.
+  - `static (Point moved, Point original) MoveBoth(Point start)` —
+    returns Move(start, 1, 1) and start — showing the copy already
+    happened at the call.
+  - `static int SumDistances(IReadOnlyList<Point> points)` — sum of
+    Manhattan distances |x|+|y|. Iterating structs in a list copies
+    each element out — fine at this size, and the explanation says
+    when it stops being fine.
+
+entryPoint: Values.cs
+
+tests:
+  - path: tests/SemanticsTests.cs
+    visibility: visible
+    concept: csharp.values.types
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.values.structs
+
+hints:
+  - level: conceptual
+    text: "Ask of every type: when I assign it, do I want a new one or the same one? Numbers want copies; identities want sharing."
+  - level: structural
+    text: "readonly record struct Point(int X, int Y); — one line buys equality, ToString, and immutability."
+  - level: language
+    text: "A record struct's with-expression builds modified copies: point with { X = point.X + dx }."
+  - level: syntax
+    text: "Move: return new Point(point.X + dx, point.Y + dy); — or the with-expression; both copy."
+  - level: explicit
+    text: "SumDistances: points.Sum(p => Math.Abs(p.X) + Math.Abs(p.Y)); — each p is a copy of the element, which at 8 bytes is cheaper than a reference would be."
+
+explanation: |
+  The decision procedure worth keeping: a struct when the value is
+  small, immutable, and identity-free — a Point, a Money, a date; a
+  class when the object has identity that must be shared — a Counter,
+  a connection, anything whose *sameness* matters. The Point here is
+  8 bytes that live wherever their container lives: in a local, on
+  the stack; in an array, inline in the array's memory. No allocation
+  means no garbage — a million Points in an array is one allocation
+  (the array), where a million reference-type points would be a
+  million and one, each eventually a collector's problem.
+
+  Mutable structs are the trap the readonly keyword exists to close:
+  a mutable struct copied on assignment mutates the *copy*, and the
+  original's unchanged state reads as a heisenbug. readonly record
+  struct removes the possibility — modification means construction,
+  visibly, at the call site.
+
+  The GC angle is why this matters at scale: gen-0 collections are
+  cheap but not free, and hot paths that allocate per-item become
+  pause-time in aggregate. Structs inline into their containers are
+  the C# idiom for keeping the collector out of the loop — the same
+  motive Span serves for slices, one exercise later.

@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.di.lifetimes
+version: 1
+language: aspnet
+title: One per app, one per request, one per ask
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - aspnet.di.lifetimes
+  - aspnet.di.options
+  - aspnet.data.context
+
+prerequisites: []
+
+learningObjectives:
+  - Implement the three service lifetimes and watch them differ in counts.
+  - Detect the captive-dependency mistake at registration time.
+  - Validate options at startup, so a bad config fails the boot, not a request.
+
+prompt: |
+  Singleton, scoped, transient — three answers to "when is this
+  constructed". Build the container that keeps them honest, in
+  `Container.cs`:
+
+  - `class ServiceRegistry` —
+    `Register(string name, Lifetime lifetime, Func<object> factory)`
+    and `CreateScope()` returning a `Scope`.
+  - `class Scope : IDisposable` — `Resolve(name)`:
+    - Singleton: one instance for the registry, whichever scope asks
+      first.
+    - Scoped: one instance per Scope — the DbContext pattern: every
+      resolve in a request shares it, the next request gets a fresh
+      one.
+    - Transient: a new instance per resolve.
+    Disposing the scope disposes its *scoped* instances (those
+    implementing IDisposable) — not singletons, which the registry
+    owns.
+  - Captive detection: `Register` throws `InvalidOperationException`
+    when a singleton factory is registered with a declared
+    dependency on a scoped service — model it as an optional
+    `dependsOn` parameter listing names: registering singleton S
+    with dependsOn naming a scoped service is refused with both
+    names in the message. (The real container finds this at
+    resolve time with ValidateScopes; catching it at registration
+    is the stricter version of the same idea.)
+  - `record MailOptions(string Host, int Port)` with
+    `static MailOptions Validated(IReadOnlyDictionary<string,
+    string> config)` — reads `Mail:Host` (required, non-empty) and
+    `Mail:Port` (int 1..65535, default 587); throws
+    `OptionsValidationException` (starter-provided Exception
+    subclass) listing *all* problems — validate-on-start as a
+    function.
+
+entryPoint: Container.cs
+
+tests:
+  - path: tests/LifetimeTests.cs
+    visibility: visible
+    concept: aspnet.di.lifetimes
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.di.options
+
+hints:
+  - level: conceptual
+    text: "A lifetime is a cache policy: singleton caches in the registry, scoped caches in the scope, transient never caches."
+  - level: structural
+    text: "Registry holds registrations + a singleton cache; Scope holds a scoped cache and a list of its own disposables."
+  - level: language
+    text: "The captive check is a registration-time scan: the new registration's dependsOn names looked up in what is already registered."
+  - level: syntax
+    text: "Scoped resolve: if (_scopedCache.TryGetValue(name, out var hit)) return hit; create, cache, and track for disposal if IDisposable."
+  - level: explicit
+    text: "Validated: collect problems into a List<string>; missing host and bad port both land in it; throw new OptionsValidationException(problems) when any."
+
+explanation: |
+  The captive dependency is the lifetime bug with the longest fuse: a
+  singleton constructed once, holding a scoped service constructed
+  for the request that happened to be first — which then outlives
+  its request by the lifetime of the process. With a DbContext
+  captive, that is one database session shared by every request
+  forever: intermittent data bleed, unreproducible locally, the
+  worst genre of production bug. Refusing at registration moves the
+  discovery from "a customer saw someone else's cart" to "the
+  deploy failed with two names in the message".
+
+  Scope-owns-scoped-disposal is the other half of the DbContext
+  pattern: the context is disposed when the request scope ends —
+  connections returned, change tracker dropped — while singletons
+  survive because the registry, not the scope, owns them. Getting
+  disposal ownership wrong in either direction is a leak or a
+  use-after-dispose; tying it to the cache that created the
+  instance is the rule that keeps both straight.
+
+  Options validation at startup completes the die-at-boot theme
+  from the Node config exercise, now in .NET's idiom: bind, check
+  everything, report the full list. One failed deploy with two
+  problems named beats two failed deploys with one each — and
+  infinitely beats a running service whose first mail send at 2am
+  discovers the port was 'S25'.

@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.operations.boundary
+version: 1
+language: aspnet
+title: Authenticated, logged, healthy, and honest about failure
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 660
+timeoutMs: 60000
+
+skills:
+  - aspnet.security.authn
+  - aspnet.operations.logging
+  - aspnet.operations.health
+  - aspnet.operations.errors
+  - aspnet.operations.testing
+
+prerequisites: []
+
+learningObjectives:
+  - Validate bearer tokens into an identity or a precise refusal.
+  - Build log scopes whose fields ride along with every line inside them.
+  - Aggregate health checks with degraded in between healthy and dead.
+  - Map exceptions to problem responses at one boundary, with a trace id.
+
+prompt: |
+  Four operations subsystems, each as the pure core the framework
+  wraps. In `Boundary.cs`:
+
+  - `static AuthResult Authenticate(string? header,
+    IReadOnlyDictionary<string, string> tokens)` — the header must
+    be `Bearer TOKEN` (case-sensitive scheme, exactly one space);
+    the token looked up in `tokens` (token → user name). Results:
+    `Anonymous` (no header), `Invalid(reason)` (`"malformed
+    header"` / `"unknown token"`), or `Authenticated(user)`. Absent
+    and invalid are different: absent may be fine for a public
+    route; invalid never is.
+  - `class LogScope` — `Push(key, value)` returns an IDisposable
+    that pops it; `Line(message)` returns the message plus the
+    current fields as ` key=value` pairs in push order. Disposing
+    restores the previous state — nesting works. This is
+    BeginScope, in miniature.
+  - `static string AggregateHealth(IReadOnlyDictionary<string,
+    string> checks)` — each check reports `"healthy"`, `"degraded"`
+    or `"unhealthy"`; the aggregate is the worst present:
+    all healthy → `healthy`; any degraded (none unhealthy) →
+    `degraded`; any unhealthy → `unhealthy`. Empty: healthy — no
+    dependencies, nothing to be sick.
+  - `static Problem ToProblem(Exception error, string traceId)` —
+    the one error boundary: `KeyNotFoundException` → 404 with the
+    message as detail; `ArgumentException` → 400 likewise;
+    anything else → 500 with detail `"internal error"` — the real
+    message stays OUT of the response and would go to the log. All
+    carry the traceId — the string a support ticket quotes and the
+    log line contains, which is what makes the two findable from
+    each other.
+
+entryPoint: Boundary.cs
+
+tests:
+  - path: tests/BoundaryTests.cs
+    visibility: visible
+    concept: aspnet.security.authn
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.operations.errors
+
+hints:
+  - level: conceptual
+    text: "Absent credentials and wrong credentials are different states with different futures: one may pass a public route, the other never passes anything."
+  - level: structural
+    text: "LogScope: a list of (key, value) pairs; Push appends and returns a disposable that removes that exact entry."
+  - level: language
+    text: "header.StartsWith(\"Bearer \", StringComparison.Ordinal) — the scheme is case-sensitive per RFC 6750's own grammar here, and 'bearer' from a confused client should fail loudly, not sorta-work."
+  - level: syntax
+    text: "AggregateHealth: checks.Values.Contains(\"unhealthy\") first, then degraded, else healthy."
+  - level: explicit
+    text: "ToProblem: switch on the exception type pattern — KeyNotFoundException k => new Problem(404, k.Message, traceId), ArgumentException a => 400, _ => new Problem(500, \"internal error\", traceId)."
+
+explanation: |
+  The absent/invalid split in authentication is the 401-with-nuance
+  the routing exercise met from the other side: a public endpoint
+  serves anonymous users happily, so "no header" must not be an
+  error — but a *malformed* header or unknown token is a client
+  actively failing to authenticate, and swallowing that into
+  anonymous hides real breakage (an expired token silently
+  downgrades to a logged-out experience, and the user's bug report
+  says "it forgot me", not "my token expired").
+
+  The trace id in ToProblem is the operational thread that ties the
+  whole exercise together: the response carries an opaque id, the
+  log (with LogScope's fields) carries the same id plus the truth,
+  and a support ticket quoting the id becomes a log query. Leaking
+  the real message for unexpected exceptions is the same
+  don't-show-internals rule as the PHP boundary; the 500 detail is
+  deliberately boring.
+
+  Health's three-state aggregate earns its middle value: degraded —
+  cache down, primary up — is the state where you serve requests
+  AND page someone, and a two-state model forces it into one or the
+  other wrongly. Worst-wins aggregation with healthy-when-empty is
+  how the real middleware computes it, and the empty case matters:
+  a service with no registered checks must not report sick.

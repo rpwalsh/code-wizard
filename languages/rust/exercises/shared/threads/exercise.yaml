@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.shared.threads
+version: 1
+language: rust
+title: Sharing, on the compiler's terms
+kind: micro-problem
+difficulty: 5
+estimatedSeconds: 660
+timeoutMs: 90000
+
+skills:
+  - rust.shared.threads
+  - rust.shared.sync
+  - rust.shared.rc
+  - rust.own.mutable
+
+prerequisites: []
+
+learningObjectives:
+  - Split work across real threads and get every result back.
+  - Guard shared mutation with Arc<Mutex> and keep the critical section small.
+  - Know why Rc is for one thread and Arc for many, and pay for only what you need.
+  - Hand out two mutable views of one slice without breaking the one-borrow rule.
+
+prompt: |
+  Rust's promise is that data races are compile errors. These four
+  functions are the vocabulary that makes shared state legal — each
+  pays exactly the cost its sharing needs, and no more.
+
+  In `main.rs`:
+
+  - `count_words_parallel(texts: &[String], threads: usize) -> usize`
+    — total word count (whitespace-split) across all texts, computed
+    by up to `threads` real `std::thread`s using `thread::scope` —
+    scoped threads may borrow the slice, which is the whole reason
+    they exist. Partial counts return through `join()`, not through a
+    shared accumulator: no lock needed when nothing is shared.
+  - `tally_lengths(texts: &[String], threads: usize) ->
+    Vec<(usize, usize)>` — (length, how many texts have it), sorted by
+    length. This one *does* share: an `Arc<Mutex<HashMap>>` the
+    threads update. Lock late, unlock early — count into a local map
+    per thread, then merge under the lock once.
+  - `fn shared_config(name: &str) -> (Rc<String>, Rc<String>, usize)`
+    — single-threaded sharing: one allocation, two handles,
+    and `Rc::strong_count` reported as the third element (it will be
+    2 at that moment... no — both handles are alive in the tuple, and
+    the count observed *before* returning is 2). Rc is the receipt
+    that no atomic was paid for.
+  - `fn double_ends(values: &mut [i32]) -> (i32, i32)` — add 1 to the
+    first element and 10 to the last *through two simultaneous
+    mutable references* obtained with `split_at_mut` — the safe API
+    for what the borrow checker would otherwise refuse. Return the
+    new (first, last). One element: it is both first and last — the
+    split puts it in one half; add 1 then 10 to the same element.
+    Empty slice returns (0, 0).
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/threads_test.rs
+    visibility: visible
+    concept: rust.shared.threads
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.own.mutable
+
+hints:
+  - level: conceptual
+    text: "The ladder of cost: no sharing (scoped threads + join) beats a lock; Rc beats Arc when one thread suffices; the lock's scope is the price of everything under it."
+  - level: structural
+    text: "count_words_parallel: chunk the slice, spawn per chunk inside thread::scope, sum the join results."
+  - level: language
+    text: "thread::scope threads borrow from the enclosing scope — plain thread::spawn would demand 'static and force Arc<Vec> clones for no reason."
+  - level: syntax
+    text: "let (front, back) = values.split_at_mut(1); — two disjoint &mut [i32], both usable at once, borrow rule intact because they cannot alias."
+  - level: explicit
+    text: "tally_lengths merge: let mut local = HashMap::new(); ...count...; let mut shared = counts.lock().unwrap(); for (k, v) in local { *shared.entry(k).or_insert(0) += v; }"
+
+explanation: |
+  The ladder in this exercise is the actual decision procedure for
+  shared state in Rust. First question: must anything be shared at
+  all? count_words_parallel says no — partial results travel through
+  join, the slice is only *read* (scoped threads borrow it), and the
+  whole function is lock-free because there is nothing to lock.
+  Second question: shared, but one thread? Rc — reference counting
+  without atomics, and the compiler enforces the "one thread" part by
+  making Rc !Send: try to move one across a thread boundary and the
+  program does not compile. Only at the top of the ladder, genuinely
+  shared and genuinely concurrent, does Arc<Mutex> appear — and then
+  the craft is in the lock scope.
+
+  Count-locally-merge-once is the pattern that keeps a mutex from
+  becoming a serializer. Locking around every increment makes N
+  threads take turns — parallel in name only. A local map per thread
+  turns the lock into a brief merge at the end: contention
+  proportional to the number of threads, not the number of words.
+
+  split_at_mut is the borrow rule's escape hatch done right: two
+  mutable borrows are illegal because they might alias, and the split
+  *proves* they cannot — disjoint halves, checked once, safe forever.
+  The standard library is full of these proofs-as-APIs; learning to
+  look for one before reaching for unsafe (or RefCell) is the mature
+  version of fighting the borrow checker.

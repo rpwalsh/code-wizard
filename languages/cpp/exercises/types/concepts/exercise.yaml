@@ -1,0 +1,92 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.concepts
+version: 1
+language: cpp
+title: Templates with a doorman
+kind: micro-problem
+difficulty: 5
+estimatedSeconds: 660
+timeoutMs: 60000
+
+skills:
+  - cpp.types.templates
+  - cpp.types.concepts
+  - cpp.values.auto
+
+prerequisites: []
+
+learningObjectives:
+  - Write function templates that work for every type meeting their needs.
+  - Constrain them with concepts so misuse fails with a sentence, not a scroll.
+  - Use auto where it clarifies and name the type where auto would hide it.
+
+prompt: |
+  An unconstrained template accepts everything and explodes inside its
+  own body — forty lines of instantiation trace for a one-word
+  mistake. A concept moves the check to the front door, where the
+  error message is one line long and in your vocabulary.
+
+  In `main.hpp` (header-only, as templates must be):
+
+  - `concept Averageable` — types that support `a + a` returning
+    something convertible to the type, and division by an int.
+    (`requires(T a) { { a + a } -> std::convertible_to<T>; a / 2; }`)
+  - `template <Averageable T> T average(const std::vector<T> &values)`
+    — the mean; an empty vector returns `T{}` (the value-initialized
+    zero). Works for int, double — and any user type meeting the
+    concept, which the tests prove with a custom `Money` struct.
+  - `template <typename T, typename Predicate>
+    std::vector<T> keep_if(const std::vector<T> &values, Predicate keep)`
+    — the classic filter, unconstrained Predicate (a lambda's type is
+    unnameable; auto/typename is the only way).
+  - `concept Describable` — has a `describe()` member returning
+    something convertible to std::string.
+  - `template <Describable T> std::string join_descriptions(const
+    std::vector<T> &items)` — the describe() of each item, joined
+    with `", "`.
+
+entryPoint: main.hpp
+
+tests:
+  - path: tests/concepts_test.cpp
+    visibility: visible
+    concept: cpp.types.concepts
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.types.templates
+
+hints:
+  - level: conceptual
+    text: "A concept is a compile-time predicate over types. Constraining a template with one moves the failure from deep inside the body to the call site, with the concept's name in the message."
+  - level: structural
+    text: "average: accumulate with a running sum starting from T{}, divide by static_cast<int>(values.size()) at the end."
+  - level: language
+    text: "requires(T a) { { a + a } -> std::convertible_to<T>; } — the braces-arrow form checks the expression compiles AND its type converts."
+  - level: syntax
+    text: "template <Averageable T> is sugar for template <typename T> requires Averageable<T> — both forms are worth recognizing."
+  - level: explicit
+    text: "join_descriptions: std::string out; bool first = true; for each item: if (!first) out += \", \"; out += item.describe(); first = false;"
+
+explanation: |
+  The error-message argument for concepts is not cosmetic — it changes
+  who can use your template. Unconstrained, `average(vector<string>)`
+  fails somewhere inside the accumulation with a trace through
+  operator overloads the caller has never seen. Constrained, it fails
+  at the call: "string does not satisfy Averageable". The template
+  author debugging templates versus the template *user* reading a
+  sentence — that is the audience shift concepts buy.
+
+  The requires-expression syntax rewards a careful read:
+  `{ a + a } -> std::convertible_to<T>` checks two things — the
+  expression compiles, and its result converts to T. Money + Money
+  returning Money passes; string + string returning string would pass
+  the addition but the division `a / 2` stops it. Writing the concept
+  *from the body's actual needs* — exactly what the code does, nothing
+  more — is bound minimalism again, the same discipline as Rust's
+  traits and TypeScript's generics, wearing C++ syntax.
+
+  keep_if staying unconstrained is deliberate contrast: a lambda's
+  type cannot be named, so Predicate must be a bare typename — and
+  that is fine, because the body's one call site (`keep(value)`)
+  produces a short error anyway. Concepts where they pay, plain
+  templates where they do not: auto judgment, applied to templates.

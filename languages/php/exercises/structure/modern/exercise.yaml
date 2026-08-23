@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.structure.modern
+version: 1
+language: php
+title: PHP with the 2015 removed
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - php.structure.classes
+  - php.structure.interfaces
+  - php.structure.enums
+  - php.structure.autoload
+
+prerequisites: []
+
+learningObjectives:
+  - Write PHP 8 classes with promoted, readonly properties.
+  - Split behavior between an interface and a trait, and know which carries what.
+  - Give an enum methods, so the state machine lives with the states.
+  - Map PSR-4 class names to file paths — the rule autoloading runs on.
+
+prompt: |
+  In `main.php`:
+
+  - `interface Notifies` — one method:
+    `public function notify(string $message): string;`
+  - `trait Signs` — one method `sign(string $text): string` returning
+    `TEXT -- CLASS` where CLASS is `static::class`'s short name (after
+    the last backslash). A trait is pasted code; the interface is a
+    promise — this exercise uses each for what it is.
+  - `final class EmailChannel implements Notifies` — constructor
+    `public function __construct(public readonly string $address)` —
+    promotion and readonly in one line. `notify` returns
+    `mail ADDRESS: MESSAGE` — signed via the trait (`use Signs;`),
+    so `mail a@b: hello -- EmailChannel`.
+  - `enum Priority: int` — `Low = 1`, `Normal = 2`, `Urgent = 3`,
+    with methods `label(): string` (`'low'`, `'normal'`, `'urgent'`)
+    and `escalate(): self` — one step up, Urgent stays Urgent.
+  - `function psr4_path(string $prefix, string $baseDir, string
+    $class): ?string` — the autoloading rule as a pure function:
+    for prefix `App\\` and base `src/`, class `App\Mail\Sender`
+    maps to `src/Mail/Sender.php`; a class outside the prefix
+    returns null. Backslashes to slashes, `.php` appended.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/modern_test.php
+    visibility: visible
+    concept: php.structure.classes
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.structure.autoload
+
+hints:
+  - level: conceptual
+    text: "Interface = what callers may demand. Trait = code pasted into the class. Enum = a closed set that can carry behavior. Three tools, three jobs."
+  - level: structural
+    text: "The enum methods use match($this): the state machine lives with the states, and a new case breaks every match that forgot it."
+  - level: language
+    text: "Constructor promotion: public function __construct(public readonly string $address) declares, assigns and freezes the property in one line."
+  - level: syntax
+    text: "The short class name: substr(strrchr(static::class, '\\') ?: '\\' . static::class, 1)."
+  - level: explicit
+    text: "psr4_path: if (!str_starts_with($class, $prefix)) return null; $rest = substr($class, strlen($prefix)); return $baseDir . str_replace('\\', '/', $rest) . '.php';"
+
+explanation: |
+  Promotion plus readonly is the modern PHP class in one signature:
+  the property is declared, typed, assigned and sealed where the
+  constructor parameter is written, and the 2015-era ceremony — a
+  property block, an assignment block, a getter — collapses into
+  nothing. readonly is the important half: a value object that
+  cannot drift after construction removes the whole family of
+  "who changed this" bugs.
+
+  The interface/trait split rewards precision. EmailChannel
+  *promises* Notifies — callers may depend on it, and a type-hint
+  enforces it. Signs is *pasted* — the trait's sign() becomes the
+  class's own method, static::class and all. Traits share
+  implementation without inheritance's baggage, but they are
+  invisible in type-hints: nothing can demand "a class that uses
+  Signs". Promise with interfaces, share with traits, and never the
+  reverse.
+
+  psr4_path is the entire autoloading system demystified: Composer
+  generates a map from namespace prefixes to directories, and the
+  loader runs exactly this string transformation before require-ing
+  the file. Writing it once removes the magic — a class-not-found is
+  now a path you can compute by hand, which is precisely what the
+  null return represents: no registered prefix, no path, next loader
+  please.

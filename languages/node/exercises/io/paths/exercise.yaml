@@ -1,0 +1,86 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.io.paths
+version: 1
+language: node
+title: Paths are data, not strings with slashes
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - node.io.paths
+  - node.runtime.modules
+
+prerequisites: []
+
+learningObjectives:
+  - Build and take apart paths with the path module, never with string math.
+  - Contain path traversal at the one boundary where user input meets the filesystem.
+  - Classify import specifiers the way Node's resolver does.
+
+prompt: |
+  In `main.js` (import from `node:path` — the platform namespace that
+  cannot be shadowed by a package):
+
+  - `safeJoin(root, requested)` — join a user-supplied relative path
+    onto a root directory, refusing escapes: resolve the join, and if
+    the result is not inside `root`, return `null`. `"../etc/passwd"`
+    and `"docs/../../secret"` both come back null; `"docs/guide.md"`
+    joins fine. Use `path.resolve` and a prefix check against
+    `root + path.sep` — the sep matters: `/data-evil` must not pass a
+    check for `/data`.
+  - `describePath(input)` — `{ dir, base, ext, absolute }` via
+    path.parse and path.isAbsolute.
+  - `toPosix(input)` — backslashes to forward slashes: the
+    normalization every manifest and URL needs on Windows.
+  - `classifySpecifier(specifier)` — what an import string is to the
+    resolver: `'relative'` (starts `./` or `../`), `'absolute'`
+    (path.isAbsolute), `'builtin'` (starts `node:`), `'bare'`
+    (everything else — the kind that goes to node_modules).
+
+entryPoint: main.js
+
+tests:
+  - path: tests/paths.test.js
+    visibility: visible
+    concept: node.io.paths
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.runtime.modules
+
+hints:
+  - level: conceptual
+    text: "Every path bug is string math where path math belonged. resolve, join, parse and sep exist so slashes are never typed by hand."
+  - level: structural
+    text: "safeJoin: const resolved = path.resolve(root, requested); then the containment check; null on failure."
+  - level: language
+    text: "path.resolve collapses ../ segments — which is exactly why checking the INPUT for dots fails and checking the RESULT works."
+  - level: syntax
+    text: "resolved === resolvedRoot || resolved.startsWith(resolvedRoot + path.sep)"
+  - level: explicit
+    text: "classifySpecifier: the order matters — node: prefix first, then ./ ../, then isAbsolute, then bare."
+
+explanation: |
+  safeJoin is the exercise's reason to exist: path traversal is the
+  vulnerability that never dies, and the correct defense is exactly
+  one move — resolve first, then check containment on the *result*.
+  Checking the input for `..` fails against encodings, redundant
+  separators and `docs/../..`; the resolver already speaks all those
+  dialects, so let it finish and judge what it produced. The
+  `root + sep` detail closes the last gap: a bare prefix check blesses
+  `/data-evil` as inside `/data`, and appending the separator is the
+  one-character fix.
+
+  The `node:` prefix earns its keyword status: `import fs from 'fs'`
+  can be shadowed by a node_modules package named fs — a real supply
+  chain incident vector — while `node:fs` short-circuits the resolver
+  straight to the builtin. New code should never import a builtin
+  bare, and classifySpecifier encodes the resolver's actual dispatch
+  order.
+
+  toPosix is two lines that mark a real boundary: Windows paths flow
+  through path.win32 semantics locally, but every URL, zip entry,
+  git path and manifest speaks forward slashes. Normalizing at the
+  serialization edge — not scattered through the code — is the same
+  one-boundary discipline as escaping HTML at output.
