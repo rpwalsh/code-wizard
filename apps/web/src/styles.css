@@ -2673,6 +2673,50 @@ kbd {
 .footer__spacer {
   flex: 1;
 }
+/* A footer control that reads as a link, because that is what it is: the way
+   to the page about where your work is kept. */
+.footer__link {
+  padding: 0;
+  border: 0;
+  color: var(--text-faint);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  cursor: pointer;
+}
+.footer__link:hover,
+.footer__link:focus-visible {
+  color: var(--text);
+}
+
+/* The data panel: one action per row, each with the sentence that says what
+   it does. A button labeled "Delete everything" with no consequence next to
+   it is a trap. */
+.datapanel {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.datapanel li {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: var(--space-3);
+  align-items: center;
+}
+.datapanel span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+@media (max-width: 34rem) {
+  .datapanel li {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
 
 .toasts {
   position: fixed;

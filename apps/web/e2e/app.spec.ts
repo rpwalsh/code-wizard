@@ -432,3 +432,41 @@ test('runs a JavaScript exercise in a worker', async ({ page }) => {
   const bands = await page.locator('.dag__band-label').allTextContents();
   expect(bands.length).toBeGreaterThan(5);
 });
+
+/**
+ * Erasure, end to end.
+ *
+ * The one action in this product that cannot be undone, so it is the one that
+ * most deserves a test proving it does exactly what its confirmation says. It
+ * also proves the claim in docs/privacy.md: a learner can remove everything,
+ * without asking anyone, without a network.
+ *
+ * The assertion is deliberately the strongest available — after erasing, a
+ * reload asks the first-run questions again. That can only happen if the
+ * stored answer is genuinely gone, not merely hidden.
+ */
+test('deletes everything on request, from the footer', async ({ page }) => {
+  await start(page);
+
+  await page.getByRole('button', { name: 'Your data stays on this device' }).click();
+  const panel = page.getByRole('dialog', { name: 'Your data' });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText(/stored on this device and nowhere else/)).toBeVisible();
+
+  // Deleting is two deliberate steps, never one click.
+  await panel.getByRole('button', { name: 'Delete everything' }).click();
+  await expect(panel.getByText('Delete everything?')).toBeVisible();
+
+  // And the first step is escapable.
+  await panel.getByRole('button', { name: 'Go back' }).click();
+  await expect(panel.getByRole('button', { name: 'Save a copy' })).toBeVisible();
+
+  await panel.getByRole('button', { name: 'Delete everything' }).click();
+  await panel.getByRole('button', { name: 'Yes, delete it all' }).click();
+  await expect(panel).toHaveCount(0);
+
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'Which language are you here to get back?' }),
+  ).toBeVisible();
+});

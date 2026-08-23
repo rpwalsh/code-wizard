@@ -101,6 +101,12 @@ cookies" sweep takes. One screen used to keep its practice count there and no
 longer does — everything now goes through one store, which means everything
 also travels with an export.
 
+**It is yours to move or remove.** "Your data stays on this device" in the
+footer opens one panel with three actions: save a copy to a file, load one back,
+or delete everything. Deleting takes two deliberate steps, cannot be undone, and
+really is total — the browser test for it erases, reloads, and checks that the
+app has forgotten enough to ask which language you want all over again.
+
 Two consequences worth stating plainly. **Private windows forget.** A browser
 that refuses storage gets a banner saying so at the top of the app rather than
 a silent surprise later. And because the data is local, **it is local to that
@@ -257,9 +263,12 @@ their exercises need fixtures rather than a compiler.
 - **No AI.** No generated hints, no completion, no chatbot, no model anywhere
   in the product. A test in this repository fails the build if an LLM client
   appears in the dependency tree, and a browser test asserts the running app
-  makes no network request except for the Python runtime itself.
+  makes no network request off its own origin at all — the Python interpreter
+  is vendored with the site, so there is nothing to fetch.
 - **No account.** No sign-in, no email, no identity. Your progress lives in
-  your browser or on your disk, and export and import are files.
+  your browser or on your disk; saving, loading and deleting it are all things
+  you do yourself, from the footer. Nothing about you is collected, so there is
+  nothing about you to lose. See [docs/privacy.md](docs/privacy.md).
 - **No leaderboard, no ranking, no XP.** Nobody else is in this. Ranking
   changes the goal from _recover capability_ to _optimize a score_, and those
   come apart immediately. There is one habit number — days practiced — and it
@@ -366,5 +375,7 @@ reasoning is in [PRINCIPLES.md](PRINCIPLES.md) §10.
 [docs/development.md](docs/development.md) — building, testing, and the gates.
 [docs/authoring.md](docs/authoring.md) — the exercise format.
 [docs/deploying.md](docs/deploying.md) — putting it on a free host.
+[docs/privacy.md](docs/privacy.md) — what is stored, where, and the tests
+that keep it on your machine.
 [PRINCIPLES.md](PRINCIPLES.md) — the constraints, each one enforced or
 falsifiable.

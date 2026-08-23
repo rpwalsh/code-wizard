@@ -127,15 +127,41 @@ There are none, deliberately.
 Progress is local. Export and import are already implemented, so moving to
 another machine is a file rather than a service.
 
-If cross-device sync is wanted later, the shape is settled: `ProgressStore` is
-an interface, so sync is a decorator that wraps the local store and pushes
-snapshots. Two rules would hold:
+### Sign-in was considered and declined
 
-- **Opt-in.** Someone trying the site must not have an account created for them.
-- **No passwords.** The audience has GitHub accounts. OAuth needs no password
-  storage, no reset flow and no email service, and the only field worth keeping
-  is an opaque provider id.
+Not postponed — decided. Third-party sign-in was costed out and rejected, and
+this section records why so the question does not get reopened by someone who
+assumes it was simply never looked at.
+
+The cost of an account is not the login screen. It is becoming the holder of
+personal data: a provider id tied to a learning history, retention decisions,
+access and erasure requests to answer inside a deadline, a breach surface that
+exists even when the database is small, and a compliance position that has to
+be maintained by someone, indefinitely, for a project that charges nothing.
+Storing no data is the only version of that job that stays done.
+
+The benefit it would buy is cross-device sync. Export and import already solve
+that with a file, without anyone becoming a data controller.
+
+See [privacy.md](privacy.md) for what is stored and the tests that keep it
+there.
+
+### If that were ever revisited
+
+The shape is settled, which is part of why it is safe to decline now.
+`ProgressStore` is an interface, so sync is a decorator that wraps the local
+store and pushes snapshots — no change to anything above it. Three rules would
+have to hold:
+
+- **Opt-in.** Someone trying the site must not have an account created for them,
+  and everything must keep working for a learner who never signs in.
+- **No passwords.** Delegated sign-in needs no password storage, no reset flow
+  and no email service, and the only field worth keeping is an opaque provider
+  id.
+- **Written down first.** A published notice, reviewed by someone qualified,
+  before the first row is stored rather than after.
 
 At roughly two snapshot writes per learner per day, a few hundred learners sit
-around 600 writes a day — comfortably inside Cloudflare D1's free tier, which
-is SQLite and would run the schema in `packages/storage` unchanged.
+around 600 writes a day, which fits inside the free tier of a hosted SQLite
+service and would run the schema in `packages/storage` unchanged. The
+engineering was never the obstacle.

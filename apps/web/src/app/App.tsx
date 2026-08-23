@@ -13,7 +13,7 @@ import { Palette, usePaletteShortcut } from '../components/Palette.tsx';
 import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
 import { fetchActivities } from '../platform/activities.ts';
-import { exportProgress, importProgress, pickJsonFile } from '../platform/transfer.ts';
+import { eraseProgress, exportProgress, importProgress, pickJsonFile } from '../platform/transfer.ts';
 import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import type { Demonstration } from '@code-retrainer/curriculum';
@@ -26,6 +26,7 @@ import { isTimerMode, timerModes } from '../components/Timer.tsx';
 import type { LanguageOption, Section } from '../components/layout/TopBar.tsx';
 import { TopBar } from '../components/layout/TopBar.tsx';
 import { Footer } from '../components/layout/Footer.tsx';
+import { Modal } from '../components/layout/Modal.tsx';
 import { ToastProvider, useToasts } from '../components/layout/Toasts.tsx';
 import { Tour } from '../components/layout/Tour.tsx';
 import { PracticeView } from './PracticeView.tsx';
@@ -84,6 +85,7 @@ function AppInner() {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const [language, setLanguage] = useState<string>('python');
   const [tourSeen, setTourSeen] = useState<boolean | null>(null);
+  const [dataPanel, setDataPanel] = useState<'closed' | 'open' | 'confirm'>('closed');
   const [courses, setCourses] = useState<readonly { id: string; title: string }[]>([]);
   const [fontSize, setFontSize] = useState(14);
 
@@ -322,6 +324,11 @@ function AppInner() {
         },
       },
       {
+        id: 'erase-progress',
+        name: 'Delete everything stored on this device',
+        run: () => setDataPanel('confirm'),
+      },
+      {
         id: 'import-progress',
         name: 'Load progress from a file (replaces what is here)',
         run: () => {
@@ -523,9 +530,115 @@ function AppInner() {
         ) : null}
       </div>
 
-      {screen.kind !== 'workspace' ? <Footer /> : null}
+      {screen.kind !== 'workspace' ? <Footer onData={() => setDataPanel('open')} /> : null}
 
       {tourSeen === false ? <Tour onClose={finishTour} /> : null}
+
+      {/* Every data action in one place, reachable from the footer.
+          Hiding "delete everything" behind a keyboard palette would make the
+          promise that it exists true and the promise that it is usable false. */}
+      <Modal
+        open={dataPanel !== 'closed'}
+        label="Your data"
+        onClose={() => setDataPanel('closed')}
+      >
+        {dataPanel === 'confirm' ? (
+          <>
+            <h2 className="tour__title">Delete everything?</h2>
+            <p className="tour__body">
+              This removes every attempt, every measurement and every preference from this
+              browser. It cannot be undone, and there is no copy anywhere else — nothing of
+              yours was ever sent off this device.
+            </p>
+            <div className="tour__actions">
+              <button
+                type="button"
+                className="button button--bare"
+                onClick={() => setDataPanel('open')}
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => {
+                  if (!platform) return;
+                  void eraseProgress(platform.store).then(
+                    async () => {
+                      setDataPanel('closed');
+                      await refresh();
+                      toast('Everything deleted', 'success');
+                    },
+                    () => toast('Could not delete your progress', 'error'),
+                  );
+                }}
+              >
+                Yes, delete it all
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="tour__title">Your data</h2>
+            <p className="tour__body">
+              Everything you do here is stored on this device and nowhere else. No account, no
+              server, nothing sent anywhere. That also means it is yours to move or remove.
+            </p>
+
+            <ul className="datapanel">
+              <li>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    if (!platform) return;
+                    void exportProgress(platform.store).then(
+                      (name) => toast(`Saved ${name}`, 'success'),
+                      () => toast('Could not save your progress', 'error'),
+                    );
+                  }}
+                >
+                  Save a copy
+                </button>
+                <span>Writes everything to a file you keep. Use it to move to another computer.</span>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    if (!platform) return;
+                    void pickJsonFile().then((file) => {
+                      if (!file) return;
+                      void importProgress(platform.store, file).then(
+                        async () => {
+                          setDataPanel('closed');
+                          await refresh();
+                          toast('Progress loaded', 'success');
+                        },
+                        (error: Error) => toast(error.message, 'error'),
+                      );
+                    });
+                  }}
+                >
+                  Load a copy
+                </button>
+                <span>Reads a saved file back in. This replaces what is on this device.</span>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="button button--bare"
+                  onClick={() => setDataPanel('confirm')}
+                >
+                  Delete everything
+                </button>
+                <span>Erases it all from this browser. Cannot be undone.</span>
+              </li>
+            </ul>
+          </>
+        )}
+      </Modal>
 
       <Palette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
     </div>

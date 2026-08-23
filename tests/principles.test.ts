@@ -142,6 +142,45 @@ describe('free forever, as an architectural constraint', () => {
     expect(declared.filter((name) => forbidden.includes(name))).toEqual([]);
   });
 
+  /**
+   * The property the whole privacy posture rests on.
+   *
+   * A browser build that names no external host cannot send anything to one.
+   * The end-to-end suite proves this at runtime by failing the test if the
+   * page makes a single request off-origin; this proves it at build time,
+   * where it is cheap enough to run on every commit and specific enough to
+   * name the file that broke it.
+   *
+   * If a font, an icon set or an error reporter is ever wanted, this test is
+   * the conversation that has to happen first — which is the point.
+   */
+  it('names no external host in the browser build', async () => {
+    const { globby } = await import('globby');
+    const files = await globby(['apps/web/src/**/*.{ts,tsx,css}', 'apps/web/index.html'], {
+      cwd: root,
+      gitignore: true,
+    });
+
+    const absolute = /https?:\/\/(?!localhost|127\.0\.0\.1)/i;
+    const offenses: string[] = [];
+
+    for (const file of files) {
+      const contents = await readFile(path.join(root, file), 'utf8');
+      for (const [index, line] of contents.split(/\r?\n/u).entries()) {
+        // A URL in a comment ships to nobody: it is prose about a standard
+        // or a spec, and banning those would only teach people to write them
+        // without the scheme. Only whole-line comments are exempt, because
+        // stripping a line at its first `//` would also strip the one inside
+        // `https://` — which is the single thing this test exists to find.
+        const trimmed = line.trim();
+        if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue;
+        if (absolute.test(line)) offenses.push(`${file}:${index + 1}`);
+      }
+    }
+
+    expect(offenses).toEqual([]);
+  });
+
   it('requires no account to use', async () => {
     const { globby } = await import('globby');
     const files = await globby(['apps/web/src/**/*.{ts,tsx}'], { cwd: root, gitignore: true });

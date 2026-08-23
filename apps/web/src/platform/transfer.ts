@@ -13,7 +13,7 @@
  */
 import type { JsonValue } from '@code-retrainer/core';
 import type { ProgressStore } from '@code-retrainer/storage';
-import { parseSnapshot } from '@code-retrainer/storage';
+import { LATEST_VERSION, parseSnapshot, SNAPSHOT_FORMAT } from '@code-retrainer/storage';
 
 /** A filename that sorts by date and says what it is. */
 function suggestedName(at: Date): string {
@@ -90,5 +90,27 @@ export function pickJsonFile(): Promise<File | null> {
     // what a canceled file dialog should do.
     document.body.append(input);
     input.click();
+  });
+}
+
+/**
+ * Erase everything this device holds.
+ *
+ * Implemented as an import of an empty snapshot rather than a new store
+ * method, because "replace everything with nothing" is exactly what import
+ * already does — and reusing it means erasure cannot drift out of step with
+ * the operation that knows every collection's name.
+ *
+ * Irreversible, and the caller is expected to have said so plainly first.
+ */
+export async function eraseProgress(store: ProgressStore, now = new Date()): Promise<void> {
+  await store.importAll({
+    format: SNAPSHOT_FORMAT,
+    schemaVersion: LATEST_VERSION,
+    exportedAt: now.toISOString(),
+    settings: {},
+    mastery: [],
+    reviews: [],
+    attempts: [],
   });
 }
