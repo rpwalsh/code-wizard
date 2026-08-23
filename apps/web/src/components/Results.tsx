@@ -1,6 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TestCaseResult, TestResult } from '@code-retrainer/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { Spinner } from './layout/Spinner.tsx';
 
 interface ResultsProps {
   readonly result: TestResult | null;
@@ -30,13 +32,47 @@ const STATUS_WORD: Record<TestCaseResult['status'], string> = {
  * was expected, what arrived, and which skill the test was probing. That last
  * line is the useful one: it turns a red test into somewhere to go.
  */
+/**
+ * What to say while a run is in flight.
+ *
+ * A test run is usually a second or two. The exception is the first Python run
+ * of a session, which starts a CPython interpreter compiled to WebAssembly and
+ * can take the better part of a minute on a cold cache — long enough that a
+ * motionless word "Running" reads as a hang, and long enough that someone
+ * closes the tab believing it is broken.
+ *
+ * So the message escalates. Saying *why* it is slow, and that it happens once,
+ * is the difference between waiting and giving up.
+ */
+function useWaitingMessage(busy: boolean): string {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!busy) {
+      setSeconds(0);
+      return;
+    }
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      setSeconds(Math.floor((Date.now() - started) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
+
+  if (seconds < 4) return 'Running your tests…';
+  if (seconds < 12) return 'Still going — starting the interpreter takes a moment.';
+  return 'First run of the session: the interpreter is unpacking itself, once. It is quick after this.';
+}
+
 export function Results({ result, busy, onWatch }: ResultsProps) {
+  const waiting = useWaitingMessage(busy);
   const [open, setOpen] = useState<string | null>(null);
 
   if (busy) {
     return (
       <section aria-busy="true">
         <p className="label">Running</p>
+        <Spinner size="small" label={waiting} />
       </section>
     );
   }

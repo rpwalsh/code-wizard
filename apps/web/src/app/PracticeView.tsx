@@ -18,6 +18,7 @@ import type { ProgressStore } from '@code-retrainer/storage';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ActivityCard } from '../components/ActivityCard.tsx';
+import { Spinner } from '../components/layout/Spinner.tsx';
 import type { CurriculumActivities } from '../platform/activities.ts';
 import { drawRun, fetchActivities } from '../platform/activities.ts';
 
@@ -135,9 +136,7 @@ export function PracticeView({
   if (!sets) {
     return (
       <main className="practice" id="main" aria-busy="true">
-        <p className="practice__status" role="status">
-          Loading activities…
-        </p>
+        <Spinner label="Loading activities…" />
       </main>
     );
   }

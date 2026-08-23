@@ -111,14 +111,132 @@ const matchPairsSchema = z.object({
     .max(8),
 });
 
-export const activitySchema = z.discriminatedUnion('kind', [
-  multipleChoiceSchema,
-  predictOutputSchema,
-  orderLinesSchema,
-  fillBlanksSchema,
-  spotTheBugSchema,
-  matchPairsSchema,
-]);
+const categorizeSchema = z.object({
+  ...common,
+  kind: z.literal('categorize'),
+  buckets: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        hint: z.string().min(1).optional(),
+      }),
+    )
+    // Two buckets is a yes/no question wearing a costume; five is a memory
+    // test about the bucket names rather than about the items.
+    .min(2)
+    .max(4),
+  items: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        bucket: z.string().min(1),
+        why: z.string().min(1).optional(),
+      }),
+    )
+    .min(4)
+    .max(10),
+});
+
+const buildTreeSchema = z.object({
+  ...common,
+  kind: z.literal('build-tree'),
+  root: z.string().min(1),
+  nodes: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        label: z.string().min(1),
+        parent: z.string().min(1).nullable(),
+        why: z.string().min(1).optional(),
+      }),
+    )
+    .min(3)
+    .max(12),
+});
+
+/**
+ * Cross-field checks, applied to the union rather than to its members.
+ *
+ * A discriminated union needs plain object schemas to read the discriminant
+ * from, and a schema carrying a refinement is no longer one — so the shape is
+ * checked per kind above, and the relationships between fields are checked
+ * here, once, after the kind is known.
+ *
+ * These catch content that parses but cannot be answered, which is the worst
+ * kind of broken: it reaches a learner looking exactly like a question.
+ */
+export const activitySchema = z
+  .discriminatedUnion('kind', [
+    multipleChoiceSchema,
+    predictOutputSchema,
+    orderLinesSchema,
+    fillBlanksSchema,
+    spotTheBugSchema,
+    matchPairsSchema,
+    categorizeSchema,
+    buildTreeSchema,
+  ])
+  .superRefine((activity, context) => {
+    if (activity.kind === 'categorize') {
+      // An item pointing at a bucket that does not exist is ungradeable: the
+      // right answer is not on screen, so it can never be chosen.
+      const known = new Set(activity.buckets.map((bucket) => bucket.id));
+      for (const [index, item] of activity.items.entries()) {
+        if (!known.has(item.bucket)) {
+          context.addIssue({
+            code: 'custom',
+            path: ['items', index, 'bucket'],
+            message: `Unknown bucket '${item.bucket}'. Declared: ${[...known].join(', ')}.`,
+          });
+        }
+      }
+      // A bucket nothing belongs in is a distractor the author forgot to fill
+      // or a typo in an item. Both deserve a sentence at build time.
+      const used = new Set(activity.items.map((item) => item.bucket));
+      for (const [index, bucket] of activity.buckets.entries()) {
+        if (!used.has(bucket.id)) {
+          context.addIssue({
+            code: 'custom',
+            path: ['buckets', index, 'id'],
+            message: `Bucket '${bucket.id}' has no items. Every bucket needs at least one.`,
+          });
+        }
+      }
+      return;
+    }
+
+    if (activity.kind === 'build-tree') {
+      const known = new Map(activity.nodes.map((node) => [node.id, node]));
+      for (const [index, node] of activity.nodes.entries()) {
+        if (node.parent !== null && !known.has(node.parent)) {
+          context.addIssue({
+            code: 'custom',
+            path: ['nodes', index, 'parent'],
+            message: `Unknown parent '${node.parent}'. Use null for a child of the root.`,
+          });
+          continue;
+        }
+
+        // Walk to the root. Bounding the walk by the node count makes it
+        // terminate even when the data does contain a cycle.
+        let steps = 0;
+        let current = node.parent;
+        while (current !== null && steps <= activity.nodes.length) {
+          if (current === node.id) {
+            context.addIssue({
+              code: 'custom',
+              path: ['nodes', index, 'parent'],
+              message: `'${node.id}' is its own ancestor: this is a cycle, not a tree.`,
+            });
+            break;
+          }
+          current = known.get(current)?.parent ?? null;
+          steps += 1;
+        }
+      }
+    }
+  });
 
 export const activityFileSchema = z.object({
   activities: z.array(activitySchema).min(1),

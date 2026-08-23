@@ -1,0 +1,192 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Architecture, as shape rather than as prose.
+#
+# Every activity here is about where something sits and what it is allowed to
+# know. That is not a fact you can recall; it is a judgment you either make
+# correctly or do not, which is why few of these are multiple choice.
+
+activities:
+  - id: architecture.boundaries.dependencies.tree-1
+    kind: build-tree
+    language: architecture
+    title: Which way do the arrows point?
+    difficulty: 3
+    estimatedSeconds: 150
+    skills: [architecture.boundaries.dependencies, architecture.boundaries.modules]
+    prompt: >-
+      Place each piece under the layer that should own it. A layer may depend on
+      the layers inside it, never on the ones outside.
+    root: Order service
+    nodes:
+      - id: transport
+        label: Transport
+        parent: null
+        why: The outermost layer. It knows how requests arrive and nothing about what they mean.
+      - id: application
+        label: Application
+        parent: null
+        why: Use cases. It orchestrates the domain but holds no rules of its own.
+      - id: domain
+        label: Domain
+        parent: null
+        why: The rules. It is the one layer that depends on nothing.
+      - id: http
+        label: HTTP handler
+        parent: transport
+        why: Parsing a request body is transport work, whatever the body contains.
+      - id: cli
+        label: Command line entry point
+        parent: transport
+        why: A second way in. That it is not HTTP is exactly the point of the layer.
+      - id: placeorder
+        label: Place order use case
+        parent: application
+        why: It sequences the steps. The steps themselves belong deeper.
+      - id: pricing
+        label: Pricing rules
+        parent: domain
+        why: What an order costs is a business fact, true regardless of how it was asked for.
+      - id: stock
+        label: Stock reservation rules
+        parent: domain
+        why: Whether an order can be filled is a rule, not a query.
+    explanation: >-
+      The test for a layer is what breaks when something changes. Swap HTTP for a
+      queue and the transport layer changes; if pricing changes too, pricing was
+      in the wrong place. Domain sits innermost because it depends on nothing --
+      you can compute the price of an order with no server, no database and no
+      request. That is also why it is the layer that is trivial to test, and the
+      layer that survives a rewrite of everything around it.
+
+  - id: architecture.tradeoffs.reversibility.cat-1
+    kind: categorize
+    language: architecture
+    title: Which of these can you undo?
+    difficulty: 4
+    estimatedSeconds: 150
+    skills: [architecture.tradeoffs.reversibility, architecture.tradeoffs.cost]
+    prompt: Sort each decision by how hard it is to walk back a year later.
+    buckets:
+      - id: cheap
+        name: Cheap to reverse
+        hint: A week of work by one person
+      - id: costly
+        name: Expensive to reverse
+        hint: Months, or a coordinated migration
+    items:
+      - text: Choosing a logging library
+        bucket: cheap
+        why: It sits behind a function you call. Replacing it is mechanical.
+      - text: Choosing which fields your public API returns
+        bucket: costly
+        why: Every client now depends on them. Removing a field breaks people you cannot call.
+      - text: Adding an index to a table
+        bucket: cheap
+        why: Drop it again. The only cost is the time it took to build.
+      - text: Splitting one service into three
+        bucket: costly
+        why: You have created network calls, deploy coupling, and three sets of data that can disagree.
+      - text: Picking a code formatter
+        bucket: cheap
+        why: One command reformats the repository, and nobody's data changes shape.
+      - text: Choosing how you identify users
+        bucket: costly
+        why: Identifiers leak into every table, every log and every integration.
+    explanation: >-
+      The useful question is not "is this the right decision" but "how much will
+      it cost to be wrong". Decisions that are cheap to reverse deserve a quick
+      answer and no meeting; decisions that are expensive deserve real argument,
+      because you are choosing once. Most of the pain in a mature system comes
+      from expensive decisions made as though they were cheap ones, usually
+      because nobody asked which kind it was.
+
+  - id: architecture.legacy.strangler.order-1
+    kind: order-lines
+    language: architecture
+    title: Replacing a system that cannot stop
+    difficulty: 4
+    estimatedSeconds: 150
+    skills: [architecture.legacy.strangler, architecture.legacy.risk]
+    prompt: >-
+      A billing system must be replaced while it keeps running. Put the steps in
+      an order that is safe at every point.
+    lines:
+      - Put a proxy in front of the old system, routing everything to it
+      - Pick one endpoint and build it in the new system
+      - Send a copy of live traffic to the new endpoint and compare the answers
+      - Route that one endpoint to the new system, with a switch to route it back
+      - Repeat for the next endpoint
+      - Delete the old system once nothing routes to it
+    explanation: >-
+      The proxy comes first and changes nothing on the day it ships, which is
+      why it is safe to ship. Every step after it is reversible, and the
+      comparison step exists so that you learn the new system is wrong before
+      any customer does. The version of this that fails is the one that builds
+      the whole replacement and switches over on a weekend, because it converts
+      a hundred small risks into one enormous one, on the day everyone is tired.
+
+  - id: architecture.scale.bottlenecks.cat-1
+    kind: categorize
+    language: architecture
+    title: Where does it actually break?
+    difficulty: 4
+    estimatedSeconds: 120
+    skills: [architecture.scale.bottlenecks, architecture.scale.capacity]
+    prompt: >-
+      Traffic will be ten times higher next month. Sort each part by whether
+      adding machines fixes it.
+    buckets:
+      - id: horizontal
+        name: More machines helps
+      - id: shared
+        name: More machines does not
+        hint: Something is shared and cannot be duplicated
+    items:
+      - text: Stateless request handlers
+        bucket: horizontal
+        why: Nothing is kept between requests, so any machine can serve any request.
+      - text: The single primary database accepting writes
+        bucket: shared
+        why: Every write goes to one place. Adding servers adds readers, not writers.
+      - text: An image resizing worker pool
+        bucket: horizontal
+        why: Each job is independent, so twice the workers is twice the throughput.
+      - text: A counter incremented on every request
+        bucket: shared
+        why: A single row that every request contends on is the definition of a hot spot.
+      - text: A rate limiter holding counts in one cache node
+        bucket: shared
+        why: The limit has to be global to mean anything, which makes it a shared point.
+    explanation: >-
+      Scaling is mostly the search for the thing that cannot be duplicated. Work
+      that touches nothing shared scales by adding machines and needs no
+      thought. Everything else -- a single writer, a global counter, a lock --
+      sets a ceiling that more hardware cannot raise, and finding that ceiling
+      before your traffic does is the whole exercise. Note that four of the five
+      items look like ordinary code: a bottleneck is rarely labeled.
+
+  - id: architecture.state.sources.mc-1
+    kind: multiple-choice
+    language: architecture
+    title: Two systems disagree about an address
+    difficulty: 3
+    estimatedSeconds: 90
+    skills: [architecture.state.sources, architecture.state.consistency]
+    prompt: >-
+      Billing and shipping hold different addresses for the same customer, and
+      both were written by a real user action. What is the underlying problem?
+    options:
+      - text: A synchronization bug between the two services.
+        why: Synchronization is what you reach for after the real mistake, and it will drift again.
+      - text: There is no single place that owns the customer address.
+      - text: The services should share one database.
+        why: That fixes disagreement by removing the boundary, giving up the reason the services were split.
+      - text: The user should not be able to edit the address in two places.
+        why: Closer, but the duplicate edit is a symptom. Two owners is what allows two edits.
+    correct: [1]
+    explanation: >-
+      Every piece of data needs exactly one owner: one system that decides what
+      is true. Others may keep copies, but copies must be readable rather than
+      writable, and must be able to say how stale they are. Once two systems can
+      both accept a write to the same fact they will eventually disagree, and no
+      amount of synchronization fixes it, because there is no rule for who wins.

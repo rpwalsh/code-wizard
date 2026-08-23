@@ -40,7 +40,9 @@ export type ActivityKind =
   | 'order-lines'
   | 'fill-blanks'
   | 'spot-the-bug'
-  | 'match-pairs';
+  | 'match-pairs'
+  | 'categorize'
+  | 'build-tree';
 
 /** Fields every activity carries, whatever its kind. */
 interface ActivityCommon {
@@ -191,13 +193,77 @@ export interface MatchPair {
   readonly right: string;
 }
 
+/**
+ * Sort items into the buckets they belong in.
+ *
+ * The kind that carries most of the weight in a subject with no output to
+ * predict. "Which of these are safe to retry, and which are not" is the real
+ * question behind idempotency, and it cannot be answered by recognizing a
+ * keyword — every item has to be judged separately, and getting six right and
+ * one wrong is visible as exactly that.
+ *
+ * Buckets are named rather than numbered so the content reads as prose and a
+ * reordered list of buckets does not silently change every answer.
+ */
+export interface CategorizeActivity extends ActivityCommon {
+  readonly kind: 'categorize';
+  readonly buckets: readonly CategoryBucket[];
+  readonly items: readonly CategoryItem[];
+}
+
+export interface CategoryBucket {
+  /** Stable key referenced by each item. */
+  readonly id: string;
+  readonly name: string;
+  /** Shown under the name — what belongs here, in one line. */
+  readonly hint?: string;
+}
+
+export interface CategoryItem {
+  readonly text: string;
+  /** The `id` of the bucket this belongs in. */
+  readonly bucket: string;
+  /** Why it belongs there, shown with the explanation. */
+  readonly why?: string;
+}
+
+/**
+ * Assemble a hierarchy: which thing sits under which.
+ *
+ * Layered architectures, component trees, dependency directions and module
+ * boundaries are all shape rather than sequence, and a shape cannot be taught
+ * by a list. Placing a node under the wrong parent is the exact mistake worth
+ * catching — a repository under the transport layer is not a small slip, it is
+ * the misunderstanding.
+ *
+ * Only the parent of each node is graded, not sibling order: whether the user
+ * service is listed above or below the order service is not a fact about the
+ * architecture, and marking it wrong would be marking noise.
+ */
+export interface BuildTreeActivity extends ActivityCommon {
+  readonly kind: 'build-tree';
+  /** The fixed root, already placed. Everything else is dragged under it. */
+  readonly root: string;
+  readonly nodes: readonly TreeNode[];
+}
+
+export interface TreeNode {
+  readonly id: string;
+  readonly label: string;
+  /** The `id` of the correct parent, or null for a child of the root. */
+  readonly parent: string | null;
+  readonly why?: string;
+}
+
 export type Activity =
   | MultipleChoiceActivity
   | PredictOutputActivity
   | OrderLinesActivity
   | FillBlanksActivity
   | SpotTheBugActivity
-  | MatchPairsActivity;
+  | MatchPairsActivity
+  | CategorizeActivity
+  | BuildTreeActivity;
 
 /**
  * What a learner submitted, one shape per kind.
@@ -211,7 +277,18 @@ export type ActivityResponse =
   | { readonly kind: 'order-lines'; readonly order: readonly number[] }
   | { readonly kind: 'fill-blanks'; readonly filled: readonly string[] }
   | { readonly kind: 'spot-the-bug'; readonly line: number }
-  | { readonly kind: 'match-pairs'; readonly matched: readonly number[] };
+  | { readonly kind: 'match-pairs'; readonly matched: readonly number[] }
+  /** Bucket id chosen for each item, parallel to `items`. Empty means unplaced. */
+  | { readonly kind: 'categorize'; readonly placed: readonly string[] }
+  /**
+   * Parent id chosen for each node, parallel to `nodes`.
+   *
+   * Three states, and all three are needed: an id means "under that node",
+   * `null` means "directly under the root", and `undefined` means "never
+   * placed". Collapsing the last two would score an untouched node as correct
+   * whenever its right answer happened to be the root.
+   */
+  | { readonly kind: 'build-tree'; readonly parents: readonly (string | null | undefined)[] };
 
 /**
  * The dimensions each kind is allowed to move.
@@ -228,4 +305,8 @@ export const dimensionsByKind: Readonly<Record<ActivityKind, readonly MasteryDim
     'fill-blanks': ['recall'],
     'spot-the-bug': ['debugging', 'recognition'],
     'match-pairs': ['recognition'],
+    // Sorting and assembling are decisions about structure, not retrieval of a
+    // remembered token, so neither claims `recall`.
+    categorize: ['knowledge', 'recognition'],
+    'build-tree': ['knowledge', 'recognition'],
   });

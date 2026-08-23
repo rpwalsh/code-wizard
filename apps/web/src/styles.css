@@ -2572,6 +2572,183 @@ body.is-resizing .resizer__grip {
   display: flex;
   gap: 2px;
 }
+/* The grip. Present always, so the row advertises that it can be dragged
+   rather than making that a thing you discover by accident. */
+.activity__order-grip {
+  color: var(--text-faint);
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 2px;
+  touch-action: none;
+  user-select: none;
+}
+.activity__order-grip:hover {
+  color: var(--text-dim);
+}
+.activity__order[data-dragging='true'] .activity__order-grip {
+  cursor: grabbing;
+}
+/* The row under the pointer lifts; the row it would displace shows the seam
+   it will land against. Nothing animates position, because animating a list
+   that is also being reordered by arrows reads as two things fighting. */
+.activity__order > li[data-dragging='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 18%);
+  opacity: 0.9;
+}
+.activity__order > li[data-over='true'] {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+
+/* Chips: the draggable unit in both sorting and tree building.
+   One definition, because they are the same object in both activities and
+   should not drift into looking like two. */
+.chip {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition:
+    border-color var(--quick) var(--ease),
+    transform var(--quick) var(--ease);
+}
+.chip:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+/* Held from a click: it follows the next click into a target, so it has to
+   look picked-up rather than merely hovered. */
+.chip[aria-pressed='true'],
+.chip[data-active='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  transform: translateY(-1px);
+}
+.chip:disabled {
+  cursor: default;
+}
+/* After grading. Marked per item, so a learner sees which one moved wrong
+   rather than one verdict over the whole board. */
+.chip[data-verdict='right'] {
+  border-color: var(--pass);
+}
+.chip[data-verdict='wrong'] {
+  border-color: var(--fail);
+  text-decoration: line-through;
+  text-decoration-color: var(--fail);
+}
+
+.sorter {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+.sorter__pool,
+.sorter__bucket,
+.tree__loose {
+  padding: var(--space-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface-inset);
+  transition: border-color var(--quick) var(--ease);
+}
+/* The drop target under the pointer. Solid, not dashed: the difference
+   between "a place things can go" and "here". */
+.sorter__pool[data-over='true'],
+.sorter__bucket[data-over='true'],
+.tree__loose[data-over='true'],
+.tree__node[data-over='true'] {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+.sorter__buckets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+.sorter__bucket-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+.sorter__bucket-hint {
+  margin: 2px 0 0;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.sorter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  /* Keeps an empty column a target rather than a one-pixel line. */
+  min-height: 34px;
+}
+
+.tree {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+.tree__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+  min-height: 34px;
+}
+.tree__canvas {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-inset);
+  overflow-x: auto;
+}
+.tree__node {
+  display: inline-block;
+  padding: 2px;
+  border: 1px dashed transparent;
+  border-radius: 999px;
+}
+.tree__node--root {
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  font-weight: 600;
+  font-size: 13px;
+}
+.tree__list {
+  margin: 4px 0 0 var(--space-4);
+  padding: 0 0 0 var(--space-4);
+  list-style: none;
+  /* The line that makes a nested list read as a tree. */
+  border-left: 1px solid var(--line-strong);
+}
+.tree__list > li {
+  margin-top: 6px;
+  position: relative;
+}
+.tree__list > li::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-4) * -1);
+  top: 16px;
+  width: var(--space-4);
+  height: 1px;
+  background: var(--line-strong);
+}
 
 .activity__pairs > li {
   display: grid;
@@ -2778,6 +2955,78 @@ body.is-resizing .resizer__grip {
 }
 .footer__spacer {
   flex: 1;
+}
+
+/* The spinner: a ring with one quarter in the accent, turning.
+   Drawn with a border rather than an SVG so it inherits the theme tokens and
+   costs nothing to render. */
+.spinner {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  animation: spin 720ms linear infinite;
+}
+.spinner[data-size='small'] {
+  width: 14px;
+  height: 14px;
+}
+.spinner[data-size='medium'] {
+  width: 20px;
+  height: 20px;
+}
+.spinner[data-size='large'] {
+  width: 30px;
+  height: 30px;
+  border-width: 3px;
+}
+.spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-dim);
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Still says "working", without the rotation. */
+  .spinner {
+    animation: breathe 1.6s ease-in-out infinite;
+    border-top-color: var(--line-strong);
+    background: var(--accent-dim);
+  }
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+/* The one line that stops "— practice" reading as "unfinished". */
+.topbar__note {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 34ch;
+}
+.topbar__note strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+@media (max-width: 1100px) {
+  .topbar__note {
+    display: none;
+  }
 }
 /* A footer control that reads as a link, because that is what it is: the way
    to the page about where your work is kept. */

@@ -1,0 +1,178 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Backend engineering, sorted and assembled rather than recognized.
+#
+# The failure modes in this file are the ones that reach production because
+# each individual decision looked reasonable. Sorting them side by side is the
+# point: the difference between a safe retry and an unsafe one is invisible
+# until you have to put them in separate columns.
+
+activities:
+  - id: backend.api.idempotency.cat-1
+    kind: categorize
+    language: backend
+    title: Safe to send twice?
+    difficulty: 3
+    estimatedSeconds: 120
+    skills: [backend.api.idempotency, backend.reliability.retries]
+    prompt: >-
+      The network dropped the response, so the client is going to retry. Sort
+      each request by whether sending it again changes the outcome.
+    buckets:
+      - id: safe
+        name: Safe to retry
+        hint: The second one changes nothing
+      - id: unsafe
+        name: Not safe to retry
+        hint: The second one does damage
+    items:
+      - text: "GET /orders/17"
+        bucket: safe
+        why: Reading changes nothing, however many times you do it.
+      - text: "DELETE /orders/17"
+        bucket: safe
+        why: The second delete finds nothing to delete. The end state is the same.
+      - text: "POST /orders with a basket"
+        bucket: unsafe
+        why: Two orders. This is the classic double submit, and the reason idempotency keys exist.
+      - text: "PUT /orders/17 with the complete order"
+        bucket: safe
+        why: You are stating the whole desired state, so applying it twice lands in the same place.
+      - text: "POST /accounts/8/balance with a delta of -10"
+        bucket: unsafe
+        why: A relative change applied twice is a different balance. Deltas are never idempotent.
+      - text: "POST /orders/17/refund"
+        bucket: unsafe
+        why: Refunding twice moves real money twice, and a customer notices.
+    explanation: >-
+      The rule that survives contact with reality is about the end state, not
+      about the verb. A request is safe to repeat when doing it twice leaves the
+      world in the same place as doing it once -- which is why DELETE is safe and
+      a balance delta is not, even though one sounds destructive and the other
+      sounds small. Anything that fails this test needs an idempotency key
+      supplied by the client, because only the client knows that two requests
+      were the same intent rather than two separate ones.
+
+  - id: backend.reliability.timeouts.cat-1
+    kind: categorize
+    language: backend
+    title: Where the timeout belongs
+    difficulty: 4
+    estimatedSeconds: 120
+    skills: [backend.reliability.timeouts, backend.reliability.breakers]
+    prompt: >-
+      A dependency has become slow rather than broken. Sort each response by
+      whether it contains the damage or spreads it.
+    buckets:
+      - id: contains
+        name: Contains the damage
+      - id: spreads
+        name: Spreads the damage
+    items:
+      - text: A deadline on the outbound call, shorter than your own deadline
+        bucket: contains
+        why: You give up in time to still answer your own caller.
+      - text: Retrying immediately, three times, on every failure
+        bucket: spreads
+        why: You have tripled the load on a service that is already struggling.
+      - text: Opening a circuit after a run of failures and failing fast
+        bucket: contains
+        why: You stop sending work that will not be answered, and the dependency gets room to recover.
+      - text: Waiting as long as the dependency takes
+        bucket: spreads
+        why: Your own threads fill with waiting requests, and your caller starts timing out on you.
+      - text: Retrying with growing delays and random jitter
+        bucket: contains
+        why: The delay lets it recover, and the jitter stops every client retrying in unison.
+      - text: Queueing failed work forever to try again later
+        bucket: spreads
+        why: An unbounded queue converts a short outage into a backlog that outlives it.
+    explanation: >-
+      Slow is worse than down. A dependency that fails immediately gives you an
+      error you can handle; one that takes thirty seconds holds a thread of yours
+      for thirty seconds, and when every thread is held, you are down too --
+      even though nothing of yours broke. Every containment measure above is
+      really the same measure: bound the wait, and bound the retries. The
+      unbounded versions are the ones that turn one sick service into an outage.
+
+  - id: backend.security.authz.tree-1
+    kind: build-tree
+    language: backend
+    title: Where each check belongs
+    difficulty: 4
+    estimatedSeconds: 150
+    skills: [backend.security.authn, backend.security.authz, backend.security.input]
+    prompt: >-
+      A request arrives to update an invoice. Place each check under the stage
+      that should perform it.
+    root: Incoming request
+    nodes:
+      - id: authn
+        label: Authentication
+        parent: null
+        why: First. Until you know who is asking, no other question can be answered.
+      - id: authz
+        label: Authorization
+        parent: null
+        why: Second. Who they are decides what they may do.
+      - id: validation
+        label: Validation
+        parent: null
+        why: Third. Only now is it worth inspecting what they sent.
+      - id: token
+        label: Is the token signed and unexpired?
+        parent: authn
+        why: The only thing that establishes identity at all.
+      - id: owner
+        label: Does this user own this invoice?
+        parent: authz
+        why: A permission question about a specific object, not about the shape of the request.
+      - id: role
+        label: Does this user have the billing role?
+        parent: authz
+        why: "The other half of authorization: what class of thing they may touch."
+      - id: shape
+        label: Is the amount a positive number?
+        parent: validation
+        why: A question about the payload, meaningless before you know the sender may send it.
+      - id: currency
+        label: Is the currency one we support?
+        parent: validation
+        why: Same category. Reject early, but only after the caller has earned a real answer.
+    explanation: >-
+      Order matters, and it is not arbitrary. Authentication first, because
+      every later question is about a person you have not yet identified.
+      Authorization next, and note that it splits in two: what role you hold and
+      which specific object you are touching. The second half is the one that
+      gets forgotten, and it is the one that produces the bug where any logged-in
+      user can read any invoice by changing a number in the URL. Validation
+      comes last, because detailed validation errors returned to an
+      unauthenticated stranger tell them about your system for free.
+
+  - id: backend.data.transactions.mc-1
+    kind: multiple-choice
+    language: backend
+    title: The transaction that holds a network call
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [backend.data.transactions, backend.data.concurrency]
+    prompt: >-
+      A handler opens a transaction, writes a row, calls a payment provider over
+      the network, then writes a second row and commits. What is the main
+      problem?
+    options:
+      - text: The payment call might fail.
+        why: True and expected. Failure is handled; it is not the structural fault here.
+      - text: The transaction holds database locks for the length of a network call.
+      - text: The two writes should be one write.
+        why: A design preference, and not what makes this dangerous under load.
+      - text: The transaction should use a higher isolation level.
+        why: A stronger level holds the same locks for the same duration, only more so.
+    correct: [1]
+    explanation: >-
+      A transaction holds locks until it commits, and here the commit waits on
+      somebody else's server. When the provider slows down, every one of these
+      handlers sits holding rows, connections drain, and unrelated queries start
+      queueing behind locks they have nothing to do with -- a database outage
+      caused by a payment provider being slow. Keep transactions short and
+      strictly local: record the intent, commit, make the call outside the
+      transaction, then record the result in a second short transaction.

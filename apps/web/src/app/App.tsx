@@ -420,6 +420,7 @@ function AppInner() {
       <main className="boot" aria-busy="true">
         <p className="boot__mark">Code Retrainer</p>
         <p className="boot__status" role="status" aria-live="polite">
+          <span className="spinner" data-size="small" aria-hidden="true" />
           {progress.message}
         </p>
       </main>

@@ -1,0 +1,148 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Middleware, where the hard part is what happens between the systems.
+#
+# Almost everything here is about a message arriving more than once, out of
+# order, or not at all. None of those are exotic failures; they are the normal
+# operating conditions of a network, and code that assumes otherwise is code
+# that works until it is busy.
+
+activities:
+  - id: middleware.messaging.delivery.cat-1
+    kind: categorize
+    language: middleware
+    title: What the broker actually promises
+    difficulty: 4
+    estimatedSeconds: 120
+    skills: [middleware.messaging.delivery, middleware.state.idempotency]
+    prompt: >-
+      Sort each statement by whether a typical message broker can genuinely
+      promise it.
+    buckets:
+      - id: real
+        name: Can be promised
+      - id: myth
+        name: Cannot be promised
+        hint: Not without something on your side
+    items:
+      - text: Every message is delivered at least once
+        bucket: real
+        why: The broker keeps redelivering until you acknowledge. This is the ordinary guarantee.
+      - text: Every message is delivered exactly once, end to end
+        bucket: myth
+        why: The acknowledgment can be lost after your work is done, so redelivery is always possible.
+      - text: Messages on one partition arrive in the order they were written
+        bucket: real
+        why: A single partition is a single log, and a log has an order.
+      - text: Messages across all partitions arrive in the order they were written
+        bucket: myth
+        why: Partitions advance independently, which is exactly what makes them scale.
+      - text: A message that fails repeatedly can be set aside for inspection
+        bucket: real
+        why: That is what a dead letter queue is, and it is a broker feature.
+      - text: A consumer will never see a message twice
+        bucket: myth
+        why: The same fact as exactly-once, wearing different clothes.
+    explanation: >-
+      Exactly-once delivery is not available, and treating it as though it were
+      is the single most expensive misunderstanding in this subject. What you
+      can have is at-least-once delivery plus idempotent handling, which
+      produces exactly-once *effects* -- and effects are what anyone actually
+      cared about. The practical consequence is that every consumer needs a way
+      to recognize work it has already done: a processed-message table, a
+      natural key, or a version check. Ordering has the same shape: it is real
+      within a partition and imaginary across them.
+
+  - id: middleware.state.outbox.order-2
+    kind: order-lines
+    language: middleware
+    title: Writing a row and publishing an event
+    difficulty: 5
+    estimatedSeconds: 150
+    skills: [middleware.state.outbox, middleware.messaging.delivery]
+    prompt: >-
+      An order must be saved and an event published, with no case where one
+      happens without the other. Put the outbox pattern in order.
+    lines:
+      - Begin a database transaction
+      - Insert the order row
+      - Insert the event into an outbox table in the same transaction
+      - Commit
+      - A separate process reads unpublished rows from the outbox
+      - It publishes each one to the broker
+      - It marks the row published once the broker acknowledges
+    explanation: >-
+      The reason this pattern exists is that you cannot commit a database
+      transaction and a broker publish together -- there is no shared
+      transaction between two different systems. So the trick is to make the
+      event part of the same write as the data, in a table you control, and to
+      move it afterwards. The window between commit and publish means an event
+      may be published more than once if the marking step fails, which is fine:
+      consumers are idempotent, because they had to be anyway.
+
+  - id: middleware.gateway.limits.cat-1
+    kind: categorize
+    language: middleware
+    title: Shedding load without lying
+    difficulty: 4
+    estimatedSeconds: 120
+    skills: [middleware.gateway.limits, middleware.gateway.shedding]
+    prompt: >-
+      A gateway is over capacity. Sort each behavior by whether it helps the
+      client do the right thing.
+    buckets:
+      - id: honest
+        name: Tells the client something useful
+      - id: harmful
+        name: Makes it worse
+    items:
+      - text: Return 429 with a Retry-After header
+        bucket: honest
+        why: A specific status and a specific time. A well-behaved client can obey it.
+      - text: Return 500 with no detail
+        bucket: harmful
+        why: The client cannot tell a bug from overload, so it retries immediately and adds load.
+      - text: Accept the request and hold it in a growing queue
+        bucket: harmful
+        why: The client is already gone by the time you answer, and you did the work anyway.
+      - text: Reject the newest requests first when the queue is deep
+        bucket: honest
+        why: Old queued requests are close to being useful. New ones are the ones to refuse.
+      - text: Close the connection with no response
+        bucket: harmful
+        why: Indistinguishable from a network fault, which is the one thing clients retry hardest on.
+    explanation: >-
+      When you are over capacity you are going to fail some requests. The only
+      choice is whether you fail them in a way the client can respond to
+      sensibly. A 429 with a Retry-After is a real instruction; a 500 or a
+      dropped connection is a mystery, and every client library treats a mystery
+      as a reason to try again immediately. That is how an overloaded system
+      turns into a permanently overloaded system: the failure mode recruits the
+      clients into attacking you.
+
+  - id: middleware.observe.correlation.mc-1
+    kind: multiple-choice
+    language: middleware
+    title: Following one request through five services
+    difficulty: 3
+    estimatedSeconds: 90
+    skills: [middleware.observe.correlation, middleware.observe.tracing]
+    prompt: >-
+      A request touches five services and fails somewhere. What makes the logs
+      usable afterwards?
+    options:
+      - text: Synchronized clocks across all five machines.
+        why: Helpful for ordering, but you still cannot tell which of thousands of requests was yours.
+      - text: An identifier created at the edge and passed to every downstream call.
+      - text: Logging the full request body at every hop.
+        why: Enormous, slow, and a way to write customer data into logs by accident.
+      - text: Keeping all five services' logs in one place.
+        why: Necessary but not sufficient. One pile of logs with no shared key is still a pile.
+    correct: [1]
+    explanation: >-
+      One identifier, created once where the request enters, carried on every
+      call it causes, and written on every log line. That single string is what
+      converts five unrelated log streams into one story, and it is the
+      difference between a ten-minute investigation and a three-hour one. It
+      costs almost nothing to add on the day you build the service and is
+      painful to retrofit later, because retrofitting means touching every call
+      site in every service at once.

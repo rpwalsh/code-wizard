@@ -6,6 +6,7 @@ import { ACTIVITY_CEILING, evidenceFrom, unreachableByActivities } from './evide
 import { grade } from './grading.ts';
 import type { Activity, MultipleChoiceActivity, PredictOutputActivity } from './model.ts';
 import { dimensionsByKind } from './model.ts';
+import { parseActivity } from './schema.ts';
 import { answer, currentActivity, isFinished, startRun, summarize, verdict } from './run.ts';
 import {
   carryForward,
@@ -248,5 +249,200 @@ describe('the practice log', () => {
     expect(minimumMet(log)).toBe(false);
     expect(practiceLine(log)).toBe('1 day practiced.');
     expect(practiceLine(log)).not.toMatch(/lost|broke|streak/i);
+  });
+});
+
+describe('sorting into buckets', () => {
+  const activity: Activity = {
+    kind: 'categorize',
+    id: 'backend.idempotency.cat-1',
+    language: 'backend',
+    title: 'Safe to retry?',
+    difficulty: 3,
+    estimatedSeconds: 90,
+    skills: ['backend.idempotency'],
+    prompt: 'Which of these can be sent twice without changing the outcome?',
+    explanation: 'Idempotency is about the effect of the second call, not the first.',
+    buckets: [
+      { id: 'safe', name: 'Safe to retry' },
+      { id: 'unsafe', name: 'Not safe to retry' },
+    ],
+    items: [
+      { text: 'DELETE /orders/17', bucket: 'safe' },
+      { text: 'POST /orders', bucket: 'unsafe' },
+      { text: 'PUT /orders/17 with a full body', bucket: 'safe' },
+      { text: 'POST /orders/17/charge', bucket: 'unsafe' },
+    ],
+  };
+
+  it('accepts every item in its bucket', () => {
+    const result = grade(activity, {
+      kind: 'categorize',
+      placed: ['safe', 'unsafe', 'safe', 'unsafe'],
+    });
+    expect(result.correct).toBe(true);
+    expect(result.parts).toEqual([true, true, true, true]);
+  });
+
+  it('marks each item separately rather than the set as a whole', () => {
+    // The point of per-item parts: someone who sorts three of four correctly
+    // should see which one moved, not a single red mark over all of it.
+    const result = grade(activity, {
+      kind: 'categorize',
+      placed: ['safe', 'unsafe', 'unsafe', 'unsafe'],
+    });
+    expect(result.correct).toBe(false);
+    expect(result.parts).toEqual([true, true, false, true]);
+  });
+
+  it('counts an unplaced item as wrong rather than throwing', () => {
+    const result = grade(activity, { kind: 'categorize', placed: ['safe', 'unsafe'] });
+    expect(result.correct).toBe(false);
+    expect(result.parts).toEqual([true, true, false, false]);
+    expect(result.submitted).toContain('nowhere');
+  });
+});
+
+describe('assembling a tree', () => {
+  const activity: Activity = {
+    kind: 'build-tree',
+    id: 'architecture.layers.tree-1',
+    language: 'architecture',
+    title: 'Where does each piece sit?',
+    difficulty: 3,
+    estimatedSeconds: 120,
+    skills: ['architecture.layering'],
+    prompt: 'Place each piece under the layer that should own it.',
+    explanation: 'Dependencies point inward: transport knows about domain, never the reverse.',
+    root: 'Application',
+    nodes: [
+      { id: 'transport', label: 'Transport', parent: null },
+      { id: 'domain', label: 'Domain', parent: null },
+      { id: 'handler', label: 'HTTP handler', parent: 'transport' },
+      { id: 'rules', label: 'Pricing rules', parent: 'domain' },
+    ],
+  };
+
+  it('accepts the right parent for every node', () => {
+    const result = grade(activity, {
+      kind: 'build-tree',
+      parents: [null, null, 'transport', 'domain'],
+    });
+    expect(result.correct).toBe(true);
+  });
+
+  it('rejects a node placed under the wrong parent', () => {
+    // The mistake worth catching: business rules hanging off transport is not
+    // a small slip, it is the misunderstanding the activity exists to find.
+    const result = grade(activity, {
+      kind: 'build-tree',
+      parents: [null, null, 'transport', 'transport'],
+    });
+    expect(result.correct).toBe(false);
+    expect(result.parts).toEqual([true, true, true, false]);
+  });
+
+  it('counts a node that was never placed as wrong, even at the root', () => {
+    // The trap this distinction exists for: `transport` belongs at the root,
+    // so collapsing "never placed" into "placed at the root" would score an
+    // untouched node correct and hand out mastery nobody demonstrated.
+    const result = grade(activity, {
+      kind: 'build-tree',
+      parents: [undefined, null, 'transport', 'domain'],
+    });
+    expect(result.parts[0]).toBe(false);
+    expect(result.correct).toBe(false);
+    expect(result.submitted).toContain('nowhere');
+  });
+
+  it('ignores sibling order, which is not a fact about the structure', () => {
+    // Same parents, and the response says nothing about ordering — there is
+    // nowhere for sibling order to be expressed, which is the design.
+    const result = grade(activity, {
+      kind: 'build-tree',
+      parents: [null, null, 'transport', 'domain'],
+    });
+    expect(result.correct).toBe(true);
+  });
+});
+
+describe('refusing content that cannot be answered', () => {
+  const base = {
+    id: 'x.y.z',
+    language: 'backend',
+    title: 'T',
+    difficulty: 2,
+    estimatedSeconds: 60,
+    skills: ['backend.idempotency'],
+    prompt: 'P',
+    explanation: 'E',
+  };
+
+  it('rejects an item pointing at a bucket that does not exist', () => {
+    expect(() =>
+      parseActivity({
+        ...base,
+        kind: 'categorize',
+        buckets: [
+          { id: 'safe', name: 'Safe' },
+          { id: 'unsafe', name: 'Unsafe' },
+        ],
+        items: [
+          { text: 'a', bucket: 'safe' },
+          { text: 'b', bucket: 'unsafe' },
+          { text: 'c', bucket: 'maybe' },
+          { text: 'd', bucket: 'safe' },
+        ],
+      }),
+    ).toThrow(/Unknown bucket 'maybe'/);
+  });
+
+  it('rejects a bucket with nothing in it', () => {
+    expect(() =>
+      parseActivity({
+        ...base,
+        kind: 'categorize',
+        buckets: [
+          { id: 'safe', name: 'Safe' },
+          { id: 'unsafe', name: 'Unsafe' },
+        ],
+        items: [
+          { text: 'a', bucket: 'safe' },
+          { text: 'b', bucket: 'safe' },
+          { text: 'c', bucket: 'safe' },
+          { text: 'd', bucket: 'safe' },
+        ],
+      }),
+    ).toThrow(/has no items/);
+  });
+
+  it('rejects a cycle, which is not a tree', () => {
+    expect(() =>
+      parseActivity({
+        ...base,
+        kind: 'build-tree',
+        root: 'App',
+        nodes: [
+          { id: 'a', label: 'A', parent: 'b' },
+          { id: 'b', label: 'B', parent: 'a' },
+          { id: 'c', label: 'C', parent: null },
+        ],
+      }),
+    ).toThrow(/its own ancestor/);
+  });
+
+  it('rejects a parent that is not a node', () => {
+    expect(() =>
+      parseActivity({
+        ...base,
+        kind: 'build-tree',
+        root: 'App',
+        nodes: [
+          { id: 'a', label: 'A', parent: null },
+          { id: 'b', label: 'B', parent: 'ghost' },
+          { id: 'c', label: 'C', parent: null },
+        ],
+      }),
+    ).toThrow(/Unknown parent 'ghost'/);
   });
 });

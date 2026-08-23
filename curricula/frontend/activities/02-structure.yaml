@@ -1,0 +1,181 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Frontend, where the structure is the accessibility.
+#
+# Most of what gets called an accessibility problem is a structure problem
+# wearing a different label: the wrong element, state kept in the wrong place,
+# a layout that assumes a size. Sorting and assembling these makes that visible
+# in a way a question about ARIA attributes never does.
+
+activities:
+  - id: frontend.markup.semantics.cat-1
+    kind: categorize
+    language: frontend
+    title: Button, link, or neither
+    difficulty: 2
+    estimatedSeconds: 120
+    skills: [frontend.markup.semantics, frontend.markup.landmarks]
+    prompt: >-
+      Sort each control by the element it should actually be.
+    buckets:
+      - id: link
+        name: A link
+        hint: Goes somewhere
+      - id: button
+        name: A button
+        hint: Does something
+    items:
+      - text: Open the user profile page
+        bucket: link
+        why: It navigates. It should be openable in a new tab, and it has a URL.
+      - text: Submit the form
+        bucket: button
+        why: An action on this page, with no destination.
+      - text: Go to the checkout page
+        bucket: link
+        why: A destination, even when it is styled to look like a button.
+      - text: Delete this comment
+        bucket: button
+        why: An action with a consequence. Nobody should reach it by pasting a URL.
+      - text: Expand the details panel
+        bucket: button
+        why: It changes this page. There is nowhere to go.
+      - text: Jump to the pricing section further down this page
+        bucket: link
+        why: Still navigation, and the anchor belongs in the address bar.
+    explanation: >-
+      The question is never how it looks, it is what happens: if there is a
+      destination it is a link, and if there is an effect it is a button. That
+      distinction is not pedantry, because the browser has already built the
+      behavior on top of it. Links can be opened in a new tab, copied, and
+      followed by a crawler; buttons respond to space as well as enter and
+      announce themselves as actions. A div with a click handler has none of
+      that, and rebuilding it correctly takes more code than using the right
+      element in the first place.
+
+  - id: frontend.state.url.cat-1
+    kind: categorize
+    language: frontend
+    title: Where should this state live?
+    difficulty: 4
+    estimatedSeconds: 150
+    skills: [frontend.state.url, frontend.state.server]
+    prompt: >-
+      Sort each piece of state by where it belongs.
+    buckets:
+      - id: url
+        name: In the URL
+        hint: Shareable, bookmarkable, survives reload
+      - id: component
+        name: In the component
+        hint: Nobody else needs to know
+      - id: server
+        name: On the server
+        hint: The server owns the truth
+    items:
+      - text: The current search filters on a results page
+        bucket: url
+        why: Someone will want to send this exact view to a colleague.
+      - text: Which page of results is showing
+        bucket: url
+        why: Reloading should not silently return you to page one.
+      - text: Whether a dropdown is currently open
+        bucket: component
+        why: Nobody wants to bookmark an open dropdown.
+      - text: The text typed so far into a search box
+        bucket: component
+        why: Transient until submitted. Putting every keystroke in the URL floods the history.
+      - text: The list of products and their prices
+        bucket: server
+        why: The server owns it, and a copy in the client is a cache that can be stale.
+      - text: Whether the current user may edit this document
+        bucket: server
+        why: A permission the client may display but must never be the authority on.
+    explanation: >-
+      The test for the URL is whether someone would reasonably send this view to
+      somebody else, or expect a reload to return to it. Filters and pagination
+      pass; an open dropdown does not. The test for the server is whether the
+      client is allowed to be wrong about it -- prices and permissions are owned
+      elsewhere and merely displayed here. Everything else is component state,
+      and the common mistake is dragging component state upward into a global
+      store because it might be needed later, which turns a local question into
+      an application-wide one for nobody's benefit.
+
+  - id: frontend.markup.landmarks.tree-1
+    kind: build-tree
+    language: frontend
+    title: The shape a screen reader hears
+    difficulty: 3
+    estimatedSeconds: 150
+    skills: [frontend.markup.landmarks, frontend.markup.semantics]
+    prompt: >-
+      Place each region under the part of the page that should contain it.
+    root: Document body
+    nodes:
+      - id: header
+        label: Banner
+        parent: null
+        why: Site-wide heading content, one per page.
+      - id: main
+        label: Main
+        parent: null
+        why: The unique content of this page. Exactly one, and the target of skip links.
+      - id: footer
+        label: Content info
+        parent: null
+        why: Site-wide footer material.
+      - id: nav
+        label: Primary navigation
+        parent: header
+        why: Site navigation belongs in the banner, not inside the page content.
+      - id: search
+        label: Search form
+        parent: header
+        why: Available everywhere, so it lives with the site chrome.
+      - id: article
+        label: Article
+        parent: main
+        why: The actual content, inside the one region that holds this page's content.
+      - id: aside
+        label: Related links
+        parent: main
+        why: Complementary to the article, so it sits inside main beside it.
+      - id: legal
+        label: Copyright notice
+        parent: footer
+        why: Site information, not page content.
+    explanation: >-
+      Landmarks are how somebody using a screen reader skips your navigation --
+      the equivalent of glancing at a page and looking past the header. Get them
+      right and a user can jump straight to main and start reading. Get them
+      wrong, most often by putting navigation inside main or by having three
+      elements claim to be main, and every visit starts by listening to your
+      menu again. The structure costs nothing; it is the same elements either
+      way, arranged so the meaning matches the appearance.
+
+  - id: frontend.perf.loading.mc-1
+    kind: multiple-choice
+    language: frontend
+    title: The page that jumps while you read it
+    difficulty: 3
+    estimatedSeconds: 90
+    skills: [frontend.perf.loading, frontend.perf.images]
+    prompt: >-
+      Text moves down the page a second after it appears, and people keep
+      clicking the wrong thing. What is the usual cause?
+    options:
+      - text: The JavaScript bundle is too large.
+        why: It makes the page slow to become interactive, but slow is not the same as moving.
+      - text: Images and embeds are loading without their dimensions reserved.
+      - text: The server is responding slowly.
+        why: That delays everything evenly. Nothing would shift after the fact.
+      - text: Too many web fonts.
+        why: Fonts do cause a smaller version of this, but the large jumps come from unsized boxes.
+    correct: [1]
+    explanation: >-
+      An image with no width and height is zero pixels tall until it arrives,
+      and then it is not, so everything below it moves. The fix is to state the
+      dimensions in the markup, or to reserve the space with an aspect ratio, so
+      the box exists before the content does. The same applies to anything that
+      appears late -- advertisements, embeds, banners injected at the top of the
+      page. It is worth caring about beyond tidiness: the moment content jumps
+      is exactly the moment somebody's finger is already moving toward a button.

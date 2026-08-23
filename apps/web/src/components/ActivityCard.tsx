@@ -3,6 +3,10 @@ import type { Activity, ActivityGrade, ActivityResponse } from '@code-retrainer/
 import { grade } from '@code-retrainer/activities';
 import { useEffect, useMemo, useState } from 'react';
 
+import { BuildTree } from './BuildTree.tsx';
+import { Categorize } from './Categorize.tsx';
+import { useDragList } from './use-drag-list.ts';
+
 import { Inline } from './Inline.tsx';
 
 /**
@@ -56,6 +60,7 @@ export function ActivityCard({
         activity={activity}
         response={response}
         locked={result !== null}
+        parts={result?.parts ?? null}
         onChange={setResponse}
       />
 
@@ -112,6 +117,10 @@ function label(activity: Activity): string {
       return 'Find the fault';
     case 'match-pairs':
       return 'Match the pairs';
+    case 'categorize':
+      return 'Sort them';
+    case 'build-tree':
+      return 'Build the structure';
   }
 }
 
@@ -119,11 +128,14 @@ function ActivityInput({
   activity,
   response,
   locked,
+  parts,
   onChange,
 }: {
   readonly activity: Activity;
   readonly response: ActivityResponse | null;
   readonly locked: boolean;
+  /** Per-part correctness once graded, so sorted items can be marked in place. */
+  readonly parts: readonly boolean[] | null;
   readonly onChange: (response: ActivityResponse) => void;
 }) {
   switch (activity.kind) {
@@ -263,15 +275,44 @@ function ActivityInput({
           onChange={(matched) => onChange({ kind: 'match-pairs', matched })}
         />
       );
+
+    case 'categorize':
+      return (
+        <Categorize
+          activity={activity}
+          placed={response?.kind === 'categorize' ? response.placed : []}
+          locked={locked}
+          parts={parts}
+          onChange={(placed) => onChange({ kind: 'categorize', placed })}
+        />
+      );
+
+    case 'build-tree':
+      return (
+        <BuildTree
+          activity={activity}
+          parents={response?.kind === 'build-tree' ? response.parents : []}
+          locked={locked}
+          parts={parts}
+          onChange={(parents) => onChange({ kind: 'build-tree', parents })}
+        />
+      );
   }
 }
 
 /**
- * Reordering without drag and drop.
+ * Reordering, by dragging or by arrows.
  *
- * Buttons that move a line up or down, because dragging is unusable by
- * keyboard, fiddly on a laptop trackpad, and a great deal of code to get
- * wrong. Two arrows do the same job for everyone.
+ * The arrows came first and stay: dragging is unusable without a pointer,
+ * awkward on a trackpad, and impossible from a keyboard or a screen reader, so
+ * a list that can only be dragged is a list some people cannot answer at all.
+ * Dragging is the addition — for someone holding a mouse, hauling a line to
+ * where it belongs is faster and more direct than clicking an arrow four
+ * times, and on an ordering question the physical act is closer to the idea
+ * being taught.
+ *
+ * Both routes call the same `move`, so there is one definition of what
+ * happened and no second code path to keep honest.
  */
 function OrderLines({
   lines,
@@ -305,10 +346,23 @@ function OrderLines({
     onChange(next);
   };
 
+  const drag = useDragList(current.length, move, !locked);
+
   return (
-    <ol className="activity__order">
+    <ol className="activity__order" data-dragging={drag.dragging !== null}>
       {current.map((lineIndex, position) => (
-        <li key={lineIndex}>
+        <li
+          key={lineIndex}
+          data-dragging={drag.dragging === position}
+          data-over={drag.dragging !== null && drag.over === position}
+        >
+          <span
+            className="activity__order-grip"
+            aria-hidden="true"
+            {...drag.handlers(position)}
+          >
+            ⠿
+          </span>
           <code className="activity__order-line">{lines[lineIndex]}</code>
           <span className="activity__order-controls">
             <button

@@ -1,5 +1,10 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Activity, ActivityResponse } from './model.ts';
+import type {
+  Activity,
+  ActivityResponse,
+  BuildTreeActivity,
+  CategoryBucket,
+} from './model.ts';
 
 /**
  * What happened when an answer was submitted.
@@ -127,7 +132,65 @@ export function grade(activity: Activity, response: ActivityResponse): ActivityG
           .join('; '),
       };
     }
+
+    case 'categorize': {
+      if (response.kind !== 'categorize') throw mismatch();
+      // One part per item, so a learner who sorts six of seven correctly sees
+      // the one they missed rather than a single red mark over the whole set.
+      const parts = activity.items.map((item, index) => response.placed[index] === item.bucket);
+      return {
+        correct: parts.every(Boolean),
+        parts,
+        expected: activity.items
+          .map((item) => `${item.text} → ${bucketName(activity.buckets, item.bucket)}`)
+          .join('; '),
+        submitted: activity.items
+          .map(
+            (item, index) =>
+              `${item.text} → ${bucketName(activity.buckets, response.placed[index] ?? '')}`,
+          )
+          .join('; '),
+      };
+    }
+
+    case 'build-tree': {
+      if (response.kind !== 'build-tree') throw mismatch();
+      // Parent only. Sibling order is not a fact about the structure, and
+      // grading it would mark noise as a mistake.
+      const parts = activity.nodes.map((node, index) => {
+        const chosen = response.parents[index];
+        // Never placed is wrong, including when the right answer is the root.
+        if (chosen === undefined) return false;
+        return chosen === node.parent;
+      });
+      return {
+        correct: parts.every(Boolean),
+        parts,
+        expected: activity.nodes
+          .map((node) => `${node.label} under ${nodeLabel(activity, node.parent)}`)
+          .join('; '),
+        submitted: activity.nodes
+          .map((node, index) => {
+            const chosen = response.parents[index];
+            return `${node.label} under ${
+              chosen === undefined ? 'nowhere' : nodeLabel(activity, chosen)
+            }`;
+          })
+          .join('; '),
+      };
+    }
   }
+}
+
+/** A bucket's name, or a legible stand-in when nothing was placed. */
+function bucketName(buckets: readonly CategoryBucket[], id: string): string {
+  return buckets.find((bucket) => bucket.id === id)?.name ?? 'nowhere';
+}
+
+/** A node's label, with the root standing in for "no parent". */
+function nodeLabel(activity: BuildTreeActivity, id: string | null): string {
+  if (id === null) return activity.root;
+  return activity.nodes.find((node) => node.id === id)?.label ?? 'nowhere';
 }
 
 /**

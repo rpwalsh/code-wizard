@@ -57,6 +57,10 @@ export function TopBar({
   onMode,
   onPalette,
 }: TopBarProps) {
+  const practiceOnly = languages.some(
+    (option) => option.id === language && !option.runnable,
+  );
+
   return (
     <header className="topbar">
       <span className="wordmark">Code Retrainer</span>
@@ -85,11 +89,18 @@ export function TopBar({
           {languages.map((option) => (
             <option key={option.id} value={option.id}>
               {option.title}
-              {option.runnable ? '' : ' — needs the desktop app'}
+              {option.runnable ? '' : ' — practice'}
             </option>
           ))}
         </select>
       </label>
+
+      {practiceOnly ? (
+        <p className="topbar__note">
+          <strong>practice</strong> = reading and reasoning here; writing and running it needs
+          the desktop app
+        </p>
+      ) : null}
 
       <span className="topbar__spacer" />
 
