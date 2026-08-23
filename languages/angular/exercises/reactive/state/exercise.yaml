@@ -1,0 +1,77 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.reactive.state
+version: 1
+language: angular
+title: A service that owns its state
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 30000
+
+skills:
+  - angular.reactive.state
+  - angular.di.scope
+  - angular.change.onpush
+
+prerequisites: []
+
+learningObjectives:
+  - Keep state in a service and expose it read-only.
+  - Replace state rather than mutating it, so change detection sees it.
+  - Derive values instead of storing a second copy.
+
+prompt: |
+  Angular state that goes wrong nearly always goes wrong in one of two ways:
+  a component mutates an object it was handed, or two pieces of state have to
+  agree and stop agreeing. This service prevents both by construction.
+
+  In `main.ts`, implement `BasketService`:
+
+  - `add(item: Item): void` — appends, replacing the array rather than pushing.
+  - `remove(id: string): void`
+  - `readonly items: readonly Item[]` — a getter, so callers cannot assign it.
+  - `get total(): number` — derived, never stored.
+  - `get isEmpty(): boolean` — likewise.
+
+  Nothing outside the service may change its state, and the tests check that
+  by trying.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/state.test.ts
+    visibility: visible
+    concept: angular.reactive.state
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.change.onpush
+
+hints:
+  - level: conceptual
+    text: State has one owner, and everyone else gets a copy or a view.
+  - level: structural
+    text: A private field with a public getter is the whole pattern.
+  - level: language
+    text: Spreading into a new array gives a new reference, which is what change detection compares.
+  - level: syntax
+    text: '`this.#items = [...this.#items, item];`'
+  - level: explicit
+    text: '`get total()` computes from `this.#items` every time it is read — there is no field for it.'
+
+explanation: |
+  Replacing the array rather than pushing to it is what makes this work with
+  `OnPush`. That strategy re-checks a component when an input's *reference*
+  changes, so mutating an array in place leaves the view showing stale data
+  with nothing thrown and nothing logged — the single most reported "Angular
+  bug" that is not one.
+
+  Exposing a getter rather than a public field is the other half. It means a
+  component cannot assign over the state, and combined with `readonly Item[]`
+  the compiler also refuses `push`. Neither is a runtime guarantee — a
+  determined caller can cast — but they turn an easy mistake into a deliberate
+  one.
+
+  `total` and `isEmpty` are getters rather than fields for the same reason they
+  were computed during render in the React course: a value derived on demand
+  cannot fall out of step with what it is derived from, and there is no update
+  path anyone can forget.

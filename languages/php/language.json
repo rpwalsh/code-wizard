@@ -1,0 +1,5 @@
+{
+  "id": "php",
+  "title": "PHP",
+  "summary": "For someone maintaining PHP written across three eras of the language. About types, the request lifecycle, and the security properties that are the whole reason to care."
+}

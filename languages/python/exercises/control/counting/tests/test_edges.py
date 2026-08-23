@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Where the ends are, and what gets dropped."""
 
 import pytest

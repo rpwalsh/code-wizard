@@ -1,0 +1,105 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 1 — The process, and what it touches (lessons 1–16)
+#
+# Node is a process with an event loop, and almost every production problem is
+# one of three things: the loop was blocked, the file was read into memory, or
+# the failure crossed a boundary and lost its meaning on the way.
+
+stage: process
+title: The process, and what it touches
+lessons:
+  - id: nd.001
+    title: What a module specifier means
+    focus: Resolution, extensions, and the two module systems in one runtime.
+    skills: [node.runtime.modules]
+    difficulty: 3
+
+  - id: nd.002
+    title: Arguments and environment
+    focus: Reading configuration from outside without scattering it inside.
+    skills: [node.runtime.process, node.operations.config]
+    difficulty: 2
+
+  - id: nd.003
+    title: Exit codes
+    focus: Failing in a way a shell script can detect.
+    skills: [node.runtime.process]
+    difficulty: 2
+
+  - id: nd.004
+    title: Reading a file
+    focus: Encoding, missing files, and the difference between absent and empty.
+    skills: [node.io.files]
+    difficulty: 2
+
+  - id: nd.005
+    title: Paths
+    focus: Joining, resolving, and never concatenating.
+    skills: [node.io.paths]
+    difficulty: 2
+
+  - id: nd.006
+    title: Writing without destroying
+    focus: Write, then rename. Why the naive version loses data on a crash.
+    skills: [node.io.files]
+    difficulty: 4
+
+  - id: nd.007
+    title: The file that did not fit
+    focus: Read it into memory, watch it fail, then stream it.
+    skills: [node.io.streams]
+    difficulty: 4
+
+  - id: nd.008
+    title: Backpressure
+    focus: What happens when the reader is faster than the writer.
+    skills: [node.io.streams]
+    difficulty: 5
+
+  - id: nd.009
+    title: Pipelines that clean up
+    focus: One failure in the middle, and every handle closed anyway.
+    skills: [node.io.pipelines]
+    difficulty: 5
+
+  - id: nd.010
+    title: Blocking the loop
+    focus: A synchronous call in a request handler. Measured, then removed.
+    skills: [node.runtime.eventloop]
+    difficulty: 4
+
+  - id: nd.011
+    title: Errors that survive a boundary
+    focus: Error types, causes, and not stringifying on the way out.
+    skills: [node.failure.errors]
+    difficulty: 3
+
+  - id: nd.012
+    title: The rejection nobody caught
+    focus: What the process does about it, and where the boundary belongs.
+    skills: [node.failure.async]
+    difficulty: 4
+
+  - id: nd.013
+    title: Logging something you can search
+    focus: Structured records rather than sentences, and what belongs in each one.
+    skills: [node.operations.logging]
+    difficulty: 3
+
+  - id: nd.014
+    title: Configuration, validated once
+    focus: Fail at startup with a clear message rather than at 3am with undefined.
+    skills: [node.operations.config]
+    difficulty: 3
+
+  - id: nd.015
+    title: Testing something with a filesystem in it
+    focus: A temporary directory, and a test that cleans up after itself.
+    skills: [node.operations.testing]
+    difficulty: 4
+
+  - id: nd.016
+    title: Finding what is slow
+    focus: Measuring rather than guessing, on a program that has more than one suspect.
+    skills: [node.operations.performance]
+    difficulty: 5

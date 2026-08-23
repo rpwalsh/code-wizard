@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Exception types of your own."""
 
 

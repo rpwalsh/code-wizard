@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """In-place really meaning in place, and windows at the edges."""
 
 import pytest

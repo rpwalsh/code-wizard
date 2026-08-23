@@ -1,0 +1,84 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.errors.wrapping
+version: 1
+language: go
+title: An error that keeps its cause
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 30000
+
+skills:
+  - go.errors.wrapping
+  - go.errors.sentinel
+  - go.errors.values
+
+prerequisites: []
+
+learningObjectives:
+  - Add context to an error without discarding what it was.
+  - Let a caller test for a cause several layers down.
+  - Choose between %w and %v deliberately.
+
+prompt: |
+  Go errors are values, and the useful question about a value is what a caller
+  can do with it. An error that says only "loading config" tells them nothing;
+  one that says "loading config: not found" and can still be *tested* for "not
+  found" tells them everything.
+
+  In `main.go`, implement:
+
+  - `ErrNotFound` — a sentinel error with the message `not found`.
+  - `Load(store map[string]string, key string) (string, error)` — returns the
+    value, or an error wrapping `ErrNotFound` with the message
+    `load "<key>": not found`.
+  - `LoadAll(store map[string]string, keys []string) ([]string, error)` —
+    every value in order, stopping at the first failure and returning that
+    error unchanged so the cause survives.
+  - `IsMissing(err error) bool` — true when `ErrNotFound` is anywhere in the
+    chain.
+
+  `IsMissing` must not compare messages. A caller matching on the text of an
+  error is coupled to your wording forever.
+
+entryPoint: main.go
+
+tests:
+  - path: wrapping_test.go
+    visibility: visible
+    concept: go.errors.wrapping
+  - path: edges_test.go
+    visibility: edge
+    concept: go.errors.sentinel
+
+hints:
+  - level: conceptual
+    text: Adding context should not destroy identity.
+  - level: structural
+    text: There is a formatting verb that keeps the original error reachable.
+  - level: language
+    text: '`%w` wraps; `%v` only formats. `errors.Is` walks the chain.'
+  - level: syntax
+    text: '`fmt.Errorf("load %q: %w", key, ErrNotFound)`'
+  - level: explicit
+    text: '`errors.Is(err, ErrNotFound)` is the whole of IsMissing.'
+
+explanation: |
+  `%w` and `%v` produce the same message and different values. With `%v` the
+  original error is formatted into a string and then thrown away, so
+  `errors.Is` finds nothing and a caller has no way to distinguish "missing"
+  from "the disk caught fire". With `%w` the cause is carried inside the new
+  error and stays reachable however many layers are added on top.
+
+  The rule of thumb is about the caller, not about you: wrap when a caller
+  might reasonably branch on the cause, and format when the error really is
+  just a message. Wrapping everything leaks internals into your API — the
+  wrapped error becomes part of what callers depend on.
+
+  Comparing error text is the alternative people reach for, and it breaks the
+  first time anyone improves a message. `errors.Is` compares identity, which
+  is what a sentinel is for.
+
+# Go tests live beside the code they test, not under `tests/`: a test in a
+# different directory is a different package and cannot see the functions it
+# is testing. The platform's `isTestFile` hook exists for exactly this.

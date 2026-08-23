@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Missing levels, and rows that are secretly the same object."""
 
 import pytest

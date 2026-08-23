@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** Where the single number type shows. */
 import { test } from 'retrainer/test.js';
 import { expectEqual } from 'retrainer/expect.js';

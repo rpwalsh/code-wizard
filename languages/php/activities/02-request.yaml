@@ -1,0 +1,121 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# PHP: types, requests and the places the language is generous to a fault.
+
+activities:
+  - id: php.types.coercion.po-2
+    kind: predict-output
+    language: php
+    title: Equal, for certain values of equal
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [php.types.coercion]
+    prompt: PHP 8 runs this. What does it print?
+    code: |
+      var_dump(0 == "a");
+      var_dump("1" == "01");
+      var_dump("abc" == 0);
+      var_dump(null == false);
+      var_dump("0" === 0);
+    expected: |
+      bool(false)
+      bool(true)
+      bool(false)
+      bool(true)
+      bool(false)
+    explanation: >-
+      PHP 8 fixed the most famous case: a number compared to a non-numeric
+      string is now compared *as strings*, so `0 == "a"` is finally false. But
+      two numeric strings still compare as numbers, so `"1" == "01"` remains
+      true, and null still loosely equals false. `===` sidesteps the whole
+      table — same type, same value, no conversions — which is why strict
+      comparison is the default choice and `==` the deliberate exception.
+
+  - id: php.request.sessions.spot-1
+    kind: spot-the-bug
+    language: php
+    title: The login that can be hijacked
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [php.request.sessions]
+    prompt: One missing line makes this login vulnerable to session fixation. Where?
+    code: |
+      function log_in(PDO $pdo, string $email, string $password): bool
+      {
+          $user = find_user($pdo, $email);
+          if ($user === null || !password_verify($password, $user['hash'])) {
+              return false;
+          }
+          $_SESSION['user_id'] = $user['id'];
+          return true;
+      }
+    faultLine: 7
+    correction: '    session_regenerate_id(true); $_SESSION[''user_id''] = $user[''id''];'
+    explanation: >-
+      Session fixation: an attacker plants a session id they know — a link
+      with the id in it, a cookie set from a subdomain — and waits for the
+      victim to log in *under that id*. The session is now authenticated and
+      the attacker holds a valid id for it. Regenerating the id at every
+      privilege change means the id the attacker planted never becomes worth
+      having. One line, and it has to run exactly here, after verification
+      and before the session becomes valuable.
+
+  - id: php.structure.enums.fill-1
+    kind: fill-blanks
+    language: php
+    title: A status that cannot be misspelled
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [php.structure.enums, php.types.declarations]
+    prompt: Complete the enum so it can round-trip through the database as a string.
+    template: |
+      enum Status: {1}
+      {
+          case Draft = 'draft';
+          case Published = 'published';
+
+          public static function fromInput(string $value): self
+          {
+              return self::{2}($value);
+          }
+      }
+    blanks:
+      - index: 1
+        accepts: ['string']
+        hint: A backed enum names the type its cases carry.
+      - index: 2
+        accepts: ['from']
+        hint: Throws on an unknown value; tryFrom returns null instead.
+    explanation: >-
+      A backed enum gives every case a scalar to store, and `from`/`tryFrom`
+      are the two re-entry points: `from` throws on garbage, `tryFrom` hands
+      back null and makes the caller decide. Before enums this was a class of
+      string constants and a prayer — nothing stopped `'pubished'` from being
+      assigned, stored and compared forever. The enum turns the typo into a
+      ValueError at the boundary.
+
+  - id: php.errors.handling.mc-1
+    kind: multiple-choice
+    language: php
+    title: What the user sees when it breaks
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [php.errors.handling, php.request.output]
+    prompt: >-
+      In production, an uncaught exception's message ends up rendered in the
+      response. What is the actual risk?
+    options:
+      - text: Messages leak internals — paths, queries, hostnames — that make every other attack easier.
+      - text: The page will not validate as HTML.
+        why: True and irrelevant; nobody attacks markup validity.
+      - text: Exceptions are slow to render.
+        why: The request has already failed; its speed no longer matters.
+      - text: There is no risk; the message is generic.
+        why: A PDOException happily includes the SQL and sometimes the DSN. Messages are written for developers, not strangers.
+    correct: [0]
+    explanation: >-
+      An exception message is a developer telling a developer what went wrong,
+      and it speaks freely: file paths, table names, the query that failed,
+      occasionally credentials embedded in a DSN. Production error handling is
+      a split: log the truth in full, show the user a reference id and an
+      apology. `display_errors = Off` is the setting; an exception handler
+      that renders a neutral page is the code.

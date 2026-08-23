@@ -1,0 +1,84 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.engineering.semver
+version: 1
+language: go
+title: Code shaped for table tests
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 90000
+
+skills:
+  - go.engineering.testing
+  - go.engineering.packages
+  - go.errors.values
+
+prerequisites: []
+
+learningObjectives:
+  - Write functions whose contracts fit a table of cases.
+  - Split exported API from unexported helpers and know what the boundary buys.
+  - Compare versions the way go.mod does, not the way string compare does.
+
+prompt: |
+  The visible test file here is itself part of the lesson: one table,
+  many cases, one loop — the shape Go testing settled on because adding
+  a case costs one line and a failure names its row.
+
+  In `main.go`:
+
+  - `ParseVersion(text string) (Version, error)` — parse `"1.22.4"`
+    into `Version{Major, Minor, Patch int}`. A leading `"v"` is
+    accepted (`"v1.22.4"`). Anything else — wrong part count, empty
+    parts, non-digits, negative signs — returns a zero Version and an
+    error naming the input. Use an unexported `parsePart` helper for
+    the per-number work: exported surface small, machinery private.
+  - `Compare(a, b Version) int` — -1, 0, 1, major first, then minor,
+    then patch. The reason string comparison is wrong is the reason
+    this function exists: `"1.9.0" > "1.10.0"` as strings.
+  - `Latest(texts []string) (string, error)` — parse them all, return
+    the text of the newest. Any unparsable entry fails the whole call
+    (the error carries that entry); an empty list is an error too.
+
+entryPoint: main.go
+
+tests:
+  - path: semver_test.go
+    visibility: visible
+    concept: go.engineering.testing
+  - path: edges_test.go
+    visibility: edge
+    concept: go.errors.values
+
+hints:
+  - level: conceptual
+    text: A table test is the contract written as data. If a function is awkward to table-test, the contract is usually the awkward part.
+  - level: structural
+    text: strings.TrimPrefix for the v, strings.Split on dots, exactly three parts, each through parsePart.
+  - level: language
+    text: strconv.Atoi accepts a leading minus, so parsePart must reject it explicitly — a version part is digits only.
+  - level: syntax
+    text: 'func parsePart(text string) (int, error) — lowercase first letter: visible in this package, invisible outside it.'
+  - level: explicit
+    text: "Compare: if a.Major != b.Major return sign; repeat for Minor, Patch; return 0. A sign helper keeps it to three lines per field."
+
+explanation: |
+  The table shape earns a paragraph because it changes behavior: when
+  adding a case is one line, people add cases — the empty string, the
+  double dot, the "v" alone — and the suite grows where the bugs are.
+  When each case is a hand-rolled function, people add three and stop.
+  The test file's `for _, tt := range cases` with `t.Run(tt.name, ...)`
+  also means a failure prints the row's name, so "which input broke"
+  is in the output, not in a debugger.
+
+  The exported/unexported split is Go's entire visibility system — one
+  capital letter — and the discipline it encodes scales: `parsePart`
+  can change signature, split in two or disappear without any consumer
+  noticing, because no consumer could name it. Every symbol you export
+  is a promise; lowercase is how you avoid promising.
+
+  Compare existing at all is the semver lesson: versions are numbers
+  in dotted clothing, and lexicographic comparison misorders them the
+  moment any part reaches two digits. The zero value pays off here
+  too — a failed parse returns `Version{}`, and because the error is
+  checked first, that zero never masquerades as v0.0.0 in real use.

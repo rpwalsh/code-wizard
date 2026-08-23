@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.routing.guards
+version: 1
+language: angular
+title: The route decides before the view exists
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - angular.routing.routes
+  - angular.routing.guards
+
+prerequisites: []
+
+learningObjectives:
+  - Match paths against route configurations with parameters.
+  - Run guard chains where the first refusal wins.
+  - Express a redirect as a guard result rather than a side effect.
+
+prompt: |
+  In Angular, navigation is a pipeline: match the route, ask its guards,
+  and only then build the component. Build the pipeline's decision half.
+
+  In `main.ts`:
+
+  - `matchRoute(routes, path)` — routes are
+    `{ path: string, name: string, guards?: GuardFn[] }` where a route
+    path may contain `:param` segments. Returns
+    `{ name, params }` for the first route (in array order — first
+    match wins, which is why order matters in every router config) whose
+    pattern matches, or `null`. Trailing slashes are ignored; parameter
+    values are decoded with `decodeURIComponent`.
+  - Guards: a `GuardFn` is `(context) => GuardResult` where context is
+    `{ params, session }` (session: `{ user: string | null,
+    roles: string[] }`) and a result is `true`, `false`, or
+    `{ redirectTo: string }`.
+  - `runGuards(guards, context)` — runs them in order. The first
+    non-`true` result is the answer — later guards must not run: a guard
+    can have side effects (logging, redirect bookkeeping), and running
+    the role check after authentication already failed is both wasted
+    and wrong. All `true` means `true`.
+  - `navigate(routes, path, session)` — the whole pipeline:
+    - no match → `{ status: 'not-found' }`
+    - guards pass → `{ status: 'activated', name, params }`
+    - a guard returns false → `{ status: 'blocked' }`
+    - a guard redirects → `{ status: 'redirected', to }` — and the
+      redirect target is *not* navigated into here; loops are the
+      caller's problem to notice, and surfacing the redirect as data is
+      what makes them noticeable.
+  - Two ready-made guards, because every app writes them:
+    `requireUser` — `true` when `session.user` is non-null, otherwise
+    `{ redirectTo: '/login' }`.
+    `requireRole(role)` — returns a guard: `true` when the session's
+    roles include it, otherwise `false` (403, not a redirect — the user
+    is known, just not allowed).
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/guards.test.ts
+    visibility: visible
+    concept: angular.routing.guards
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.routing.routes
+
+hints:
+  - level: conceptual
+    text: A guard answers one question and never navigates. Returning the redirect as data is what keeps navigation in one place.
+  - level: structural
+    text: Split both path and pattern on '/', drop empties, compare segment-wise with :params capturing.
+  - level: language
+    text: 'runGuards is a plain for-of with an early return — the laziness is the contract, not an optimization.'
+  - level: syntax
+    text: 'requireRole is a factory: `(role) => (context) => context.session.roles.includes(role) ? true : false`.'
+  - level: explicit
+    text: 'navigate: match; if null, not-found. runGuards(route.guards ?? [], { params, session }); true → activated, false → blocked, object → redirected with to: result.redirectTo.'
+
+explanation: |
+  First-match-wins is the routing rule that bites everyone once: a config
+  listing `/users/:id` before `/users/new` sends "new" into the id route,
+  and the fix is ordering, which is why the exercise pins array order
+  rather than specificity. (Angular's real router also matches in config
+  order — specificity scoring is the other tradition, and knowing which
+  router you are holding matters.)
+
+  The unauthenticated/unauthorized split — redirect versus block — is
+  HTTP's 401/403 distinction wearing router clothes. An anonymous user
+  sent to login can fix their situation; a known user lacking a role
+  cannot, and redirecting them to login anyway produces the classic
+  infinite bounce for users who are logged in but under-privileged.
+  Encoding the difference in the guard's *return type* keeps the policy
+  in one grep-able place.
+
+  Guards short-circuiting in order is also a security property, not just
+  efficiency: guard order is often auth-then-authorization-then-audit,
+  and running the audit guard for a request that failed authentication
+  records an event that never meaningfully happened. Pipelines whose
+  stages assume the previous stages passed must actually stop at the
+  first failure.

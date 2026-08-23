@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The four, used the ordinary way."""
 
 import pytest

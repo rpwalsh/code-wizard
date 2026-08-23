@@ -1,0 +1,92 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.types.mapped
+version: 1
+language: typescript
+title: Types computed from types
+kind: micro-problem
+difficulty: 5
+estimatedSeconds: 660
+timeoutMs: 20000
+
+skills:
+  - typescript.types.mapped
+  - typescript.types.conditional
+  - typescript.types.utility
+
+prerequisites: []
+
+learningObjectives:
+  - Write mapped types that derive one shape from another.
+  - Use conditional types with infer to take types apart.
+  - Rebuild the utility types you use daily, so they stop being magic.
+
+prompt: |
+  `Partial`, `Pick`, `ReturnType` — the utility types are not compiler
+  features. They are one-liners in a language whose values are types,
+  and building them once removes the magic permanently.
+
+  In `main.ts`, implement the *types* (the tests type-check against
+  them; the runtime functions exist to prove they are usable):
+
+  - `Mine<T>` — your `Partial`: every property optional. A mapped type
+    with a `?` modifier.
+  - `Locked<T>` — your `Readonly`.
+  - `Chosen<T, K extends keyof T>` — your `Pick`.
+  - `Unwrapped<T>` — `T` with one layer of Promise removed:
+    `Unwrapped<Promise<number>>` is `number`, `Unwrapped<string>` is
+    `string`. Conditional + infer.
+  - `Setters<T>` — the mapped-type-with-renaming showpiece: for
+    `{ name: string; age: number }`, produce
+    `{ setName: (value: string) => void; setAge: (value: number) => void }`.
+    Template literal keys with `Capitalize`.
+
+  And two runtime functions that exercise them:
+
+  - `pickFields(source, keys)` — returns `Chosen<T, K>`: a new object
+    holding exactly those keys.
+  - `makeSetters(target)` — returns `Setters<T>`, each setter writing
+    through to `target` (mutating it — the one deliberate mutation in
+    this exercise, because that is what a setter is).
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/mapped.test.ts
+    visibility: visible
+    concept: typescript.types.mapped
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.types.conditional
+
+hints:
+  - level: conceptual
+    text: A mapped type is a for-loop over keys; a conditional type is an if; infer is a pattern-match binding. The type level is a tiny functional language.
+  - level: structural
+    text: "Mine: { [K in keyof T]?: T[K] }. Locked: readonly before the key. Chosen: map over K, not keyof T."
+  - level: language
+    text: "Unwrapped: T extends Promise<infer Inner> ? Inner : T — infer names the type the pattern captured."
+  - level: syntax
+    text: "Setters: { [K in keyof T & string as `set${Capitalize<K>}`]: (value: T[K]) => void }"
+  - level: explicit
+    text: "makeSetters: build an object, and for each key of target define set{Key} = (value) => { target[key] = value; }. Capitalize at runtime with key[0].toUpperCase() + key.slice(1)."
+explanation: |
+  The `as` clause in a mapped type — key remapping — is the moment the
+  type level stops being bookkeeping and starts being programming:
+  `Setters<T>` runs a template literal over every key name at compile
+  time, and the result is a real type that autocompletes `setName` and
+  rejects `setNmae`. Libraries like tRPC and Zod are this technique
+  applied at scale; none of it is compiler magic, all of it is these
+  three constructs composed.
+
+  `infer` deserves its own sentence: it is destructuring for types.
+  `T extends Promise<infer Inner>` asks "does T match this shape, and
+  if so, name the hole". ReturnType, Parameters, Awaited — the whole
+  standard-library family is one infer each. (The real Awaited also
+  recurses, unwrapping nested promises; the single-layer version here
+  is the honest first step.)
+
+  A warning that belongs in the lesson: type-level programming is a
+  budget, not a lifestyle. A Setters-style type earns its complexity
+  when it keeps many call sites honest; the same trick wrapped around
+  one object is cleverness rent with interest. The skill includes
+  knowing when the plain interface was the better program.

@@ -1,0 +1,5 @@
+{
+  "id": "node",
+  "title": "Node",
+  "summary": "Server-side JavaScript for someone who can already write the language. About processes, streams, failure and the things that only go wrong under load."
+}

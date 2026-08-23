@@ -1,0 +1,83 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.basics.word-count
+version: 1
+language: go
+title: The map access that invents a zero
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 60000
+
+skills:
+  - go.basics.maps
+  - go.basics.slices
+  - go.basics.functions
+
+prerequisites: []
+
+learningObjectives:
+  - Use the zero value a map hands back instead of checking membership first.
+  - Use the comma-ok form when absence and zero mean different things.
+  - Return a deterministic slice from an unordered map.
+
+prompt: |
+  Reading a missing key from a Go map does not panic and does not return an
+  error. It returns the value type's zero — which is either exactly what you
+  wanted or a silent bug, depending on whether zero and absent mean the same
+  thing in your problem.
+
+  In `main.go`, implement:
+
+  - `CountWords(text string) map[string]int` — how many times each word
+    appears. Words are separated by any whitespace; comparison is
+    case-insensitive, and the map's keys are lowercase. Here the zero value
+    *is* the feature: `counts[word]++` works on the first sighting because a
+    missing key reads as 0.
+  - `Occurrences(counts map[string]int, word string) (int, bool)` — the count
+    and whether the word was ever seen. This is the comma-ok form: a word seen
+    zero times and a word never seen both count 0, and the bool is the only
+    way to tell them apart. A nil map is fine here — it reads as empty.
+  - `TopWords(counts map[string]int, limit int) []string` — the `limit` most
+    frequent words, most frequent first, ties broken alphabetically. Map
+    iteration order is deliberately random in Go, so sorting is not optional
+    polish — without it this function returns different answers on different
+    runs. A limit beyond the map's size returns everything; zero or negative
+    returns an empty, non-nil slice.
+
+entryPoint: main.go
+
+tests:
+  - path: words_test.go
+    visibility: visible
+    concept: go.basics.maps
+  - path: edges_test.go
+    visibility: edge
+    concept: go.basics.slices
+
+hints:
+  - level: conceptual
+    text: A map read never fails. The question is whether zero-because-absent and zero-because-counted need distinguishing.
+  - level: structural
+    text: strings.Fields splits on any run of whitespace and drops the empties.
+  - level: language
+    text: 'The comma-ok form is `count, seen := counts[word]` — the second value is whether the key exists.'
+  - level: syntax
+    text: 'sort.Slice(words, func(i, j int) bool { ... }) with the count first and the word as the tie-break.'
+  - level: explicit
+    text: 'Collect the keys into a slice, sort by descending count then ascending word, and slice to the limit after clamping it to len(words).'
+
+explanation: |
+  `counts[word]++` on a key that is not there yet is idiomatic Go, not an
+  accident that happens to work. The zero value is part of the map's contract,
+  and half the standard library's map code leans on it. The skill is noticing
+  when it stops being safe — which is what `Occurrences` is for. There, zero
+  is a legitimate answer, so absence needs its own channel, and the comma-ok
+  form is that channel.
+
+  The randomized iteration order is a deliberate piece of language design: Go
+  shuffles it precisely so nobody ships code that accidentally depends on it.
+  `TopWords` is the function every such program eventually contains, and the
+  sort is where its determinism comes from. Returning an empty slice rather
+  than nil for a zero limit keeps the caller's `range` and `len` code on one
+  path — nil ranges fine too, but an API that sometimes returns nil and
+  sometimes empty makes every caller ask which.

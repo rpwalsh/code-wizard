@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Empty chains, single nodes, and loops."""
 
 import pytest

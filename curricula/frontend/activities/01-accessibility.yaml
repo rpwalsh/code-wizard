@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Frontend, read rather than rendered.
+#
+# Accessibility and layout, both of which are usually treated as taste and are
+# mostly rules with observable consequences.
+
+activities:
+  - id: frontend.a11y.names.mc-1
+    kind: multiple-choice
+    language: frontend
+    title: The button nobody can use
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [frontend.a11y.names, frontend.markup.semantics]
+    prompt: 'A close button is `<div onclick="close()">×</div>`. What actually breaks?'
+    options:
+      - text: It cannot be reached by keyboard, has no role, and is announced as the character "times".
+      - text: Nothing; a click handler is a click handler.
+        why: For a mouse user, yes. That is exactly why this survives review.
+      - text: Only that the cursor does not change.
+        why: Cosmetic, and the least of it.
+      - text: It will not work on touch devices.
+        why: Touch generates click events. It works fine there and still excludes keyboard and screen reader users.
+    correct: [0]
+    explanation: >-
+      A `button` element gets focusability, Enter and Space activation, a role
+      and a default appearance for free — every one of which must be
+      reimplemented on a div, and usually is not. Use the element that means
+      what you mean, and give it an accessible name (`aria-label="Close"`)
+      when its content is a symbol.
+
+  - id: frontend.a11y.focus.spot-1
+    kind: spot-the-bug
+    language: frontend
+    title: The focus ring somebody removed
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [frontend.a11y.focus, frontend.a11y.keyboard]
+    prompt: Which rule makes the page unusable without a mouse?
+    code: |
+      button {
+        border-radius: 6px;
+        padding: 8px 16px;
+      }
+      *:focus {
+        outline: none;
+      }
+    faultLine: 6
+    correction: '*:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }'
+    explanation: >-
+      Removing the outline removes the only indication of where keyboard focus
+      is, so tabbing through the page becomes navigating blind. If the default
+      ring is ugly, replace it — `:focus-visible` shows it for keyboard users
+      and not on mouse clicks, which is the behavior people were reaching for
+      when they wrote `outline: none`.
+
+  - id: frontend.layout.overflow.mc-1
+    kind: multiple-choice
+    language: frontend
+    title: The table that breaks the page
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [frontend.layout.overflow, frontend.layout.responsive]
+    prompt: >-
+      A wide table makes the whole page scroll sideways on a phone. What is the
+      right fix?
+    options:
+      - text: 'Wrap the table in a container with `overflow-x: auto`.'
+      - text: 'Set `overflow-x: hidden` on the body.'
+        why: The content is still there and now unreachable. This hides the symptom by hiding the data.
+      - text: Reduce the font size until it fits.
+        why: It will not fit at any readable size, and you have made everything else worse.
+      - text: 'Set the table to `width: 100%`.'
+        why: The table's minimum content width still exceeds the viewport; it will overflow anyway.
+    correct: [0]
+    explanation: >-
+      Wide content should scroll inside its own box. The page body scrolling
+      sideways moves the navigation and the text off screen too, which is the
+      part users experience as broken. Give the overflow to the element that
+      actually overflows.
+
+  - id: frontend.perf.images.match-1
+    kind: match-pairs
+    language: frontend
+    title: Why the page jumps
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [frontend.perf.images, frontend.perf.rendering]
+    prompt: Match each attribute to what it prevents.
+    pairs:
+      - left: width and height on an img
+        right: Content shifting when the image loads
+      - left: loading="lazy"
+        right: Downloading images nobody scrolls to
+      - left: 'fetchpriority="high"'
+        right: The main image queuing behind minor ones
+      - left: 'decoding="async"'
+        right: Decoding blocking the main thread
+    explanation: >-
+      Dimensions are the one that matters most and is skipped most often: the
+      browser reserves the space before the bytes arrive, so nothing below
+      jumps. Layout shift is the failure people report as "I clicked the wrong
+      thing", and it is almost always an image or a font arriving late.

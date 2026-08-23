@@ -1,9 +1,10 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The ordinary cases."""
 
 import pytest
 
 from retrainer.expect import expect_close, expect_equal
-from main import close_enough, normalise, settled, total_error
+from main import close_enough, normalize, settled, total_error
 
 
 @pytest.mark.concept("python.numerical.floats")
@@ -13,8 +14,8 @@ def test_close_enough():
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_normalise():
-    result = normalise({"a": 1, "b": 3})
+def test_normalize():
+    result = normalize({"a": 1, "b": 3})
     expect_close(result["a"], 0.25)
     expect_close(result["b"], 0.75)
 

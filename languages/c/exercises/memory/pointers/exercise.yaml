@@ -1,0 +1,87 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.memory.pointer-walk
+version: 1
+language: c
+title: An array is an address wearing a hat
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 45000
+
+skills:
+  - c.memory.pointers
+  - c.memory.arrays
+  - c.memory.stack-heap
+
+prerequisites: []
+
+learningObjectives:
+  - Walk memory with pointers instead of indices, and know they are the same walk.
+  - Return heap memory from a function and know why stack memory cannot be.
+  - Treat pointer + length as the shape every C array really has.
+
+prompt: |
+  In C an array is not a value you pass around; it is an address and a
+  length you carry separately, and the address is all the callee ever
+  receives. These functions make that concrete.
+
+  In `main.c` (declarations in `main.h`):
+
+  - `const int *find_value(const int *begin, const int *end, int wanted)`
+    — the classic pointer-pair search: `begin` points at the first
+    element, `end` one *past* the last. Return the first pointer whose
+    element equals `wanted`, or `end` when absent. No indices — walk the
+    pointer.
+  - `void reverse_in_place(int *values, size_t length)` — two pointers,
+    one from each end, swapping inward.
+  - `int *copy_reversed(const int *values, size_t length)` — a *new*
+    heap array holding the values reversed, or NULL when malloc fails or
+    length is 0. The caller frees it. Returning a stack array here is
+    the classic dangling-pointer bug — the memory dies with the return.
+  - `long sum_range(const int *begin, const int *end)` — the sum of the
+    half-open range, again by walking. An empty range (begin == end)
+    sums to 0.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/pointers_test.c
+    visibility: visible
+    concept: c.memory.pointers
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.memory.stack-heap
+
+hints:
+  - level: conceptual
+    text: begin/end with end one-past-the-last is the convention the whole C++ STL grew from. Empty is begin == end; no special cases.
+  - level: structural
+    text: Every function is a while over pointers. The index version compiles to the same thing; the pointer version is the exercise.
+  - level: language
+    text: 'Pointer arithmetic moves by element, not by byte: p + 1 on an int pointer advances four bytes.'
+  - level: syntax
+    text: 'for (const int *p = begin; p != end; p++) — the canonical walk.'
+  - level: explicit
+    text: 'reverse: int *left = values, *right = values + length - 1; while (left < right) swap, left++, right--. Guard length == 0 before computing right.'
+
+explanation: |
+  The half-open pointer pair — begin at the first, end one past the last
+  — earns its keep in three ways: an empty range is simply begin == end,
+  the length is end - begin with no off-by-one, and ranges split cleanly
+  at any midpoint. C++ iterators, Rust slices and Go slices all carry
+  this shape forward; learning it in raw pointers is learning all of
+  them at once.
+
+  `copy_reversed` returning heap memory is the stack/heap boundary drawn
+  where it actually matters. A local array is reclaimed the instant the
+  function returns — returning its address hands the caller a corpse,
+  and modern compilers warn precisely because the bug is so common.
+  Heap memory survives until freed, which is also the contract's cost:
+  the function's documentation must say who frees, because nothing in
+  the type system will.
+
+  One more habit hiding in `find_value`: returning `end` for "not
+  found" rather than NULL keeps the result inside the range's own
+  vocabulary — the caller compares against the end they already hold.
+  Both conventions exist in the wild; what matters is that absence has
+  an in-band answer that cannot be confused with a hit.

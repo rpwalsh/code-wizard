@@ -1,0 +1,89 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.boundaries.validation
+version: 1
+language: typescript
+title: The type is a claim until the guard makes it true
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - typescript.boundaries.validation
+  - typescript.basics.narrowing
+  - typescript.shapes.discriminated
+
+prerequisites: []
+
+learningObjectives:
+  - Write type guards that prove a shape instead of asserting it.
+  - Validate parsed JSON at the boundary so the inside of the program can trust its types.
+  - Return errors as data with a discriminated union.
+
+prompt: |
+  `JSON.parse` returns whatever the wire said, and a type annotation on the
+  result is a promise the compiler cannot check — `as User` compiles equally
+  well against any garbage. A *type guard* is the honest version: a function
+  whose return type says "if I return true, this value has this shape", and
+  whose body has to earn it.
+
+  In `main.ts`, with the `User` type from the starter
+  (`id: number, name: string, email: string, tags: string[]`), implement:
+
+  - `isUser(value: JsonValue): value is User` — true only for an object with
+    exactly those fields at those types. Extra fields are fine; wrong or
+    missing ones are not. Every element of `tags` must really be a string —
+    checking `Array.isArray` alone claims `string[]` of a `number[]`.
+  - `parseUser(text: string)` — returns the discriminated union
+    `{ ok: true; user: User } | { ok: false; error: string }`. Malformed
+    JSON and a wrong shape are both `ok: false` with different messages
+    (`'invalid json'` / `'not a user'`); nothing throws.
+  - `parseUsers(text: string)` — the input must be a JSON array; every valid
+    user is kept and the invalid entries are counted:
+    `{ ok: true; users: User[]; skipped: number }` or the same
+    `ok: false` shapes as above (`'not an array'` for a non-array).
+
+  No `as`, no `any`, no `unknown` — `JsonValue` (in the starter) is what
+  parsed JSON actually is, and narrowing is how you climb from it to `User`.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/validation.test.ts
+    visibility: visible
+    concept: typescript.boundaries.validation
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.basics.narrowing
+
+hints:
+  - level: conceptual
+    text: A guard's body must check everything its signature claims. The compiler trusts the signature completely and checks the body not at all.
+  - level: structural
+    text: 'Check in narrowing order: is it an object and not null, then each field''s type, then every element of tags.'
+  - level: language
+    text: '`typeof value === "object" && value !== null && !Array.isArray(value)` is the full test for "a plain object" — typeof null is "object", the historical accident that makes the second clause necessary.'
+  - level: syntax
+    text: '`tags.every((tag): tag is string => typeof tag === "string")` narrows the array''s element type.'
+  - level: explicit
+    text: 'In parseUser, JSON.parse inside try/catch gives you a JsonValue; return { ok: false, error: "invalid json" } in the catch and { ok: false, error: "not a user" } when the guard says no.'
+
+explanation: |
+  The difference between `value as User` and `isUser(value)` is the difference
+  between telling the compiler and showing it. The cast is free and worthless:
+  it compiles against anything and fails at the exact moment the wire sends
+  something new, deep inside the program where the stack trace points at
+  innocent code. The guard is work and worth it: the failure happens at the
+  boundary, once, with a message that says what actually arrived.
+
+  Checking every element of `tags` is where most hand-written guards cut the
+  corner. `Array.isArray` proves "array", not "array of strings", and the
+  claim `string[]` over a `[1, 2, 3]` means some distant `.toUpperCase()`
+  crashes on a number — the exact failure mode guards exist to prevent,
+  reintroduced by an incomplete guard that *looks* thorough.
+
+  `parseUsers` keeping the good entries and counting the bad is boundary
+  policy, and it is a real decision: all-or-nothing is right for a config
+  file, keep-and-count is right for a feed where one bad record should not
+  take down the page. The type makes the policy visible — `skipped` in the
+  success shape tells every caller that partial success exists.

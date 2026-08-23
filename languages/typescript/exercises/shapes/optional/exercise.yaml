@@ -1,0 +1,83 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.shapes.optional
+version: 1
+language: typescript
+title: Optional, absent, and undefined walk into an object
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - typescript.shapes.optional
+  - typescript.shapes.objects
+  - typescript.basics.narrowing
+
+prerequisites: []
+
+learningObjectives:
+  - Model a shape with required, optional and readonly members deliberately.
+  - Update immutable objects without disturbing absent fields.
+  - Narrow optionals once, at the top, instead of sprinkling ?. everywhere.
+
+prompt: |
+  In `main.ts`, a user profile:
+
+  - `Profile` — `readonly id: string`, `name: string`, and two optional
+    fields: `email?: string`, `age?: number`.
+  - `describe(profile)` — one line: `"NAME (ID)"`, then `", EMAIL"` when
+    email is present, then `", age AGE"` when age is present. Absent
+    means *absent*: an email of `""` is present-and-empty and still
+    prints (a data bug this function must not paper over).
+  - `withEmail(profile, email)` — a new profile with the email set; the
+    original untouched.
+  - `clearEmail(profile)` — a new profile with the email *gone* — not
+    set to undefined, gone: `'email' in result` must be false. Rest
+    destructuring removes; assigning undefined does not.
+  - `mergeProfiles(base, patch)` — patch is a `Partial`-shaped update:
+    fields present in patch win, absent fields fall through to base.
+    A patch field explicitly set to undefined does not erase — this
+    merge treats undefined-in-patch as absent (document the choice).
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/optional.test.ts
+    visibility: visible
+    concept: typescript.shapes.optional
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.basics.narrowing
+
+hints:
+  - level: conceptual
+    text: An optional field has three observable states in JavaScript — absent, present-undefined, present-with-value — and your API should decide which two it distinguishes.
+  - level: structural
+    text: describe builds an array of parts and joins; each optional contributes only when !== undefined.
+  - level: language
+    text: "Removing a field is rest destructuring: const { email, ...rest } = profile; return rest; — assigning undefined leaves the key present."
+  - level: syntax
+    text: "'email' in profile is the presence test; profile.email !== undefined is the value test. clearEmail is judged by the first."
+  - level: explicit
+    text: "mergeProfiles: spread base, then for each key of patch, copy only when patch[key] !== undefined — a plain double spread would let an explicit undefined erase a base field."
+explanation: |
+  The absent/undefined distinction sounds like pedantry until a JSON
+  API meets it: `JSON.stringify` drops absent fields and keeps
+  `undefined` ones... no — it drops both, but `Object.keys`, `in`,
+  spread and Partial-based merges all see the difference, and exactness
+  bugs live exactly there. `clearEmail` is judged with `in` because a
+  key set to undefined still enumerates: it survives spreads and
+  appears in key lists, a ghost field that reads as a value bug later.
+
+  The merge decision — undefined-in-patch means "no change", not
+  "erase" — is the convention JSON merge patch had to standardize the
+  other way (null erases) precisely because every codebase decides it
+  differently. What matters is not which rule you pick but that the
+  function's type and doc state it; a merge whose erasure semantics are
+  implicit is a merge every caller uses slightly wrong.
+
+  Printing the empty email on purpose is the third small stand: `""`
+  is a present value, and presence tests written as truthiness
+  (`if (profile.email)`) silently reclassify empty strings, zero and
+  false as absent. Narrow with `!== undefined` and the three states
+  stay three.

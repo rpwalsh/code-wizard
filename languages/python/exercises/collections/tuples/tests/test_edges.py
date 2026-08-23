@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Shapes, emptiness, and what comes back as what."""
 
 import pytest

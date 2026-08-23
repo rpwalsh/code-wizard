@@ -1,0 +1,158 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# C, read rather than run.
+#
+# In C the difference between a correct program and one that appears correct is
+# invisible at runtime until it is not. These ask about the places where that
+# gap opens.
+
+activities:
+  - id: c.memory.lifetime.spot-1
+    kind: spot-the-bug
+    language: c
+    title: Returning what is gone
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [c.memory.lifetime, c.memory.stack-heap]
+    prompt: This function sometimes works and sometimes prints rubbish. Which line is the fault?
+    code: |
+      char *greeting(void) {
+          char buffer[32];
+          snprintf(buffer, sizeof buffer, "hello");
+          return buffer;
+      }
+    faultLine: 2
+    correction: 'char *buffer = malloc(32);  /* and the caller frees it */'
+    explanation: >-
+      `buffer` lives on the stack and its lifetime ends when the function
+      returns, so the caller receives a pointer to memory that has been handed
+      back. It often still holds the right bytes, which is what makes this bug
+      survive testing. Either allocate it, take a caller-supplied buffer, or
+      return a string literal.
+
+  - id: c.memory.arrays.po-1
+    kind: predict-output
+    language: c
+    title: sizeof, and where it stops working
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [c.memory.arrays, c.memory.pointers]
+    prompt: 'On a 64-bit machine, what does this print?'
+    code: |
+      void show(int a[]) {
+          printf("%zu\n", sizeof a);
+      }
+
+      int main(void) {
+          int nums[10];
+          printf("%zu\n", sizeof nums);
+          show(nums);
+      }
+    expected: |
+      40
+      8
+    explanation: >-
+      An array knows its own size only where it is declared. Passed to a
+      function it decays to a pointer, so `sizeof` reports the pointer size, not
+      the array. This is why every C function taking an array also takes a
+      length — there is no way to recover it.
+
+  - id: c.memory.strings.mc-1
+    kind: multiple-choice
+    language: c
+    title: Room for the terminator
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [c.memory.strings, c.memory.malloc]
+    prompt: How much memory does a copy of the string "hello" need?
+    options:
+      - text: 5 bytes, one per character.
+        why: This is the mistake that writes a NUL byte one past the end of the allocation.
+      - text: 6 bytes, the characters plus a terminating NUL.
+      - text: 8 bytes, rounded up for alignment.
+        why: The allocator may round up internally; what you must ask for is what you will write.
+      - text: 'Whatever `sizeof("hello")` reports at the call site, which is 5.'
+        why: '`sizeof` on a string literal is 6 — it includes the terminator. That is the point of the question.'
+    correct: [1]
+    explanation: >-
+      A C string is the characters followed by a NUL byte, and every function
+      that reads one relies on that byte to know where to stop. `strlen` returns
+      5 and `malloc(strlen(s) + 1)` is the idiom for exactly this reason. The
+      missing `+ 1` is one of the most common heap overflows in the language.
+
+  - id: c.errors.cleanup.order-1
+    kind: order-lines
+    language: c
+    title: One exit path
+    difficulty: 4
+    estimatedSeconds: 100
+    skills: [c.errors.cleanup, c.errors.returns]
+    prompt: >-
+      Put this into the order that releases everything exactly once on every
+      path.
+    lines:
+      - 'FILE *f = fopen(path, "r");'
+      - 'if (!f) return -1;'
+      - 'char *buf = malloc(size);'
+      - 'if (!buf) goto close_file;'
+      - 'if (read_into(f, buf, size) < 0) goto free_buf;'
+      - 'result = 0;'
+      - 'free_buf: free(buf);'
+      - 'close_file: fclose(f);'
+      - 'return result;'
+    explanation: >-
+      The labels unwind in the reverse order of acquisition, and each failure
+      jumps to the point that releases everything acquired so far. This is what
+      `goto` is genuinely for in C: it is the only way to get one cleanup path
+      rather than a copy of the teardown at every early return, and copies are
+      how a leak gets added later.
+
+  - id: c.build.undefined.match-1
+    kind: match-pairs
+    language: c
+    title: What the standard says
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [c.build.undefined]
+    prompt: Match each expression to how the standard classifies it.
+    pairs:
+      - left: Signed integer overflow
+        right: Undefined — the compiler may assume it never happens
+      - left: Unsigned integer overflow
+        right: Defined — wraps modulo the type's range
+      - left: 'Right-shifting a negative value'
+        right: Implementation-defined
+      - left: 'Reading an uninitialized int'
+        right: Undefined in practice; the value is indeterminate
+    explanation: >-
+      The distinction is not academic. Because signed overflow is undefined, a
+      compiler is entitled to optimize away a check written *after* the
+      overflow — the check becomes dead code under the assumption the overflow
+      never occurred. Unsigned arithmetic wraps predictably, which is why it is
+      the right tool for hashing and bit manipulation.
+
+  - id: c.memory.pointers.fill-1
+    kind: fill-blanks
+    language: c
+    title: Freeing what was allocated
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [c.memory.malloc, c.memory.pointers]
+    prompt: Complete this so the allocation is checked and released correctly.
+    template: |
+      int *nums = malloc(count * sizeof {1});
+      if (nums == {2}) return -1;
+      /* ... use nums ... */
+      free(nums);
+    blanks:
+      - index: 1
+        accepts: ['*nums', '(int)', 'int']
+        hint: Size it from the thing being pointed at, not from a repeated type name.
+      - index: 2
+        accepts: ['NULL', '0']
+        hint: What malloc returns on failure.
+    explanation: >-
+      `sizeof *nums` stays correct if the type of `nums` ever changes, which
+      `sizeof(int)` does not — the repeated type name is a second place to
+      update and therefore a second place to forget. Checking for NULL is not
+      optional: on failure `malloc` returns it, and writing through it is a
+      crash at best.

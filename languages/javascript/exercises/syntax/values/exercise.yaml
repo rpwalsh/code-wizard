@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: javascript.syntax.values
 version: 1
 language: javascript
@@ -79,12 +80,12 @@ explanation: |
 mutationExceptions:
   - path: main.js
     operator: strictness
-    line: 19
+    line: 20
     why: >-
       An array length is always a number and zero is always a number, so strict
       and loose comparison agree on every possible input.
   - path: main.js
     operator: strictness
-    line: 20
+    line: 21
     why: >-
       The same number-to-number equivalence when choosing the singular noun.

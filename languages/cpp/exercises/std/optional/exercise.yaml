@@ -1,0 +1,86 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.optional-lookup
+version: 1
+language: cpp
+title: A lookup that cannot lie about missing
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 60000
+
+skills:
+  - cpp.std.optional
+  - cpp.std.algorithms
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Return std::optional instead of a sentinel value the caller may forget.
+  - Reach for the algorithms header instead of writing the loop again.
+  - Keep a reference to something that outlives the call, and a value otherwise.
+
+prompt: |
+  A function that returns `-1` for "not found" is a function whose callers will
+  eventually treat `-1` as an answer. `std::optional` makes the absence part of
+  the type, so the compiler asks the question the comment used to.
+
+  In `main.cpp`, implement these over `std::vector<Reading>`, where a
+  `Reading` is a `std::string sensor` and a `double value`:
+
+  - `find_reading(readings, sensor)` → `std::optional<Reading>`. The first
+    reading from that sensor, or nothing.
+  - `highest(readings)` → `std::optional<Reading>`. The greatest value; on a
+    tie, the earlier one. Nothing for an empty vector — which is the case a
+    `max` that returns a bare `Reading` cannot express.
+  - `average(readings)` → `std::optional<double>`. Nothing when empty, because
+    the mean of no readings is not zero.
+  - `sensors(readings)` → `std::vector<std::string>`, each sensor name once,
+    sorted.
+  - `value_or(readings, sensor, fallback)` → `double`. The reading's value, or
+    the fallback.
+
+  Use the algorithms header rather than hand-written loops: `std::find_if`,
+  `std::max_element`, `std::accumulate`, `std::sort`, `std::unique`. Each
+  states its intent in its name, which a `for` loop with an index does not.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/optional_test.cpp
+    visibility: visible
+    concept: cpp.std.optional
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.algorithms
+
+hints:
+  - level: conceptual
+    text: An empty container is not an error, and it is not zero either. It is the absence of an answer.
+  - level: structural
+    text: Every one of these is an algorithm call plus a check for the empty case.
+  - level: language
+    text: '`std::max_element` returns an iterator to the end when the range is empty, so compare against `end()` before dereferencing.'
+  - level: syntax
+    text: '`return std::nullopt;` for nothing; `return *found;` for the value.'
+  - level: explicit
+    text: 'For `sensors`, copy the names, sort them, then `erase(std::unique(begin, end), end())` — the erase-remove idiom, which `std::unique` alone does not do for you.'
+
+explanation: |
+  `std::max_element` returning the *first* greatest element is the reason the
+  tie-breaking rule in the prompt is free rather than something to code around.
+  Knowing what the standard algorithms guarantee is most of the value of using
+  them: stability, which end a tie goes to, and what they do with an empty
+  range are all specified, and a hand-written loop re-decides all three by
+  accident.
+
+  `std::unique` only moves duplicates to the end and returns the new logical
+  end — it cannot resize a container it was handed iterators into. Forgetting
+  the `erase` leaves the vector its original length with unspecified values in
+  the tail, which is the kind of bug that passes a test checking only the first
+  few elements.
+
+  Returning `std::optional<double>` from `average` rather than `0.0` is the
+  whole argument in one line. Zero is a plausible average, so a caller cannot
+  tell it apart from "there was nothing to average" — and the two mean opposite
+  things on a dashboard.

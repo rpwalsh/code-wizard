@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 1 — The part that is not a framework (lessons 1–16)
 #
 # Every framework rebuilds these badly at least once. Someone who knows what
@@ -58,7 +59,7 @@ lessons:
 
   - id: fe.009
     title: Respecting a preference
-    focus: Reduced motion, contrast, colour scheme — honoured, not overridden.
+    focus: Reduced motion, contrast, color scheme — honored, not overridden.
     skills: [frontend.a11y.motion]
     difficulty: 3
 

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Ordering, cycles and cheapest routes."""
 
 import heapq
@@ -72,9 +73,9 @@ def cheapest(graph, start, goal):
             continue
         if node == goal:
             return cost
-        for neighbour, step in graph.get(node, []):
+        for neighbor, step in graph.get(node, []):
             total = cost + step
-            if neighbour not in best or total < best[neighbour]:
-                best[neighbour] = total
-                heapq.heappush(frontier, (total, neighbour))
+            if neighbor not in best or total < best[neighbor]:
+                best[neighbor] = total
+                heapq.heappush(frontier, (total, neighbor))
     return None

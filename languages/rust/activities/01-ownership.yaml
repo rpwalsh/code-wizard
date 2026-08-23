@@ -1,0 +1,165 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Ownership, without a compiler.
+#
+# Everything here is answerable by reading. That is the point: the borrow
+# checker's rules are simple enough to hold in your head, and the reason people
+# bounce off Rust is not that the rules are hard but that they first meet them
+# as an error message at the end of an hour's work.
+
+activities:
+  - id: rust.own.move.mc-1
+    kind: multiple-choice
+    language: rust
+    title: Where the string went
+    difficulty: 1
+    estimatedSeconds: 40
+    skills: [rust.own.move]
+    prompt: What does the compiler say about this program?
+    code: |
+      let a = String::from("hello");
+      let b = a;
+      println!("{}", a);
+    options:
+      - text: It prints `hello`.
+        why: This is what happens in almost every other language, which is exactly why it is the wrong answer here.
+      - text: 'It does not compile: borrow of moved value `a`.'
+      - text: It prints an empty string, because `a` was emptied.
+        why: Nothing is emptied. `a` is still the same bytes; the compiler has simply stopped letting you name them.
+      - text: It compiles but the behavior is undefined.
+        why: Rust's entire proposition is that this class of mistake is a compile error rather than undefined behavior.
+    correct: [1]
+    explanation: >-
+      Assigning a `String` moves it. After `let b = a`, the value belongs to `b`
+      and `a` is no longer usable — not emptied, not freed, just no longer a
+      name you are allowed to use. The compiler rejects the program rather than
+      leaving you two owners of one heap allocation, which is the double-free
+      this rule exists to prevent.
+
+  - id: rust.own.clone.mc-1
+    kind: multiple-choice
+    language: rust
+    title: Making the error go away
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [rust.own.clone, rust.own.borrow]
+    prompt: >-
+      This does not compile. Which change is the one to reach for *first*, if
+      you only need to read `a` afterwards?
+    code: |
+      let a = String::from("hello");
+      let b = a;
+      println!("{}", a);
+    options:
+      - text: '`let b = a.clone();`'
+        why: It works, and it copies the whole string to do it. Correct but wasteful when nobody needed a second copy.
+      - text: '`let b = &a;`'
+      - text: 'Wrap it: `let a = Rc::new(String::from("hello"));`'
+        why: Reference counting solves shared *ownership*. Nothing here needs shared ownership; it needs a look.
+      - text: 'Make it mutable: `let mut a = ...`'
+        why: Mutability and ownership are different rules. `mut` has no bearing on whether a value has been moved.
+    correct: [1]
+    explanation: >-
+      Borrowing is the cheap answer and usually the right one. `&a` gives `b` a
+      reference — permission to read, no transfer of ownership — so `a` stays
+      usable and nothing is copied. Reach for `clone` when you genuinely need a
+      second independent value, not to silence the compiler.
+
+  - id: rust.own.mutable.spot-1
+    kind: spot-the-bug
+    language: rust
+    title: Two borrows
+    difficulty: 3
+    estimatedSeconds: 60
+    skills: [rust.own.mutable]
+    prompt: One line here makes the program illegal. Which one?
+    code: |
+      let mut names = vec![String::from("ada")];
+      let first = &names[0];
+      names.push(String::from("grace"));
+      println!("{}", first);
+    faultLine: 3
+    correction: '// move this below the final use of `first`'
+    explanation: >-
+      `first` is an immutable borrow of the vector, and it is still alive on the
+      last line. `push` needs a mutable borrow, and Rust allows either one
+      mutable borrow or any number of immutable ones, never both. This is not
+      pedantry: `push` may reallocate, which would leave `first` pointing at
+      freed memory. The rule is the reason that cannot happen.
+
+  - id: rust.types.option.match-1
+    kind: match-pairs
+    language: rust
+    title: What each one gives you back
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [rust.types.option]
+    prompt: Match each expression on an `Option<i32>` to what it evaluates to.
+    pairs:
+      - left: 'Some(3).unwrap_or(0)'
+        right: '3'
+      - left: 'None.unwrap_or(0)'
+        right: '0'
+      - left: 'Some(3).map(|n| n * 2)'
+        right: 'Some(6)'
+      - left: 'None.map(|n: i32| n * 2)'
+        right: 'None'
+    explanation: >-
+      `unwrap_or` leaves the `Option` behind and hands you a value, substituting
+      a default for `None`. `map` stays inside the `Option`: it applies the
+      function if there is something there and does nothing if there is not.
+      Knowing which of the two you want is most of working with `Option`.
+
+  - id: rust.types.question.po-1
+    kind: predict-output
+    language: rust
+    title: The question mark
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [rust.types.question, rust.types.result]
+    prompt: What does this print?
+    code: |
+      fn parse(text: &str) -> Result<i32, std::num::ParseIntError> {
+          let n: i32 = text.parse()?;
+          Ok(n * 2)
+      }
+
+      fn main() {
+          println!("{:?}", parse("21"));
+          println!("{:?}", parse("x"));
+      }
+    expected: |
+      Ok(42)
+      Err(ParseIntError { kind: InvalidDigit })
+    explanation: >-
+      `?` unwraps a `Result` when it is `Ok` and returns early with the error
+      when it is not. So the first call reaches `Ok(n * 2)` with `n` at 21, and
+      the second never gets past the `?` — the `ParseIntError` is returned from
+      `parse` unchanged. It is an early return, not exception handling.
+
+  - id: rust.own.borrow.fill-1
+    kind: fill-blanks
+    language: rust
+    title: A function that only reads
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [rust.own.borrow]
+    prompt: >-
+      Complete the signature so `longest_name` can read the list without taking
+      it away from the caller.
+    template: |
+      fn longest_name(names: {1}Vec<String>) -> {2}str {
+          names.iter().map(|n| n.as_str()).max_by_key(|n| n.len()).unwrap_or("")
+      }
+    blanks:
+      - index: 1
+        accepts: ['&']
+        hint: The caller keeps the vector.
+      - index: 2
+        accepts: ['&']
+        hint: A slice of a string that lives in the vector.
+    explanation: >-
+      Taking `&Vec<String>` borrows the list: the caller can still use it after
+      the call. Returning `&str` hands back a slice pointing into a string the
+      vector still owns, which is sound precisely because the borrow of the
+      vector outlives the call. Take ownership only when you intend to keep or
+      consume the value.

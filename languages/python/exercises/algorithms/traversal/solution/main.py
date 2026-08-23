@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Graph traversal."""
 
 
@@ -14,11 +15,11 @@ def breadth_first(graph, start):
     while frontier:
         node = frontier.pop(0)
         order.append(node)
-        for neighbour in graph.get(node, []):
-            if neighbour in seen:
+        for neighbor in graph.get(node, []):
+            if neighbor in seen:
                 continue
-            seen.add(neighbour)
-            frontier.append(neighbour)
+            seen.add(neighbor)
+            frontier.append(neighbor)
     return order
 
 
@@ -30,11 +31,11 @@ def depth_first(graph, start):
     while frontier:
         node = frontier.pop()
         order.append(node)
-        for neighbour in graph.get(node, []):
-            if neighbour in seen:
+        for neighbor in graph.get(node, []):
+            if neighbor in seen:
                 continue
-            seen.add(neighbour)
-            frontier.append(neighbour)
+            seen.add(neighbor)
+            frontier.append(neighbor)
     return order
 
 
@@ -47,13 +48,13 @@ def shortest_path(graph, start, goal):
     frontier = [start]
     while frontier:
         node = frontier.pop(0)
-        for neighbour in graph.get(node, []):
-            if neighbour in came_from:
+        for neighbor in graph.get(node, []):
+            if neighbor in came_from:
                 continue
-            came_from[neighbour] = node
-            if neighbour == goal:
+            came_from[neighbor] = node
+            if neighbor == goal:
                 return _walk_back(came_from, goal)
-            frontier.append(neighbour)
+            frontier.append(neighbor)
     return None
 
 

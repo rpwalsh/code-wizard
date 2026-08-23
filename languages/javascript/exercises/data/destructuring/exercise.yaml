@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.data.destructuring
+version: 1
+language: javascript
+title: Taking objects apart on arrival
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - javascript.data.destructuring
+  - javascript.functions.parameters
+  - javascript.data.objects
+
+prerequisites: []
+
+learningObjectives:
+  - Destructure parameters with defaults so the signature documents the options.
+  - Separate the fields you handle from the rest without mutating anything.
+  - Know when a default applies — undefined, and nothing else.
+
+prompt: |
+  An options object is the JavaScript convention for a function with more than
+  two or three inputs, and destructuring is what keeps it honest: the
+  signature itself names what the function reads and what each thing defaults
+  to, instead of the body picking at `options.whatever` forty lines down.
+
+  In `main.js`, implement:
+
+  - `connect(options)` — takes `{ host, port = 5432, secure = false }`, where
+    `host` is required: throw a `TypeError` naming `host` when it is missing.
+    Returns `"pg://host:port"`, with `"+tls"` appended when secure:
+    `"pg://db.example:5432+tls"`. Calling with no argument at all behaves
+    like calling with `{}`.
+  - `splitUser(user)` — returns `{ name, contact, rest }`: the `name` field,
+    a `contact` string built as `"email <phone>"` from nested
+    `{ contact: { email, phone = 'none' } }`, and `rest` — an object of
+    every remaining top-level field, with `name` and `contact` absent. The
+    input must not be modified.
+  - `firstAndLast(items)` — for arrays: `{ first, last, count }` in one
+    return. Empty arrays give `undefined` for both and 0.
+
+  Use destructuring throughout — the point is the signatures, not the logic.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/destructuring.test.js
+    visibility: visible
+    concept: javascript.data.destructuring
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.functions.parameters
+
+hints:
+  - level: conceptual
+    text: A default fires on undefined only. null, 0 and '' are values someone chose, and defaults leave them alone.
+  - level: structural
+    text: 'Destructure in the parameter list: `function connect({ host, port = 5432, secure = false } = {})`.'
+  - level: language
+    text: 'The `= {}` after the pattern is what makes `connect()` behave like `connect({})` — without it, destructuring undefined throws before your code runs.'
+  - level: syntax
+    text: '`const { name, contact: { email, phone = "none" }, ...rest } = user;` — rest collects what the pattern did not claim, into a new object.'
+  - level: explicit
+    text: 'firstAndLast: `const { 0: first, length } = items;` works, but `items[0]`, `items[items.length - 1]` and `items.length` are clearer — destructure the return: `return { first, last, count }`.'
+
+explanation: |
+  The double default in `connect` — field defaults inside the pattern, `= {}`
+  for the whole parameter — is the idiom worth keeping. The inner defaults
+  answer "the caller sent an object but left fields out"; the outer one
+  answers "the caller sent nothing". Only together do all four call shapes
+  work, and the failure without the outer default is instructive: destructuring
+  `undefined` throws immediately, so the function breaks before its first line.
+
+  Rest properties (`...rest`) build a *new* object, which is why `splitUser`
+  can promise not to modify its input — the original keeps `name` and
+  `contact`; the copy simply never received them. That non-mutating split is
+  the pattern behind every "take these props, forward the rest" component and
+  every "strip the internal fields before sending" serializer.
+
+  Defaults firing only on `undefined` is the sharp rule. `phone = 'none'`
+  leaves `null` alone — null is a value someone deliberately sent, and a
+  default that overrode it would erase a decision. When you want
+  null-or-undefined handling, that is `??`, and mixing the two mechanisms up
+  produces bugs that read correctly.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 28
+    why: >-
+      The comparison is items.length === 0, and length is always a number, so
+      == and === cannot disagree here. No input distinguishes them.

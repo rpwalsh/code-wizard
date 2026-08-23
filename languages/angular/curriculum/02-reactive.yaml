@@ -1,0 +1,81 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# # Stage 2 — Streams, forms and the server (lessons 15–26)
+#
+# The reactive half. Observables are not promises, and the bugs come from
+# treating them as though they were: a subscription nobody ended, an inner
+# stream that should have been canceled, a request fired on every keystroke.
+
+stage: reactive
+title: Streams, forms and the server
+lessons:
+  - id: ng.015
+    title: An observable is not a promise
+    focus: Cold, multiple values, and nothing happening until you subscribe.
+    skills: [angular.reactive.observables]
+    difficulty: 3
+
+  - id: ng.016
+    title: Operators
+    focus: map, filter, and reading a pipeline top to bottom.
+    skills: [angular.reactive.operators]
+    difficulty: 3
+
+  - id: ng.017
+    title: switchMap, and the one that should have been mergeMap
+    focus: Four inner-stream operators, and the bug each one causes in the wrong place.
+    skills: [angular.reactive.operators]
+    difficulty: 5
+
+  - id: ng.018
+    title: Teardown
+    focus: The subscription that outlived the component, watched leaking.
+    skills: [angular.reactive.subscriptions]
+    difficulty: 4
+
+  - id: ng.019
+    title: State without a store
+    focus: A subject, a derived stream, and no library.
+    skills: [angular.reactive.state]
+    difficulty: 4
+
+  - id: ng.020
+    title: Reactive forms
+    focus: A form as data, and validation that is a function.
+    skills: [angular.forms.reactive]
+    difficulty: 3
+
+  - id: ng.021
+    title: Custom validators
+    focus: Synchronous and asynchronous, and the debounce that belongs in one.
+    skills: [angular.forms.validation]
+    difficulty: 4
+
+  - id: ng.022
+    title: Talking to a server
+    focus: A typed call, and errors that stay errors.
+    skills: [angular.http.client]
+    difficulty: 3
+
+  - id: ng.023
+    title: Search as you type
+    focus: Debounce, cancel, and the response that arrived out of order.
+    skills: [angular.http.client, angular.reactive.operators]
+    difficulty: 5
+
+  - id: ng.024
+    title: Interceptors
+    focus: Cross-cutting concerns, and the one that broke every request.
+    skills: [angular.http.interceptors]
+    difficulty: 4
+
+  - id: ng.025
+    title: Retry and fallback
+    focus: Backoff in a pipeline, and a cached answer when it finally fails.
+    skills: [angular.http.client, angular.reactive.operators]
+    difficulty: 5
+
+  - id: ng.026
+    title: A screen, end to end
+    focus: Route, guard, form, request, error state, teardown.
+    skills: [angular.routing.guards, angular.forms.reactive, angular.http.client]
+    difficulty: 5

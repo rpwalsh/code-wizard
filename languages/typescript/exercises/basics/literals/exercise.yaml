@@ -1,0 +1,88 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.basics.literals
+version: 1
+language: typescript
+title: Types narrower than string
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - typescript.basics.literals
+  - typescript.basics.annotations
+  - typescript.basics.inference
+
+prerequisites: []
+
+learningObjectives:
+  - Use literal unions where a string would accept the world.
+  - Annotate what inference cannot know, and only that.
+  - Let const context and return-type inference carry their weight.
+
+prompt: |
+  `string` accepts every typo ever typed. A literal union —
+  `'draft' | 'published'` — accepts exactly the values that mean
+  something, and the compiler rejects the rest at the call site instead
+  of the log file.
+
+  In `main.ts`:
+
+  - Type `Level` — exactly `'debug' | 'info' | 'warn' | 'error'`.
+  - `severity(level: Level): number` — debug 0, info 1, warn 2,
+    error 3. An exhaustive switch: no default, and a `never`-typed
+    fallthrough check so adding a level breaks the build here rather
+    than returning undefined at midnight.
+  - `atLeast(messages, level)` — messages is
+    `{ level: Level; text: string }[]`; keep those at or above the
+    given severity, preserving order.
+  - `LEVELS` — a readonly tuple of all four, declared
+    `as const`, lowest first. Its type must be
+    `readonly ['debug', 'info', 'warn', 'error']` — not `string[]` —
+    which is what `as const` is for.
+  - `isLevel(value: string): value is Level` — the guard that lets a
+    runtime string (a query parameter, an env var) into the union
+    honestly. Built from `LEVELS`, so a fifth level added there is
+    accepted here without edits.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/literals.test.ts
+    visibility: visible
+    concept: typescript.basics.literals
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.basics.inference
+
+hints:
+  - level: conceptual
+    text: A literal type is a value promoted to a type. The union of four of them is a type with four inhabitants, and the compiler counts.
+  - level: structural
+    text: severity is a switch over the union; the never check is an unreachable default that fails to compile if a case is missing.
+  - level: language
+    text: "as const stops widening: without it ['debug', ...] is string[], and every literal fact about the contents is lost."
+  - level: syntax
+    text: "const exhaustive: never = level; in the default branch — if a case is unhandled, level still has a type there, and never refuses it."
+  - level: explicit
+    text: "isLevel: return (LEVELS as readonly string[]).includes(value); — widening LEVELS for the includes call while the return type stays value is Level."
+explanation: |
+  The exhaustive switch with a `never` check is the best value-per-line
+  trick in TypeScript. When someone adds `'fatal'` to `Level`, every
+  switch with the never check turns red at compile time, producing a
+  to-do list of exactly the places that need thought. Without it, the
+  new level silently falls through defaults, and the to-do list is
+  assembled from bug reports instead.
+
+  `as const` is about who decides the type: left alone, TypeScript
+  widens `['debug', ...]` to `string[]` on the sensible theory that you
+  might push to it. `as const` says the value *is* the type — readonly,
+  tuple-length, literal members — which is what lets `isLevel` derive
+  its truth from `LEVELS` instead of repeating the four strings. One
+  source of truth, and the guard tracks it by construction.
+
+  The guard itself is the honest door between runtime and type land. A
+  cast — `value as Level` — asserts with no evidence and is wrong the
+  first time a query string holds 'verbose'. The predicate checks, and
+  its `value is Level` return type teaches the compiler to narrow at
+  every call site. Assertions promise; guards prove.

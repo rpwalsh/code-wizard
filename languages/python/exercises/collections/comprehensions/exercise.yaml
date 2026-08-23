@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.collections.comprehensions
 version: 1
 language: python
@@ -18,7 +19,7 @@ prerequisites:
 learningObjectives:
   - Write a list comprehension that filters and projects in one expression.
   - Write a dict comprehension.
-  - Recognise when a comprehension is clearer than an explicit loop.
+  - Recognize when a comprehension is clearer than an explicit loop.
 
 prompt: |
   Each user is a dictionary with `"name"`, `"email"` and `"active"` keys.

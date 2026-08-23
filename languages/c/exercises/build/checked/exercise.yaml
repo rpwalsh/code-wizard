@@ -1,0 +1,92 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.build.checked-arithmetic
+version: 1
+language: c
+title: The overflow you check before it happens
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 45000
+
+skills:
+  - c.build.undefined
+  - c.structs.layout
+  - c.build.tools
+
+prerequisites: []
+
+learningObjectives:
+  - Detect signed overflow before performing the operation, never after.
+  - Predict struct sizes from alignment rules instead of guessing.
+  - Know what the sanitizers would have caught, and write code they stay quiet on.
+
+prompt: |
+  Signed overflow in C is not "wraps around" — it is undefined behavior,
+  and the check everyone writes first (`if (a + b < a)`) *performs the
+  overflow it is checking for*. The compiler may assume it cannot
+  happen and delete the check. These functions do it right: decide from
+  the operands, before the operation.
+
+  In `main.c`:
+
+  - `int can_add(int a, int b)` — 1 when `a + b` fits in int. Using
+    only comparisons against `INT_MAX`/`INT_MIN`: adding positives can
+    exceed the top (`a > INT_MAX - b`), adding negatives the bottom.
+  - `int can_multiply(int a, int b)` — same for `a * b`. Division
+    against the limits avoids performing the multiply; mind zero and
+    the `INT_MIN / -1` corner, which overflows *division* itself.
+  - `int checked_sum(const int *values, size_t length, int *out)` — sum
+    with `can_add` at every step: 1 and writes `out` on success, 0 the
+    moment a step would overflow (out untouched).
+  - `size_t padded_size(size_t members, size_t largest)` — the layout
+    half: a struct's size rounded up to a multiple of its strictest
+    member alignment. Given the total of member sizes and the largest
+    member's size, return the total rounded up to a multiple of
+    largest. This is why `struct { char c; int n; }` is 8, not 5 —
+    the tests check your function against real structs with sizeof.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/checked_test.c
+    visibility: visible
+    concept: c.build.undefined
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.structs.layout
+
+hints:
+  - level: conceptual
+    text: The rule for UB checks — ask whether the operation is safe using only operations that are themselves safe.
+  - level: structural
+    text: can_add splits on the sign of b; can_multiply on the signs of both, with zero dispatched first.
+  - level: language
+    text: 'b > 0: overflow iff a > INT_MAX - b. b < 0: underflow iff a < INT_MIN - b. Both right-hand sides are safe to compute.'
+  - level: syntax
+    text: 'padded_size: (members + largest - 1) / largest * largest — integer round-up without a loop.'
+  - level: explicit
+    text: 'can_multiply, both positive: a > INT_MAX / b overflows; negative/negative: a < INT_MAX / b overflows (dividing by a negative flips the comparison); mixed: compare against INT_MIN / the positive one. Handle 0 first and the INT_MIN/-1 pair explicitly.'
+
+explanation: |
+  The deleted-check story is real and worth telling precisely. Because
+  signed overflow is undefined, a compiler is licensed to reason "a + b
+  cannot overflow, therefore a + b < a is false when b >= 0" and remove
+  the branch entirely — optimizing away a security check the author
+  believed they wrote. GCC and Clang both do this at ordinary
+  optimization levels. The fix is structural: check with arithmetic
+  that stays in range (subtracting from the limits), so there is
+  nothing undefined for the compiler to exploit.
+
+  This is also the exercise where the tools matter. UBSan
+  (-fsanitize=undefined) would flag the naive check at runtime; ASan
+  catches the memory cousins; valgrind sees leaks and wild reads on
+  binaries you cannot rebuild. The discipline is to run them in CI
+  where they are cheap, not only during the post-mortem where they are
+  evidence. Code like this file is what they stay quiet on.
+
+  padded_size demystifies struct layout: members are placed at offsets
+  aligned to their own size, and the whole struct is padded to a
+  multiple of its strictest member so arrays of it stay aligned. char
+  then int costs three padding bytes; int then char costs three at the
+  end. Reordering members largest-first is the classic size
+  optimization, and offsetof is how you verify instead of believing.

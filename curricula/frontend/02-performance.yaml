@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 2 — Making it fast, with evidence (lessons 17–26)
 #
 # Same discipline as the complexity stage in the Python course: measure, change
@@ -33,7 +34,7 @@ lessons:
 
   - id: fe.021
     title: What is in the bundle
-    focus: Look before optimising. The answer is usually one dependency.
+    focus: Look before optimizing. The answer is usually one dependency.
     skills: [frontend.perf.loading]
     difficulty: 4
 

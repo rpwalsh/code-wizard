@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Order, emptiness, and what is left open."""
 
 import pytest

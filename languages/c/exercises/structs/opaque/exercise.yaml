@@ -1,0 +1,91 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.structs.opaque
+version: 1
+language: c
+title: A struct nobody else can touch
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 45000
+
+skills:
+  - c.structs.opaque
+  - c.structs.definition
+  - c.build.headers
+
+prerequisites: []
+
+learningObjectives:
+  - Hide a struct's layout behind a forward declaration in the header.
+  - Design create/destroy/accessor functions as the type's whole public surface.
+  - Understand what a translation unit can and cannot see.
+
+prompt: |
+  The header declares `typedef struct Stopwatch Stopwatch;` and four
+  functions — and *no fields*. A user of this header can hold a
+  `Stopwatch *`, pass it around, and never once see inside; the compiler
+  itself enforces the privacy, because a type with no visible definition
+  cannot be dereferenced, sized or copied. That is the opaque pointer
+  pattern, and it is how every serious C library keeps its options open.
+
+  In `main.c`, define the struct and implement:
+
+  - `Stopwatch *stopwatch_create(void)` — a fresh stopwatch on the heap:
+    total 0, not running. NULL when allocation fails.
+  - `void stopwatch_record(Stopwatch *watch, int seconds)` — adds a lap
+    of `seconds` to the total and bumps the lap count. Negative seconds
+    are ignored entirely — time does not run backward.
+  - `int stopwatch_total(const Stopwatch *watch)` and
+    `int stopwatch_laps(const Stopwatch *watch)` — the accessors. NULL
+    watch: 0 — a convention, stated in the header, that makes the
+    accessors safe in cleanup paths.
+  - `void stopwatch_destroy(Stopwatch *watch)` — frees. NULL is a no-op,
+    matching free() itself.
+
+  The tests can only use the public functions — they include the same
+  header everyone else would, and the struct's fields are not visible
+  there. That constraint is the design.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/opaque_test.c
+    visibility: visible
+    concept: c.structs.opaque
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.build.headers
+
+hints:
+  - level: conceptual
+    text: The header is the contract; the .c file is the one place the fields exist. Everything the outside world can do is a function in the header.
+  - level: structural
+    text: struct Stopwatch { int total; int laps; }; lives in main.c — above the functions that use it.
+  - level: language
+    text: A forward-declared struct is an "incomplete type" — pointers to it work, but sizeof and dereference are compile errors outside main.c.
+  - level: syntax
+    text: 'Stopwatch *watch = malloc(sizeof *watch); if (watch == NULL) return NULL; watch->total = 0; watch->laps = 0;'
+  - level: explicit
+    text: 'Accessors: return watch == NULL ? 0 : watch->total; destroy: free(watch) — free already accepts NULL.'
+
+explanation: |
+  The compiler enforcing privacy is the part worth savoring: this is not
+  convention, like a leading underscore, and not visibility keywords,
+  like private — it is the type system refusing to compile a dereference
+  of a type it has never seen defined. The fields can be reordered,
+  renamed or replaced entirely and no caller can be broken, because no
+  caller could have depended on them.
+
+  The cost is the reason the pattern is a choice rather than a default:
+  an incomplete type cannot be a local variable or a struct member —
+  only pointed at — so every instance lives behind an allocation, and
+  the create/destroy pair becomes mandatory API. FILE from stdio is
+  exactly this trade: you have never seen inside a FILE, and fopen and
+  fclose exist because you cannot.
+
+  The NULL conventions — accessors return 0, destroy is a no-op — are
+  small but load-bearing. Cleanup code runs in error paths where half
+  the pointers are legitimately NULL, and an API whose destroy crashes
+  on NULL forces every caller to wrap it in the same if statement
+  forever. free() set the precedent; following it is what makes the
+  type feel native.

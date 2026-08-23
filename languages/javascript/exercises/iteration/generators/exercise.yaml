@@ -1,0 +1,86 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.iteration.generators
+version: 1
+language: javascript
+title: Sequences that do not exist yet
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - javascript.iteration.generators
+  - javascript.iteration.iterables
+  - javascript.functions.higher-order
+
+prerequisites: []
+
+learningObjectives:
+  - Write generators that produce values on demand, including infinite ones.
+  - Compose lazy sequences without materializing the intermediate steps.
+  - Make an ordinary object iterable by giving it Symbol.iterator.
+
+prompt: |
+  A generator is a function that can pause. Each `yield` hands a value out
+  and stops the function mid-sentence until somebody asks for the next one —
+  which means a generator can describe a sequence with no end, because nobody
+  ever asks for all of it.
+
+  In `main.js`, implement:
+
+  - `naturals()` — a generator yielding 0, 1, 2, ... forever. Three lines,
+    and the heart of the exercise: it must be safe *because* it is lazy.
+  - `take(iterable, n)` — a generator yielding the first `n` values of any
+    iterable, then stopping. `take(naturals(), 3)` is `[0, 1, 2]` and
+    returns; the infinite source is never a problem.
+  - `map(iterable, fn)` — lazy map: yields `fn(value)` for each value, one
+    at a time, on demand. `fn` must not be called for values nobody pulls.
+  - `chain(...iterables)` — yields everything from the first, then the
+    second, and so on. `yield*` is the tool.
+  - `Range` — a class: `new Range(2, 5)` is iterable and produces 2, 3, 4.
+    Implement `[Symbol.iterator]()` as a generator method. A Range can be
+    iterated twice; each `for...of` gets a fresh run.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/generators.test.js
+    visibility: visible
+    concept: javascript.iteration.generators
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.iteration.iterables
+
+hints:
+  - level: conceptual
+    text: Laziness is the contract. Nothing runs until next() is called, and nothing after the last next() runs at all.
+  - level: structural
+    text: 'take counts as it yields and returns when the count reaches n — return, in a generator, is "done".'
+  - level: language
+    text: '`function* naturals() { let n = 0; while (true) yield n++; }` — the infinite loop is fine because it pauses at every yield.'
+  - level: syntax
+    text: '`yield* other` delegates: everything the other iterable produces is yielded here, one at a time, still lazily.'
+  - level: explicit
+    text: 'Range: `*[Symbol.iterator]() { for (let v = this.start; v < this.end; v += 1) yield v; }` — a generator method makes each for...of call start fresh.'
+
+explanation: |
+  `while (true)` inside `naturals` looks like the bug every beginner is
+  warned about, and the reason it is not one is the reason generators exist:
+  the loop body runs only when a consumer calls `next()`, so the "infinite"
+  loop executes exactly as many times as anyone asks. Infinity moved from
+  being a crash to being a data structure.
+
+  `take` is what makes infinite sources usable, and the composition
+  `take(map(naturals(), square), 5)` shows the deeper property: nothing in
+  that chain materializes a list. Each value flows one at a time through
+  map's function and out of take, and the edge test proving `fn` ran only
+  five times is proving the laziness is real rather than decorative — an
+  eager map would have hung forever first.
+
+  `Range` closes the loop on the protocol. `for...of`, spread, destructuring
+  and `Array.from` all ask one question of an object: "do you have
+  `Symbol.iterator`?" A generator *method* is the cheapest possible yes, and
+  writing it once makes every iteration tool in the language work with your
+  type. That each call produces a fresh iterator is the part worth noticing
+  — a generator object itself is exhausted after one pass, but the Range
+  hands out a new one per loop, which is why it can be walked twice.

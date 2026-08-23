@@ -1,0 +1,5 @@
+{
+  "id": "rust",
+  "title": "Rust",
+  "summary": "For someone who has bounced off the borrow checker. Built around making ownership feel like a description of what your program already does rather than a tax on writing it."
+}

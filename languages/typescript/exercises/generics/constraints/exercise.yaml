@@ -1,0 +1,82 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.generics.constrained
+version: 1
+language: typescript
+title: A generic that promises only what it can keep
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - typescript.generics.constraints
+  - typescript.generics.functions
+  - typescript.generics.inference
+
+prerequisites: []
+
+learningObjectives:
+  - Constrain a type parameter to what the body actually requires.
+  - Keep the caller's precise type instead of widening it.
+  - Use keyof so a property name cannot be misspelled.
+
+prompt: |
+  An unconstrained type parameter is a promise to accept anything, and a body
+  that calls `.length` has already broken it. These three functions each need
+  exactly one constraint — no more, because every extra one turns away a
+  caller who would have worked.
+
+  In `main.ts`, implement:
+
+  - `longest<T extends { length: number }>(items: T[]): T | undefined` — the
+    item with the greatest `length`. On a tie, the first. Works for strings,
+    arrays, and anything else with a length.
+  - `pluck<T, K extends keyof T>(items: T[], key: K): T[K][]` — one property
+    from each item. Misspelling the key must be a compile error, and the
+    result must be typed as that property, not as `unknown`.
+  - `byKey<T, K extends keyof T>(items: T[], key: K): Map<T[K], T>` — the last
+    item wins on a duplicate key.
+
+  The signatures are most of the exercise. Each one is a claim about what the
+  function accepts and returns, and the tests check the behavior while the
+  compiler checks the claim.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/generics.test.ts
+    visibility: visible
+    concept: typescript.generics.constraints
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.generics.inference
+
+hints:
+  - level: conceptual
+    text: A type parameter should require exactly what the body uses and nothing more.
+  - level: structural
+    text: '`extends` on a type parameter is a constraint, not inheritance.'
+  - level: language
+    text: '`keyof T` is the union of T''s property names, so `K extends keyof T` is "a real key of this object".'
+  - level: syntax
+    text: '`function pluck<T, K extends keyof T>(items: T[], key: K): T[K][]`'
+  - level: explicit
+    text: 'For byKey, build the Map by iterating and setting; later duplicates overwrite earlier ones, which is what Map.set already does.'
+
+explanation: |
+  `T extends { length: number }` accepts a string, an array, a NodeList and a
+  learner's own type with a length — and refuses a number, which is the one
+  the body could not have handled. That is the whole test of a good
+  constraint: it turns away exactly the callers that would have failed.
+
+  `keyof` is what makes `pluck` worth having over a hand-written map. The key
+  is checked against the actual object type, so a rename or a typo is a build
+  error at the call site rather than a column of `undefined` in the output.
+  And `T[K]` keeps the property's own type, so plucking `age` gives
+  `number[]`, not `unknown[]` — which is the difference between a helper you
+  can use and one you have to cast your way out of.
+
+  The tie-breaking and the duplicate rule are stated because both are real
+  choices. "The longest" is ambiguous until you say which one wins, and a
+  helper whose behavior on duplicates is unspecified is one that quietly
+  disagrees with itself between versions.

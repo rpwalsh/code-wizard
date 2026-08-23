@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Where fewest-edges and cheapest come apart."""
 
 import pytest
@@ -28,7 +29,7 @@ def test_the_route_to_yourself_costs_nothing():
 @pytest.mark.concept("python.algorithms.shortest-path")
 def test_a_cheaper_route_found_later_wins():
     """The expensive entry is already in the heap when the cheap one is found.
-    It cannot be removed, so it must be recognised and skipped."""
+    It cannot be removed, so it must be recognized and skipped."""
     graph = {
         "a": [("b", 100), ("c", 1)],
         "c": [("d", 1)],
@@ -68,14 +69,14 @@ def test_a_region_that_needs_every_direction():
 
 @pytest.mark.concept("python.algorithms.topological")
 def test_a_region_two_cells_apart_is_two_regions():
-    """A step of two would join these. They are not neighbours."""
+    """A step of two would join these. They are not neighbors."""
     expect_equal(count_regions(["#.#"]), 2)
     expect_equal(count_regions(["#", ".", "#"]), 2)
 
 
 @pytest.mark.concept("python.algorithms.topological")
 def test_cells_touching_only_at_a_corner_are_separate():
-    """Diagonal neighbours do not connect, so this is two regions."""
+    """Diagonal neighbors do not connect, so this is two regions."""
     expect_equal(count_regions(["#.", ".#"]), 2)
 
 

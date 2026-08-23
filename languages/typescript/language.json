@@ -1,0 +1,5 @@
+{
+  "id": "typescript",
+  "title": "TypeScript",
+  "summary": "For someone who writes JavaScript and treats the types as decoration. The course is about making the compiler carry weight rather than about annotating what you already wrote."
+}

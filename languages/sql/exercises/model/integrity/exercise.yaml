@@ -1,0 +1,79 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.model.staging-audit
+version: 1
+language: sql
+title: What the constraints would have refused
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.model.keys
+  - sql.model.types
+  - sql.model.normalization
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  Orders arrived from a CSV into `staged_orders`, a table with no
+  constraints — no key, no foreign key, no type worth the name. The clean
+  schema next to it would have refused half these rows. Your query finds
+  them by hand, which is the exercise *and* the argument for constraints.
+
+  In `main.sql`, one query (UNION ALL of three checks) listing
+  `order_ref, problem` for every violation:
+
+  - 'orphan customer' — customer_id is NULL, or names no row in customers.
+  - 'bad amount' — amount does not survive being cast to INTEGER and back
+    to TEXT; `'250'` does, `'lots'` does not, and neither does NULL.
+  - 'duplicate reference' — order_ref appears more than once (report every
+    copy).
+
+  Ordered by order_ref, then problem.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/integrity.sql
+    visibility: visible
+    concept: sql.model.keys
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.model.types
+
+hints:
+  - level: conceptual
+    text: "Each constraint is a query: FK = anti-join, UNIQUE = GROUP BY ... HAVING COUNT > 1, type = a cast that must round-trip."
+  - level: structural
+    text: "Three SELECTs glued with UNION ALL, ordered once at the end."
+  - level: language
+    text: "NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = s.customer_id) is the anti-join; NULL needs its own OR because NULL never matches anything."
+  - level: syntax
+    text: "CAST('lots' AS INTEGER) is 0 in SQLite, silently. Cast to INTEGER and back to TEXT: a numeric string survives the round trip, a word comes back as '0'."
+  - level: explicit
+    text: "The duplicate arm: WHERE order_ref IN (SELECT order_ref FROM staged_orders GROUP BY order_ref HAVING COUNT(*) > 1) \u2014 IN, so every copy of the duplicate is reported."
+
+explanation: |
+  Every arm of this query is a constraint spelled out longhand, and that is
+  the point worth keeping: a FOREIGN KEY is an anti-join the database runs
+  for you on every write, a UNIQUE key is the GROUP BY ... HAVING check, and
+  a typed column is the cast round-trip. Put the constraints in the schema
+  and these queries stop needing to exist; leave them out and every consumer
+  of the data writes some subset of this audit, each slightly differently.
+
+  The type arm is SQLite-specific in mechanism and universal in moral.
+  SQLite's affinity system stores 'lots' in an INTEGER-ish column without
+  complaint (the edge test shows typeof is 'text'), and CAST silently
+  produces 0 rather than an error. Engines differ in *where* they put the
+  failure — Postgres refuses the insert, SQLite accepts and mangles the
+  read — but in both worlds the data is only as typed as the boundary that
+  admitted it.
+
+  UNION ALL rather than UNION is a small correctness choice: UNION
+  deduplicates, and the duplicate-reference arm is *supposed* to report two
+  identical rows — one per copy. Deduplicating an audit is how a report
+  undercounts exactly the problem it was written to find.

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Dangling pages, stopping, and not stopping."""
 
 import pytest

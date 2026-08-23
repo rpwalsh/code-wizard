@@ -1,0 +1,87 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.forms.validation
+version: 1
+language: angular
+title: Validators that compose
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - angular.forms.validation
+  - angular.forms.reactive
+  - angular.components.binding
+
+prerequisites: []
+
+learningObjectives:
+  - Write a validator as a pure function from a value to an error map or null.
+  - Compose several validators without losing any of their errors.
+  - Keep a required check separate from the checks that assume a value exists.
+
+prompt: |
+  Angular's validator contract is one function: take a control's value, return
+  `null` when it is fine or an object describing what is wrong. Everything else
+  in reactive forms is built on that, and it composes — provided you write them
+  so that they do.
+
+  In `main.ts`, implement:
+
+  - `required(value)` — `{ required: true }` when the value is null,
+    undefined, or a string that is empty after trimming. Otherwise `null`.
+  - `minLength(n)` — returns a validator giving
+    `{ minLength: { requiredLength: n, actualLength: length } }`.
+    A blank value is *not* a length error; that is `required`'s job, and a
+    field showing two messages for one mistake is the bug this avoids.
+  - `pattern(regexp, name)` — `{ pattern: name }` when a non-blank value does
+    not match. Blank passes, for the same reason.
+  - `compose(validators)` — one validator running all of them and merging every
+    error into a single object. All of them, not the first: a user who fixes
+    the one error you showed and is handed another has been made to submit the
+    form twice to learn two things.
+  - `validateGroup(values, rules)` — `{ valid, errors }`, where `errors` maps
+    each failing field name to its merged error object and passing fields are
+    absent entirely.
+
+  A validator must not throw on a value it was not expecting. `minLength(3)`
+  applied to `null` returns `null`, not a crash.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/validation.test.ts
+    visibility: visible
+    concept: angular.forms.validation
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.forms.reactive
+
+hints:
+  - level: conceptual
+    text: A validator returns null for success. That is backwards from a boolean and it is deliberate — the error object carries the reason.
+  - level: structural
+    text: Write one blank check and reuse it in every validator that should skip blanks.
+  - level: language
+    text: '`Object.assign({}, ...results)` merges a list of error objects; `null` entries must be filtered out first.'
+  - level: syntax
+    text: '`minLength` returns a function: `export function minLength(n) { return (value) => ... }`.'
+  - level: explicit
+    text: 'For `compose`, map the validators over the value, drop the nulls, and return null when nothing is left — an empty error object would read as a failure.'
+
+explanation: |
+  The contract's shape is the lesson. Returning `null` for success and an
+  object for failure means a validator carries the *reason* rather than a
+  boolean, and that is what lets a template say "at least 3 characters, you
+  typed 1" instead of "invalid".
+
+  Skipping blank values in every validator except `required` is the part people
+  get wrong. Apply `minLength(3)` to an untouched field and it reports a length
+  error before the user has typed anything, so the form is red on arrival.
+  Splitting the responsibility means `required` decides whether emptiness is
+  allowed and everything else assumes the question is already settled.
+
+  Merging all errors rather than stopping at the first is a small decision with
+  a visible cost when you get it wrong. Fixing one problem to be shown the next
+  one turns a single correction into a sequence of round trips, and it makes
+  the form feel like it is arguing rather than helping.

@@ -1,0 +1,10 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: every violation, named
+-- concept: sql.model.keys
+-- uses: main.sql
+-- expect:
+-- A-2|duplicate reference
+-- A-2|duplicate reference
+-- A-2|orphan customer
+-- A-3|bad amount
+-- A-4|orphan customer

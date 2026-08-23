@@ -1,0 +1,7 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: names every customer with no orders
+-- concept: sql.sets.joins
+-- uses: main.sql
+-- expect:
+-- Barbara
+-- Linus

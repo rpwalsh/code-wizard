@@ -1,0 +1,134 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 6 — Modeling (lessons 105–122)
+#
+# Classes arrive late here, and that is deliberate. Introduced early they get
+# used for everything, including the twelve places a function would have done;
+# introduced after functions and dictionaries are fluent, the question becomes
+# the right one — does this thing have state that must stay consistent?
+#
+# The stage ends with a stateful system built in stages, because the difference
+# between "can write a class" and "can keep a system correct while it changes"
+# is the whole subject.
+
+stage: modeling
+title: Modeling
+lessons:
+  - id: py.103
+    title: A thing with state
+    focus: class, __init__, attributes — and the same job done with a dictionary first.
+    skills: [python.modeling.classes]
+    difficulty: 2
+
+  - id: py.104
+    title: Methods
+    focus: self, calling one method from another, and what the instance is for.
+    skills: [python.modeling.classes]
+    difficulty: 2
+
+  - id: py.105
+    title: Printing an object usefully
+    focus: __repr__ and __str__, and which one the debugger shows you.
+    skills: [python.modeling.classes]
+    difficulty: 2
+
+  - id: py.106
+    title: Equality and identity
+    focus: __eq__, __hash__, and why one without the other breaks sets.
+    skills: [python.modeling.classes, python.collections.set]
+    difficulty: 4
+
+  - id: py.107
+    title: Keeping state consistent
+    focus: Invariants, and refusing an operation that would break one.
+    skills: [python.modeling.state, python.errors.validation]
+    difficulty: 4
+
+  - id: py.108
+    title: Your own exception types
+    focus: Subclassing, a hierarchy callers can catch selectively, and carrying data.
+    skills: [python.errors.custom]
+    difficulty: 3
+
+  - id: py.109
+    title: Failing without breaking anything
+    focus: An operation that must either fully happen or not happen at all.
+    skills: [python.errors.validation, python.modeling.state]
+    difficulty: 4
+
+  - id: py.110
+    title: Class attributes versus instance attributes
+    focus: The shared list on the class that every instance is quietly using.
+    skills: [python.modeling.classes]
+    difficulty: 3
+
+  - id: py.111
+    title: Properties
+    focus: A computed attribute, and a setter that validates.
+    skills: [python.modeling.classes, python.errors.validation]
+    difficulty: 3
+
+  - id: py.112
+    title: Dataclasses
+    focus: What they generate, and the mutable default they refuse.
+    skills: [python.modeling.dataclasses]
+    difficulty: 2
+
+  - id: py.113
+    title: Frozen dataclasses
+    focus: Immutable records, and building a changed copy instead of mutating.
+    skills: [python.modeling.dataclasses]
+    difficulty: 3
+
+  - id: py.114
+    title: Composition
+    focus: Building a thing out of other things, and delegating to them.
+    skills: [python.modeling.composition]
+    difficulty: 3
+
+  - id: py.115
+    title: Inheritance, and its narrow use
+    focus: Subclassing, super(), and three cases where composition was better.
+    skills: [python.modeling.composition]
+    difficulty: 4
+
+  - id: py.116
+    title: Duck typing
+    focus: Depending on behavior rather than type, and what that costs.
+    skills: [python.modeling.composition]
+    difficulty: 3
+
+  - id: py.117
+    title: Type annotations
+    focus: Annotating signatures, and Optional as a design decision.
+    skills: [python.advanced.typing]
+    difficulty: 3
+
+  - id: py.118
+    title: Annotating collections
+    focus: list[str], dict[str, int], and a type that documents the shape.
+    skills: [python.advanced.typing, python.collections.nested]
+    difficulty: 3
+
+  - id: py.119
+    title: Context managers
+    focus: with, __enter__ / __exit__, and cleanup that happens even on failure.
+    skills: [python.advanced.context-managers]
+    difficulty: 4
+
+  - id: py.120
+    title: Decorators
+    focus: Wrapping a function, and preserving what the caller sees.
+    skills: [python.advanced.decorators]
+    difficulty: 5
+
+  - id: py.121
+    title: A system, stage one
+    focus: Model the entities and the operations. Tests define the contract.
+    skills: [python.modeling.state, python.modeling.composition]
+    difficulty: 4
+
+  - id: py.122
+    title: A system, stage two
+    focus: Extend it without breaking stage one. The old tests still run.
+    skills: [python.modeling.state, python.errors.validation]
+    difficulty: 5

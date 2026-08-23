@@ -1,0 +1,133 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Architecture, read rather than drawn.
+#
+# Every one of these has a right answer that can be checked against the code,
+# not a preference. Whether a module graph has a cycle, whether an operation is
+# safe to retry, whether a change is reversible — these are properties of a
+# system, and a system either has them or does not.
+
+activities:
+  - id: architecture.boundaries.dependencies.mc-1
+    kind: multiple-choice
+    language: architecture
+    title: The cycle
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [architecture.boundaries.dependencies, architecture.boundaries.modules]
+    prompt: >-
+      `orders` imports from `billing`, and `billing` imports from `orders`.
+      Which statement about this is a fact rather than an opinion?
+    options:
+      - text: Neither module can be built, tested or understood without the other.
+      - text: It will be slower at runtime.
+        why: A cycle in the module graph has no inherent runtime cost. The cost is entirely to change and comprehension.
+      - text: It means the two should be merged.
+        why: Sometimes true and sometimes the opposite. That is the judgment call; the question asks for the fact.
+      - text: It will fail to compile in most languages.
+        why: Most languages permit it. The tooling not stopping you is why cycles accumulate.
+    correct: [0]
+    explanation: >-
+      A cycle is a checkable property of the import graph, and its consequence
+      is mechanical: you cannot load, test or reason about either module in
+      isolation, and a change to one can reach itself through the other. What to
+      do about it is a design decision. That it exists is not.
+
+  - id: architecture.boundaries.seams.order-1
+    kind: order-lines
+    language: architecture
+    title: Breaking a cycle with an interface
+    difficulty: 4
+    estimatedSeconds: 100
+    skills: [architecture.boundaries.seams, architecture.boundaries.coupling]
+    prompt: >-
+      Order these steps to remove the orders/billing cycle by dependency
+      inversion.
+    lines:
+      - 'Identify what orders actually needs from billing: one call, charge()'
+      - 'Declare a PaymentGateway interface inside orders'
+      - 'Change orders to depend on PaymentGateway, not on billing'
+      - 'Make billing implement PaymentGateway'
+      - 'Wire the concrete billing implementation at the composition root'
+      - 'Delete the import of billing from orders'
+    explanation: >-
+      The interface is declared by the consumer, which is what actually reverses
+      the arrow: `billing` now depends on `orders`, and `orders` depends on
+      nothing. Declaring it in a shared module instead leaves both depending on
+      the shared one and is a common way to do this and get no benefit.
+
+  - id: architecture.tradeoffs.reversibility.mc-1
+    kind: multiple-choice
+    language: architecture
+    title: Which decision to spend time on
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [architecture.tradeoffs.reversibility, architecture.tradeoffs.cost]
+    prompt: >-
+      Two decisions are on the table. Which deserves the longer discussion?
+    options:
+      - text: 'The public shape of an API other teams will build against.'
+      - text: 'Which logging library to use inside one service.'
+        why: Reversible in an afternoon by one person. Deciding it quickly and badly costs almost nothing.
+      - text: 'The name of an internal module.'
+        why: A rename is a mechanical refactor with tool support.
+      - text: 'Which of two equivalent JSON parsers to depend on.'
+        why: Swappable behind the same call. If it were not swappable, that would be the actual problem.
+    correct: [0]
+    explanation: >-
+      Sort decisions by how hard they are to undo, not by how interesting they
+      are. A published API shape is depended on by people you cannot deploy
+      alongside, so changing it needs versioning, migration and coordination —
+      it is close to irreversible. Spend your deliberation budget there and
+      decide the reversible things fast.
+
+  - id: architecture.state.sources.spot-1
+    kind: spot-the-bug
+    language: architecture
+    title: Two sources of truth
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [architecture.state.sources, architecture.state.consistency]
+    prompt: >-
+      This will eventually report a total that disagrees with the rows. Which
+      line introduces that?
+    code: |
+      async function addItem(cartId, item) {
+        await db.insert('cart_items', { cartId, ...item });
+        await db.update('carts', cartId, { total: await recomputeTotal(cartId) });
+        await search.index(cartId);
+        return ok();
+      }
+    faultLine: 3
+    correction: 'derive the total when reading, or update it in the same transaction as the insert'
+    explanation: >-
+      The total is a second copy of a fact the rows already contain, written by
+      a separate statement that can fail on its own. Anything derivable should
+      be derived; if it must be stored for performance, it has to be written in
+      the same transaction as the thing it summarizes, so the two cannot
+      disagree.
+
+  - id: architecture.legacy.strangler.mc-1
+    kind: multiple-choice
+    language: architecture
+    title: Replacing a system that is in use
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [architecture.legacy.strangler, architecture.legacy.risk]
+    prompt: >-
+      A ten-year-old service must be replaced. It cannot stop working during
+      the process. What does the strangler approach actually require first?
+    options:
+      - text: A facade in front of the old system, so traffic can be routed per operation.
+      - text: A complete rewrite on a branch, cut over when finished.
+        why: This is the big-bang rewrite the pattern exists to avoid — the branch diverges, the cutover is one enormous untested event, and there is no way back.
+      - text: Freezing changes to the old system until the new one is ready.
+        why: A freeze means the business stops while you work, which is usually not on offer and grows the gap between the two systems.
+      - text: Full test coverage of the old system before starting.
+        why: Desirable, often impossible, and not the first step. Characterization tests come per-slice, as each is moved.
+    correct: [0]
+    explanation: >-
+      The facade is what makes incremental replacement possible: with it, one
+      operation at a time can be routed to the new implementation, compared
+      against the old, and rolled back on its own. Without it there is no unit
+      of migration smaller than the whole system, and no way to undo a slice
+      that goes wrong.

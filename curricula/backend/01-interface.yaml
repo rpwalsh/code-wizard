@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 1 — The interface, and the data behind it (lessons 1–16)
 #
 # An API is a promise you cannot take back, and a schema is a promise with
@@ -44,9 +45,9 @@ lessons:
     difficulty: 5
 
   - id: be.007
-    title: Modelling
+    title: Modeling
     focus: The entities, their keys, and the constraint that prevents nonsense.
-    skills: [backend.data.modelling]
+    skills: [backend.data.modeling]
     difficulty: 3
 
   - id: be.008
@@ -99,6 +100,6 @@ lessons:
 
   - id: be.016
     title: An endpoint, end to end
-    focus: Validate, authorise, transact, respond, log.
+    focus: Validate, authorize, transact, respond, log.
     skills: [backend.api.errors, backend.data.transactions]
     difficulty: 5

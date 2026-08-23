@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import os from 'node:os';
 
 import { buildSandboxEnvironment, runProcess } from '@code-retrainer/execution';
@@ -120,7 +121,7 @@ async function probe(candidate: Candidate): Promise<PythonInterpreter | null> {
 
 let cached: Promise<PythonInterpreter> | null = null;
 
-/** Discover a usable interpreter, memoised for the life of the process. */
+/** Discover a usable interpreter, memoized for the life of the process. */
 export function discoverPython(options: { refresh?: boolean } = {}): Promise<PythonInterpreter> {
   if (options.refresh) cached = null;
   cached ??= (async () => {
@@ -137,7 +138,7 @@ export function discoverPython(options: { refresh?: boolean } = {}): Promise<Pyt
   return cached;
 }
 
-/** Test seam: drop the memoised interpreter. */
+/** Test seam: drop the memoized interpreter. */
 export function resetPythonDiscovery(): void {
   cached = null;
 }

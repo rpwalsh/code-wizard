@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.effects.dependencies
+version: 1
+language: react
+title: The rules useEffect actually follows
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - react.effects.dependencies
+  - react.effects.useeffect
+  - react.effects.cleanup
+
+prerequisites: []
+
+learningObjectives:
+  - State the exact comparison React applies to a dependency array.
+  - Predict when an effect re-runs, and when its cleanup runs.
+  - Explain why an object literal in the array defeats the comparison.
+
+prompt: |
+  `useEffect` follows three mechanical rules, and every stale-closure bug,
+  every effect firing on each keystroke, every double-subscription comes
+  from misremembering one of them. This exercise implements the rules
+  themselves, so there is nothing left to misremember.
+
+  In `main.tsx`, implement the little engine React uses:
+
+  - `depsChanged(prev, next)` — the real comparison. `undefined` prev (first
+    render) is always "changed". Arrays compare element-wise with
+    `Object.is`; different lengths are changed. An *empty* array therefore
+    never changes after the first render — that is why `[]` means "once".
+  - `EffectScheduler` — a class that replays a component's renders:
+    - `render(deps)` — called with the effect's dependency array for that
+      render (or `undefined` for "no array"). Decides, by the rules, whether
+      the effect would run.
+    - `run(effect)` — invokes the pending decision: if the effect is due, run
+      the previous cleanup first (if any), call `effect()`, and keep
+      whatever function it returns as the next cleanup. If not due, do
+      nothing.
+    - `unmount()` — runs the last cleanup, once. Further unmounts do nothing.
+    - `log` — an array of strings recording what happened, in order:
+      `'cleanup'` and `'effect'` entries only.
+  - `describeDeps(deps)` — the teaching function: returns `'every render'`
+    for `undefined`, `'once'` for `[]`, and `'when deps change'` otherwise.
+
+  The rules, precisely: no array — run after every render. Array — run after
+  renders where `depsChanged` says so. Cleanup — before every re-run, and at
+  unmount.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/deps.test.tsx
+    visibility: visible
+    concept: react.effects.dependencies
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.effects.cleanup
+
+hints:
+  - level: conceptual
+    text: React never looks inside your dependencies. It compares each slot with Object.is and nothing more.
+  - level: structural
+    text: The scheduler keeps three things — the previous deps, the pending decision, and the current cleanup.
+  - level: language
+    text: '`prev.length !== next.length || prev.some((dep, i) => !Object.is(dep, next[i]))` is the whole comparison.'
+  - level: syntax
+    text: 'In run: `if (!this.due) return; if (this.cleanup) { this.log.push("cleanup"); this.cleanup(); } ...`'
+  - level: explicit
+    text: 'unmount: run and clear the stored cleanup — clearing is what makes a second unmount a no-op. render(undefined) sets due unconditionally; render(array) sets due from depsChanged and then stores the array as prev.'
+
+explanation: |
+  `Object.is` per slot is the entire mechanism, and its consequences fall
+  out one by one. A fresh object literal in the array — `[{ id }]` — is a
+  new reference every render, so `Object.is` says changed and the effect
+  runs every time, which is the classic "my effect loops forever" bug. The
+  comparison never deep-compares because deep comparison of arbitrary
+  values on every render of every component would be the framework paying
+  for your convenience in everyone's frame budget.
+
+  The cleanup ordering — old cleanup before new effect — is what makes
+  effects safe to re-run at all. A subscription effect that re-runs without
+  cleaning up first is *two* subscriptions; the scheduler's log makes the
+  ordering visible as data, and the edge test pins it. Unmount running the
+  final cleanup completes the invariant: every effect run is eventually
+  paired with exactly one cleanup.
+
+  `describeDeps` is small, but saying the three cases aloud — every render,
+  once, when they change — is the checklist to run whenever an effect
+  misbehaves. Almost every dependency bug is the code disagreeing with
+  which of the three the author believed they wrote.

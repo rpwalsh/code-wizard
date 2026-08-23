@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { generateMutants } from '@code-retrainer/exercises';
 import { describe, expect, it } from 'vitest';
 

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.binary-search
 version: 1
 language: python
@@ -17,7 +18,7 @@ prerequisites:
 learningObjectives:
   - Write binary search from its loop invariant rather than from memory.
   - Find a boundary rather than an exact value.
-  - Recognise binary search where there is no array at all.
+  - Recognize binary search where there is no array at all.
 
 prompt: |
   Binary search is eight lines and almost everybody gets it wrong the first
@@ -85,7 +86,7 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: comparison
-    line: 12
+    line: 13
     why: >-
       The equality case returns on the line above, so by the time this
       comparison runs the two values cannot be equal and `<` cannot be

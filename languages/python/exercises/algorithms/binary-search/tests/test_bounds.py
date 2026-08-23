@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The four ways to get the bounds wrong."""
 
 import pytest

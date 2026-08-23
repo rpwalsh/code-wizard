@@ -1,0 +1,78 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.sets.anti-join
+version: 1
+language: sql
+title: The customers who never ordered
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 360
+timeoutMs: 15000
+
+skills:
+  - sql.sets.joins
+  - sql.query.nulls
+  - sql.sets.aggregates
+
+prerequisites: []
+
+learningObjectives:
+  - Keep rows that have no match on the other side of a join.
+  - Test for a missing value with IS NULL rather than equality.
+  - Recognize when a WHERE clause has quietly undone an outer join.
+
+prompt: |
+  Three questions about the same two tables. Each one is a place where a
+  plausible query returns a plausible wrong answer.
+
+  `schema.sql` gives you `customers (id, name, city)` and
+  `orders (id, customer_id, total, status)`. Some customers have never
+  ordered; some orders were canceled.
+
+  Write your answer to each in `main.sql`? No — each test carries its own
+  query. Your job is `main.sql`, which must return **the name of every
+  customer who has never placed an order**, one column, ordered by name.
+
+  Two traps are waiting. A LEFT JOIN followed by a condition on the right-hand
+  table in the WHERE clause turns itself back into an inner join. And
+  `WHERE o.id = NULL` is legal SQL that is never true.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/anti-join.sql
+    visibility: visible
+    concept: sql.sets.joins
+  - path: tests/nulls.sql
+    visibility: edge
+    concept: sql.query.nulls
+  - path: tests/hidden.sql
+    visibility: hidden
+    concept: sql.sets.joins
+
+hints:
+  - level: conceptual
+    text: You are looking for absence, and absence is what an outer join leaves behind.
+  - level: structural
+    text: Join every customer to their orders, keep the ones where nothing matched.
+  - level: language
+    text: A LEFT JOIN fills the right-hand columns with NULL when there is no match.
+  - level: syntax
+    text: Test for it with IS NULL. Equality against NULL is never true.
+  - level: explicit
+    text: 'SELECT c.name FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL ORDER BY c.name;'
+
+explanation: |
+  This is the anti-join, and it is the shape to reach for whenever the question
+  is "which of these has no matching that". The LEFT JOIN keeps every customer;
+  the ones with no order get NULLs in every `orders` column; `IS NULL` on the
+  order's primary key keeps exactly those rows.
+
+  Why the primary key and not, say, `o.total`: a real order could legitimately
+  have a NULL total, and testing that column would also return customers whose
+  only order had no total recorded. The key cannot be NULL in a row that
+  exists, so it is the only column that reliably means "there was no row".
+
+  `NOT IN (SELECT customer_id FROM orders)` looks equivalent and is a trap of
+  its own: if any `customer_id` in that subquery is NULL, the whole predicate
+  is unknown for every row and the query returns nothing at all. `NOT EXISTS`
+  is safe; `NOT IN` over a nullable column is not.

@@ -1,0 +1,107 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Middleware, read rather than deployed.
+#
+# Delivery guarantees and the consequences people discover in production
+# instead of in design review.
+
+activities:
+  - id: middleware.messaging.delivery.mc-1
+    kind: multiple-choice
+    language: middleware
+    title: What the broker actually promises
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [middleware.messaging.delivery, middleware.state.idempotency]
+    prompt: >-
+      A queue advertises "exactly-once delivery". What does a consumer still
+      have to do?
+    options:
+      - text: Be idempotent, because exactly-once processing is what you need and no broker can give it to you end to end.
+      - text: Nothing further; that is what the guarantee means.
+        why: The guarantee covers the broker's own handoff. It cannot cover the side effects your handler performs before acknowledging.
+      - text: Acknowledge before processing.
+        why: That converts a crash into a lost message — at-most-once, which is usually worse than a duplicate.
+      - text: Disable retries.
+        why: Then a transient failure loses the message permanently.
+    correct: [0]
+    explanation: >-
+      Between receiving a message, performing a side effect and acknowledging
+      it, there is a window where a crash means the work happened and the
+      acknowledgement did not. The message is redelivered and the work happens
+      twice. No broker closes that window, so the consumer must be safe to run
+      twice — usually a key, recorded transactionally with the effect.
+
+  - id: middleware.state.outbox.order-1
+    kind: order-lines
+    language: middleware
+    title: The transactional outbox
+    difficulty: 4
+    estimatedSeconds: 100
+    skills: [middleware.state.outbox, middleware.messaging.delivery]
+    prompt: >-
+      Order these so a state change and its event cannot disagree.
+    lines:
+      - 'BEGIN'
+      - "UPDATE orders SET status = 'paid' WHERE id = ?"
+      - 'INSERT INTO outbox (topic, payload) VALUES (?, ?)'
+      - 'COMMIT'
+      - 'A separate process reads unsent outbox rows'
+      - 'It publishes each to the broker'
+      - 'It marks the row sent, retrying on failure'
+    explanation: >-
+      The state change and the intent to publish commit together, so there is
+      no moment where one exists without the other. Publishing directly inside
+      the transaction is the trap: the broker call can succeed and the
+      transaction still roll back, announcing something that never happened.
+      The relay may publish twice, which is why consumers must be idempotent.
+
+  - id: middleware.messaging.dlq.mc-1
+    kind: multiple-choice
+    language: middleware
+    title: The poison message
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [middleware.messaging.dlq, middleware.messaging.ordering]
+    prompt: >-
+      One malformed message fails, is retried forever, and the queue stops
+      moving. What is the dead letter queue for?
+    options:
+      - text: Taking the message out of the way after N attempts so the rest can proceed, while keeping it for inspection.
+      - text: Deleting messages that fail.
+        why: Deleting loses data and the evidence of why. A DLQ keeps both.
+      - text: Retrying more slowly.
+        why: That is a backoff policy. It delays the blockage rather than clearing it.
+      - text: Storing messages during an outage.
+        why: The main queue does that. A DLQ holds things that have already failed repeatedly.
+    correct: [0]
+    explanation: >-
+      Head-of-line blocking is the failure mode: one bad message stops
+      everything behind it. A DLQ bounds the damage to that message and turns a
+      total stall into an alert plus one item to look at. It is only useful if
+      somebody actually watches it — an unmonitored DLQ is a directory where
+      data goes to be forgotten.
+
+  - id: middleware.observe.correlation.fill-1
+    kind: fill-blanks
+    language: middleware
+    title: Following one request across services
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [middleware.observe.correlation, middleware.observe.tracing]
+    prompt: >-
+      Complete the header that lets one user action be found in the logs of
+      every service it touched.
+    template: |
+      # generated at the edge if absent, propagated unchanged thereafter
+      {1}: 4f2a9c1e-...
+    blanks:
+      - index: 1
+        accepts:
+          ['X-Correlation-Id', 'x-correlation-id', 'X-Request-Id', 'x-request-id', 'traceparent']
+        hint: One id, generated once, passed everywhere.
+    explanation: >-
+      Without a shared id, a failure that spans four services is four unrelated
+      log searches joined by guessing at timestamps. Generate it at the edge if
+      the caller did not supply one, put it in every log line, and pass it on
+      every outbound call — including into queue messages, which is the hop
+      people forget.

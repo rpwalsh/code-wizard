@@ -1,9 +1,10 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The ordinary cases."""
 
 import pytest
 
 from retrainer.expect import expect_equal
-from main import build_directed, build_undirected, neighbours_of, to_matrix
+from main import build_directed, build_undirected, neighbors_of, to_matrix
 
 
 @pytest.mark.concept("python.structures.graph-representation")
@@ -17,9 +18,9 @@ def test_build_undirected():
 
 
 @pytest.mark.concept("python.structures.graph-representation")
-def test_neighbours_of():
+def test_neighbors_of():
     graph = build_directed([("a", "b"), ("a", "c")])
-    expect_equal(neighbours_of(graph, "a"), ["b", "c"])
+    expect_equal(neighbors_of(graph, "a"), ["b", "c"])
 
 
 @pytest.mark.concept("python.structures.graph-representation")

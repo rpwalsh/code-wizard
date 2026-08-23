@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Assertion helpers that carry structured expectation data.
  *

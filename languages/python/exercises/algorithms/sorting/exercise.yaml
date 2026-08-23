@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.sorting
 version: 1
 language: python
@@ -18,7 +19,7 @@ prerequisites:
 learningObjectives:
   - Write insertion sort and merge sort from the idea rather than from memory.
   - Write the merge step on its own, because it is where the bugs are.
-  - Recognise the input that makes each algorithm behave at its worst.
+  - Recognize the input that makes each algorithm behave at its worst.
 
 prompt: |
   You will never write these in anger. You will be asked about them, and more

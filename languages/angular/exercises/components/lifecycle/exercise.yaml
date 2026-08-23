@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.components.lifecycle
+version: 1
+language: angular
+title: The order Angular calls you in
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - angular.components.lifecycle
+  - angular.components.inputs
+  - angular.testing.harness
+
+prerequisites: []
+
+learningObjectives:
+  - State the lifecycle order — changes before init, destroy exactly once.
+  - Build the SimpleChanges record the way Angular builds it.
+  - Drive a component the way a test harness drives it.
+
+prompt: |
+  Angular promises an order: inputs are set, `ngOnChanges` fires, *then*
+  `ngOnInit`, then more `ngOnChanges` as inputs change, and `ngOnDestroy`
+  once at the end. Build the harness that keeps that promise, and the
+  promise becomes something you know rather than something you look up.
+
+  In `main.ts`:
+
+  - `buildChanges(previous, current, first)` — Angular's `SimpleChanges`:
+    for every key where `previous[key] !== current[key]` (`Object.is`), an
+    entry `{ previousValue, currentValue, firstChange: first }`. Keys
+    that did not change are absent — a change record with no changes in it
+    is an empty object.
+  - `ComponentHarness` — drives any object shaped like
+    `{ ngOnChanges?, ngOnInit?, ngOnDestroy? }` (each optional — Angular
+    calls only what you declared):
+    - `setInput(name, value)` — stages an input. Before init, staged
+      inputs accumulate; the first `detectChanges()` delivers them as one
+      change record with `firstChange: true`, then calls `ngOnInit`.
+    - `detectChanges()` — delivers staged changes: `ngOnChanges` first
+      (only when something actually changed), `ngOnInit` on the first
+      call ever, whether or not inputs were staged. Inputs are written
+      onto the component object itself before the hooks fire — a hook
+      reading `this.name` must see the new value.
+    - `destroy()` — calls `ngOnDestroy` once; later calls do nothing, and
+      `detectChanges` after destroy throws an `Error` — using a destroyed
+      view is a bug, and the harness should say so.
+    - `log` — every hook call in order: `'ngOnChanges'`, `'ngOnInit'`,
+      `'ngOnDestroy'`.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/lifecycle.test.ts
+    visibility: visible
+    concept: angular.components.lifecycle
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.components.inputs
+
+hints:
+  - level: conceptual
+    text: The harness owns the clock. The component only ever reacts — that inversion is the whole framework in one sentence.
+  - level: structural
+    text: 'Keep staged inputs, current inputs, an initialized flag and a destroyed flag. detectChanges reads the first two and updates the rest.'
+  - level: language
+    text: '`component.ngOnChanges?.(changes)` calls the hook only when the component declared it.'
+  - level: syntax
+    text: 'Write inputs first: `Object.assign(component, staged)` before any hook fires, so this.name is already new inside ngOnChanges.'
+  - level: explicit
+    text: 'detectChanges: throw if destroyed; build changes from staged; assign staged onto the component; if changes non-empty call ngOnChanges; if not initialized call ngOnInit and set the flag; clear staged.'
+
+explanation: |
+  Changes-before-init surprises everyone once: the first `ngOnChanges`
+  fires *before* `ngOnInit`, because inputs are part of the component's
+  birth, not events that happen to it later. Code that initializes state
+  in `ngOnInit` from an input works; code that assumes `ngOnChanges` only
+  runs on a *live* component does not. The harness makes the order a
+  tested fact.
+
+  Writing inputs onto the component before the hooks run is the detail
+  that makes both hooks usable: `ngOnChanges` gets the record (old and
+  new), and any other code path just reads `this.whatever` and sees the
+  truth. Angular does exactly this, which is why an input property and
+  its change record never disagree.
+
+  Throwing on `detectChanges` after `destroy` is the harness teaching the
+  same lesson Angular's `ViewRef` does: a destroyed view is not a view in
+  an unusual state, it is a resource you no longer hold. The optional-hook
+  convention — call it only if declared — is also real Angular: lifecycle
+  interfaces are TypeScript niceties; the runtime just checks for the
+  method.

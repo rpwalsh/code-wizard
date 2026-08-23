@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.tables
 version: 1
 language: python
@@ -12,16 +13,16 @@ skills:
   - python.algorithms.intervals
 
 prerequisites:
-  - python.recursion.memoisation
+  - python.recursion.memoization
   - python.idioms.sorting
 
 learningObjectives:
   - Turn a recurrence into a table filled in order.
-  - Recognise when only the previous row is needed and drop the rest.
+  - Recognize when only the previous row is needed and drop the rest.
   - Solve an interval problem by sorting first and then doing one pass.
 
 prompt: |
-  Dynamic programming is memoisation with the recursion removed: work out the
+  Dynamic programming is memoization with the recursion removed: work out the
   order the answers depend on each other, then fill them in that order.
 
   - `ways_up(steps)` counts the ways to climb `steps` stairs taking one or two
@@ -65,7 +66,7 @@ explanation: |
   The stairs and the non-adjacent sum are the same recurrence wearing different
   clothes: each answer depends on the two before it. Both can be written with a
   table and both then collapse to two variables, which is worth doing once so
-  that "optimising the space" stops being a separate trick and becomes an
+  that "optimizing the space" stops being a separate trick and becomes an
   observation.
 
   The coin problem needs an unreachable marker that survives arithmetic. Using
@@ -79,7 +80,7 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: off-by-one
-    line: 28
+    line: 29
     why: >-
       One extra slot on the end of the table is never written to and never
       read, so no input can distinguish it from the exact size.

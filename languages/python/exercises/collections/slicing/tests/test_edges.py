@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Slicing does not raise for being out of range. Prove you relied on that."""
 
 import pytest

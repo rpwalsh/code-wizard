@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The ordinary cases, on a small graph."""
 
 import pytest

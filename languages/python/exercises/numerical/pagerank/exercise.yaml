@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.numerical.pagerank
 version: 1
 language: python
@@ -90,14 +91,14 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: off-by-one
-    line: 4
+    line: 5
     why: >-
       A tighter default tolerance converges to the same fixed point, so no
       input can distinguish 1e-8 from 1e-9. The loosening direction is a
       different mutant and is caught.
   - path: main.py
     operator: off-by-one
-    line: 5
+    line: 6
     why: >-
       Every graph in the tests converges in far fewer than a hundred rounds
       under the default damping, so the round limit is never reached and 100

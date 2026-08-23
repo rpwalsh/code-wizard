@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** The falsy values that are not absent. */
 import { test } from 'retrainer/test.js';
 import { expectEqual } from 'retrainer/expect.js';

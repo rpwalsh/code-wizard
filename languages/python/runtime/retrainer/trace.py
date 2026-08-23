@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Record what a program actually did, line by line.
 
 The instrument behind "increase observability before increasing explanation".

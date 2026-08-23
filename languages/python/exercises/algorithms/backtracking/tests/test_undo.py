@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Copies, undos, and the empty cases."""
 
 import pytest

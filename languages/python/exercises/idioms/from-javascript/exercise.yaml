@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.idioms.from-javascript
 version: 1
 language: python
@@ -19,11 +20,11 @@ prerequisites:
 learningObjectives:
   - Express map, filter and reduce as Python idioms rather than as transliterated JavaScript.
   - Sort by a computed key without writing a comparator.
-  - Recognise where the two languages genuinely differ instead of guessing.
+  - Recognize where the two languages genuinely differ instead of guessing.
 
 prompt: |
-  Below is working JavaScript. Write the same behaviour in Python — not the
-  same *lines*, the same behaviour, in the way Python would have it.
+  Below is working JavaScript. Write the same behavior in Python — not the
+  same *lines*, the same behavior, in the way Python would have it.
 
   ```js
   const activeNames = (users) =>

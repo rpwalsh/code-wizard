@@ -1,0 +1,7 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: the teams above the average
+-- concept: sql.sets.ctes
+-- uses: main.sql
+-- expect:
+-- platform|800
+-- search|700

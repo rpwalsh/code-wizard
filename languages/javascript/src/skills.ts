@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Skill } from '@code-retrainer/core';
 import { SkillGraph } from '@code-retrainer/core';
 
@@ -183,7 +184,7 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     name: 'Running several at once',
     category: 'Asynchrony',
     prerequisites: ['javascript.async.await'],
-    description: 'all, allSettled, race — and the await inside a loop that serialised everything.',
+    description: 'all, allSettled, race — and the await inside a loop that serialized everything.',
   },
   {
     id: 'javascript.async.errors',
@@ -193,24 +194,24 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     description: 'The rejection nobody caught, and the promise nobody awaited.',
   },
 
-  // -- Modelling ----------------------------------------------------------
+  // -- Modeling ----------------------------------------------------------
   {
     id: 'javascript.modeling.classes',
     name: 'Classes',
-    category: 'Modelling',
+    category: 'Modeling',
     prerequisites: ['javascript.functions.this'],
   },
   {
     id: 'javascript.modeling.prototypes',
     name: 'Prototypes',
-    category: 'Modelling',
+    category: 'Modeling',
     prerequisites: ['javascript.modeling.classes'],
     description: 'What a class is underneath, and why that still shows through.',
   },
   {
     id: 'javascript.modeling.immutability',
     name: 'Working without mutating',
-    category: 'Modelling',
+    category: 'Modeling',
     prerequisites: ['javascript.data.reference', 'javascript.data.destructuring'],
     description: 'Producing a changed copy, which is the whole discipline behind modern UI state.',
   },

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Where the return sits, and what the boundaries are."""
 
 import pytest

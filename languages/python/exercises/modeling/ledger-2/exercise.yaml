@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.modeling.ledger-2
 version: 1
 language: python
@@ -18,7 +19,7 @@ prerequisites:
   - python.collections.nested
 
 learningObjectives:
-  - Extend a working system without breaking the contract it already honours.
+  - Extend a working system without breaking the contract it already honors.
   - Make a multi-step operation atomic — it fully happens, or not at all.
   - Record an audit trail as a side effect of state changes, not instead of them.
 

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.structures.graphs
 version: 1
 language: python
@@ -21,13 +22,13 @@ learningObjectives:
 
 prompt: |
   Before any traversal, the graph has to be a shape you can walk. That shape is
-  a dictionary from node to its neighbours.
+  a dictionary from node to its neighbors.
 
   - `build_directed(edges)` takes a list of `(source, target)` pairs and returns
     `{node: sorted list of targets}`. Every node mentioned anywhere must appear
     as a key, even if it has no outgoing edges.
   - `build_undirected(edges)` does the same, but each edge goes both ways.
-  - `neighbours_of(graph, node)` returns the neighbour list, or `[]` for a node
+  - `neighbors_of(graph, node)` returns the neighbor list, or `[]` for a node
     that is not in the graph.
   - `to_matrix(graph, order)` returns a list of rows of 0 and 1, where row `i`
     column `j` is 1 when there is an edge from `order[i]` to `order[j]`.
@@ -56,18 +57,18 @@ hints:
   - level: language
     text: '`setdefault(node, [])` creates the entry the first time the node is seen.'
   - level: syntax
-    text: 'Sort each neighbour list at the end so the result is comparable.'
+    text: 'Sort each neighbor list at the end so the result is comparable.'
   - level: explicit
-    text: "For the matrix, build one row per node in `order`, checking membership in that node's neighbours."
+    text: "For the matrix, build one row per node in `order`, checking membership in that node's neighbors."
 
 explanation: |
   Forgetting to create an entry for a node that only ever appears as a target is
   the classic first bug here, and it does not fail where you made it. The graph
-  looks fine, and then a traversal reaches that node, asks for its neighbours,
+  looks fine, and then a traversal reaches that node, asks for its neighbors,
   and raises `KeyError` several functions away.
 
   The two representations make different things cheap. The adjacency dictionary
-  answers "who are this node's neighbours" immediately and uses space
+  answers "who are this node's neighbors" immediately and uses space
   proportional to the number of edges. The matrix answers "is there an edge from
   A to B" immediately and always uses n² space, so it is the right choice for
   dense graphs and a poor one for sparse graphs — which most real graphs are.

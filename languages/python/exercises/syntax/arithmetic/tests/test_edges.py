@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Where Python disagrees with most other languages."""
 
 import pytest

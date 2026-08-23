@@ -1,0 +1,90 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.hooks.rules
+version: 1
+language: react
+title: Why hooks must not hide in an if
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - react.hooks.rules
+  - react.hooks.ref
+  - react.hooks.memo
+
+prerequisites: []
+
+learningObjectives:
+  - Explain hook identity as call order, by building the slot machinery.
+  - Show exactly what breaks when a hook call is skipped.
+  - Implement the ref and memo behaviors on top of the same slots.
+
+prompt: |
+  React does not know your hooks' names. On every render it hands out state
+  in the order you ask: first call gets slot 0, second gets slot 1. The
+  rules of hooks — top level only, no conditions, no loops — exist to keep
+  that order identical every render. Build the machinery and the rules stop
+  being rules; they become obvious.
+
+  In `main.tsx`, implement `HookSlots`:
+
+  - `beginRender()` — resets the cursor to slot 0. Every render starts here.
+  - `useSlot(initial)` — returns the slot's stored value, initializing it
+    the first time this *position* is reached. Advances the cursor.
+  - `setSlot(index, value)` — writes a slot directly (this is the "setState
+    from an event handler" path).
+  - `endRender()` — after the first render, throws an `Error` containing
+    the words `"hook order"` when this render used a *different number* of
+    slots than the first one did — which is precisely how a hook inside an
+    `if` betrays itself.
+  - `useRef(initial)` — built on `useSlot`: returns the same
+    `{ current }` object every render. Mutating `current` never touches
+    the slot again — identity is the whole feature.
+  - `useMemo(compute, deps)` — built on `useSlot`: stores
+    `{ value, deps }`; recomputes only when a dep differs by `Object.is`,
+    element-wise (assume equal-length arrays). Returns the stored value
+    otherwise. `compute` must not run when deps are unchanged.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/rules.test.tsx
+    visibility: visible
+    concept: react.hooks.rules
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.hooks.memo
+
+hints:
+  - level: conceptual
+    text: A hook has no name — its identity is "the Nth call this render". Skip one call and every later hook answers for the wrong slot.
+  - level: structural
+    text: One array of slots, one cursor, and a remembered count from the first render.
+  - level: language
+    text: 'The first render defines the contract: store slots.length at the first endRender and compare against it forever after.'
+  - level: syntax
+    text: 'useSlot: `if (this.cursor >= this.slots.length) this.slots.push(initial); return this.slots[this.cursor++];` — well, read then advance.'
+  - level: explicit
+    text: 'useMemo: read the slot; if it is undefined or a dep differs (`stored.deps.some((d, i) => !Object.is(d, deps[i]))`), compute, store { value, deps }, and write it back with setSlot on the slot you just consumed.'
+
+explanation: |
+  The machinery explains the rules better than the rules explain
+  themselves. With state handed out by position, a conditional hook makes
+  render N ask for four slots where render N−1 asked for five — every hook
+  after the `if` reads its neighbor's state. The real React detects
+  exactly what `endRender` detects (a changed hook count) and throws the
+  error every React developer eventually meets. The rule "call hooks at
+  the top level" is not etiquette; it is the alignment of two lists.
+
+  `useRef` falls out almost for free: a slot that stores one object and
+  never replaces it. The object's *identity* is the feature — the same
+  `{ current }` across renders is a box you can mutate without asking for
+  a re-render, which is why refs hold timers, DOM nodes, and previous
+  values. Note what it is not: writing `current` notifies nobody.
+
+  `useMemo` shows the other pattern: a slot as a cache with its own
+  invalidation rule, the same `Object.is`-per-slot comparison the effect
+  exercise met. Seeing both built on the same slot array demystifies the
+  whole hook family — they are all just disciplined uses of "state at
+  position N", which is why they all share one set of rules.

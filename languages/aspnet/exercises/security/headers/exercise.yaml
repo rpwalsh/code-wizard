@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.security.headers
+version: 1
+language: aspnet
+title: Headers the browser will actually enforce
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 60000
+
+skills:
+  - aspnet.security.headers
+  - aspnet.pipeline.middleware
+  - aspnet.pipeline.results
+
+prerequisites: []
+
+learningObjectives:
+  - Apply a security header policy without overwriting what a handler chose.
+  - Send a header only where the browser will honor it.
+  - Keep the policy a pure function so it can be tested without a server.
+
+prompt: |
+  Security headers are middleware's least glamorous job and one of its most
+  load-bearing. The rules are mostly about restraint: send the right ones, do
+  not send the ones that will be ignored, and never clobber a header a handler
+  deliberately set.
+
+  In `Headers.cs`, implement
+  `Policy.Apply(Request request, IDictionary<string, string> existing)`.
+  It returns the complete set of response headers — the existing ones plus
+  whatever the policy adds.
+
+  The rules:
+
+  - `X-Content-Type-Options: nosniff` on every response. There is no case where
+    guessing the content type is what you wanted.
+  - `Content-Security-Policy: default-src 'self'` on every response.
+  - `Strict-Transport-Security: max-age=31536000` **only when the request
+    arrived over HTTPS**. A browser ignores it over plain HTTP, and sending it
+    anyway tells a reader of the code that it is doing something it is not.
+  - `X-Frame-Options: DENY` unless `request.Path` is in `embeddablePaths`,
+    which arrives on the request. Embeddable paths get no frame header at all.
+  - A header already in `existing` is left exactly as it is. A handler that set
+    its own `Content-Security-Policy` for one page knows something the policy
+    does not.
+
+  Header names are compared case-insensitively, because HTTP header names are
+  case-insensitive and a handler that wrote `content-security-policy` has set
+  the same header.
+
+  Also implement `Policy.IsSecure(Request request)`, returning true when the
+  scheme is `https` in any casing.
+
+entryPoint: Headers.cs
+
+tests:
+  - path: tests/HeaderTests.cs
+    visibility: visible
+    concept: aspnet.security.headers
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.pipeline.middleware
+
+hints:
+  - level: conceptual
+    text: The policy adds; it never replaces. Check for the header before writing it.
+  - level: structural
+    text: Copy the existing headers into a new dictionary first, then add what is missing.
+  - level: language
+    text: '`new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)` gives case-insensitive lookup for free.'
+  - level: syntax
+    text: '`if (!result.ContainsKey(name)) result[name] = value;`'
+  - level: explicit
+    text: 'For the frame header, decide first whether the path is embeddable; if it is, add nothing at all rather than adding an empty value.'
+
+explanation: |
+  Not overwriting an existing header is the rule that separates a policy from a
+  blunt instrument. A page that embeds a payment iframe needs its own CSP, and
+  middleware that stamps the default over the top breaks that page in a way
+  that only shows up in a browser console — never in a test that checks the
+  middleware alone.
+
+  The HSTS condition is about honesty as much as correctness. The header does
+  nothing over plain HTTP; a browser that receives it there discards it. Code
+  that sends it anyway reads as though the site is protected on every scheme,
+  which is exactly the impression you do not want a reader to form while
+  auditing it.
+
+  Omitting `X-Frame-Options` for embeddable paths rather than setting it to
+  something permissive matters because the header has no "allow anyone" value
+  worth relying on — `ALLOW-FROM` was never widely supported and is gone. The
+  absence of the header is the mechanism, which is a good reminder that
+  security configuration is often about what you do not send.

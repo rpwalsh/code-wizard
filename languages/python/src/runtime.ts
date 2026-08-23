@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import path from 'node:path';
 
 import type {
@@ -20,7 +21,7 @@ import type {
   TraceRequest,
   TraceResult,
 } from '@code-retrainer/core';
-import { redactHiddenTests, summarise } from '@code-retrainer/core';
+import { redactHiddenTests, summarize } from '@code-retrainer/core';
 import type { ProcessOutcome, Sandbox } from '@code-retrainer/execution';
 import {
   buildSandboxEnvironment,
@@ -369,7 +370,7 @@ export class PythonRuntime implements LanguageRuntime {
     }
 
     const redacted = redactHiddenTests(cases);
-    const counts = summarise(redacted);
+    const counts = summarize(redacted);
     const runOutcome: TestRunOutcome = outcome.timedOut
       ? 'timeout'
       : hadCollectionError && redacted.length === 0

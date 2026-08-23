@@ -1,0 +1,89 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.shapes.result
+version: 1
+language: typescript
+title: A result that cannot be misread
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 15000
+
+skills:
+  - typescript.shapes.discriminated
+  - typescript.shapes.exhaustive
+  - typescript.basics.narrowing
+
+prerequisites: []
+
+learningObjectives:
+  - Design a union whose members are told apart by a literal property.
+  - Narrow a union so the compiler grants access to the right fields.
+  - Make an unhandled case a build error instead of a runtime surprise.
+
+prompt: |
+  A function that might fail has three ways to say so, and two of them are
+  bad. Returning `null` loses the reason. Throwing makes the failure invisible
+  in the signature. This exercise builds the third.
+
+  In `main.ts`, implement:
+
+  - `type Result<T>` — a union of a success carrying a `value` and a failure
+    carrying a `reason`, told apart by a literal `ok` property.
+  - `parseAge(input: string): Result<number>` — succeeds for a string that is
+    a whole number from 0 to 150 inclusive, and fails otherwise with one of
+    the reasons `"not a number"`, `"not a whole number"` or `"out of range"`,
+    checked in that order.
+  - `unwrapOr<T>(result: Result<T>, fallback: T): T` — the value, or the
+    fallback when it failed.
+  - `describe(result: Result<number>): string` — `"age 42"` for a success and
+    `"failed: not a number"` for a failure.
+
+  `describe` must handle both cases through a `switch` on the discriminant,
+  with a `default` branch that assigns to `never`. That branch is the point of
+  the exercise: adding a third member to `Result` should break the build here,
+  loudly, rather than silently returning `undefined` at run time.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/result.test.ts
+    visibility: visible
+    concept: typescript.shapes.discriminated
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.basics.narrowing
+  - path: tests/hidden.test.ts
+    visibility: hidden
+    concept: typescript.shapes.exhaustive
+
+hints:
+  - level: conceptual
+    text: Two shapes that must never be confused should differ in a way the compiler can see, not in a way only a comment explains.
+  - level: structural
+    text: 'The property that tells them apart has to be a literal type, not `boolean` — `ok: true` rather than `ok: boolean`.'
+  - level: language
+    text: 'Narrowing happens on a check of the discriminant: inside `if (result.ok)`, the compiler knows which member it has.'
+  - level: syntax
+    text: '`type Result<T> = { ok: true; value: T } | { ok: false; reason: string };`'
+  - level: explicit
+    text: 'In the default branch write `const impossible: never = result;` — it compiles only while every case above is handled.'
+
+explanation: |
+  `ok: boolean` and `ok: true | false` look the same and are not. A boolean
+  property carries no information the compiler can use, so `result.value`
+  stays an error on both branches and you end up casting your way out. Literal
+  types make the check informative: after `if (result.ok)` the compiler knows
+  it is holding the success member and grants exactly that member's fields.
+
+  The `never` assignment in the default branch is the part worth keeping. In a
+  branch where every known case has been handled, the value has narrowed to
+  `never`, and the assignment is legal. Add a third member to the union and it
+  narrows to that member instead — which is not assignable to `never`, so the
+  build fails and points at this line. It converts "did I remember to update
+  every switch?" from a question about your memory into a question the
+  compiler answers.
+
+  This is also why the reasons are checked in a fixed order. `"12.5"` is a
+  number and not a whole one; `"999"` is both a number and whole, and out of
+  range. Two of the three inputs fail more than one rule, so "which reason" is
+  a decision the exercise makes rather than leaves ambiguous.

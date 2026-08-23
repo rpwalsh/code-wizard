@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 7 — The toolkit (lessons 123–142)
 #
 # The standard library, plus the four engineering habits that separate a script
@@ -31,7 +32,7 @@ lessons:
 
   - id: py.126
     title: Writing a test
-    focus: pytest, a plain assert, and one test per behaviour.
+    focus: pytest, a plain assert, and one test per behavior.
     skills: [python.engineering.testing]
     difficulty: 2
 

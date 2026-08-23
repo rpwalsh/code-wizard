@@ -1,0 +1,77 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.functions.closures
+version: 1
+language: javascript
+title: Functions that remember
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - javascript.functions.closures
+  - javascript.functions.higher-order
+  - javascript.functions.declaration
+
+prerequisites: []
+
+learningObjectives:
+  - Use a closure to give a function private, persistent state.
+  - Return functions from functions and treat them as ordinary values.
+  - Keep each closure's state independent of every other's.
+
+prompt: |
+  A closure is a function plus the variables it can see, kept alive for as
+  long as the function is. That pairing is JavaScript's original mechanism for
+  private state — objects came later and generators later still.
+
+  In `main.js`, implement:
+
+  - `makeCounter(start = 0)` — returns an object with `next()` and `peek()`.
+    `next()` returns the current value and then advances; `peek()` looks
+    without advancing. Two counters must never share state.
+  - `once(fn)` — returns a function that calls `fn` the first time and returns
+    that first result on every later call, without calling `fn` again. Later
+    arguments are ignored; the first answer is the answer.
+  - `memoize(fn)` — for single-argument functions. Caches results by argument,
+    so calling with the same value twice runs `fn` once. Different arguments
+    each get their own call. Use a Map, not an object: object keys are
+    strings, and `memoize(f)(1)` and `memoize(f)('1')` are different calls.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/closures.test.js
+    visibility: visible
+    concept: javascript.functions.closures
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.functions.higher-order
+
+hints:
+  - level: conceptual
+    text: The variable lives in the outer function; the returned functions reach up to it. Nothing outside can.
+  - level: structural
+    text: Each helper declares its state, then returns the function(s) that close over it.
+  - level: language
+    text: '`let called = false; let result;` above the returned function is the whole state of `once`.'
+  - level: syntax
+    text: '`const cache = new Map(); return (arg) => { if (cache.has(arg)) return cache.get(arg); ... }`'
+  - level: explicit
+    text: 'makeCounter: `let value = start; return { next: () => value++, peek: () => value };` — postfix ++ returns the value before advancing, which is exactly the contract.'
+
+explanation: |
+  The state in a closure is genuinely private — not by convention, like a
+  leading underscore, but by scoping: no code outside `makeCounter` can reach
+  `value` at all. Each call to `makeCounter` creates a fresh `value`, which is
+  why two counters cannot interfere; the test that checks this is checking
+  that you stored state per call rather than in the module.
+
+  `once` and `memoize` are the two most common closure utilities in real
+  codebases, and the difference between them is what they key on. `once` keys
+  on nothing — one flag, one saved result. `memoize` keys on the argument, so
+  it needs a table, and the choice of table matters: a plain object coerces
+  every key to a string, so `1` and `'1'` collide, and `undefined` and
+  `'undefined'` collide. `Map.has` is also the honest way to cache a result
+  that is itself `undefined` — a truthiness check would re-run the function
+  forever for that one input.

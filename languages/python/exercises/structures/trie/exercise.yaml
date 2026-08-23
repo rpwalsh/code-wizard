@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.structures.trie
 version: 1
 language: python
@@ -81,7 +82,7 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: constant
-    line: 13
+    line: 14
     why: >-
       Only the presence of the end marker is ever tested, never its value, so
       storing False marks a word exactly as well as storing True. Reading the

@@ -1,0 +1,89 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.concurrency.first-wins
+version: 1
+language: go
+title: Whichever answers first
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - go.concurrency.select
+  - go.concurrency.context
+  - go.basics.types
+
+prerequisites: []
+
+learningObjectives:
+  - Use select to race channels, including the one context carries.
+  - Honor cancellation without leaking the goroutines that lost.
+  - Make zero values useful instead of surprising.
+
+prompt: |
+  `select` is Go's answer to "wait for whichever happens first", and
+  `context.Context` is the convention for "stop waiting". Together they
+  are how every timeout, cancellation and hedged request in Go works.
+
+  In `main.go`:
+
+  - `First(ctx context.Context, sources ...<-chan string) (string, error)`
+    — return the first value any source delivers. If the context is
+    done first, return `""` and `ctx.Err()`. No sources at all: block
+    on the context alone (a select with only the ctx case), so the
+    caller's timeout still works.
+  - `Collect(ctx context.Context, source <-chan int, count int) ([]int, error)`
+    — receive up to `count` values; stop early (returning what was
+    gathered so far *and* `ctx.Err()`) when the context ends. A closed
+    source ends the collection early with no error.
+  - `Merge(done <-chan struct{}, sources ...<-chan int) <-chan int` —
+    fan-in with cancellation: every value from every source flows into
+    one output channel until all sources close — or `done` closes, at
+    which point the forwarding goroutines all stop (no leaks) and the
+    output closes. This is the pre-context pattern that explains why
+    context exists.
+
+entryPoint: main.go
+
+tests:
+  - path: select_test.go
+    visibility: visible
+    concept: go.concurrency.select
+  - path: edges_test.go
+    visibility: edge
+    concept: go.concurrency.context
+
+hints:
+  - level: conceptual
+    text: A select with a ctx.Done() case is a wait that can give up. Every long wait in production Go has one.
+  - level: structural
+    text: "First over N sources needs reflect.Select for arbitrary N — or, simpler and idiomatic here: one forwarding goroutine per source into a shared channel, then a two-case select."
+  - level: language
+    text: "A receive from a closed channel returns the zero value immediately with ok == false — the comma-ok on a channel receive is how Collect notices the close."
+  - level: syntax
+    text: "case value, ok := <-source: if !ok { return gathered, nil }"
+  - level: explicit
+    text: "Merge: for each source, wg.Add(1) and a goroutine that selects between forwarding to out and <-done; wg.Wait-then-close(out) in one more goroutine. The done case must also cover the send: select { case out <- v: case <-done: return }."
+
+explanation: |
+  The leak Merge is designed around deserves the spotlight: a goroutine
+  blocked on `out <- v` after every reader has left waits forever —
+  goroutines are cheap but not free, and a server leaking one per
+  request dies by Tuesday. The double select (send *or* done) is the
+  pattern that guarantees an exit path; context wraps exactly this
+  machinery behind a tidy interface, which is why `<-ctx.Done()`
+  appears in every serious select.
+
+  Collect's comma-ok receive is the channel vocabulary completing
+  itself: `value, ok := <-source` distinguishes "a value arrived" from
+  "the channel closed", and closing is the *normal* end of a stream —
+  hence no error for it, while cancellation returns ctx.Err() so the
+  caller can tell a completed collection from an interrupted one. The
+  partial results still come back: work already done is not discarded
+  because the deadline passed.
+
+  First returning `ctx.Err()` rather than a homemade error keeps the
+  ecosystem's contract: callers check `errors.Is(err,
+  context.Canceled)` and `context.DeadlineExceeded`, and those checks
+  work only if cancellation errors flow through unchanged. Wrapping is
+  fine; replacing is rude.

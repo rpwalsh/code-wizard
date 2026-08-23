@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Emit parse-time diagnostics for a set of files as JSON.
 
 Always available: it needs nothing beyond the interpreter, so the editor gutter
@@ -13,7 +14,7 @@ import os
 import sys
 
 
-def _normalise(value: str) -> str:
+def _normalize(value: str) -> str:
     return value.replace(os.sep, "/").replace("\\", "/")
 
 
@@ -31,7 +32,7 @@ def diagnose(root: str, paths: list[str]) -> list[dict[str, object]]:
                     "message": f"could not read file: {error.strerror or error}",
                     "code": "IOError",
                     "source": "compile",
-                    "location": {"path": _normalise(path), "line": 1, "column": 1},
+                    "location": {"path": _normalize(path), "line": 1, "column": 1},
                 }
             )
             continue
@@ -46,7 +47,7 @@ def diagnose(root: str, paths: list[str]) -> list[dict[str, object]]:
                     "code": type(error).__name__,
                     "source": "compile",
                     "location": {
-                        "path": _normalise(path),
+                        "path": _normalize(path),
                         "line": error.lineno or 1,
                         "column": error.offset or 1,
                         "endLine": getattr(error, "end_lineno", None) or error.lineno or 1,
@@ -62,7 +63,7 @@ def diagnose(root: str, paths: list[str]) -> list[dict[str, object]]:
                     "message": str(error),
                     "code": "ValueError",
                     "source": "compile",
-                    "location": {"path": _normalise(path), "line": 1, "column": 1},
+                    "location": {"path": _normalize(path), "line": 1, "column": 1},
                 }
             )
     return diagnostics

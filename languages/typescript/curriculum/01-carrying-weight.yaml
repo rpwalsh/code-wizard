@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 1 — Making the compiler carry weight (lessons 1–14)
+#
+# The stage that decides whether TypeScript is worth having. Someone who
+# annotates what they already wrote gets slower autocomplete and no safety;
+# someone who lets the types express what is actually possible gets a compiler
+# that refuses the bug before it is written.
+
+stage: carrying-weight
+title: Making the compiler carry weight
+lessons:
+  - id: ts.001
+    title: What the compiler already knows
+    focus: Delete every annotation that adds nothing, and see which ones did.
+    skills: [typescript.basics.inference]
+    difficulty: 2
+
+  - id: ts.002
+    title: Annotating a boundary
+    focus: Where an explicit type is load-bearing — exports, parameters, returns you care about.
+    skills: [typescript.basics.annotations]
+    difficulty: 2
+
+  - id: ts.003
+    title: Unions of literals
+    focus: A string that can only be one of four things, and what that buys.
+    skills: [typescript.basics.literals]
+    difficulty: 2
+
+  - id: ts.004
+    title: Narrowing
+    focus: typeof, in, truthiness — how a check becomes knowledge.
+    skills: [typescript.basics.narrowing]
+    difficulty: 3
+
+  - id: ts.005
+    title: Optional, and the difference from undefined
+    focus: A missing property and a property set to undefined are not the same.
+    skills: [typescript.shapes.optional]
+    difficulty: 3
+
+  - id: ts.006
+    title: readonly, and how far it goes
+    focus: One level, like everything else in this ecosystem.
+    skills: [typescript.shapes.optional]
+    difficulty: 3
+
+  - id: ts.007
+    title: Discriminated unions
+    focus: A tag field, and the pattern that replaces most inheritance here.
+    skills: [typescript.shapes.discriminated]
+    difficulty: 4
+
+  - id: ts.008
+    title: Exhaustiveness
+    focus: Making the compiler fail when someone adds a case and forgets a branch.
+    skills: [typescript.shapes.exhaustive]
+    difficulty: 4
+
+  - id: ts.009
+    title: Modeling state as a union
+    focus: Loading, loaded, failed — and why three booleans allow eight states.
+    skills: [typescript.shapes.discriminated]
+    difficulty: 4
+
+  - id: ts.010
+    title: unknown at the door
+    focus: Data from outside is unknown, and narrowing it is the work.
+    skills: [typescript.boundaries.unknown]
+    difficulty: 4
+
+  - id: ts.011
+    title: Assertions are a promise
+    focus: '`as` turns off the check. Where that is honest and where it is a lie.'
+    skills: [typescript.boundaries.assertions]
+    difficulty: 4
+
+  - id: ts.012
+    title: Validating a payload
+    focus: A parser that returns a typed value or a typed failure.
+    skills: [typescript.boundaries.validation]
+    difficulty: 5
+
+  - id: ts.013
+    title: Failure as a value
+    focus: A thrown error has no type. A returned result does.
+    skills: [typescript.boundaries.errors]
+    difficulty: 4
+
+  - id: ts.014
+    title: The flags that change the language
+    focus: strictNullChecks, noUncheckedIndexedAccess — and what each one starts catching.
+    skills: [typescript.config.strictness]
+    difficulty: 4

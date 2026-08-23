@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Empty lists, lopsided nesting, and the two kinds of base case."""
 
 import pytest

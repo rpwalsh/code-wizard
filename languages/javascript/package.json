@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./sources": {
+      "types": "./dist/support-sources.generated.d.ts",
+      "default": "./dist/support-sources.generated.js"
     }
   },
   "dependencies": {

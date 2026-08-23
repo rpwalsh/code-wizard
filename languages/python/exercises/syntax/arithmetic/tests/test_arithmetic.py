@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The four operations, on ordinary numbers."""
 
 import pytest

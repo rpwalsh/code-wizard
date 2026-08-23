@@ -1,8 +1,9 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 10 — Algorithms (lessons 177–194)
 #
-# Traversal is the centre of this stage and everything else orbits it. BFS and
+# Traversal is the center of this stage and everything else orbits it. BFS and
 # DFS are the same seven lines with one container swapped, and a learner who
-# sees that once stops memorising two algorithms and starts recognising one.
+# sees that once stops memorising two algorithms and starts recognizing one.
 #
 # The visited set gets its own lesson, on its own, before either traversal is
 # written. Every wrong graph traversal in the world is a missing or misplaced

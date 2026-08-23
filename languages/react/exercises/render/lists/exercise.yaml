@@ -1,0 +1,88 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.render.lists
+version: 1
+language: react
+title: Rendering what is there, and nothing for what is not
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - react.render.lists
+  - react.render.conditional
+  - react.render.components
+
+prerequisites: []
+
+learningObjectives:
+  - Render a list with stable keys drawn from the data, not from the index.
+  - Express the three-way empty/loading/content split as returns, not nesting.
+  - Compose small components rather than growing one large one.
+
+prompt: |
+  Three components in `main.tsx`, each a pure function of its props:
+
+  - `Tag({ label })` — a `<span class="tag">` around the label. Trivial on
+    purpose: composition starts with pieces this small.
+  - `ArticleCard({ article })` — an `<article>` containing an `<h2>` with
+    the title, a `<p>` with the summary, and a `<ul class="tags">` where
+    every tag renders through `Tag`, one `<li>` each, keyed by the tag
+    itself. An article with no tags renders no `<ul>` at all — an empty
+    list container is furniture nobody ordered.
+  - `ArticleList({ articles, loading })` — the three-way split, as three
+    returns:
+    - loading: a single `<p class="status">Loading…</p>` — content is not
+      rendered while loading, even if articles were passed.
+    - empty (not loading, no articles): `<p class="status">No articles
+      yet</p>`.
+    - otherwise: a `<section>` with every article through `ArticleCard`,
+      keyed by `article.id`.
+
+  Keys come from the data — the tag text, the article id — never from the
+  array index. The markup is checked with `renderToStaticMarkup`, and the
+  key rule is checked by React itself: a missing key is a console warning,
+  and the hidden test fails on any console output.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/render.test.tsx
+    visibility: visible
+    concept: react.render.lists
+  - path: tests/keys.test.tsx
+    visibility: hidden
+    concept: react.render.lists
+
+hints:
+  - level: conceptual
+    text: Early returns for the exceptional states leave the main return for the main case. Nesting ternaries does the same job while hiding it.
+  - level: structural
+    text: 'ArticleCard decides about the ul; ArticleList decides about the page. Each decision lives where its data lives.'
+  - level: language
+    text: '`{articles.map((article) => <ArticleCard key={article.id} article={article} />)}` — the key sits on the element in the array, not inside ArticleCard.'
+  - level: syntax
+    text: '`{article.tags.length > 0 && <ul className="tags">...</ul>}` renders nothing when the check fails.'
+  - level: explicit
+    text: 'Three returns in ArticleList: `if (loading) return <p className="status">Loading…</p>; if (articles.length === 0) return <p className="status">No articles yet</p>; return <section>...</section>;`'
+
+explanation: |
+  The key rule is about identity across renders. React reconciles a list by
+  matching keys between the old and new trees; index keys match *positions*,
+  so inserting one article at the top makes every row below it look changed —
+  state attached to rows (an open menu, a half-typed comment box) silently
+  shifts to the wrong article. Keys from the data mean the row keeps its
+  identity wherever it moves. The warning React prints for a missing key is
+  the framework telling you it has been reduced to guessing.
+
+  Loading beating content is deliberate policy, stated in the prompt and
+  pinned by a test: showing stale articles under a spinner reads as "these
+  are the results", and they are not. A three-way state renders most
+  honestly as three returns — the shape of the code matches the shape of
+  the decision, and there is no way to fall through into rendering two
+  states at once.
+
+  The no-empty-`<ul>` rule is the small habit that separates tidy component
+  output from markup soup: empty containers style badly (margins around
+  nothing), read badly in devtools, and mean every consumer of the markup
+  has to handle a case that did not need to exist.

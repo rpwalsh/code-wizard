@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# PHP, read rather than run.
+#
+# Modern PHP is a different language from the one most people remember, and
+# these lean on the parts that changed: strict types, real enums, and prepared
+# statements as the only acceptable way to talk to a database.
+
+activities:
+  - id: php.types.coercion.po-1
+    kind: predict-output
+    language: php
+    title: Comparison
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [php.types.coercion]
+    prompt: What does this print in PHP 8?
+    code: |
+      var_dump(0 == "abc");
+      var_dump("1" == "01");
+      var_dump("10" == "1e1");
+      var_dump(0 === "");
+    expected: |
+      bool(false)
+      bool(true)
+      bool(true)
+      bool(false)
+    explanation: >-
+      PHP 8 changed the first case: a number compared to a non-numeric string
+      now converts the number to a string, so `0 == "abc"` is false where it was
+      true for years. Two numeric strings still compare numerically, which is
+      why the middle two are true. `===` compares type as well as value and is
+      the one to reach for by default.
+
+  - id: php.data.injection.spot-1
+    kind: spot-the-bug
+    language: php
+    title: The query that is a security hole
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [php.data.injection, php.data.pdo]
+    prompt: Which line makes this exploitable?
+    code: |
+      $email = $_POST['email'];
+      $sql = "SELECT * FROM users WHERE email = '$email'";
+      $rows = $pdo->query($sql)->fetchAll();
+      return $rows;
+    faultLine: 2
+    correction: "$stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?'); $stmt->execute([$email]);"
+    explanation: >-
+      Interpolating input into SQL means the input can end the string and add
+      its own clauses. Escaping is not the fix — it is a filter you have to get
+      right every time, forever. A prepared statement sends the query and the
+      data separately, so the data can never be parsed as SQL, and that property
+      does not depend on anyone remembering anything.
+
+  - id: php.structure.enums.mc-1
+    kind: multiple-choice
+    language: php
+    title: Enums
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [php.structure.enums, php.types.declarations]
+    prompt: What does a backed enum give you over a set of class constants?
+    options:
+      - text: A type the signature can require, so an invalid value cannot be passed at all.
+      - text: Faster comparisons.
+        why: Performance is not the argument, and would be a poor reason to change a design.
+      - text: Automatic database persistence.
+        why: You still map it yourself; `from()` and `->value` just make that mapping short.
+      - text: Constants that cannot be redefined.
+        why: Class constants already cannot be redefined.
+    correct: [0]
+    explanation: >-
+      The value is in the type. `function setStatus(Status $s)` cannot receive
+      an unexpected string, so every call site is checked at compile time rather
+      than validated at runtime in each function. `Status::from()` at the
+      boundary is where an unknown value becomes an error, once, in one place.
+
+  - id: php.types.declarations.fill-1
+    kind: fill-blanks
+    language: php
+    title: Turning coercion off
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [php.types.declarations]
+    prompt: Complete the line that makes type declarations actually enforced.
+    template: |
+      <?php
+      declare({1}=1);
+
+      function half(int $n): float { return $n / 2; }
+    blanks:
+      - index: 1
+        accepts: ['strict_types']
+        hint: Must be the first statement in the file.
+    explanation: >-
+      Without it, passing "8" to an `int` parameter silently coerces and the
+      declaration documents an intention rather than enforcing it. With it, the
+      same call is a TypeError at the boundary where the wrong type entered,
+      which is where you want to find out. It is per-file and affects calls made
+      *from* that file.

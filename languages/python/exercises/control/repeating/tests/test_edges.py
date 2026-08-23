@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Loops that end immediately, and loops that must end at all."""
 
 import pytest

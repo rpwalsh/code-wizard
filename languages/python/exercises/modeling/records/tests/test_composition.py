@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """What the basket does not offer, and whose list is whose."""
 
 import pytest

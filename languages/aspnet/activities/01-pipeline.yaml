@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# ASP.NET Core, read rather than hosted.
+#
+# The request pipeline and dependency lifetimes, which between them explain
+# most of the "it works locally" reports.
+
+activities:
+  - id: aspnet.di.lifetimes.mc-1
+    kind: multiple-choice
+    language: aspnet
+    title: The captive dependency
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [aspnet.di.lifetimes]
+    prompt: >-
+      A singleton service takes a scoped DbContext in its constructor. What
+      happens?
+    options:
+      - text: The context is captured for the lifetime of the application, outliving every request scope it was meant to serve.
+      - text: A new context is resolved per request automatically.
+        why: Constructor injection resolves once, when the singleton is built. Nothing re-resolves it later.
+      - text: It is fine, because DbContext is thread-safe.
+        why: It is explicitly not thread-safe, which makes this worse rather than better.
+      - text: The container refuses to start.
+        why: Validation catches this only when scope validation is enabled — on by default in Development, and often not in Production.
+    correct: [0]
+    explanation: >-
+      This is a captive dependency: the shorter lifetime is trapped inside the
+      longer one. The context is never disposed, its change tracker grows all
+      day, and concurrent requests share one non-thread-safe object. Inject
+      `IServiceScopeFactory` and create a scope per unit of work instead.
+
+  - id: aspnet.pipeline.middleware.order-1
+    kind: order-lines
+    language: aspnet
+    title: Pipeline order
+    difficulty: 4
+    estimatedSeconds: 100
+    skills: [aspnet.pipeline.middleware, aspnet.security.authn, aspnet.security.authz]
+    prompt: Put these into the order that actually works.
+    lines:
+      - app.UseExceptionHandler("/error");
+      - app.UseHttpsRedirection();
+      - app.UseRouting();
+      - app.UseAuthentication();
+      - app.UseAuthorization();
+      - app.MapControllers();
+    explanation: >-
+      Order is behavior here, not style. Exception handling must be outermost
+      to catch everything inside it. Routing has to run before authorization,
+      because the endpoint is what carries the policy. Authentication must
+      precede authorization — you cannot check permissions for a user you have
+      not identified yet. Getting the last two the wrong way round produces
+      endpoints that are silently unprotected.
+
+  - id: aspnet.data.tracking.mc-1
+    kind: multiple-choice
+    language: aspnet
+    title: A read that gets slower all day
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [aspnet.data.tracking, aspnet.data.queries]
+    prompt: >-
+      A read-only endpoint loading thousands of rows uses more memory and time
+      than expected. What is the one-line improvement?
+    options:
+      - text: Add AsNoTracking to the query.
+      - text: Add an index.
+        why: Worth doing, and a different problem. The symptom here is on the client side of the query.
+      - text: Increase the connection pool.
+        why: The connection is not the constraint; the materialized objects are.
+      - text: Use a stored procedure.
+        why: Moves the query, keeps the tracking. The entities are still tracked when they come back.
+    correct: [0]
+    explanation: >-
+      By default EF Core keeps a snapshot of every entity it materializes so it
+      can detect changes on save. For a query that will never be saved, that is
+      double the memory and a fixup pass for nothing. `AsNoTracking` skips it,
+      and for read endpoints it is close to free.
+
+  - id: aspnet.pipeline.results.match-1
+    kind: match-pairs
+    language: aspnet
+    title: Status codes
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [aspnet.pipeline.results, aspnet.pipeline.validation]
+    prompt: Match each situation to the status it should return.
+    pairs:
+      - left: The body failed validation
+        right: '400'
+      - left: No credentials were supplied
+        right: '401'
+      - left: Credentials were fine, permission was not
+        right: '403'
+      - left: The route matched but the id does not exist
+        right: '404'
+    explanation: >-
+      401 and 403 are the pair that gets confused: 401 means "I do not know who
+      you are, try authenticating", 403 means "I know exactly who you are and
+      the answer is no". Returning 401 for a permissions failure sends clients
+      into a login loop that cannot succeed.

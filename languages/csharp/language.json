@@ -1,0 +1,5 @@
+{
+  "id": "csharp",
+  "title": "C#",
+  "summary": "For someone who writes C# and has never had to think about what the runtime is doing underneath. About value and reference semantics, nullability, and asynchrony that is genuinely asynchronous."
+}

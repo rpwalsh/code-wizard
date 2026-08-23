@@ -1,0 +1,110 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Angular: components, injection and templates, read rather than served.
+
+activities:
+  - id: angular.components.inputs.po-1
+    kind: predict-output
+    language: angular
+    title: When the input actually arrives
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [angular.components.inputs, angular.components.lifecycle]
+    prompt: A child logs in its constructor and in ngOnInit. What prints?
+    code: |
+      @Component({ selector: 'child', template: '' })
+      export class Child implements OnInit {
+        @Input() name = 'nobody';
+
+        constructor() {
+          console.log('ctor:', this.name);
+        }
+
+        ngOnInit() {
+          console.log('init:', this.name);
+        }
+      }
+      // used as: <child name="ada" />
+    expected: |
+      ctor: nobody
+      init: ada
+    explanation: >-
+      Inputs are set by the framework *after* construction and *before*
+      ngOnInit — that window is the whole reason ngOnInit exists. Code in the
+      constructor sees the field initializer, not the binding, which is why
+      initialization that depends on an input belongs in ngOnInit and why a
+      constructor in Angular should mostly just receive dependencies.
+
+  - id: angular.di.providers.mc-1
+    kind: multiple-choice
+    language: angular
+    title: Two components, two services, one surprise
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [angular.di.providers, angular.di.scope]
+    prompt: >-
+      A service is in `providers` of two component decorators. Both components
+      inject it and see different data. Why?
+    options:
+      - text: A component-level provider creates one instance per component; each component got its own.
+      - text: Angular services are never shared; every injection is a new instance.
+        why: A service provided in root is one instance for the whole application. Sharing is the default people rely on.
+      - text: "The service must be marked @Injectable({ providedIn: 'root' }) to work at all."
+        why: providedIn root is one way to register, not a requirement. Component providers are legal and sometimes exactly right.
+      - text: One of the injections silently failed and returned a mock.
+        why: A failed injection throws at construction. Angular does not invent fallbacks.
+    correct: [0]
+    explanation: >-
+      Where a provider is registered decides how many instances exist.
+      `providedIn: 'root'` means one for the application; a `providers` entry
+      on a component means one per component instance, created with it and
+      destroyed with it. Both are useful — per-component state wants the
+      narrow one — but mixing them up produces exactly this bug: two islands
+      of state where one shared service was intended.
+
+  - id: angular.change.signals.fill-1
+    kind: fill-blanks
+    language: angular
+    title: A derived value that stays derived
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [angular.change.signals]
+    prompt: Complete this so the total always reflects the items, with no subscription.
+    template: |
+      items = signal<Item[]>([]);
+      total = {1}(() => this.items().reduce((sum, item) => sum + item.price, 0));
+    blanks:
+      - index: 1
+        accepts: ['computed']
+        hint: The signal that is a function of other signals.
+    explanation: >-
+      `computed` re-evaluates when the signals it read change, and only then.
+      The alternative — storing the total and updating it wherever items
+      change — is the two-sources-of-truth bug waiting for the one code path
+      that forgets. A derived value should be written as a derivation, and
+      signals make that the cheap option as well as the correct one.
+
+  - id: angular.components.content.match-1
+    kind: match-pairs
+    language: angular
+    title: Which mechanism carries what
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [angular.components.content, angular.components.binding]
+    prompt: Match each need to the mechanism that serves it.
+    pairs:
+      - left: Parent passes data down
+        right: An @Input() binding
+      - left: Child announces something happened
+        right: An @Output() EventEmitter
+      - left: Parent supplies markup to render inside
+        right: ng-content projection
+      - left: Many components share one growing state
+        right: An injected service
+    explanation: >-
+      The first two are the everyday pair, and their direction is the point:
+      data flows down through inputs, events flow up through outputs, and
+      nothing reaches sideways. Projection is for when the parent owns the
+      *content*, not just the data — a card component that renders whatever
+      you put between its tags. When several distant components need the same
+      state, threading inputs through every layer is the smell; a service is
+      the shared place.

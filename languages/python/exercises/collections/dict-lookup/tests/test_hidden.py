@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Hidden tests: these exist so the exercise cannot be passed by hardcoding."""
 
 import pytest

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Skill } from '@code-retrainer/core';
 import { SkillGraph } from '@code-retrainer/core';
 
@@ -201,7 +202,7 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     prerequisites: ['python.errors.exceptions'],
   },
 
-  // -- Data modelling -----------------------------------------------------
+  // -- Data modeling -----------------------------------------------------
   {
     id: 'python.modeling.classes',
     name: 'Classes and __init__',
@@ -222,7 +223,7 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
   },
   {
     id: 'python.modeling.state',
-    name: 'Modelling mutable state',
+    name: 'Modeling mutable state',
     category: 'Data Modeling',
     description: 'Holding, updating and querying state that outlives one call.',
     prerequisites: ['python.collections.nested', 'python.modeling.classes'],
@@ -311,13 +312,13 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
   // Split from Functions because the failure mode is different. People do not
   // fail at recursion because they cannot write a function; they fail because
   // they cannot see the base case, or because they will not trust a recursive
-  // call they have not finished writing yet. Both are practised, not read.
+  // call they have not finished writing yet. Both are practiced, not read.
   {
     id: 'python.recursion.base-case',
     name: 'Base cases and termination',
     category: 'Recursion',
     prerequisites: ['python.functions.definition', 'python.control.conditionals'],
-    description: 'Recognising what stops the recursion, before writing what continues it.',
+    description: 'Recognizing what stops the recursion, before writing what continues it.',
   },
   {
     id: 'python.recursion.linear',
@@ -339,8 +340,8 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     prerequisites: ['python.recursion.linear', 'python.functions.arguments'],
   },
   {
-    id: 'python.recursion.memoisation',
-    name: 'Memoisation',
+    id: 'python.recursion.memoization',
+    name: 'Memoization',
     category: 'Recursion',
     prerequisites: ['python.recursion.tree', 'python.collections.dict-mutation'],
     description: 'Trading memory for repeated work, and seeing which calls actually repeat.',
@@ -348,7 +349,7 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
 
   // -- Complexity ---------------------------------------------------------
   //
-  // Not a maths topic here. The only question that matters is whether the
+  // Not a math topic here. The only question that matters is whether the
   // learner can predict which of two versions dies on real input, and that is
   // something to measure rather than assert.
   {
@@ -458,7 +459,7 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
     id: 'python.algorithms.dynamic-programming',
     name: 'Dynamic programming',
     category: 'Algorithms',
-    prerequisites: ['python.recursion.memoisation', 'python.complexity.growth'],
+    prerequisites: ['python.recursion.memoization', 'python.complexity.growth'],
   },
 
   // -- Numerical ----------------------------------------------------------
@@ -489,14 +490,14 @@ const definitions: readonly Omit<Skill, 'language'>[] = [
 
   {
     id: 'python.numerical.floats',
-    name: 'Floating point behaviour',
+    name: 'Floating point behavior',
     category: 'Numerical',
     prerequisites: ['python.syntax.expressions'],
     description: 'Why equality is the wrong question, and what to ask instead.',
   },
   {
     id: 'python.numerical.vectors',
-    name: 'Vectors and normalisation',
+    name: 'Vectors and normalization',
     category: 'Numerical',
     prerequisites: ['python.numerical.floats', 'python.idioms.aggregation'],
   },

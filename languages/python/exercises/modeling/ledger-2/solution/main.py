@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """A ledger of account balances, in whole cents.
 
 Stage 2: transfers and an audit trail, built on the stage 1 ledger.

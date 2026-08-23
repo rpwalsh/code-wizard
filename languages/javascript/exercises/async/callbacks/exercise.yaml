@@ -1,0 +1,98 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.async.promisify
+version: 1
+language: javascript
+title: From callbacks to await, one wrapper at a time
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - javascript.async.callbacks
+  - javascript.async.await
+  - javascript.async.promises
+
+prerequisites: []
+
+learningObjectives:
+  - Wrap an error-first callback API in a promise without leaking either style.
+  - Sequence dependent async steps with await instead of nesting.
+  - Retry a failing operation with a delay, using only await and a timer.
+
+prompt: |
+  Before promises, every async Node API took an *error-first callback*:
+  `fn(input, (error, result) => ...)`, error in the first slot, null when it
+  worked. Whole codebases still speak this dialect, and the bridge between
+  the two styles is one function.
+
+  In `main.js`:
+
+  - `promisify(fn)` — takes a function whose last argument is an error-first
+    callback and returns a version that returns a promise instead.
+    `promisified(a, b)` calls `fn(a, b, callback)`; an error rejects, a
+    result resolves. The wrapper must not call `fn` until the returned
+    function is called.
+  - `sleep(ms)` — a promise that resolves after `ms` milliseconds. The
+    building block: `setTimeout` wrapped once, so nobody wraps it again.
+  - `sequence(steps, input)` — `steps` is an array of async functions; feed
+    `input` to the first, its result to the second, and so on, one at a
+    time — never two in flight. Resolves to the last result; an empty list
+    resolves to `input` unchanged.
+  - `retry(operation, attempts, delayMs)` — call `operation()` (async); on
+    rejection, wait `delayMs` and try again, up to `attempts` total calls.
+    The last failure's error is the one thrown. Success stops immediately;
+    no timer outlives it.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/promisify.test.js
+    visibility: visible
+    concept: javascript.async.callbacks
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.async.await
+
+hints:
+  - level: conceptual
+    text: The promise constructor is the adapter — resolve and reject are just a callback split into its two outcomes.
+  - level: structural
+    text: 'promisify returns `(...args) => new Promise((resolve, reject) => fn(...args, (error, result) => ...))`.'
+  - level: language
+    text: 'An error-first callback maps mechanically: `error ? reject(error) : resolve(result)`.'
+  - level: syntax
+    text: 'sequence is a for...of with an await inside — the loop body not starting the next step until the current one finishes is the sequencing.'
+  - level: explicit
+    text: 'retry: a counted loop; try/catch around the await; save the error, `await sleep(delayMs)` when tries remain, and rethrow the saved error after the loop.'
+
+explanation: |
+  `promisify` is worth building by hand once because it shows there is no
+  magic in the migration from callbacks to await — an error-first callback
+  *is* a promise flattened into one function, and the adapter is four lines.
+  Node ships this exact function as `util.promisify`; having written it, you
+  know what it can and cannot handle (multi-value callbacks, this-sensitive
+  methods) and why.
+
+  The `await` inside a loop in `sequence` is the pattern linters warn about,
+  and here it is correct — the warning exists for *independent* work, where
+  sequential awaiting wastes time. These steps are dependent by definition:
+  each consumes the previous result, so no concurrency exists to lose. The
+  skill is knowing which case you are in, not memorizing the lint rule.
+
+  `retry` composes everything in the exercise: awaiting in a loop because
+  attempts are inherently sequential, `sleep` because a bare setTimeout has
+  no place in async logic, and the saved-error detail because rethrowing
+  the *last* failure is what tells the caller what finally went wrong —
+  rethrowing the first would report a problem that might have been
+  transient, and swallowing them all would report nothing.
+
+mutationExceptions:
+  - path: main.js
+    operator: comparison
+    line: 43
+    why: >-
+      Widening the guard only adds one more sleep after the final failure,
+      before the same error is rethrown. The observable contract — how many
+      calls were made and which error escapes — is unchanged, and detecting
+      the extra delay would need a timing assertion too flaky to keep.

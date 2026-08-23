@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.boundaries.unknown
+version: 1
+language: typescript
+title: unknown is a question; any is a shrug
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - typescript.boundaries.unknown
+  - typescript.boundaries.assertions
+  - typescript.boundaries.errors
+  - typescript.config.strictness
+
+prerequisites: []
+
+learningObjectives:
+  - Take unknown input apart with narrowing instead of assertions.
+  - Treat a caught error as the unknown it legally is.
+  - Return failures as typed values so callers must look.
+
+prompt: |
+  `catch (error)` gives you `unknown`, because *anything* can be thrown
+  — a string, undefined, a DOMException, an Error subclass. Code that
+  writes `error.message` unchecked works until the day someone throws
+  a string, and `useUnknownInCatchVariables` (on in this repo, part of
+  strict) exists to make that day a compile error instead.
+
+  In `main.ts`:
+
+  - `errorMessage(thrown: unknown): string` — the message if it is an
+    Error, the string itself if a string, otherwise
+    `String(thrown)` — with the two amusing corners handled: a thrown
+    `null` and a thrown object with no useful toString both become
+    `"unknown error"` (test: `String({})` is `"[object Object]"`,
+    which helps nobody; detect it and substitute).
+  - `Result<T>` — `{ ok: true; value: T } | { ok: false; error: string }`.
+  - `tryParse(text: string): Result<number>` — `Number` semantics with
+    trimming: a finite number parses; `""` and garbage do not. Never
+    throws.
+  - `tryRun<T>(operation: () => T): Result<T>` — runs it, catching
+    anything; the catch converts through `errorMessage`. The one
+    honest use of try/catch as an expression boundary.
+  - `assertPresent<T>(value: T | null | undefined, what: string):
+    asserts value is T` — the assertion *function*: throws
+    `Error('WHAT is missing')` on null/undefined, and afterward the
+    compiler treats value as T. The only assertion in this file, and
+    it is one that checks.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/unknown.test.ts
+    visibility: visible
+    concept: typescript.boundaries.unknown
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.boundaries.errors
+
+hints:
+  - level: conceptual
+    text: unknown forces the question every any silently skips — what do you actually know about this value? Narrowing is how you answer on the record.
+  - level: structural
+    text: errorMessage is three narrows in order — instanceof Error, typeof string, then the fallback with its two guards.
+  - level: language
+    text: "asserts value is T is a return-type annotation: the function returning at all is the proof the compiler accepts."
+  - level: syntax
+    text: "The unhelpful-toString check: String(thrown) === '[object Object]' — substitute 'unknown error'."
+  - level: explicit
+    text: "tryParse: const value = Number(text.trim()); return text.trim() !== '' && Number.isFinite(value) ? { ok: true, value } : { ok: false, error: `not a number: ${text}` };"
+explanation: |
+  `unknown` versus `any` is one bit of information with system-wide
+  consequences. Both accept anything; only `unknown` refuses to be
+  *used* until narrowed. An `any` spreads — every expression it touches
+  becomes `any`, unchecked property access and all — while an `unknown`
+  stops the type-checker at exactly the line where a human should be
+  looking. This repository lints `any` to zero for that reason.
+
+  The assertion function is the disciplined cousin of `as`.
+  `value as T` changes the compiler's mind with no runtime evidence;
+  `assertPresent(value, 'config')` throws if reality disagrees, and
+  only then does the compiler proceed. Same convenience at the use
+  site, opposite epistemics. When you must cross a boundary, cross it
+  through code that checks.
+
+  Result-shaped returns finish the thought: exceptions are invisible in
+  signatures, so a caller cannot be made to handle them. A
+  `Result<number>` is a return type the caller must destructure — the
+  failure path is in the data, where review and the compiler both see
+  it. tryRun is the adapter between the two worlds, and errorMessage is
+  the reason its failures are always printable.

@@ -1,0 +1,75 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.change.atomicity-audit
+version: 1
+language: sql
+title: Half a transfer, found by arithmetic
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.change.transactions
+  - sql.change.isolation
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  The movements table logs every transfer as two rows — a debit and a
+  credit — written by two UPDATEs with *no transaction around them*. At
+  10:04 the process crashed between the two, and somewhere in this log is
+  half a transfer.
+
+  In `main.sql`: every transfer that did not balance, as
+  `transfer_id, total`, ordered by transfer_id. A complete transfer sums
+  to zero; that invariant is the whole audit.
+
+  This query is the one you get to write when the code did not use BEGIN
+  and COMMIT. Inside a transaction, the crash would have rolled the debit
+  back and transfer 3 would either exist whole or not at all — atomicity
+  is exactly the property that makes this exercise unnecessary.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/atomicity.sql
+    visibility: visible
+    concept: sql.change.transactions
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.change.isolation
+
+hints:
+  - level: conceptual
+    text: "Invariants make broken state findable: a transfer's rows must sum to zero, so GROUP BY the transfer and ask."
+  - level: structural
+    text: "GROUP BY transfer_id, HAVING on the SUM."
+  - level: language
+    text: "HAVING, not WHERE \u2014 the sum does not exist until the rows are grouped."
+  - level: syntax
+    text: "HAVING SUM(delta) != 0"
+  - level: explicit
+    text: "SELECT transfer_id, SUM(delta) AS total FROM movements GROUP BY transfer_id HAVING SUM(delta) != 0 ORDER BY transfer_id;"
+
+explanation: |
+  The exercise is the argument for transactions, run in reverse. BEGIN and
+  COMMIT would have made transfer 3 atomic — the crash rolls back the debit
+  and the log holds only whole transfers. Without them, the failure mode is
+  not an error message but *plausible wrong data*: the books are off by
+  exactly 20 and nothing says so until someone reconciles.
+
+  The invariant-shaped query is a tool worth keeping beyond this table. Any
+  multi-row fact has some arithmetic that must hold — double-entry rows sum
+  to zero, an order's line items sum to its total, a state machine's log
+  alternates. Writing the query that checks the invariant is how you find
+  the half-written data that a missing transaction, a killed deploy or a
+  manual fix left behind.
+
+  Isolation is atomicity's sibling and shows up in the edge tests: the
+  stored balance for ada (55) disagrees with what the movement log implies
+  (60 before the half-transfer, 40 after a complete one). Reading two
+  tables that are updated together, without a transaction around the reads,
+  can catch them mid-update — the same lesson from the reader's side.

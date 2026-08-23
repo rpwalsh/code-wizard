@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.io.bounded-lines
+version: 1
+language: c
+title: Reading a file without trusting it
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 45000
+
+skills:
+  - c.io.files
+  - c.io.buffers
+  - c.errors.returns
+
+prerequisites: []
+
+learningObjectives:
+  - Open, read and close a file with every failure handled.
+  - Read lines into a bounded buffer and treat oversized input as data, not disaster.
+  - Report failure through return values with errno-style discipline.
+
+prompt: |
+  File input is where C programs historically bled: gets() had no bound
+  at all, and every buffer since has been one missing check from an
+  overflow. These functions read like the survivors do.
+
+  In `main.c`:
+
+  - `int count_lines(const char *path, int *out)` — how many lines the
+    file holds, written through `out`. Returns 0 on success, -1 when the
+    file cannot be opened (out untouched). A line is text ended by a
+    newline *or* by end-of-file — a final line without a trailing
+    newline still counts. An empty file has 0 lines.
+  - `int longest_line(const char *path, char *buffer, size_t capacity)`
+    — copy the longest line (no newline) into `buffer`, always
+    NUL-terminated, truncated to fit `capacity`. Returns the *true*
+    length of the longest line — which may exceed capacity, and the
+    caller compares to detect truncation. -1 when the file cannot be
+    opened; on a tie the first longest wins. capacity is at least 1.
+  - `int sum_numbers(const char *path, long *out)` — the file holds one
+    integer per line; sum them into `out`. Returns 0 on success, -1 on
+    open failure, -2 on the first line that is not a number (out
+    untouched in both failure cases). Parse with `strtol` and check the
+    end pointer — `atoi` cannot tell 0 from garbage.
+
+  Every path through every function closes the file. The leak is the
+  bug the tests cannot see and the reviewer always finds.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/lines_test.c
+    visibility: visible
+    concept: c.io.files
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.io.buffers
+
+hints:
+  - level: conceptual
+    text: A bounded read never trusts the data to fit. fgets takes the bound; the function's job is deciding what truncation means.
+  - level: structural
+    text: Open, loop with fgets into a local buffer, do the work, fclose on every exit path — early returns included.
+  - level: language
+    text: fgets keeps the newline when the line fit; strcspn(line, "\n") is the clean way to find the content length either way.
+  - level: syntax
+    text: 'char *end; long value = strtol(line, &end, 10); the line was a number only if end moved and, after skipping the newline, reached the terminator.'
+  - level: explicit
+    text: 'longest_line: track best length and copy on improvement — the copy respects capacity (length < capacity ? length : capacity - 1 characters plus NUL) but the recorded best is the true length.'
+
+explanation: |
+  The truncation contract in `longest_line` — copy what fits, return the
+  true length — is the pattern snprintf standardized, and it is the
+  correct answer to "the data was bigger than the buffer". The caller
+  learns the truth (result >= capacity means truncation), the buffer
+  never overflows, and no information is silently lost. The wrong
+  answers are the historical ones: gets() overflowed, strncpy() left
+  the terminator off, and both bugs shipped for decades.
+
+  strtol's end pointer is the difference between parsing and guessing.
+  atoi("12abc") is 12 and atoi("abc") is 0 — the same 0 a legitimate
+  "0" produces, so failure is indistinguishable from data. strtol hands
+  back where parsing stopped; requiring it to have consumed the whole
+  line (newline aside) is what makes "not a number" a detectable state
+  with its own return code.
+
+  The close-on-every-path rule is stated because early returns make it
+  easy to break. A function that returns -2 from the middle of its loop
+  and forgets fclose leaks a handle per bad file — invisible to every
+  test in this suite, fatal to a server by Friday. The discipline that
+  scales is one cleanup point (or C's admittedly awkward goto-cleanup
+  idiom); what does not scale is hoping.

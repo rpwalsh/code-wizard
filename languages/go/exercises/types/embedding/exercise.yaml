@@ -1,0 +1,92 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.types.embedded-logger
+version: 1
+language: go
+title: The nil that is not nil
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - go.types.embedding
+  - go.types.nil-interface
+  - go.basics.structs
+  - go.errors.panic
+
+prerequisites: []
+
+learningObjectives:
+  - Compose behavior with embedding and know what is and is not inheritance.
+  - Explain the typed-nil trap and write the code that avoids it.
+  - Convert a panic into an error at the one boundary where recover belongs.
+
+prompt: |
+  Three Go traps in one file, each the kind that costs an afternoon.
+
+  In `main.go`:
+
+  - `Base` — a struct with `Name string` and method
+    `Describe() string` returning `"BASE:" + Name`. `Stamped` — a
+    struct *embedding* `Base` plus `Version int`, with its own
+    `Describe()` returning `Base.Describe() + "@vVERSION"` — calling
+    the embedded method explicitly, which is what embedding is:
+    delegation with sugar, not inheritance.
+  - `Validate(name string) error` — returns nil for a non-empty name
+    and a `*NameError` (a struct implementing error) for an empty one.
+    The trap: the function must return the **error interface**, and a
+    naive implementation that declares `var err *NameError` and
+    returns it returns a *non-nil interface holding a nil pointer* —
+    `err != nil` is true at every call site forever. Return literal
+    `nil` on the success path.
+  - `IsReallyNil(err error) bool` — true when err is nil *as an
+    interface*. Paired with the test that builds the typed-nil case by
+    hand, so the trap is met on purpose in a place that explains it.
+  - `Safely(operation func() string) (result string, err error)` —
+    run it; if it panics, recover and return the panic as an error
+    (`"recovered: VALUE"`). The one legitimate recover: a boundary
+    that must not let a library's panic kill the process.
+
+entryPoint: main.go
+
+tests:
+  - path: embedding_test.go
+    visibility: visible
+    concept: go.types.embedding
+  - path: edges_test.go
+    visibility: edge
+    concept: go.types.nil-interface
+
+hints:
+  - level: conceptual
+    text: An interface value is a pair (type, pointer). It is nil only when both are — a nil *NameError in an error is (type=*NameError, value=nil), and that pair is not nil.
+  - level: structural
+    text: Stamped's Describe calls s.Base.Describe() by name — the embedded field is a real field with the type's name.
+  - level: language
+    text: "Safely uses named returns: defer func() { if r := recover(); r != nil { err = fmt.Errorf(\"recovered: %v\", r) } }() — a deferred closure is the only place that can set the return after a panic."
+  - level: syntax
+    text: "Validate success path: return nil — the literal, not a typed variable that happens to be nil."
+  - level: explicit
+    text: "IsReallyNil: return err == nil — the point is that the test's hand-built typed nil makes this return false, and the reader watches it happen."
+
+explanation: |
+  The typed-nil trap is Go's most famous interview question because it
+  is Go's most-shipped bug. `var e *NameError; return e` puts a
+  *type* into the interface even though the pointer is nil, and the
+  caller's `if err != nil` sees the type and fires. The fix is
+  discipline at the return site — success returns the literal nil —
+  and the deeper lesson is the two-word model: an interface is (type,
+  value), and nil-ness asks about both.
+
+  Embedding earns its keep as composition with a keyboard discount.
+  `Stamped` gets `Base`'s fields and methods *promoted*, but there is
+  no virtual dispatch: a `Base` method that calls `Describe()` calls
+  Base's own, always. Overriding is shadowing, and the embedded
+  original stays reachable as `s.Base.Describe()` — which the exercise
+  calls explicitly precisely so the mechanism is visible.
+
+  `Safely` is recover used the one way it is meant to be: at a
+  boundary, converting a panic into an error, restoring the invariant
+  that failures travel by return value. Recover anywhere else — deep
+  in logic, as control flow — recreates exceptions without any of the
+  conventions that make exceptions survivable.

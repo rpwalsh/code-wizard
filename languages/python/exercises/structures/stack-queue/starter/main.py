@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Stack and queue drills."""
 
 
@@ -7,7 +8,7 @@ def balanced(text):
 
 
 def undo(actions):
-    """Apply "undo" entries, cancelling the previous remaining action."""
+    """Apply "undo" entries, canceling the previous remaining action."""
     raise NotImplementedError
 
 

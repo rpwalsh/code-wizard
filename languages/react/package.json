@@ -1,0 +1,26 @@
+{
+  "name": "@code-retrainer/lang-react",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@code-retrainer/core": "*",
+    "@code-retrainer/execution": "*",
+    "@code-retrainer/toolchain": "*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "esbuild": "^0.25.12"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
+}

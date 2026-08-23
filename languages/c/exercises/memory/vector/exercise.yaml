@@ -1,0 +1,90 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.memory.vector
+version: 1
+language: c
+title: The realloc that must not lose your data
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 45000
+
+skills:
+  - c.memory.malloc
+  - c.memory.lifetime
+  - c.errors.cleanup
+
+prerequisites: []
+
+learningObjectives:
+  - Grow a heap buffer without leaking the old one when the growth fails.
+  - Keep capacity and length as separate ideas.
+  - Leave a failed operation with the container exactly as it was.
+
+prompt: |
+  A growable array is the first thing everyone writes in C and the first place
+  everyone writes the same bug:
+
+      vector->items = realloc(vector->items, bigger);
+
+  When `realloc` fails it returns NULL and leaves the original block untouched
+  and still allocated. That line has just overwritten the only pointer to it —
+  the data is gone and the memory is leaked, in the same statement, on the one
+  code path you were trying to handle.
+
+  In `main.c`, implement a vector of `int`:
+
+  - `vec_init(Vector *vector)` — an empty vector that owns nothing yet. No
+    allocation here; a vector nobody pushes to should not call `malloc`.
+  - `vec_push(Vector *vector, int value)` — appends. Returns 1 on success and 0
+    on failure. Capacity starts at 4 and doubles when it is reached. On
+    failure the vector must be exactly as it was: same items, same length,
+    same capacity, nothing leaked.
+  - `vec_get(const Vector *vector, size_t index, int *out)` — 1 and writes
+    through `out` when the index is in range, 0 and writes nothing otherwise.
+  - `vec_pop(Vector *vector, int *out)` — removes and returns the last item the
+    same way. Popping does not shrink the capacity; giving the memory back on
+    every pop is how a push/pop loop becomes an allocator benchmark.
+  - `vec_free(Vector *vector)` — releases the buffer and leaves the vector
+    valid and empty, so calling it twice is safe.
+
+  `length` is how many items there are. `capacity` is how many there is room
+  for. Confusing them is the other classic bug here.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/vector_test.c
+    visibility: visible
+    concept: c.memory.malloc
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.errors.cleanup
+
+hints:
+  - level: conceptual
+    text: Never assign the result of realloc straight back into the pointer you passed it.
+  - level: structural
+    text: Grow into a temporary, check it, and only then commit it to the struct.
+  - level: language
+    text: '`realloc(NULL, n)` behaves like `malloc(n)`, so the first growth needs no special case.'
+  - level: syntax
+    text: '`int *grown = realloc(vector->items, bigger * sizeof *grown); if (grown == NULL) return 0; vector->items = grown;`'
+  - level: explicit
+    text: 'In `vec_free`, free the buffer and then set `items` to NULL and both sizes to 0 — that is what makes a second call safe.'
+
+explanation: |
+  `sizeof *grown` rather than `sizeof(int)` is worth the habit: it stays
+  correct when the element type changes, and it cannot disagree with the
+  pointer it is sizing. Most rules about allocation in C are like this — small
+  phrasings that remove a whole category of future mistake.
+
+  The temporary is the point of the exercise. Committing the new pointer only
+  after checking it means a failed growth leaves every field of the vector
+  untouched, which is the strong exception guarantee under a different name:
+  the operation either happened or it did not, and there is no third state for
+  the caller to discover later.
+
+  Leaving `items` NULL after `vec_free` is what makes double-free safe, and
+  `free(NULL)` being defined as a no-op is the language meeting you halfway. It
+  costs one assignment and removes the most common way a cleanup path in C goes
+  wrong — running twice because two error handlers both did their job.

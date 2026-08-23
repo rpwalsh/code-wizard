@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Failure, emptiness, and what the wrapper hides."""
 
 import pytest

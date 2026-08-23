@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Ties, emptiness, and leaving the input alone."""
 
 import pytest

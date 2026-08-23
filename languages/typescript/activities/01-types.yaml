@@ -1,0 +1,164 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# TypeScript, read rather than compiled.
+#
+# The recurring theme is that the type system describes what is already true
+# about the code, and that fighting it usually means the code is saying
+# something you did not intend.
+
+activities:
+  - id: typescript.basics.narrowing.po-1
+    kind: predict-output
+    language: typescript
+    title: Narrowing
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [typescript.basics.narrowing]
+    prompt: What does this print?
+    code: |
+      function describe(value: string | number): string {
+        if (typeof value === 'string') return `str:${value.length}`;
+        return `num:${value.toFixed(1)}`;
+      }
+
+      console.log(describe('abc'));
+      console.log(describe(2));
+    expected: |
+      str:3
+      num:2.0
+    explanation: >-
+      Inside the `if`, TypeScript knows `value` is a string, so `.length` is
+      allowed; after the early return it knows the only remaining possibility is
+      number, so `.toFixed` is allowed. Neither member of the union has both
+      methods — narrowing is what makes the union usable at all.
+
+  - id: typescript.shapes.discriminated.mc-1
+    kind: multiple-choice
+    language: typescript
+    title: Which union is usable
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [typescript.shapes.discriminated]
+    prompt: Which of these unions can be narrowed by checking a single property?
+    options:
+      - text: '{ ok: true, value: string } | { ok: false, error: string }'
+      - text: '{ value?: string } | { error?: string }'
+        why: Both members can be the empty object, so no property distinguishes them and narrowing has nothing to work with.
+      - text: 'string[] | number[]'
+        why: Both are arrays with identical properties. You can check an element, but that tells you nothing about an empty array.
+      - text: 'Record<string, string> | Record<string, number>'
+        why: Index signatures give the two members the same shape, so there is no discriminant anywhere.
+    correct: [0]
+    explanation: >-
+      A discriminated union needs a property with a literal type that differs
+      between members — here `ok: true` against `ok: false`. Checking the
+      property then tells the compiler exactly which member it has. Designing
+      unions this way is the difference between a type that helps and one you
+      have to cast your way out of.
+
+  - id: typescript.shapes.exhaustive.fill-1
+    kind: fill-blanks
+    language: typescript
+    title: Making a missed case a compile error
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [typescript.shapes.exhaustive]
+    prompt: >-
+      Complete the default branch so that adding a third shape breaks the build
+      instead of returning undefined at runtime.
+    template: |
+      type Shape = { kind: 'circle'; r: number } | { kind: 'square'; side: number };
+
+      function area(shape: Shape): number {
+        switch (shape.kind) {
+          case 'circle': return Math.PI * shape.r ** 2;
+          case 'square': return shape.side ** 2;
+          default: {
+            const impossible: {1} = shape;
+            throw new Error(`unhandled ${impossible}`);
+          }
+        }
+      }
+    blanks:
+      - index: 1
+        accepts: ['never']
+        hint: The type with no values.
+    explanation: >-
+      In the default branch every known case has been handled, so `shape` has
+      narrowed to `never` and the assignment is legal. Add a third member to
+      `Shape` and it narrows to that member instead, which is not assignable to
+      `never` — so the compiler points at this line the moment the union grows.
+      It turns "did I update every switch?" from a memory problem into a build
+      error.
+
+  - id: typescript.generics.constraints.spot-1
+    kind: spot-the-bug
+    language: typescript
+    title: A generic that promises too much
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [typescript.generics.constraints]
+    prompt: Which line is the reason this does not compile?
+    code: |
+      function longest<T>(items: T[]): T | undefined {
+        let best = items[0];
+        for (const item of items) {
+          if (item.length > best.length) best = item;
+        }
+        return best;
+      }
+    faultLine: 1
+    correction: 'function longest<T extends { length: number }>(items: T[]): T | undefined {'
+    explanation: >-
+      `T` is unconstrained, so it could be a number, and a number has no
+      `length`. The error surfaces on the comparison but the fault is the
+      signature: it claims to accept anything while the body requires something
+      measurable. Constrain the parameter and the body becomes legal and the
+      call sites get checked.
+
+  - id: typescript.types.utility.match-1
+    kind: match-pairs
+    language: typescript
+    title: Utility types
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [typescript.types.utility]
+    prompt: >-
+      Given a User type with id, name and age, match each utility type to what
+      it describes.
+    pairs:
+      - left: Partial<User>
+        right: Every property optional
+      - left: Pick<User, 'id' | 'name'>
+        right: Only id and name
+      - left: Omit<User, 'age'>
+        right: Everything except age
+      - left: Readonly<User>
+        right: No property may be reassigned
+    explanation: >-
+      These four cover most day-to-day type manipulation, and every one of them
+      derives from User rather than restating it — so renaming a field updates
+      all of them at once. Hand-written duplicates of a type are how a codebase
+      ends up with two definitions that disagree.
+
+  - id: typescript.basics.inference.mc-1
+    kind: multiple-choice
+    language: typescript
+    title: What gets inferred
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [typescript.basics.inference, typescript.basics.literals]
+    prompt: What is the inferred type of `mode` in `let mode = "fast";`?
+    options:
+      - text: The literal type "fast"
+        why: This is what `const` gives you. `let` widens, because you are expected to reassign it.
+      - text: string
+      - text: any
+        why: Inference from an initializer is never `any`; that only happens with no initializer and no annotation.
+      - text: The boxed String object type
+        why: Almost never what you want, and inference does not produce it.
+    correct: [1]
+    explanation: >-
+      `let` widens a literal to its base type on the assumption that you will
+      reassign it; `const` keeps the literal type because you cannot. This is
+      why passing a `let` variable to a function expecting a union of string
+      literals fails while passing the string directly works.

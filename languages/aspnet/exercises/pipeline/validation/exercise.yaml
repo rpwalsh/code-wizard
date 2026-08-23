@@ -1,0 +1,83 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.pipeline.validation
+version: 1
+language: aspnet
+title: Saying no with the right status
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 45000
+
+skills:
+  - aspnet.pipeline.validation
+  - aspnet.pipeline.results
+  - aspnet.security.authz
+
+prerequisites: []
+
+learningObjectives:
+  - Reject bad input at the boundary, once, with a specific reason.
+  - Choose between 400, 401, 403 and 404 on what each actually means.
+  - Return a result type rather than throwing across a handler boundary.
+
+prompt: |
+  Four status codes, and picking the wrong one sends a client somewhere it
+  cannot recover from. The classic is answering a permissions failure with
+  401, which puts a correctly-authenticated user into a login loop that can
+  never succeed.
+
+  In `Handler.cs`, implement:
+
+  - `Validate(CreateUser request)` — returns the problems with the request, in
+    order: `"email is required"`, `"email must contain @"`, `"name is
+    required"`, `"age must be between 0 and 150"`. An empty list means valid.
+  - `Decide(CreateUser request, Caller caller)` — returns the `Outcome` for
+    this request:
+      - `Unauthenticated` when the caller has no identity
+      - `Forbidden` when the caller is identified but not an admin
+      - `Invalid(problems)` when validation failed
+      - `Created(email)` otherwise
+
+  The order matters and is part of the exercise: who you are is settled before
+  what you sent is inspected, because telling an anonymous caller which fields
+  are invalid leaks the shape of your API to someone with no right to it.
+
+entryPoint: Handler.cs
+
+tests:
+  - path: tests/ValidationTests.cs
+    visibility: visible
+    concept: aspnet.pipeline.validation
+  - path: tests/StatusTests.cs
+    visibility: edge
+    concept: aspnet.security.authz
+
+hints:
+  - level: conceptual
+    text: 401 is about who you are; 403 is about what you may do.
+  - level: structural
+    text: Check identity, then permission, then the body — in that order.
+  - level: language
+    text: A discriminated result makes each case visible in the type rather than in a comment.
+  - level: syntax
+    text: 'Collect problems into a List<string> and return it; an empty list means valid.'
+  - level: explicit
+    text: Return early for the identity and permission cases before calling Validate at all.
+
+explanation: |
+  401 means "I do not know who you are — authenticate and try again". 403 means
+  "I know exactly who you are and the answer is still no". Returning 401 for a
+  permissions failure tells a client to re-authenticate, it does, it succeeds,
+  it retries, and it gets 401 again: an infinite loop that looks like a broken
+  login system rather than a permission the user does not have.
+
+  Ordering the checks is a security decision as much as a design one. Running
+  validation before authorization means an anonymous caller can discover which
+  fields exist and what shape they take, one 400 at a time. Settling identity
+  first means an unauthenticated request learns exactly one thing: that it
+  needs to authenticate.
+
+  Returning an outcome rather than throwing is the same argument as in the C#
+  course. The handler has four possible answers, all of them expected, and a
+  signature naming all four is easier to use correctly than one that names none
+  and documents the rest in a comment.

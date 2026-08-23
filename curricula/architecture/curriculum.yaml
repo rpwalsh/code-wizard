@@ -1,9 +1,10 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: architecture
 title: Architecture
 summary: >-
-  Design judgement, drilled rather than discussed. Every exercise is a decision with a cost on both sides, and the deliverable is the reasoning as much as the structure.
+  Architecture as programming, not as diagrams. Every exercise is a codebase with a measurable defect — an import cycle, a second source of truth, an operation that is not safe to retry — and you fix it until the property holds. The tests assert the property, not the drawing.
 blockedBy: >-
-  A way to judge a design. Every other curriculum here is graded by executing code against tests; this one cannot be, and grading it with a model would put the one thing this platform refuses at the centre of its hardest subject. Until there is an honest deterministic way to assess a design, this stays a plan.
+  Exercise fixtures: multi-module codebases large enough for a boundary to be a real boundary, in a language with a runtime already behind it. The grading is not the obstacle — an import cycle is a cycle, an operation is idempotent or it is not, a module either compiles without its neighbor or it does not, and every one of those is checkable by running code. What is missing is the content.
 
 skills:
   - id: architecture.boundaries.coupling
@@ -48,23 +49,23 @@ skills:
 
   - id: architecture.tradeoffs.cost
     name: Reading a trade-off
-    category: Judgement
+    category: Judgment
     prerequisites: []
     description: Both sides, honestly, including the one you prefer.
 
   - id: architecture.tradeoffs.reversibility
     name: Reversible and irreversible decisions
-    category: Judgement
+    category: Judgment
     prerequisites: [architecture.tradeoffs.cost]
 
   - id: architecture.tradeoffs.simplicity
     name: The cost of a solution nobody needed
-    category: Judgement
+    category: Judgment
     prerequisites: [architecture.tradeoffs.cost]
 
   - id: architecture.tradeoffs.records
     name: Recording why
-    category: Judgement
+    category: Judgment
     prerequisites: [architecture.tradeoffs.reversibility]
 
   - id: architecture.scale.bottlenecks
@@ -87,7 +88,7 @@ skills:
     category: Scale
     prerequisites: [architecture.scale.bottlenecks]
 
-  - id: architecture.legacy.characterisation
+  - id: architecture.legacy.characterization
     name: Understanding what is there
     category: Legacy
     prerequisites: []
@@ -95,9 +96,9 @@ skills:
   - id: architecture.legacy.strangler
     name: Replacing something that is running
     category: Legacy
-    prerequisites: [architecture.legacy.characterisation]
+    prerequisites: [architecture.legacy.characterization]
 
   - id: architecture.legacy.risk
     name: Changing something you cannot test
     category: Legacy
-    prerequisites: [architecture.legacy.characterisation]
+    prerequisites: [architecture.legacy.characterization]

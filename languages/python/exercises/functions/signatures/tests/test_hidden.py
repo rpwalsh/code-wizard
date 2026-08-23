@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Signatures used in ways the visible tests did not."""
 
 import pytest

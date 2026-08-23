@@ -1,0 +1,90 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.di.injector
+version: 1
+language: angular
+title: An injector with nothing up its sleeve
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - angular.di.providers
+  - angular.di.tokens
+
+prerequisites: []
+
+learningObjectives:
+  - Register providers by token and resolve them on demand.
+  - Keep singleton and factory providers distinct, and know which is the default.
+  - Use multi-providers to collect contributions from independent registrars.
+
+prompt: |
+  Angular's injector is a Map with opinions. Build the opinions.
+
+  In `main.ts`, implement `Injector`:
+
+  - `provideValue(token, value)` — the simplest provider: resolving the
+    token returns exactly this value.
+  - `provideFactory(token, factory)` — lazy and cached: the factory runs
+    the *first* time the token is resolved — never at registration — and
+    the result is reused for every later resolve. This is Angular's
+    singleton behavior, and the laziness is why an unused service costs
+    nothing.
+  - `provideMulti(token, value)` — callable repeatedly for one token;
+    resolving returns *all* the values, as an array, in registration
+    order. This is how interceptor chains and validator sets are
+    assembled from pieces that never met each other.
+  - `resolve(token)` — the lookup. An unknown token throws an `Error`
+    whose message contains the token — a silent `undefined` from an
+    injector is a bug with a delay fuse.
+  - `has(token)` — whether the token is registered, without resolving
+    (a factory must not run because somebody asked whether it exists).
+
+  Registering the same non-multi token twice: last registration wins —
+  which is what makes test overrides work. Mixing multi and non-multi on
+  one token throws at registration; that confusion should not wait for
+  resolve time.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/injector.test.ts
+    visibility: visible
+    concept: angular.di.providers
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.di.tokens
+
+hints:
+  - level: conceptual
+    text: A token is just a key. What makes DI interesting is entirely in when the value is created and how many exist.
+  - level: structural
+    text: 'One Map from token to a provider record — { kind: "value" | "factory" | "multi", ... } — and resolve switches on the kind.'
+  - level: language
+    text: 'The factory cache is two fields on the record: created (boolean) and instance — not just instance, because a factory may legitimately return undefined.'
+  - level: syntax
+    text: 'Multi: the record holds an array; provideMulti pushes; resolve returns a copy so callers cannot mutate the registry.'
+  - level: explicit
+    text: 'resolve: look up the record; throw naming the token when absent; "value" returns value, "factory" runs once and caches, "multi" returns [...values].'
+
+explanation: |
+  The factory-runs-on-first-resolve rule is the load-bearing one. Eager
+  construction means starting the application builds every service that
+  exists, needed or not — and worse, it means construction order is
+  registration order, so services cannot depend on each other without
+  ceremony. Lazy construction makes the dependency graph resolve itself:
+  whatever is asked for first pulls in what it needs.
+
+  Last-registration-wins sounds sloppy and is the feature that makes the
+  whole design testable: a test registers a fake over the real provider
+  and everything downstream gets the fake without knowing. Frameworks
+  formalize this as "overrides", but the mechanism is nothing more than a
+  Map write.
+
+  Multi-providers solve the problem singletons cannot: several modules
+  each contributing one interceptor, none knowing the others exist, and
+  the consumer receiving the lot in a defined order. The rule that multi
+  and non-multi cannot share a token — enforced at registration, loudly —
+  is the kind of early error that saves an afternoon: the alternative is
+  a resolve that sometimes returns an array and sometimes a value.

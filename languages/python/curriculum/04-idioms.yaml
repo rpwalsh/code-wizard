@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 4 — Writing it the way the language wants (lessons 73–90)
 #
 # Everything here can already be done with a loop and an accumulator. That is
@@ -116,7 +117,7 @@ lessons:
 
   - id: py.088
     title: Translation lab — from JavaScript
-    focus: map, filter, reduce, find, sort. Same behaviour, different habits.
+    focus: map, filter, reduce, find, sort. Same behavior, different habits.
     skills: [python.collections.comprehensions, python.idioms.sorting, python.idioms.aggregation]
     difficulty: 3
 

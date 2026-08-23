@@ -1,0 +1,81 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 2 — Sharing, failing and threading (lessons 17–28)
+#
+# The stage where the earlier restrictions pay. Fearless concurrency is not
+# marketing: the rules that were annoying in stage one are exactly the ones
+# that make a data race a compile error here.
+
+stage: sharing
+title: Sharing, failing and threading
+lessons:
+  - id: rs.017
+    title: Error types of your own
+    focus: A type per failure mode, and what the caller can do with it.
+    skills: [rust.errors.types]
+    difficulty: 4
+
+  - id: rs.018
+    title: Errors across a boundary
+    focus: Converting at the edge, keeping the cause.
+    skills: [rust.errors.boundaries]
+    difficulty: 4
+
+  - id: rs.019
+    title: Generics and bounds
+    focus: Any type that can be compared, printed, or added.
+    skills: [rust.types.generics]
+    difficulty: 4
+
+  - id: rs.020
+    title: Shared ownership
+    focus: Rc, and the reference count you can watch.
+    skills: [rust.shared.rc]
+    difficulty: 4
+
+  - id: rs.021
+    title: Interior mutability
+    focus: RefCell, and the check moving from compile time to run time.
+    skills: [rust.shared.rc]
+    difficulty: 5
+
+  - id: rs.022
+    title: The cycle that never frees
+    focus: Rc pointing both ways, and the weak reference that fixes it.
+    skills: [rust.shared.rc]
+    difficulty: 5
+
+  - id: rs.023
+    title: Threads
+    focus: Spawning, joining, and the value that had to move.
+    skills: [rust.shared.threads]
+    difficulty: 4
+
+  - id: rs.024
+    title: What may cross a thread
+    focus: Send and Sync, and the error that names them.
+    skills: [rust.shared.threads]
+    difficulty: 5
+
+  - id: rs.025
+    title: Mutex and Arc
+    focus: Sharing mutable state safely, and the lock you forgot to drop.
+    skills: [rust.shared.sync]
+    difficulty: 5
+
+  - id: rs.026
+    title: Channels
+    focus: Moving values between threads instead of sharing them.
+    skills: [rust.shared.threads]
+    difficulty: 4
+
+  - id: rs.027
+    title: The data race that will not compile
+    focus: Write it. Read the refusal. Then write the version that works.
+    skills: [rust.shared.sync]
+    difficulty: 5
+
+  - id: rs.028
+    title: A parallel job, end to end
+    focus: Split, work, collect, and no unsafe anywhere.
+    skills: [rust.shared.sync, rust.data.iterators]
+    difficulty: 5

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: javascript.data.arrays
 version: 1
 language: javascript
@@ -63,7 +64,7 @@ hints:
 explanation: |
   The default sort converts everything to text, so `[10, 9]` sorts to
   `[10, 9]` — because `"10"` really does come before `"9"`. A comparator is not
-  an optimisation, it is the only correct way to sort numbers.
+  an optimization, it is the only correct way to sort numbers.
 
   `sort` mutating is the one that costs people time. It returns the array as
   well, which makes `const sorted = items.sort(...)` look like it produced

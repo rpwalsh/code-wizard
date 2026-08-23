@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 11 — Convergence and PageRank (lessons 195–200)
 #
 # The finish, and the only place in the curriculum where "it runs" and "it is
@@ -6,8 +7,8 @@
 # output will tell you. That is the last thing worth learning here.
 #
 # PageRank is the right ending because it needs almost everything: a graph, a
-# vector, normalisation, a loop with a stopping condition that is not a count,
-# and the judgement to know when the answer stopped moving. It is also small
+# vector, normalization, a loop with a stopping condition that is not a count,
+# and the judgment to know when the answer stopped moving. It is also small
 # enough to write in one sitting once the pieces are there.
 
 stage: pagerank
@@ -27,7 +28,7 @@ lessons:
 
   - id: py.197
     title: Vectors as dictionaries
-    focus: Adding, scaling, and normalising a distribution so it sums to one.
+    focus: Adding, scaling, and normalizing a distribution so it sums to one.
     skills: [python.numerical.vectors]
     difficulty: 4
 

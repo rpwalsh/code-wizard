@@ -1,0 +1,78 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.lifetime.ownership
+version: 1
+language: cpp
+title: Who owns it, and for how long
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 60000
+
+skills:
+  - cpp.lifetime.unique
+  - cpp.lifetime.raii
+  - cpp.values.move
+
+prerequisites: []
+
+learningObjectives:
+  - Give a resource exactly one owner, released on every exit path.
+  - Move ownership rather than copying or sharing it.
+  - Return a view without outliving what it views.
+
+prompt: |
+  A tiny registry that owns the things it holds. The exercise is about who
+  frees what, and about not answering that question with `shared_ptr`.
+
+  In `main.cpp`, implement `Registry`:
+
+  - `void add(std::string name, int value)` — stores an entry the registry owns.
+  - `const Entry *find(std::string_view name) const` — a pointer to the entry,
+    or `nullptr`. The registry keeps ownership; the caller only looks.
+  - `std::unique_ptr<Entry> take(std::string_view name)` — removes the entry
+    and hands ownership to the caller.
+  - `std::size_t size() const`.
+
+  `take` is the interesting one. After it returns, the registry no longer holds
+  that entry, the caller does, and nothing was copied.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/ownership_test.cpp
+    visibility: visible
+    concept: cpp.lifetime.unique
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.move
+
+hints:
+  - level: conceptual
+    text: Exactly one thing should be responsible for freeing each entry.
+  - level: structural
+    text: A vector of unique_ptr owns its elements and frees them when it is destroyed.
+  - level: language
+    text: '`std::move` on a unique_ptr transfers it; copying one does not compile, which is the point.'
+  - level: syntax
+    text: '`auto owned = std::move(entries_[index]); entries_.erase(entries_.begin() + index);`'
+  - level: explicit
+    text: '`find` returns `entries_[i].get()` — a raw pointer that observes without owning.'
+
+explanation: |
+  The three pointer types answer three different questions.
+  `std::unique_ptr` says "exactly one owner, and here it is". A raw pointer or
+  a reference says "I am looking at something somebody else owns". And
+  `std::shared_ptr` says "genuinely several owners, and the last one out frees
+  it" — which is true far less often than it is used, and costs an atomic
+  refcount every time it is copied.
+
+  Reaching for `shared_ptr` when the lifetime is merely *unclear* is the
+  commonest way modern C++ goes wrong: it makes the program compile without
+  answering the design question, and the answer surfaces later as a cycle that
+  never frees.
+
+  `take` returning `unique_ptr` is the shape to notice. It makes the transfer
+  visible in the type: the caller can see from the signature that they are now
+  responsible, and the compiler will not let them ignore it. `find` returning a
+  raw pointer is the counterpart — deliberately non-owning, and valid only as
+  long as the registry outlives the use.

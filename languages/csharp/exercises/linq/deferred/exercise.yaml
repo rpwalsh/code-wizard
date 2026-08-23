@@ -1,0 +1,78 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.linq.deferred
+version: 1
+language: csharp
+title: A query is not a result
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 60000
+
+skills:
+  - csharp.linq.deferred
+  - csharp.linq.queries
+  - csharp.linq.performance
+
+prerequisites: []
+
+learningObjectives:
+  - Distinguish building a query from running one.
+  - Materialize a query once when it will be read more than once.
+  - Recognize when deferred execution changes an answer rather than a timing.
+
+prompt: |
+  LINQ operators build a description and evaluate nothing. That is usually
+  what you want and occasionally the reason a number is wrong.
+
+  In `Queries.cs`, implement:
+
+  - `CountingSource<T>` — wraps a sequence and counts how many times it has
+    been enumerated, exposing `Enumerations`. The counter increases when
+    iteration *starts*, not when the object is built.
+  - `Expensive(IEnumerable<int> numbers)` — returns `numbers.Where(n => n > 0)`
+    without enumerating anything.
+  - `SumTwice(IEnumerable<int> numbers)` — returns the sum plus the count,
+    enumerating the source exactly **once**.
+  - `Snapshot(IEnumerable<int> numbers)` — a list that does not change when the
+    underlying collection does.
+
+  `SumTwice` is the exercise. Written the obvious way it walks the sequence
+  twice, and the test counts.
+
+entryPoint: Queries.cs
+
+tests:
+  - path: tests/DeferredTests.cs
+    visibility: visible
+    concept: csharp.linq.deferred
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.linq.performance
+
+hints:
+  - level: conceptual
+    text: An operator that returns IEnumerable has not run yet. One that returns a number or a List has.
+  - level: structural
+    text: If you need two answers from one pass, take the pass yourself.
+  - level: language
+    text: '`ToList()` runs the query once and hands back something you can read repeatedly.'
+  - level: syntax
+    text: 'A foreach over the source, accumulating both a total and a count, enumerates once by construction.'
+  - level: explicit
+    text: 'For CountingSource, increment in GetEnumerator — that is the moment enumeration begins.'
+
+explanation: |
+  `Where` and `Select` return an object that remembers what to do. Nothing
+  happens until something asks for the first element, which is why building a
+  query is free and why the same query re-run later sees different data.
+
+  That is a feature — a query held against a live collection stays current —
+  and it is also the reason `numbers.Sum()` followed by `numbers.Count()`
+  walks the source twice. Over a list that is a wasted pass. Over a database
+  query or a file it is two round trips, and over a one-shot sequence the
+  second pass finds nothing at all and returns zero without complaining.
+
+  The rule is small: enumerate once, and if you need the result more than
+  once, materialize it. `ToList()` is that decision written down. The habit
+  worth building is noticing when a method returns `IEnumerable<T>` and asking
+  whether the caller will read it twice.

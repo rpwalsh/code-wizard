@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 1 — The language, as it is now (lessons 1–14)
+#
+# Most PHP pain is a codebase spanning three eras of the language. The stage
+# drills the modern subset hard enough that reading the old parts becomes a
+# translation exercise rather than a source of doubt.
+
+stage: language
+title: The language, as it is now
+lessons:
+  - id: ph.001
+    title: Strict types
+    focus: Turn them on, and see what stops being accepted.
+    skills: [php.types.declarations]
+    difficulty: 3
+
+  - id: ph.002
+    title: The comparison table
+    focus: Predict twelve loose comparisons. Then run them.
+    skills: [php.types.coercion]
+    difficulty: 4
+
+  - id: ph.003
+    title: Arrays are two things
+    focus: A list and a map, and the function that behaves differently for each.
+    skills: [php.types.arrays]
+    difficulty: 4
+
+  - id: ph.004
+    title: Array functions worth knowing
+    focus: map, filter, reduce — and the argument order that is not consistent.
+    skills: [php.types.arrays]
+    difficulty: 3
+
+  - id: ph.005
+    title: null, safely
+    focus: The null-safe operator, and the coalescing one.
+    skills: [php.types.null]
+    difficulty: 3
+
+  - id: ph.006
+    title: Functions and closures
+    focus: use, by value and by reference.
+    skills: [php.structure.functions]
+    difficulty: 3
+
+  - id: ph.007
+    title: Modern class syntax
+    focus: Constructor promotion, readonly, and typed properties.
+    skills: [php.structure.classes]
+    difficulty: 3
+
+  - id: ph.008
+    title: Interfaces and traits
+    focus: Shared behavior, and the trait conflict.
+    skills: [php.structure.interfaces]
+    difficulty: 4
+
+  - id: ph.009
+    title: Enums
+    focus: A closed set of values, backed or pure.
+    skills: [php.structure.enums]
+    difficulty: 3
+
+  - id: ph.010
+    title: Namespaces and autoloading
+    focus: How a class name becomes a file.
+    skills: [php.structure.autoload]
+    difficulty: 3
+
+  - id: ph.011
+    title: Exceptions
+    focus: The hierarchy, and errors that are not exceptions.
+    skills: [php.errors.exceptions]
+    difficulty: 3
+
+  - id: ph.012
+    title: Handling without leaking
+    focus: What the user sees, and what the log gets.
+    skills: [php.errors.handling]
+    difficulty: 4
+
+  - id: ph.013
+    title: Dependencies
+    focus: Autoloading, versions, and the lock file.
+    skills: [php.engineering.composer]
+    difficulty: 3
+
+  - id: ph.014
+    title: Testing
+    focus: A test per behavior, and a fixture that does not need a server.
+    skills: [php.engineering.testing]
+    difficulty: 3

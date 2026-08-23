@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Edge cases that catch the usual first attempt."""
 
 import pytest

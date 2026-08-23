@@ -1,0 +1,150 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# C#, read rather than compiled.
+#
+# Weighted toward async and nullability, which between them account for most of
+# the surprises in a modern C# codebase.
+
+activities:
+  - id: csharp.async.deadlock.mc-1
+    kind: multiple-choice
+    language: csharp
+    title: The call that hangs
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [csharp.async.deadlock, csharp.async.await]
+    prompt: >-
+      In a UI or classic ASP.NET application, why can `var x = GetAsync().Result;`
+      deadlock?
+    options:
+      - text: '`.Result` blocks the context thread that the awaited continuation needs to resume on.'
+      - text: '`.Result` starts the task a second time.'
+        why: A task is started once. Accessing `.Result` waits for the one that exists.
+      - text: The task is garbage collected while blocked.
+        why: A task being awaited is reachable, and collection would not present as a hang.
+      - text: '`.Result` throws unless the task has already completed.'
+        why: It blocks until completion. It throws only for a faulted or canceled task.
+    correct: [0]
+    explanation: >-
+      With a synchronization context, the continuation after an `await` is
+      posted back to that single context thread. `.Result` is blocking that very
+      thread, so the continuation can never run and the wait never ends. Await
+      all the way up, or if you truly cannot, use `ConfigureAwait(false)` in the
+      library so the continuation does not need that thread.
+
+  - id: csharp.values.nullable.po-1
+    kind: predict-output
+    language: csharp
+    title: Null-conditional and coalescing
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [csharp.values.nullable]
+    prompt: What does this print?
+    code: |
+      string? name = null;
+      Console.WriteLine(name?.Length.ToString() ?? "none");
+      Console.WriteLine(name?.ToUpper() ?? "none");
+    expected: |
+      none
+      none
+    explanation: >-
+      `?.` short-circuits the whole chain: once the left side is null the rest
+      is skipped and the expression is null, so `??` supplies the fallback.
+      Note that the first line does not throw despite `.ToString()` appearing
+      after `.Length` — short-circuiting covers the remainder of the chain, not
+      just the next member.
+
+  - id: csharp.linq.deferred.mc-1
+    kind: multiple-choice
+    language: csharp
+    title: When the query runs
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [csharp.linq.deferred, csharp.linq.queries]
+    prompt: >-
+      `var q = items.Where(x => x.Active);` then `items.Add(newActiveItem);`
+      then `q.Count()`. What does `Count()` see?
+    options:
+      - text: The item added after the query was written, because the query runs at Count().
+      - text: Only the items present when `Where` was called.
+        why: '`Where` builds a description; it does not capture a snapshot of the collection.'
+      - text: It throws, because the collection changed.
+        why: That happens when you modify a collection *during* enumeration, not before it starts.
+      - text: Undefined behavior.
+        why: The semantics are specified and deterministic; deferred execution is a designed feature.
+    correct: [0]
+    explanation: >-
+      LINQ operators are lazy: `Where` returns a query, and nothing is evaluated
+      until something enumerates it. That is usually what you want, and
+      occasionally a trap — a query held across a change, or enumerated twice,
+      does the work twice. `ToList()` is how you say "run it now, once."
+
+  - id: csharp.memory.disposal.spot-1
+    kind: spot-the-bug
+    language: csharp
+    title: The stream that stays open
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [csharp.memory.disposal]
+    prompt: Which line leaves a handle open when the read throws?
+    code: |
+      var stream = File.OpenRead(path);
+      var data = ReadEverything(stream);
+      stream.Dispose();
+      return data;
+    faultLine: 1
+    correction: 'using var stream = File.OpenRead(path);'
+    explanation: >-
+      If `ReadEverything` throws, line 3 never runs and the file handle leaks.
+      `using` ties disposal to the scope so it happens on every exit path,
+      including exceptions. Manual `Dispose` at the end of a method is correct
+      only when nothing between can fail, which is rarely worth reasoning about.
+
+  - id: csharp.values.records.match-1
+    kind: match-pairs
+    language: csharp
+    title: Which kind of type
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [csharp.values.types, csharp.values.records, csharp.values.structs]
+    prompt: Match each declaration to how equality and copying behave.
+    pairs:
+      - left: class Point
+        right: Reference equality, shared on assignment
+      - left: record Point
+        right: Value equality, shared on assignment
+      - left: struct Point
+        right: Value equality, copied on assignment
+      - left: record struct Point
+        right: Value equality and copying, with a generated ToString
+    explanation: >-
+      Two independent choices are in play: how equality works and where the
+      value lives. `record` changes the first, `struct` changes the second, and
+      you can have either, both or neither. Reaching for `record` when you meant
+      `struct` gives you sensible equality and unexpected aliasing.
+
+  - id: csharp.async.cancellation.fill-1
+    kind: fill-blanks
+    language: csharp
+    title: Passing cancellation through
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [csharp.async.cancellation]
+    prompt: Complete the signature and the call so this work can actually be canceled.
+    template: |
+      public async Task<string> LoadAsync({1} token)
+      {
+          var response = await _http.GetAsync(url, {2});
+          return await response.Content.ReadAsStringAsync({2});
+      }
+    blanks:
+      - index: 1
+        accepts: ['CancellationToken']
+        hint: The parameter type, by convention last.
+      - index: 2
+        accepts: ['token']
+        hint: Pass it on, every time.
+    explanation: >-
+      A cancellation token only does something if it reaches the call that is
+      actually waiting. Accepting one and not forwarding it is worse than not
+      accepting one at all, because the signature now promises cancellation that
+      will never happen.

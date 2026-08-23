@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: backend
 title: Backend
 summary: >-
@@ -34,15 +35,15 @@ skills:
     prerequisites: [backend.api.errors]
     description: The retry that charged the card twice.
 
-  - id: backend.data.modelling
-    name: Modelling
+  - id: backend.data.modeling
+    name: Modeling
     category: Data
     prerequisites: []
 
   - id: backend.data.transactions
     name: Transactions and boundaries
     category: Data
-    prerequisites: [backend.data.modelling]
+    prerequisites: [backend.data.modeling]
 
   - id: backend.data.concurrency
     name: Concurrent writers
@@ -53,12 +54,12 @@ skills:
   - id: backend.data.migration
     name: Changing a live schema
     category: Data
-    prerequisites: [backend.data.modelling]
+    prerequisites: [backend.data.modeling]
 
   - id: backend.data.caching
     name: Caching, and invalidating
     category: Data
-    prerequisites: [backend.data.modelling]
+    prerequisites: [backend.data.modeling]
 
   - id: backend.reliability.timeouts
     name: Timeouts

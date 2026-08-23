@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Exactly four elements, and a two-element list: the off-by-one boundaries."""
 
 import pytest

@@ -1,0 +1,99 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.control.tokens
+version: 1
+language: javascript
+title: A loop, its exits, and the errors worth throwing
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - javascript.control.loops
+  - javascript.control.conditionals
+  - javascript.control.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Choose the loop whose shape matches the traversal.
+  - Exit early instead of nesting deeper.
+  - Throw for a caller's mistake and return for an expected outcome, and know the difference.
+
+prompt: |
+  A tiny command language: a program is an array of strings like `"push 3"`,
+  `"add"`, `"dup"`, `"drop"`. This exercise is about the control flow around
+  it — which loop, which exits, and which failures are exceptions.
+
+  In `main.js`, implement `run(program)` operating on a stack of numbers:
+
+  - `"push N"` pushes the number N.
+  - `"add"` pops two, pushes their sum.
+  - `"dup"` pushes a copy of the top value.
+  - `"drop"` pops and discards the top value.
+  - `"halt"` stops execution immediately; later commands never run.
+
+  `run` returns the final stack (bottom first). Failures divide in two, and
+  the division is the lesson:
+
+  - A malformed *program* is the caller's mistake — throw. Unknown commands
+    throw `SyntaxError` naming the command; `"push"` with a missing or
+    non-numeric argument throws `SyntaxError` too. Include the zero-based
+    instruction index in every message, formatted `"at 3: ..."`.
+  - An *empty-stack* pop is a runtime outcome the language defines: `add`,
+    `dup` and `drop` on too few values throw `RangeError`, again with the
+    index.
+
+  Also implement `firstError(program)` — runs the program and returns the
+  message of the error it throws, or `null` when it runs clean. A try/catch
+  that distinguishes nothing has no reason to exist; this one converts.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/tokens.test.js
+    visibility: visible
+    concept: javascript.control.loops
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.control.exceptions
+
+hints:
+  - level: conceptual
+    text: The loop needs the index for error messages, which is a vote for a counted loop or entries().
+  - level: structural
+    text: Split each instruction once, switch on the command, and let each case do one thing.
+  - level: language
+    text: '`Number(text)` returns NaN for garbage, and NaN is the one value that fails `Number.isFinite`.'
+  - level: syntax
+    text: '`for (const [index, instruction] of program.entries())` gives both without bookkeeping.'
+  - level: explicit
+    text: '`case "halt": return stack;` — returning from inside the loop is the clean early exit; a flag checked at the top of every iteration is the same thing with more moving parts.'
+
+explanation: |
+  The `SyntaxError`/`RangeError` split is the durable idea. A malformed
+  program cannot mean anything, so the only honest response is to refuse it
+  loudly, naming the spot — that is what error types are for, and the caller
+  of `firstError` can prove the distinction survived. An empty-stack pop is
+  different in kind: the program was well-formed and the machine ran it into a
+  wall. Real interpreters make exactly this distinction, and so do HTTP APIs:
+  400 for a request that cannot be parsed, 422 for one that parses and cannot
+  be satisfied.
+
+  `return` from inside the loop for `halt` is the small control-flow lesson.
+  The alternative — a `running` flag consulted by the loop condition — does
+  the same thing with an extra variable whose only job is to remember a
+  decision the code already made. Early exits are not a style violation; they
+  are the removal of state.
+
+  `Number` versus `parseInt` is worth the footnote: `parseInt("3oranges")`
+  is 3, silently, because it stops at the first bad character. `Number`
+  refuses the whole string, and `Number.isFinite` then rejects `NaN` and the
+  infinities in one check. When validating, prefer the parser that says no.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 17
+    why: >-
+      argument is a string or undefined, never null, so == and === agree on every reachable input.

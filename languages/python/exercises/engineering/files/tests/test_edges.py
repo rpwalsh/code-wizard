@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Trailing newlines, bad JSON, and what does not survive."""
 
 import pytest

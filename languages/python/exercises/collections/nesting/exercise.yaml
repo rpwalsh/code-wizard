@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.collections.nesting
 version: 1
 language: python
@@ -17,7 +18,7 @@ prerequisites:
 learningObjectives:
   - Read the shape of nested data before writing anything that touches it.
   - Reach through several levels where any of them might be missing.
-  - Recognise that copying the outer collection still shares the inner ones.
+  - Recognize that copying the outer collection still shares the inner ones.
 
 prompt: |
   Real data is dictionaries inside lists inside dictionaries, and any level may

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """pytest plugin that emits a structured JSON report for Code Retrainer.
 
 Parsing human-readable pytest output is brittle and version-dependent, so the
@@ -42,13 +43,13 @@ def pytest_configure(config: pytest.Config) -> None:
         config.pluginmanager.register(Reporter(path), "retrainer-reporter")
 
 
-def _normalise(value: str) -> str:
+def _normalize(value: str) -> str:
     return value.replace(os.sep, "/").replace("\\", "/")
 
 
 def _split_nodeid(nodeid: str) -> tuple[str, str]:
-    normalised = _normalise(nodeid)
-    file_path, _, remainder = normalised.partition("::")
+    normalized = _normalize(nodeid)
+    file_path, _, remainder = normalized.partition("::")
     return file_path, remainder or file_path
 
 
@@ -69,7 +70,7 @@ class Reporter:
             return
         self._collection_errors.append(
             {
-                "path": _normalise(str(report.nodeid)),
+                "path": _normalize(str(report.nodeid)),
                 "message": _shorten(_longrepr_text(report)),
             }
         )
@@ -111,7 +112,7 @@ class Reporter:
         _attach_exception(record, call.excinfo.value)
 
     def _touch(self, nodeid: str, location: Any) -> dict[str, Any]:
-        key = _normalise(str(nodeid))
+        key = _normalize(str(nodeid))
         record = self._cases.get(key)
         if record is not None:
             return record
@@ -129,7 +130,7 @@ class Reporter:
             "name": name,
             "status": "passed",
             "durationMs": 0,
-            "location": {"path": _normalise(str(location_path)), "line": line},
+            "location": {"path": _normalize(str(location_path)), "line": line},
         }
         self._cases[key] = record
         self._order.append(key)
@@ -164,7 +165,7 @@ class Reporter:
         for item in items:
             marker = item.get_closest_marker("concept")
             if marker and marker.args:
-                concepts[_normalise(item.nodeid)] = str(marker.args[0])
+                concepts[_normalize(item.nodeid)] = str(marker.args[0])
         self._concepts = concepts
 
 

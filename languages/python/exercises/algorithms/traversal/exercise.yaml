@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.traversal
 version: 1
 language: python
@@ -24,7 +25,7 @@ prompt: |
   it has been will go round one forever. That memory is the whole algorithm.
   Everything else is bookkeeping.
 
-  Graphs here are `{node: [neighbour, ...]}` with neighbours already sorted.
+  Graphs here are `{node: [neighbor, ...]}` with neighbors already sorted.
 
   - `reachable(graph, start)` returns the set of nodes reachable from `start`,
     including `start` itself.

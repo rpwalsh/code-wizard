@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Cycles, dead ends, and nodes reached from two directions."""
 
 import pytest

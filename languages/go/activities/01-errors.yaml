@@ -1,0 +1,152 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Go, read rather than run.
+#
+# Weighted toward the two things that actually catch people out: errors are
+# ordinary values with ordinary control flow, and a nil interface is not a nil
+# pointer.
+
+activities:
+  - id: go.errors.values.mc-1
+    kind: multiple-choice
+    language: go
+    title: What err is
+    difficulty: 1
+    estimatedSeconds: 40
+    skills: [go.errors.values]
+    prompt: In Go, an error returned from a function is best described as which of these?
+    options:
+      - text: An exception that unwinds the stack until something catches it.
+        why: Nothing unwinds. This is the model from other languages that makes Go's error handling feel verbose rather than deliberate.
+      - text: An ordinary value of an interface type, returned alongside the result.
+      - text: A special return slot the runtime checks for you.
+        why: The runtime checks nothing. If you ignore the value, it is ignored.
+      - text: A status code that must be compared against zero.
+        why: Comparison is against `nil`, and `errors.Is` exists precisely because comparing directly is often wrong.
+    correct: [1]
+    explanation: >-
+      `error` is an interface with one method. An error value is returned, stored
+      and passed like any other value, and nothing forces you to look at it. That
+      is the whole design: error handling is ordinary code, visible in the
+      control flow, with no separate mechanism to learn.
+
+  - id: go.errors.wrapping.po-1
+    kind: predict-output
+    language: go
+    title: Wrapping and unwrapping
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [go.errors.wrapping, go.errors.sentinel]
+    prompt: What does this print?
+    code: |
+      var ErrNotFound = errors.New("not found")
+
+      func load() error {
+          return fmt.Errorf("loading config: %w", ErrNotFound)
+      }
+
+      func main() {
+          err := load()
+          fmt.Println(err)
+          fmt.Println(errors.Is(err, ErrNotFound))
+      }
+    expected: |
+      loading config: not found
+      true
+    explanation: >-
+      `%w` wraps: the new error carries the original inside it, so the message
+      gains context while the identity survives. `errors.Is` walks that chain,
+      which is why it reports true even though `err` is not `ErrNotFound`
+      itself. Use `%w` when a caller might reasonably test for the cause, and
+      `%v` when it is genuinely just a message.
+
+  - id: go.types.nil.spot-1
+    kind: spot-the-bug
+    language: go
+    title: The nil that is not nil
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [go.types.nil-interface, go.types.interfaces]
+    prompt: This function reports an error even when everything succeeded. Which line is at fault?
+    code: |
+      func run() error {
+          var e *MyError = nil
+          if somethingFailed() {
+              e = &MyError{}
+          }
+          return e
+      }
+    faultLine: 6
+    correction: 'if e != nil { return e }; return nil'
+    explanation: >-
+      Returning a nil `*MyError` as an `error` produces an interface value that
+      is *not* nil: it has a type (`*MyError`) and a nil value, and `err != nil`
+      is true. This is the classic Go trap. Either return the concrete type and
+      let the caller decide, or return an explicit untyped `nil` when there is
+      no error.
+
+  - id: go.basics.slices.po-1
+    kind: predict-output
+    language: go
+    title: Slices share
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [go.basics.slices]
+    prompt: What does this print?
+    code: |
+      a := []int{1, 2, 3, 4}
+      b := a[:2]
+      b = append(b, 99)
+      fmt.Println(a)
+    expected: '[1 2 99 4]'
+    explanation: >-
+      `b` shares backing storage with `a`, and it has capacity to spare, so
+      `append` writes into that shared array rather than allocating. Element 2
+      of `a` is overwritten. A slice is a view, not a copy; when you need
+      independence, say so with `copy` or a three-index slice.
+
+  - id: go.types.interfaces.match-1
+    kind: match-pairs
+    language: go
+    title: Where the method set matters
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [go.types.methods, go.types.interfaces]
+    prompt: Match each receiver to what it means for the type's method set.
+    pairs:
+      - left: 'func (v Value) Read() int'
+        right: 'Both Value and *Value have Read'
+      - left: 'func (v *Value) Write(n int)'
+        right: 'Only *Value has Write'
+      - left: 'var i Iface = Value{}'
+        right: 'Satisfied only by value-receiver methods'
+      - left: 'var i Iface = &Value{}'
+        right: 'Satisfied by every method on the type'
+    explanation: >-
+      A pointer can reach a value method, but a value cannot reach a pointer
+      method, because there may be no address to take. So `*T` always has the
+      larger method set. When an interface assignment fails and the method is
+      plainly there, this is almost always why.
+
+  - id: go.basics.maps.fill-1
+    kind: fill-blanks
+    language: go
+    title: Telling absent from zero
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [go.basics.maps]
+    prompt: Complete the lookup so a missing key is distinguishable from a stored zero.
+    template: |
+      counts := map[string]int{"a": 0}
+      n, {1} := counts["a"]
+      if {1} {
+          fmt.Println("present, value", n)
+      }
+    blanks:
+      - index: 1
+        accepts: ['ok', 'found', 'exists', 'present']
+        hint: The second return value of a map index.
+    explanation: >-
+      Indexing a map yields the zero value for a missing key, so `counts["a"]`
+      and `counts["missing"]` both give 0. The two-value form returns a boolean
+      saying whether the key was actually there, which is the only way to tell
+      a stored zero from an absent one.

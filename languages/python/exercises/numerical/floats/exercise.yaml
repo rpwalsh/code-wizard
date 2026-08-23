@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.numerical.floats
 version: 1
 language: python
@@ -16,7 +17,7 @@ prerequisites:
 
 learningObjectives:
   - Compare floating point values with a tolerance instead of for equality.
-  - Normalise a set of weights so they sum to one.
+  - Normalize a set of weights so they sum to one.
   - Handle the degenerate case where the total is zero.
 
 prompt: |
@@ -27,7 +28,7 @@ prompt: |
 
   - `close_enough(a, b, tolerance)` returns True when the two are within
     `tolerance` of each other.
-  - `normalise(weights)` takes `{key: number}` and returns a new dictionary
+  - `normalize(weights)` takes `{key: number}` and returns a new dictionary
     scaled so the values sum to 1. If the total is zero, spread the weight
     evenly instead. An empty input gives an empty result.
   - `total_error(actual, expected)` returns the sum of the absolute differences
@@ -56,7 +57,7 @@ hints:
   - level: conceptual
     text: Two floats are equal enough when the distance between them is small.
   - level: structural
-    text: Normalising means dividing every value by the total of all of them.
+    text: Normalizing means dividing every value by the total of all of them.
   - level: language
     text: '`abs(a - b) <= tolerance` is the comparison. `sum(weights.values())` is the total.'
   - level: syntax
@@ -68,12 +69,12 @@ explanation: |
   Floating point is not approximate arithmetic done badly; it is exact
   arithmetic in binary, where `0.1` has no exact representation any more than
   `1/3` has a finite decimal one. The errors are tiny and they accumulate, and
-  the only defence is to stop asking whether two values are identical.
+  the only defense is to stop asking whether two values are identical.
 
   Choosing the tolerance is a real decision, not a formality. Too tight and an
   iteration never terminates; too loose and it stops before the answer has
   settled. Both failures look like the code working.
 
-  The zero-total case in `normalise` is the one that gets skipped. Dividing by
+  The zero-total case in `normalize` is the one that gets skipped. Dividing by
   the total is obvious; noticing that the total can be zero is the part that
   separates code that works on your test data from code that works.

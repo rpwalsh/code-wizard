@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.state.lifting
+version: 1
+language: react
+title: One state, two views of it
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - react.state.lifting
+  - react.state.usestate
+  - react.structure.forms
+  - react.render.jsx
+
+prerequisites: []
+
+learningObjectives:
+  - Keep one source of truth above two components that must agree.
+  - Write a controlled input pair — value down, change up.
+  - Convert on render instead of storing both representations.
+
+prompt: |
+  Two temperature fields, Celsius and Fahrenheit. Type in either and the
+  other follows. The classic mistake is two `useState`s that try to stay in
+  sync; the fix is one state, lifted to the parent, with each field a *view*.
+
+  In `main.tsx`:
+
+  - `toFahrenheit(celsius)` and `toCelsius(fahrenheit)` — plain math,
+    rounded to 1 decimal place (`Math.round(x * 10) / 10`).
+  - `convert(state, edited, text)` — the whole update in one pure function.
+    `state` is `{ celsius: string, fahrenheit: string }` (strings — these
+    are input fields). `edited` is `'celsius'` or `'fahrenheit'`; `text` is
+    what the user typed. Rules:
+    - The edited field always holds exactly `text`, even mid-typing garbage
+      — snatching the cursor's text away is how inputs fight their users.
+    - When `text` parses as a number (`Number(text)` finite after trim, and
+      not the empty string), the *other* field shows the converted value as
+      a string.
+    - When it does not parse — `""`, `"-"`, `"1.2.3"` — the other field
+      becomes `""`. Nothing to convert, nothing shown.
+  - `TemperatureInput({ scale, value, onTextChange })` — one labeled
+    input: a `<label>` containing the scale name capitalized, and an
+    `<input value={value} />` whose change handler passes
+    `event.target.value` to `onTextChange`.
+  - `TemperaturePair({ state, onEdit })` — renders both fields from the
+    one state, wiring each field's `onTextChange` to
+    `onEdit(scale, text)`. This component owns *no* state — it is the
+    shape of the lifted design, received from above.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/lifting.test.tsx
+    visibility: visible
+    concept: react.state.lifting
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.state.usestate
+
+hints:
+  - level: conceptual
+    text: If two pieces of state must agree, they are one piece of state wearing two outfits.
+  - level: structural
+    text: convert computes the whole next state; the components only display it and report edits.
+  - level: language
+    text: '`Number(" 12 ")` is 12; `Number("")` is 0 — check for the empty trimmed string before trusting the number.'
+  - level: syntax
+    text: '`<input value={value} onChange={(event) => onTextChange(event.target.value)} />` is the controlled-input pair.'
+  - level: explicit
+    text: 'convert: `const other = edited === "celsius" ? "fahrenheit" : "celsius"; const trimmed = text.trim(); const value = Number(trimmed);` then build `{ [edited]: text, [other]: ... }`.'
+
+explanation: |
+  The design rule this exercise encodes: derived values are computed, never
+  stored. Storing both temperatures means every update must write both, and
+  the first code path that forgets leaves them disagreeing — the user sees
+  25°C and 99°F and trusts neither. One canonical value (here: whatever was
+  last typed, plus which field it was) cannot disagree with itself.
+
+  Keeping the edited field's raw text — including `"-"` and half-typed
+  numbers — is what separates inputs people can type into from inputs that
+  fight back. The parse-then-format round trip (`"25."` → 25 → `"25"`)
+  looks harmless in code and is maddening at the keyboard: the character
+  you just typed vanishes. Format the *other* field, never the one under
+  the cursor.
+
+  `TemperaturePair` owning no state is lifting made visible. The state
+  lives with whoever needs to coordinate — the parent — and the children
+  become interchangeable, testable views. That the whole update logic fits
+  in one pure `convert` function is the payoff: the hardest part of the
+  component is testable without rendering anything.

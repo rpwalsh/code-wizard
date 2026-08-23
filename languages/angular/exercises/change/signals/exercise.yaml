@@ -1,0 +1,94 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.change.signal-view
+version: 1
+language: angular
+title: A view that knows when it is stale
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - angular.change.signals
+  - angular.change.detection
+  - angular.components.template
+
+prerequisites: []
+
+learningObjectives:
+  - Build writable and computed signals with dependency tracking.
+  - Re-render only what actually became stale — change detection in miniature.
+  - Interpolate a template from signal values.
+
+prompt: |
+  A signal is a value that knows who read it. That one idea replaces dirty
+  checking: when the value changes, the signal tells exactly the readers
+  that are now stale, and nothing else re-runs.
+
+  In `main.ts`:
+
+  - `signal(initial)` — returns `{ get, set }`. `get()` returns the
+    value; `set(next)` replaces it — but a `set` to an `Object.is`-equal
+    value is a no-op that notifies nobody.
+  - `computed(fn)` — returns `{ get }`. `fn` reads other signals; the
+    computed tracks which ones (they are re-tracked on every run — a
+    branch that stops reading a signal stops depending on it). The value
+    is cached; it recomputes only when a dependency changed since the
+    last read. Lazy: `fn` never runs until the first `get`.
+  - `effect(fn)` — runs `fn` now, and re-runs it after any signal it read
+    changes. Returns a `stop()` function; a stopped effect never runs
+    again.
+  - `renderTemplate(template, values)` — the template half:
+    `"Hello, {{name}}!"` with `{ name: signalOf('Ada') }` becomes
+    `"Hello, Ada!"` — every `{{key}}` replaced by `values[key].get()`.
+    An unknown key throws an `Error` naming it: a template that renders
+    `undefined` into the page has failed quietly, which is the worst way.
+
+  Implementation note: track the current reader with a module-level
+  variable — `get` registers the running computed/effect as a subscriber;
+  `set` notifies subscribers. This is genuinely how Angular, Solid and
+  Vue do it.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/signals.test.ts
+    visibility: visible
+    concept: angular.change.signals
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.change.detection
+
+hints:
+  - level: conceptual
+    text: 'The trick is one global — who is running right now. get() adds that reader to the signal''s subscribers; set() wakes them.'
+  - level: structural
+    text: 'Each signal keeps a Set of subscribers. A computed is a signal-shaped thing plus a stale flag; an effect is a subscriber with no readers of its own.'
+  - level: language
+    text: 'Re-tracking: before re-running fn, remove the reader from every signal it subscribed to last time — the fresh run resubscribes to what it actually reads.'
+  - level: syntax
+    text: 'renderTemplate: `template.replace(/\{\{(\w+)\}\}/g, (match, key) => ...)` — throw inside the callback for unknown keys.'
+  - level: explicit
+    text: 'computed get: if stale, set current-reader to self, run fn, restore, clear stale. Its subscribers are woken when a dependency marks it stale.'
+
+explanation: |
+  Dependency tracking through a "current reader" global looks like a hack
+  and is the industry-standard design — Angular signals, Solid, Vue's
+  reactivity and MobX all do precisely this. Its consequence is the
+  dynamic-dependency property the tests pin: a computed that reads
+  `showDetail() ? detail() : summary()` re-tracks each run, so while
+  `showDetail` is false, changes to `detail` wake nothing. Static
+  dependency lists (the useEffect model) cannot express that.
+
+  The `Object.is` no-op on `set` is what keeps signal graphs cheap: a
+  chain of computeds above an unchanged value never hears about the
+  write. Combined with laziness — computeds do no work until read — the
+  system does the minimum possible: nothing re-runs unless a value it
+  truly read truly changed. That is change detection reduced to its
+  correct core, with no zones, no dirty-check sweep, no guessing.
+
+  The strict template — throw on unknown keys — is the same philosophy
+  at the view layer. Angular's own templates are compiled and checked;
+  an interpolation of a nonexistent property is a build error, not an
+  `undefined` in production. When you build the toy version, keeping
+  that property is one `if`.

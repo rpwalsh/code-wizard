@@ -1,0 +1,82 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.speed.sargable-range
+version: 1
+language: sql
+title: The predicate the index can actually see
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.speed.sargable
+  - sql.speed.indexes
+  - sql.speed.plans
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  `idx_orders_placed` exists, and the obvious March query never touches it:
+
+      WHERE strftime('%m', placed_at) = '03'
+
+  The index stores `placed_at`. It does not store `strftime('%m', ...)` of
+  anything, so the engine's only option is to compute the function for
+  every row — a full scan wearing an innocent WHERE clause.
+
+  In `main.sql`, ask for March 2026 the sargable way: a *range on the bare
+  column* — on or after '2026-03-01', strictly before '2026-04-01'.
+  Columns `id, customer, placed_at, total`, ordered by placed_at then id.
+
+  The half-open shape is part of the answer: `< '2026-04-01'` needs no
+  knowledge of how many days March has, and the same shape works for
+  months, weeks and timestamp ranges alike. `BETWEEN` with an end-of-month
+  date is the off-by-one generator here.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/sargable.sql
+    visibility: visible
+    concept: sql.speed.sargable
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.speed.indexes
+
+hints:
+  - level: conceptual
+    text: "An index can only be searched for what it stores: the bare column's values. Wrap the column in a function and the index might as well not exist."
+  - level: structural
+    text: "Two comparisons on placed_at: >= the first of the month, < the first of the next."
+  - level: language
+    text: "ISO dates compare correctly as strings, which is exactly why they are stored that way."
+  - level: syntax
+    text: "WHERE placed_at >= '2026-03-01' AND placed_at < '2026-04-01'"
+  - level: explicit
+    text: "SELECT id, customer, placed_at, total FROM orders WHERE placed_at >= '2026-03-01' AND placed_at < '2026-04-01' ORDER BY placed_at, id;"
+
+explanation: |
+  "Sargable" — search-argument-able — names the property this rewrite
+  restores: a predicate the engine can turn into an index seek. The rule of
+  thumb covers most cases you will meet: keep the column bare and move the
+  work to the constant side. `strftime('%m', placed_at) = '03'` computes per
+  row forever; `placed_at >= '2026-03-01' AND placed_at < '2026-04-01'`
+  computes nothing and seeks. The same disease wears other costumes:
+  `lower(email) = ?`, `total + fee > 100`, `CAST(id AS TEXT) = '42'` — in
+  each, the function on the column blinds the index.
+
+  Reading a plan is how you catch this without guessing: EXPLAIN QUERY PLAN
+  prints `SCAN orders` for the strftime version and
+  `SEARCH orders USING INDEX idx_orders_placed (placed_at>? AND placed_at<?)`
+  for the range. The words SCAN and SEARCH are the whole diagnosis — scan
+  grows with the table, search grows with the result.
+
+  The COLLATE NOCASE case in the edge tests shows the pattern generalizing:
+  `lower(customer) = 'bo'` is the unsargable instinct, and declaring the
+  comparison's collation instead keeps the column bare. (For it to *seek*,
+  the index itself must share the collation — the deeper version of the
+  same rule: the index can only answer questions phrased the way it was
+  built.)

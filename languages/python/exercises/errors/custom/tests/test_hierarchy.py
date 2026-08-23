@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Catching one kind, and catching any kind."""
 
 import pytest

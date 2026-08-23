@@ -1,9 +1,10 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Where equality would have been wrong."""
 
 import pytest
 
 from retrainer.expect import expect_close, expect_equal
-from main import close_enough, normalise, settled
+from main import close_enough, normalize, settled
 
 
 @pytest.mark.concept("python.numerical.floats")
@@ -29,22 +30,22 @@ def test_comparison_is_symmetric():
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_normalising_a_zero_total_spreads_evenly():
+def test_normalizing_a_zero_total_spreads_evenly():
     """Dividing by the total is obvious. Noticing the total can be zero is the
     part that separates code that works on your test data from code that works."""
-    result = normalise({"a": 0, "b": 0})
+    result = normalize({"a": 0, "b": 0})
     expect_close(result["a"], 0.5)
     expect_close(result["b"], 0.5)
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_normalising_nothing():
-    expect_equal(normalise({}), {})
+def test_normalizing_nothing():
+    expect_equal(normalize({}), {})
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_a_normalised_vector_sums_to_one():
-    result = normalise({"a": 3, "b": 5, "c": 12})
+def test_a_normalized_vector_sums_to_one():
+    result = normalize({"a": 3, "b": 5, "c": 12})
     expect_close(sum(result.values()), 1.0)
 
 

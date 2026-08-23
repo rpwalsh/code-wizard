@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 export * from './paths.ts';
 export * from './discovery.ts';
 export * from './report.ts';

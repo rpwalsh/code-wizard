@@ -1,0 +1,5 @@
+{
+  "id": "react",
+  "title": "React",
+  "summary": "For someone who can already write JavaScript and keeps being surprised by when a component runs. About rendering as a function of state, and about the escape hatches you should almost never need."
+}

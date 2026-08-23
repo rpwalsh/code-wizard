@@ -1,0 +1,82 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.types.small-interfaces
+version: 1
+language: go
+title: An interface the caller declares
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 45000
+
+skills:
+  - go.types.interfaces
+  - go.types.methods
+  - go.errors.values
+
+prerequisites: []
+
+learningObjectives:
+  - Declare an interface where it is used rather than where it is implemented.
+  - Keep an interface to the methods the caller actually calls.
+  - Satisfy an interface implicitly, without declaring that you do.
+
+prompt: |
+  Go's interfaces are satisfied implicitly, and that changes where they belong.
+  In a language with `implements`, the interface lives with the type. In Go it
+  belongs with the *consumer*, because the consumer is the only one who knows
+  what it needs.
+
+  In `main.go`, implement:
+
+  - `type Store interface` — one method, `Get(key string) (string, error)`.
+    Declared here, in the package that consumes it.
+  - `type MapStore` — a `map[string]string` with a `Get` method that returns
+    `ErrMissing` for an absent key. It must satisfy `Store` without saying so.
+  - `Lookup(store Store, keys []string) ([]string, error)` — every value in
+    order, stopping at the first error and returning it unchanged.
+  - `LookupOr(store Store, keys []string, fallback string) []string` — the
+    same, but a missing key becomes `fallback` and nothing stops.
+
+  `Lookup` takes the interface, not `MapStore`. That is the point: a test can
+  pass a store that always fails without either type knowing the other exists.
+
+entryPoint: main.go
+
+tests:
+  - path: interfaces_test.go
+    visibility: visible
+    concept: go.types.interfaces
+  - path: edges_test.go
+    visibility: edge
+    concept: go.errors.values
+
+hints:
+  - level: conceptual
+    text: The interface belongs to whoever calls it, not to whoever implements it.
+  - level: structural
+    text: A type satisfies an interface by having the methods. There is nothing to declare.
+  - level: language
+    text: 'A method on a named map type is declared like any other: `func (s MapStore) Get(...)`.'
+  - level: syntax
+    text: '`type MapStore map[string]string` gives you a type you can hang methods on.'
+  - level: explicit
+    text: 'In LookupOr, use `errors.Is(err, ErrMissing)` to decide whether to substitute; any other error should still be substituted rather than dropped, since the signature has nowhere to put it.'
+
+explanation: |
+  Declaring `Store` in the consuming package is the Go idiom and it is not a
+  style preference. It means the implementation has no dependency on the
+  abstraction at all — `MapStore` imports nothing, knows nothing, and would
+  keep working if `Store` were deleted. Test doubles become trivial, because
+  anything with the right method is already a `Store`.
+
+  The one method is the other half. An interface grows by being convenient to
+  its implementer and shrinks by being honest about its caller, and a
+  one-method interface can be satisfied by almost anything — which is why the
+  standard library is full of them and why `io.Reader` has been enough for
+  twenty years.
+
+  `LookupOr` substituting on *any* error rather than only `ErrMissing` is a
+  deliberate choice the prompt states, because the signature returns no error
+  and silently dropping a real failure would be worse than the alternative.
+  When a function cannot report a problem, it should not be able to hide one
+  either — which is a good argument for it returning an error after all.

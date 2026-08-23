@@ -1,4 +1,5 @@
-"""The same behaviour as the JavaScript, on ordinary input."""
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+"""The same behavior as the JavaScript, on ordinary input."""
 
 import pytest
 

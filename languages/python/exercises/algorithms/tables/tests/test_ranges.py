@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Emptiness, impossibility, and ranges that merely touch."""
 
 import pytest

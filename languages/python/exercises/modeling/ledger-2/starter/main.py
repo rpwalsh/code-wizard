@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """A ledger of account balances, in whole cents.
 
 Stage 2: add transfer() and history(). Everything below already works and its

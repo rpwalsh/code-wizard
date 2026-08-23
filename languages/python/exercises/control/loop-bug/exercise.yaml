@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.control.loop-bug
 version: 1
 language: python
@@ -15,8 +16,8 @@ prerequisites:
   - python.control.loop-control
 
 learningObjectives:
-  - Recognise the failure mode of mutating a list while iterating over it.
-  - Recognise that `range(len(...))` plus mutation shifts the indices.
+  - Recognize the failure mode of mutating a list while iterating over it.
+  - Recognize that `range(len(...))` plus mutation shifts the indices.
   - Repair a loop without rewriting the whole function.
 
 prompt: |

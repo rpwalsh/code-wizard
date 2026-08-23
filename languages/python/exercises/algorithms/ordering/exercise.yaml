@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.ordering
 version: 1
 language: python
@@ -23,8 +24,8 @@ learningObjectives:
 prompt: |
   Three questions about directed graphs that come up constantly.
 
-  Graphs are `{node: [neighbour, ...]}`. Weighted graphs are
-  `{node: [(neighbour, cost), ...]}`.
+  Graphs are `{node: [neighbor, ...]}`. Weighted graphs are
+  `{node: [(neighbor, cost), ...]}`.
 
   - `count_regions(grid)` counts the connected groups of `"#"` cells in a grid
     of strings. Cells connect up, down, left and right — not diagonally.
@@ -72,7 +73,7 @@ explanation: |
 
   Dijkstra is breadth-first search with a heap instead of a queue, plus one
   detail: entries already in the heap cannot be updated when a cheaper route to
-  the same node is found, so a stale entry stays there and must be recognised
+  the same node is found, so a stale entry stays there and must be recognized
   and skipped on the way out. Forgetting that does not give a wrong answer on
   small graphs, which is precisely why it survives into production.
 
@@ -83,13 +84,13 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: arithmetic
-    line: 22
+    line: 23
     why: >-
       The four offsets are symmetric, so subtracting the row delta instead of
-      adding it yields the same set of neighbours in a different order. No
+      adding it yields the same set of neighbors in a different order. No
       input can tell them apart.
   - path: main.py
     operator: arithmetic
-    line: 23
+    line: 24
     why: >-
       The same symmetry on the column delta.

@@ -1,0 +1,122 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# C++: values, moves and the standard library, read rather than compiled.
+
+activities:
+  - id: cpp.types.polymorphism.po-1
+    kind: predict-output
+    language: cpp
+    title: Sliced on the way in
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [cpp.types.polymorphism, cpp.types.classes]
+    prompt: What does this print?
+    code: |
+      struct Animal {
+          virtual std::string speak() const { return "..."; }
+          virtual ~Animal() = default;
+      };
+      struct Dog : Animal {
+          std::string speak() const override { return "woof"; }
+      };
+
+      void byValue(Animal animal) { std::cout << animal.speak() << "\n"; }
+      void byRef(const Animal &animal) { std::cout << animal.speak() << "\n"; }
+
+      int main() {
+          Dog dog;
+          byValue(dog);
+          byRef(dog);
+      }
+    expected: |
+      ...
+      woof
+    explanation: >-
+      Passing by value copies the Animal *part* of the Dog into a fresh
+      Animal — the Dog half is sliced off, and the call dispatches to the base
+      implementation because the object genuinely is a base object now. The
+      reference version keeps the original Dog, and the virtual call finds the
+      override. Polymorphism in C++ works through references and pointers
+      only; a by-value base parameter silently discards the derived class, and
+      the compiler considers that a feature.
+
+  - id: cpp.lifetime.references.spot-2
+    kind: spot-the-bug
+    language: cpp
+    title: A reference to a corpse
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [cpp.lifetime.references, cpp.std.strings]
+    prompt: This compiles cleanly and is undefined behavior. Which line?
+    code: |
+      std::string_view first_word(const std::string &text) {
+          return text.substr(0, text.find(' '));
+      }
+
+      int main() {
+          std::string_view word = first_word("hello world");
+          std::cout << word << "\n";
+      }
+    faultLine: 2
+    correction: 'Return std::string, or take the string by value and let the caller keep it alive.'
+    explanation: >-
+      `substr` returns a *new, temporary* std::string, and the string_view
+      built from it points into that temporary — which dies at the end of the
+      return statement. The view outlives its target and the print reads freed
+      memory. string_view is a borrow with no borrow checker: it never owns,
+      so every function returning one is making an unchecked promise about
+      someone else's lifetime. When the data is freshly computed, return the
+      owning type.
+
+  - id: cpp.std.containers.mc-1
+    kind: multiple-choice
+    language: cpp
+    title: The iterator that stopped being valid
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [cpp.std.containers, cpp.lifetime.references]
+    prompt: >-
+      A loop calls `items.push_back(...)` inside `for (const auto &item :
+      items)` and crashes only when the vector is large. Why only then?
+    options:
+      - text: push_back reallocates when capacity runs out, and the range-for's iterators point into the old buffer.
+      - text: Range-for does not allow modification of any kind.
+        why: Modifying *elements* through a non-const reference is fine. The problem is invalidating the iteration itself.
+      - text: The vector runs out of memory.
+        why: Then the failure would be bad_alloc, loudly, not a crash that depends on capacity.
+      - text: push_back is not thread-safe.
+        why: There is one thread here. No concurrency is involved.
+    correct: [0]
+    explanation: >-
+      A vector grows by allocating a bigger buffer and moving everything —
+      at which point every pointer, reference and iterator into it points at
+      freed memory. While capacity suffices, push_back invalidates nothing and
+      the loop *appears* to work, which is what makes this bug survive
+      testing: small vectors never reallocate. Iterator invalidation rules are
+      per-container and worth knowing cold — a deque, a list and a vector all
+      answer differently.
+
+  - id: cpp.values.const.match-1
+    kind: match-pairs
+    language: cpp
+    title: Where the const goes
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [cpp.values.const, cpp.types.classes]
+    prompt: Match each declaration to what it promises.
+    pairs:
+      - left: void print(const Widget &w)
+        right: Reads w without copying or changing it
+      - left: int size() const
+        right: Calling this cannot change the object
+      - left: const int *p
+        right: The int cannot change through p; p can move
+      - left: int *const p
+        right: p is fixed; the int can change through it
+    explanation: >-
+      `const Widget &` is the default way to accept anything you only read —
+      no copy, no mutation, binds to temporaries. The trailing const on a
+      member function is a promise to callers *and* a requirement: const
+      objects can only call const members, so a getter without it makes the
+      whole class unusable through const references. For pointers, read right
+      to left: what is west of the star is what the pointee is; what is east
+      is what the pointer is.

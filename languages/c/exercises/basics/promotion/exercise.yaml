@@ -1,0 +1,86 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.basics.promotion
+version: 1
+language: c
+title: The arithmetic C does behind your back
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 540
+timeoutMs: 45000
+
+skills:
+  - c.basics.types
+  - c.basics.functions
+  - c.basics.control
+
+prerequisites: []
+
+learningObjectives:
+  - Predict integer promotion and know when a calculation leaves the small type.
+  - Compute a midpoint that cannot overflow.
+  - Keep loops and comparisons honest between signed and unsigned.
+
+prompt: |
+  C promotes, converts and wraps without a word. These four functions are
+  each a place where the invisible arithmetic bites, and each is small
+  enough to get exactly right.
+
+  In `main.c` (declarations in `main.h`):
+
+  - `int midpoint(int low, int high)` — the midpoint, correct even when
+    `low + high` would overflow int. `low <= high` is guaranteed.
+    `low + (high - low) / 2` stays in range; `(low + high) / 2` is the
+    classic overflow that lived in binary searches for twenty years.
+  - `int clamp(int value, int lowest, int highest)` — value forced into
+    the range, bounds inclusive.
+  - `size_t count_between(const int *values, size_t length, int low,
+    int high)` — how many elements fall in [low, high]. Careful with the
+    loop variable: `size_t` is unsigned, and counting *down* with one is
+    an infinite loop wearing a plausible face.
+  - `int average_sign(const int *values, size_t length)` — -1, 0 or 1:
+    the sign of the *sum* of the values. Sum in `long long`, because a
+    billion ints of the same sign overflow an int sum long before the
+    array ends. Empty array: 0.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/promotion_test.c
+    visibility: visible
+    concept: c.basics.types
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.basics.control
+
+hints:
+  - level: conceptual
+    text: The question for every line is "what type is this expression, really" — and the answer is decided before any value arrives.
+  - level: structural
+    text: Each function is a few lines; the care is in which type holds the intermediate result.
+  - level: language
+    text: low + (high - low) / 2 never leaves the range [low, high], so it cannot overflow when the inputs are valid.
+  - level: syntax
+    text: 'long long total = 0; for (size_t i = 0; i < length; i++) total += values[i];'
+  - level: explicit
+    text: 'average_sign: sum into long long, then return (total > 0) - (total < 0) — a branchless sign that also reads well.'
+
+explanation: |
+  `(low + high) / 2` overflowed in production binary searches for two
+  decades — famously including the JDK's — because the sum leaves int's
+  range even when the answer would fit. Rewriting as
+  `low + (high - low) / 2` keeps every intermediate inside [low, high].
+  The general habit: check the *intermediates*, not just the result. C
+  will not.
+
+  The `size_t` loop rule is the other half. `for (size_t i = length - 1;
+  i >= 0; i--)` is an infinite loop — an unsigned value is always >= 0,
+  and `length - 1` on an empty array is the largest value the type holds.
+  Counting up, or using a signed index and converting, are both fine;
+  what is not fine is assuming unsigned behaves like int with bigger
+  numbers. It behaves like modular arithmetic, always.
+
+  Summing into `long long` in `average_sign` is defensive typing in the
+  correct direction: promote *before* accumulating. INT_MAX is about 2.1
+  billion; five hundred values of a hundred million each overflow int
+  midway, and signed overflow in C is not "wraps around" — it is
+  undefined behavior, which optimizing compilers exploit with glee.

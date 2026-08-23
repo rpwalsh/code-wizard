@@ -1,0 +1,79 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.types.result-chain
+version: 1
+language: rust
+title: Failing without panicking
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 90000
+
+skills:
+  - rust.types.result
+  - rust.types.option
+  - rust.types.question
+
+prerequisites: []
+
+learningObjectives:
+  - Return a Result rather than panicking on bad input.
+  - Move between Option and Result deliberately.
+  - Use ? to propagate a failure without unwrapping it.
+
+prompt: |
+  `unwrap` is how a Rust program panics in production. Everything here is
+  about not writing it.
+
+  In `main.rs`, implement:
+
+  - `enum ParseError` with `Empty`, `NotANumber` and `OutOfRange`, deriving
+    `Debug` and `PartialEq`.
+  - `parse_port(text: &str) -> Result<u16, ParseError>` — a whole number from
+    1 to 65535. Empty or whitespace-only is `Empty`, unparseable is
+    `NotANumber`, and anything outside the range is `OutOfRange`, checked in
+    that order.
+  - `first_valid(inputs: &[&str]) -> Option<u16>` — the first input that
+    parses, or `None`. Note the return type: the *reason* is discarded here on
+    purpose, which is what `ok()` is for.
+  - `parse_pair(a: &str, b: &str) -> Result<(u16, u16), ParseError>` — both,
+    or the first failure. Use `?` rather than matching twice.
+
+  Not one function may panic. The tests pass every kind of rubbish in.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/result_test.rs
+    visibility: visible
+    concept: rust.types.result
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.types.question
+
+hints:
+  - level: conceptual
+    text: A function that can fail should say so in its return type rather than in its documentation.
+  - level: structural
+    text: '`Option` says something is absent; `Result` says why. Converting one way is lossy and the other way needs a reason.'
+  - level: language
+    text: '`result.ok()` throws the error away and gives an Option — which is exactly what first_valid wants.'
+  - level: syntax
+    text: '`let port = parse_port(a)?;` returns early with the error when it fails.'
+  - level: explicit
+    text: 'Check empty first, then `text.trim().parse::<u32>()`, then the range — parsing into u32 lets you detect out-of-range rather than overflowing u16.'
+
+explanation: |
+  Parsing into `u32` before the range check is the detail worth noticing.
+  Parsing straight into `u16` makes `70000` a parse failure rather than an
+  out-of-range one, so the caller cannot tell "that is not a number" from
+  "that is not a port" — and those are different things to tell a user.
+
+  `?` is an early return, not exception handling. It unwraps an `Ok` and
+  returns the `Err` from the enclosing function, which is why `parse_pair` is
+  three lines instead of a nested match. The error type has to be convertible
+  to the function's error type; here they are the same, so nothing converts.
+
+  `first_valid` returning `Option` rather than `Result` is a deliberate loss.
+  "None of these parsed" has no single reason — there were several — so the
+  honest type has no room for one. `ok()` is the conversion that says so, and
+  it reads as discarding information because that is what it does.

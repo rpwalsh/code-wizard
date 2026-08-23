@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """A refused transfer must leave both accounts untouched."""
 
 import pytest

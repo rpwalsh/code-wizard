@@ -1,0 +1,5 @@
+{
+  "id": "angular",
+  "title": "Angular",
+  "summary": "For someone who knows TypeScript and needs the framework's model rather than its vocabulary. About dependency injection, change detection and reactive data flow."
+}

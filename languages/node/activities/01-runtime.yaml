@@ -1,0 +1,128 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Node, read rather than run.
+#
+# The event loop is the thing people think they understand and then get wrong
+# under load, so most of these are about ordering and back pressure.
+
+activities:
+  - id: node.runtime.eventloop.po-1
+    kind: predict-output
+    language: node
+    title: Ordering
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [node.runtime.eventloop]
+    prompt: In what order do these print?
+    code: |
+      console.log('a');
+      setTimeout(() => console.log('b'), 0);
+      Promise.resolve().then(() => console.log('c'));
+      process.nextTick(() => console.log('d'));
+      console.log('e');
+    expected: |
+      a
+      e
+      d
+      c
+      b
+    explanation: >-
+      Synchronous code finishes first, so `a` and `e`. Then the microtask
+      queues drain before the loop continues, and `process.nextTick` runs ahead
+      of promise callbacks. `setTimeout` is a timer phase of the loop proper, so
+      it comes last despite the zero. "Zero milliseconds" never means "now".
+
+  - id: node.io.streams.mc-1
+    kind: multiple-choice
+    language: node
+    title: Why pipe rather than read-then-write
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [node.io.streams, node.io.pipelines]
+    prompt: >-
+      Copying a 4 GB file with `writeFileSync(dest, readFileSync(src))` fails on
+      a small container. What does piping change?
+    options:
+      - text: It moves the data in chunks and stops reading when the writer falls behind.
+      - text: It is the same operation with less code.
+        why: It is a materially different operation; the resource profile is the entire point.
+      - text: It uses a background thread, so the memory is not counted.
+        why: The memory would still be allocated. Streams reduce how much exists at once.
+      - text: It compresses the data in transit.
+        why: Only if you put a compression stream in the pipeline. Piping itself does not.
+    correct: [0]
+    explanation: >-
+      Reading the whole file materializes 4 GB in the heap. A pipeline moves it
+      in chunks and — the part that matters — applies back pressure: when the
+      destination cannot keep up the source pauses. Use `pipeline()` rather than
+      `.pipe()` so that an error anywhere destroys every stream instead of
+      leaking the ones still open.
+
+  - id: node.failure.async.spot-1
+    kind: spot-the-bug
+    language: node
+    title: The rejection nothing catches
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [node.failure.async, node.failure.errors]
+    prompt: The try/catch never fires when the write fails. Which line is at fault?
+    code: |
+      try {
+        fs.writeFile(path, data, (err) => {
+          if (err) throw err;
+        });
+      } catch (error) {
+        report(error);
+      }
+    faultLine: 3
+    correction: 'if (err) return report(err);'
+    explanation: >-
+      The callback runs later, on a different tick, long after the `try` block
+      has returned. Throwing from it escapes to the top level and takes the
+      process down. Errors from callbacks must be handled where they arrive —
+      or better, use the promise API so `await` puts them back inside the `try`.
+
+  - id: node.operations.config.mc-1
+    kind: multiple-choice
+    language: node
+    title: Configuration
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [node.operations.config]
+    prompt: Where should a database password come from in a deployed service?
+    options:
+      - text: A committed config file, encrypted with a key in the repository.
+        why: The key is in the same place as the ciphertext, which makes the encryption decorative.
+      - text: The environment, injected by whatever runs the process.
+      - text: A constant, with a comment saying to change it before deploying.
+        why: The comment will be there long after everyone who read it has left.
+      - text: Fetched at startup from a public endpoint.
+        why: Public means public. Anything that can reach the endpoint gets the password.
+    correct: [1]
+    explanation: >-
+      Configuration that varies by environment belongs in the environment, and
+      secrets belong wherever the platform stores secrets and injects them. The
+      practical test is whether a leaked copy of the repository is also a
+      breach — if it is, the secret is in the wrong place.
+
+  - id: node.runtime.modules.match-1
+    kind: match-pairs
+    language: node
+    title: Modules
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [node.runtime.modules]
+    prompt: Match each to what it means in an ES module.
+    pairs:
+      - left: import.meta.url
+        right: The URL of the current module
+      - left: __dirname
+        right: Not defined; derive it from import.meta.url
+      - left: 'require()'
+        right: Not defined; use import or createRequire
+      - left: 'await at top level'
+        right: Allowed, unlike in CommonJS
+    explanation: >-
+      The two module systems differ in more than syntax. ES modules resolve
+      statically, which is what makes top-level await and tree-shaking possible
+      and what removes the CommonJS globals. Mixing them in one project works,
+      but every boundary between them is a place to check.

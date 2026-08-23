@@ -1,0 +1,5 @@
+{
+  "id": "aspnet",
+  "title": "ASP.NET",
+  "summary": "For someone building services on .NET who wants the pipeline rather than the scaffolding. About middleware, model binding, and the parts of a request that fail under load."
+}

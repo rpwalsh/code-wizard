@@ -1,0 +1,95 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# C++, read rather than compiled.
+#
+# Lifetime first, because everything else in the language is downstream of who
+# owns what and when it goes away.
+
+activities:
+  - id: cpp.lifetime.unique.mc-1
+    kind: multiple-choice
+    language: cpp
+    title: Which pointer
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [cpp.lifetime.unique, cpp.lifetime.shared]
+    prompt: >-
+      A parser owns a syntax tree. Nothing else outlives the parser. Which
+      should hold the nodes?
+    options:
+      - text: std::unique_ptr
+      - text: std::shared_ptr
+        why: Shared ownership costs an atomic refcount and, worse, obscures the lifetime. Use it when ownership is genuinely shared, not as a default.
+      - text: Raw new and delete
+        why: Correct only if every path frees exactly once, which includes every exception. That is what unique_ptr does for you.
+      - text: A raw pointer to a static buffer
+        why: Fixes the lifetime problem by removing the ability to have more than one parser.
+    correct: [0]
+    explanation: >-
+      Single owner, clear lifetime, no runtime cost over a raw pointer, and
+      correct on every exit path including exceptions. `shared_ptr` is for
+      genuinely shared ownership; reaching for it because lifetime is unclear
+      usually means the design question has been deferred rather than answered.
+
+  - id: cpp.lifetime.references.spot-1
+    kind: spot-the-bug
+    language: cpp
+    title: A reference to a temporary
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [cpp.lifetime.references, cpp.std.strings]
+    prompt: This prints rubbish. Which line causes it?
+    code: |
+      std::string_view name() {
+          std::string full = first + " " + last;
+          return full;
+      }
+    faultLine: 3
+    correction: 'return full;  // with the return type changed to std::string'
+    explanation: >-
+      `full` is destroyed when the function returns, and the returned
+      `string_view` points into it. A view never owns anything — it is a pointer
+      and a length — so returning one that refers to a local is always wrong.
+      Views are for parameters, where the caller's string outlives the call.
+
+  - id: cpp.values.move.po-1
+    kind: predict-output
+    language: cpp
+    title: After a move
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [cpp.values.move]
+    prompt: What does this print?
+    code: |
+      std::string a = "hello";
+      std::string b = std::move(a);
+      std::cout << b << "|" << a.size() << "\n";
+    expected: 'hello|0'
+    explanation: >-
+      A moved-from standard library object is left in a valid but unspecified
+      state, and for `std::string` implementations in practice that is the
+      empty string. "Valid but unspecified" means you may destroy it or assign
+      to it, but you should not rely on what it contains — this prints 0 here
+      and the standard does not promise it.
+
+  - id: cpp.lifetime.rule.match-1
+    kind: match-pairs
+    language: cpp
+    title: What the compiler generates
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [cpp.lifetime.rule, cpp.lifetime.raii]
+    prompt: Match each declaration to its effect on the special member functions.
+    pairs:
+      - left: Declare nothing
+        right: All six are generated
+      - left: Declare a destructor
+        right: Move operations are suppressed
+      - left: Declare a move constructor
+        right: Copy operations are deleted
+      - left: '= default on all of them'
+        right: Generated, and the intent is documented
+    explanation: >-
+      This is why the rule of five exists: writing a destructor because your
+      class owns something quietly turns every move into a copy, which is a
+      performance bug with no diagnostic. If you declare one of the five,
+      consider all of them — and prefer owning members that need none of it.

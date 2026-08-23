@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Support modules the runtime puts on the interpreter's path.
 
 A package rather than a set of prefixed top-level modules, because the

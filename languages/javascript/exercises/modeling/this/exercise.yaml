@@ -1,0 +1,109 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.modeling.this
+version: 1
+language: javascript
+title: Who is this, exactly
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - javascript.functions.this
+  - javascript.modeling.classes
+  - javascript.modeling.prototypes
+
+prerequisites: []
+
+learningObjectives:
+  - Predict what `this` is from how the function was called, not where it was written.
+  - Keep a method working after it has been detached from its object.
+  - Know what actually lives on the instance and what lives on the prototype.
+
+prompt: |
+  `this` is decided at the *call*, not at the definition. `timer.tick` is a
+  function with no owner; `timer.tick()` is a call with a receiver. Passing a
+  method as a callback performs the first and hopes for the second, and that
+  hope is the most common `this` bug in the language.
+
+  In `main.js`, implement a `Timer` class:
+
+  - `constructor(start = 0)` — the elapsed count begins at `start`.
+  - `tick()` — advances by one and returns the new count.
+  - `elapsed` — a getter for the current count.
+  - `reset()` — back to the constructor's start (not to zero — the timer
+    remembers where it began).
+  - `makeTicker()` — returns a function that can be passed anywhere —
+    stored, detached, called bare — and still ticks *this* timer. Arrow
+    functions capture `this` from where they are written; that is the tool.
+
+  And two functions that inspect the machinery itself:
+
+  - `ownedBy(instance)` — the instance's *own* property names, sorted. For a
+    Timer this must not include `tick` — methods live on the prototype.
+  - `methodsOf(instance)` — the method names on the instance's prototype,
+    sorted, excluding `constructor` and excluding getters — `elapsed` is an
+    accessor, not a method, and `Object.getOwnPropertyDescriptor` knows the
+    difference.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/this.test.js
+    visibility: visible
+    concept: javascript.functions.this
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.modeling.prototypes
+
+hints:
+  - level: conceptual
+    text: Ask "what is left of the dot at the call site". No dot, no this — unless the function was born an arrow.
+  - level: structural
+    text: makeTicker returns an arrow function whose body calls this.tick() — the arrow has no this of its own, so it uses the method's.
+  - level: language
+    text: '`Object.getOwnPropertyNames(instance)` lists own properties; `Object.getPrototypeOf(instance)` reaches the prototype.'
+  - level: syntax
+    text: 'A getter shows up in the descriptor as `get` being a function while `value` is undefined — `typeof descriptor.value === "function"` is the method test.'
+  - level: explicit
+    text: 'methodsOf: getOwnPropertyNames of the prototype, filter out "constructor", keep names whose descriptor has a function value, sort.'
+
+explanation: |
+  The mental model that survives contact: `this` is an implicit argument
+  filled in by the call site. `timer.tick()` passes `timer`; `const t =
+  timer.tick; t()` passes nothing, and the count lands on `undefined` — a
+  TypeError in a class, because class bodies run strict. The arrow function
+  in `makeTicker` is the standard repair: arrows do not *have* a `this`, so
+  the one from `makeTicker`'s own call — where `this` was the timer — is the
+  one the arrow sees forever after.
+
+  `ownedBy` and `methodsOf` make the class sugar transparent. A class puts
+  data on the instance and methods on the prototype — one copy of `tick`
+  shared by every timer, found by walking the prototype chain on each call.
+  This is why `ownedBy` sees only the state and why modifying a prototype
+  method changes behavior for every existing instance: they were all looking
+  at the same function the whole time.
+
+  The getter distinction in `methodsOf` is the detail that shows descriptors
+  are real. `elapsed` is not a data property holding a function — it is an
+  accessor, a get function the property system calls on read. Reading
+  `prototype.elapsed` directly would *invoke* the getter (on the wrong
+  receiver); the descriptor lets you inspect without invoking, which is what
+  every serious serializer, mock library and framework does.
+
+mutationExceptions:
+  - path: main.js
+    operator: empty-return
+    line: 40
+    why: >-
+      A bare return yields undefined, and the filter treats undefined and false identically.
+  - path: main.js
+    operator: strictness
+    line: 40
+    why: >-
+      name is always a string from getOwnPropertyNames, so == and === cannot disagree.
+  - path: main.js
+    operator: strictness
+    line: 44
+    why: >-
+      typeof always returns a string, so comparing it with == or === is the same test.

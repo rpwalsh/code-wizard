@@ -1,0 +1,75 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.own.borrowing
+version: 1
+language: rust
+title: Reading without taking
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 30000
+
+skills:
+  - rust.own.borrow
+  - rust.own.move
+  - rust.types.option
+
+prerequisites: []
+
+learningObjectives:
+  - Take a reference when a function only needs to read.
+  - Return a slice that borrows from something the caller still owns.
+  - Use Option to express absence instead of a sentinel value.
+
+prompt: |
+  Most fights with the borrow checker are about taking ownership of something
+  the caller still wanted. This exercise is the other way round.
+
+  In `main.rs`, implement:
+
+  - `longest(names: &[String]) -> Option<&str>` — the longest name, or `None`
+    for an empty slice. On a tie, the first one wins.
+  - `total_length(names: &[String]) -> usize` — the sum of the lengths.
+  - `starting_with<'a>(names: &'a [String], prefix: &str) -> Vec<&'a str>` —
+    every name with that prefix, in order, borrowing from the input.
+
+  Not one of these takes ownership, and not one of them clones. The caller
+  keeps their vector and can use it again afterwards — which the tests check.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/borrowing_test.rs
+    visibility: visible
+    concept: rust.own.borrow
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.types.option
+
+hints:
+  - level: conceptual
+    text: A function that only reads should say so in its signature.
+  - level: structural
+    text: Returning a reference means the compiler must know what it borrows from.
+  - level: language
+    text: '`&str` borrows from a `String` that somebody else owns.'
+  - level: syntax
+    text: '`names.iter().max_by_key(|n| n.len())` — but mind which end a tie goes to.'
+  - level: explicit
+    text: '`max_by_key` keeps the *last* maximum; `iter().max_by_key()` on a reversed iterator, or a manual fold, keeps the first.'
+
+explanation: |
+  `&[String]` is the right parameter type for reading a list: it accepts a
+  `Vec`, an array or a slice of one, and it takes nothing away from the caller.
+  Taking `Vec<String>` would consume the vector, and taking `&Vec<String>`
+  works but needlessly refuses arrays.
+
+  Returning `&str` rather than `String` is the second half. The characters
+  already exist inside the caller's strings; copying them would allocate for no
+  reason. The lifetime on `starting_with` is what makes that sound: it says the
+  returned references live as long as the input, so the compiler will not let
+  the input be dropped while they are still held.
+
+  The tie-breaking rule is not pedantry. `max_by_key` returns the *last*
+  maximum, which is a documented behavior people are consistently surprised
+  by, and the hidden test is there because "the longest" is ambiguous until you
+  say which one.

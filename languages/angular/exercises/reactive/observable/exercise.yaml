@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.reactive.observable
+version: 1
+language: angular
+title: An Observable small enough to trust
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - angular.reactive.observables
+  - angular.reactive.operators
+  - angular.reactive.subscriptions
+
+prerequisites: []
+
+learningObjectives:
+  - Build the subscribe/teardown contract from nothing.
+  - Write operators as functions from one Observable to another.
+  - Prove that unsubscribing actually stops the work.
+
+prompt: |
+  RxJS looks like magic until you build the four pieces it is made of: a
+  producer function, a subscribe call, operators that wrap, and teardown.
+
+  In `main.ts`, implement:
+
+  - `Observable<T>` — constructed with a producer:
+    `(observer: { next, complete }) => teardown`. `subscribe(observer)`
+    runs the producer with a *guarded* observer and returns
+    `{ unsubscribe() }`:
+    - After `complete()` or `unsubscribe()`, further `next` calls are
+      ignored — a producer that keeps pushing must not reach a dead
+      subscriber.
+    - Teardown runs exactly once, on `unsubscribe()` *or* on `complete()`,
+      whichever comes first.
+    - The observer's `complete` is optional.
+  - `of(...values)` — emits the values synchronously, then completes.
+  - `map(source, fn)` and `filter(source, keep)` — operators: each returns
+    a *new* Observable that subscribes to the source when it is itself
+    subscribed — never earlier. Laziness is the contract: an operator on
+    an Observable nobody subscribed to does nothing at all.
+  - `toArray(source)` — subscribes, collects every value until complete,
+    and returns the array. (Synchronous sources only — this is the test's
+    window into the stream.)
+  - `interval(scheduler)` — the subscription-leak demonstrator:
+    `scheduler` is `{ schedule(fn): cancel }` — calling `schedule`
+    registers a callback and returns a cancel function. The Observable
+    emits 0, 1, 2, ... each time the scheduler fires the callback, and
+    its teardown *must* call the cancel function. This is the setInterval
+    Observable, with the timer made testable.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/observable.test.ts
+    visibility: visible
+    concept: angular.reactive.observables
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.reactive.subscriptions
+
+hints:
+  - level: conceptual
+    text: An Observable is just a function waiting for an observer. Nothing happens until subscribe — that is not an optimization, it is the definition.
+  - level: structural
+    text: The guard is a closed flag checked in next and complete; teardown is stored and invoked by a run-once wrapper.
+  - level: language
+    text: 'map is three lines: `new Observable((observer) => source.subscribe({ next: (v) => observer.next(fn(v)), complete: () => observer.complete() }).unsubscribe)'
+  - level: syntax
+    text: 'The run-once teardown: `let done = false; const cleanup = () => { if (!done) { done = true; teardown?.(); } };`'
+  - level: explicit
+    text: 'interval: `new Observable((observer) => { let n = 0; const cancel = scheduler.schedule(() => observer.next(n++)); return cancel; })` — returning cancel as the teardown is the whole leak-prevention story.'
+
+explanation: |
+  The guarded observer is the piece of RxJS people never see and always
+  rely on. A producer is arbitrary code — it may keep calling `next` after
+  completion out of simple bugginess — and the guarantee that a dead
+  subscription hears nothing is enforced by the wrapper, not by trusting
+  producers. Once you have written the flag yourself, "why did my handler
+  fire after I unsubscribed" stops being a mystery you can have.
+
+  Operators returning a *lazy* Observable is the second definition-level
+  fact. `map` does not transform a stream; it builds a recipe that will
+  subscribe upstream when someone subscribes downstream. That is why an
+  unused pipeline costs nothing, why each new subscriber restarts a cold
+  source — and why the teardown has to chain: unsubscribing from the
+  mapped stream must unsubscribe the source, or the chain leaks at the
+  joint.
+
+  `interval` is the leak the Angular activity warned about, now as code
+  you wrote: the producer takes a resource (the scheduled callback) and
+  the teardown releases it. The test that asserts cancel was called is
+  the test every subscription-owning component deserves — and it is the
+  reason `takeUntilDestroyed` exists at all.

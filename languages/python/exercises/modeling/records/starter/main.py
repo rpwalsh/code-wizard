@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Records and composition."""
 
 from dataclasses import dataclass, field

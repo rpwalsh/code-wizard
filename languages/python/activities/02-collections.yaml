@@ -1,0 +1,299 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Python: collections and the idioms built on them.
+#
+# The largest stage of the course and the one where the difference between
+# writing Python and writing another language in Python's syntax is most
+# visible.
+
+activities:
+  - id: python.collections.list.po-1
+    kind: predict-output
+    language: python
+    title: Multiplying a list of lists
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.collections.list, python.collections.nested]
+    prompt: What does this print?
+    code: |
+      grid = [[0] * 2] * 3
+      grid[0][0] = 9
+      print(grid)
+    expected: '[[9, 0], [9, 0], [9, 0]]'
+    explanation: >-
+      `* 3` repeats the *reference*, not the list. All three rows are the same
+      object, so writing through one is visible through all of them. The inner
+      `[0] * 2` is fine because integers are immutable — the problem only
+      appears when the repeated element is mutable.
+      `[[0] * 2 for _ in range(3)]` builds three separate rows, and is the
+      reason that comprehension is the idiom for a grid.
+
+  - id: python.collections.dict-lookup.mc-1
+    kind: multiple-choice
+    language: python
+    title: Absent, or present and None
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.collections.dict-lookup]
+    prompt: >-
+      `settings = {"retries": None}`. Which expression distinguishes a missing
+      key from a key whose value is `None`?
+    options:
+      - text: '"retries" in settings'
+      - text: 'settings.get("retries")'
+        why: Returns None for both cases, which is exactly the ambiguity being asked about.
+      - text: 'settings.get("retries") is not None'
+        why: False for both, for the same reason.
+      - text: 'bool(settings["retries"])'
+        why: Raises for a missing key and returns False for a stored None — two different failures, neither of them an answer.
+    correct: [0]
+    explanation: >-
+      `in` asks about the key; everything else asks about the value. The
+      distinction matters whenever `None` is a legitimate stored value — a
+      setting explicitly turned off, a field deliberately cleared — because
+      `get` collapses "absent" and "present and empty" into one answer.
+      A sentinel object is the other way: `settings.get(key, MISSING)`.
+
+  - id: python.collections.dict-mutation.spot-1
+    kind: spot-the-bug
+    language: python
+    title: Changing a dictionary while reading it
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.collections.dict-mutation]
+    prompt: This raises at run time. Which line causes it?
+    code: |
+      counts = {"a": 0, "b": 3, "c": 0}
+      for key in counts:
+          if counts[key] == 0:
+              del counts[key]
+      print(counts)
+    faultLine: 2
+    correction: 'for key in list(counts):'
+    explanation: >-
+      A dictionary cannot change size while it is being iterated; Python
+      detects it and raises `RuntimeError` rather than quietly skipping
+      entries. Wrapping the keys in `list()` takes a snapshot first, so the
+      loop iterates over that and the deletions land on the dictionary. The
+      same rule applies to sets, and to lists you are removing from by index.
+
+  - id: python.collections.slicing.po-1
+    kind: predict-output
+    language: python
+    title: Slices that cannot fail
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [python.collections.slicing]
+    prompt: What does this print?
+    code: |
+      items = [1, 2, 3, 4, 5]
+      print(items[1:3])
+      print(items[:2])
+      print(items[-2:])
+      print(items[10:20])
+      print(items[::-1])
+    expected: |
+      [2, 3]
+      [1, 2]
+      [4, 5]
+      []
+      [5, 4, 3, 2, 1]
+    explanation: >-
+      A slice is half-open — it includes the start and excludes the stop — so
+      `items[1:3]` has two elements, and `items[:n]` and `items[n:]` partition
+      the list with no overlap and no gap. Out-of-range slices clamp rather
+      than raise, which is why `items[10:20]` is empty while `items[10]` would
+      be an `IndexError`. The step of `-1` reverses.
+
+  - id: python.collections.comprehensions.fill-1
+    kind: fill-blanks
+    language: python
+    title: Filter and reshape in one pass
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.collections.comprehensions]
+    prompt: >-
+      Complete the comprehension so it produces the upper-cased names of the
+      active users only.
+    template: |
+      users = [{"name": "ada", "active": True}, {"name": "bob", "active": False}]
+      names = [user["name"].upper() {1} user in users {2} user["active"]]
+    blanks:
+      - index: 1
+        accepts: ['for']
+        hint: What drives the iteration.
+      - index: 2
+        accepts: ['if']
+        hint: What decides whether an item is kept.
+    explanation: >-
+      The order reads awkwardly at first and is fixed: the expression comes
+      first, then the `for`, then the `if`. It is deliberately the same order
+      as a nested loop with the body hoisted to the front, which is why
+      multiple `for` clauses in one comprehension read left to right like
+      nested loops rather than inside out.
+
+  - id: python.collections.set.match-1
+    kind: match-pairs
+    language: python
+    title: Set operations
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [python.collections.set]
+    prompt: 'Given a = {1, 2, 3} and b = {3, 4}, match each expression to its value.'
+    pairs:
+      - left: a | b
+        right: '{1, 2, 3, 4}'
+      - left: a & b
+        right: '{3}'
+      - left: a - b
+        right: '{1, 2}'
+      - left: a ^ b
+        right: '{1, 2, 4}'
+    explanation: >-
+      Union, intersection, difference and symmetric difference. The reason to
+      reach for a set at all is the third one: "which of these are not in that"
+      is a loop with an `in` check over a list — quadratic — and a single
+      operation on sets, which is linear. Membership in a set is constant time
+      and in a list is not, and that is usually the whole performance story.
+
+  - id: python.collections.tuple.mc-1
+    kind: multiple-choice
+    language: python
+    title: When a tuple is the right answer
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.collections.tuple]
+    prompt: Which of these genuinely requires a tuple rather than a list?
+    options:
+      - text: Using the value as a dictionary key.
+      - text: Returning two values from a function.
+        why: Works with either; the tuple is idiomatic, but a list would function.
+      - text: Iterating over a fixed sequence.
+        why: Both iterate identically.
+      - text: Storing a large number of items.
+        why: A tuple is marginally smaller, which is almost never the reason to pick one.
+    correct: [0]
+    explanation: >-
+      Dictionary keys must be hashable, and a list is not, precisely because it
+      can change — a key that could mutate after insertion would be lost in the
+      table. A tuple of hashable things is hashable, which is what makes
+      `counts[(row, column)]` work and `counts[[row, column]]` a `TypeError`.
+      Everything else about tuples is convention.
+
+  - id: python.idioms.sorting.po-1
+    kind: predict-output
+    language: python
+    title: Sorting by a key
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.idioms.sorting]
+    prompt: What does this print?
+    code: |
+      people = [("ada", 36), ("bob", 25), ("cy", 36)]
+      print(sorted(people, key=lambda p: p[1]))
+      print(sorted(people, key=lambda p: (-p[1], p[0])))
+    expected: |
+      [('bob', 25), ('ada', 36), ('cy', 36)]
+      [('ada', 36), ('cy', 36), ('bob', 25)]
+    explanation: >-
+      Python's sort is stable, so equal keys keep their original relative order
+      — which is why `ada` still precedes `cy` in the first line. The second
+      shows the idiom for sorting by several fields in different directions: a
+      tuple key, with a negated number to reverse just that one. `reverse=True`
+      would flip the names as well, which is usually not what is meant.
+
+  - id: python.idioms.aggregation.order-1
+    kind: order-lines
+    language: python
+    title: Counting without a dictionary of your own
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [python.idioms.aggregation, python.stdlib.collections]
+    prompt: Put these in order to print the three commonest words.
+    lines:
+      - from collections import Counter
+      - 'words = text.lower().split()'
+      - counts = Counter(words)
+      - 'for word, count in counts.most_common(3):'
+      - '    print(word, count)'
+    explanation: >-
+      `Counter` is a dictionary that starts every key at zero and knows how to
+      rank itself. The hand-written version — a dict, a `get(word, 0) + 1`, and
+      a `sorted(..., key=..., reverse=True)[:3]` — is four more lines and one
+      more place to get the tie-breaking wrong.
+
+  - id: python.idioms.grouping.fill-1
+    kind: fill-blanks
+    language: python
+    title: Grouping records
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.idioms.grouping, python.stdlib.collections]
+    prompt: Complete this so each city maps to a list of the people living there.
+    template: |
+      from collections import defaultdict
+
+      by_city = defaultdict({1})
+      for person in people:
+          by_city[person["city"]].{2}(person["name"])
+    blanks:
+      - index: 1
+        accepts: ['list']
+        hint: The factory called for a missing key — the type, not an instance.
+      - index: 2
+        accepts: ['append']
+        hint: Adding one item to the end of a list.
+    explanation: >-
+      `defaultdict(list)` takes the *callable*, not `list()`: it is invoked
+      once per missing key, so passing an instance would share one list between
+      every group — the same aliasing trap as `[[0] * 2] * 3`. This replaces
+      the `if key not in d: d[key] = []` preamble that otherwise begins every
+      grouping loop.
+
+  - id: python.collections.nested.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The default that remembers
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [python.collections.nested, python.functions.arguments]
+    prompt: The second call returns two items rather than one. Which line is wrong?
+    code: |
+      def collect(item, into=[]):
+          into.append(item)
+          return into
+
+      print(collect("a"))
+      print(collect("b"))
+    faultLine: 1
+    correction: 'def collect(item, into=None):  # then: if into is None: into = []'
+    explanation: >-
+      A default argument is evaluated once, when the function is defined, not
+      on each call. So every call that omits `into` shares one list, and it
+      accumulates across calls for the life of the process. The fix is the
+      standard idiom: default to `None` and build the real default inside. This
+      applies to every mutable default — lists, dicts, sets — and to anything
+      whose value is computed at definition time, such as `datetime.now()`.
+
+  - id: python.collections.dict.mc-1
+    kind: multiple-choice
+    language: python
+    title: What a dict remembers
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.collections.dict]
+    prompt: In Python 3.7 and later, iterating a dictionary yields its keys in which order?
+    options:
+      - text: The order they were first inserted.
+      - text: Sorted order.
+        why: Nothing sorts them. That is `sorted(d)`, which is a different thing and costs more.
+      - text: An arbitrary order that may change between runs.
+        why: True before 3.7, and the reason a lot of older advice says to sort before printing.
+      - text: Reverse insertion order.
+        why: '`reversed(d)` gives that, from 3.8 onwards.'
+    correct: [0]
+    explanation: >-
+      Insertion order became a language guarantee in 3.7, having been an
+      implementation detail in 3.6. It means a dictionary built from a file
+      round-trips in the same order, which makes output diffable and tests
+      stable. Re-inserting an existing key does *not* move it to the end —
+      only deleting and re-adding does.

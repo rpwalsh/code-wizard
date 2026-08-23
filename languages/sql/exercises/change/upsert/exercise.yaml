@@ -1,0 +1,72 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.change.upsert-settings
+version: 1
+language: sql
+title: Insert, unless it is already there
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.change.upsert
+  - sql.change.insert
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  A settings table keyed by name: writing a setting should insert it the
+  first time and update it every time after, atomically — check-then-insert
+  in application code is a race that inserts twice under load.
+
+  In `main.sql`, one statement: upsert `('theme', 'light')`. If the key is
+  absent, insert it (updates defaults to 0). If present, set the value and
+  add one to `updates`. Either way, return `key, value, updates` via
+  RETURNING.
+
+  `excluded` is the name of the row that failed to insert — use it for the
+  value rather than repeating the literal, so the statement has one source
+  of truth.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/upsert.sql
+    visibility: visible
+    concept: sql.change.upsert
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.change.upsert
+
+hints:
+  - level: conceptual
+    text: "ON CONFLICT turns a violation into a decision: update instead, or do nothing. Check-then-insert in code is the same idea with a race in the middle."
+  - level: structural
+    text: "INSERT ... VALUES ... ON CONFLICT (key) DO UPDATE SET ... RETURNING ..."
+  - level: language
+    text: "excluded.value is the value the failed insert carried; plain value (or settings.value) is what the row already holds."
+  - level: syntax
+    text: "updates = updates + 1 reads the existing row; excluded.updates would read the incoming one, which is 0."
+  - level: explicit
+    text: "INSERT INTO settings (key, value) VALUES ('theme', 'light') ON CONFLICT (key) DO UPDATE SET value = excluded.value, updates = updates + 1 RETURNING key, value, updates;"
+
+explanation: |
+  The reason upsert exists as one statement is the race in the two-statement
+  version: two requests both SELECT, both find nothing, both INSERT, and one
+  violates the key — or worse, in engines without the constraint, both
+  succeed and the table has two rows for one setting. ON CONFLICT moves the
+  decision inside the statement, where the engine holds the lock either way.
+
+  `excluded` repays learning precisely: inside DO UPDATE, bare column names
+  mean the *existing* row and `excluded.column` means the *incoming* one.
+  `updates = updates + 1` therefore increments what is there, while
+  `value = excluded.value` takes what arrived — one line each, no literals
+  repeated, and the same statement stays correct when the inserted values
+  change.
+
+  RETURNING rounds out the pattern: the caller almost always wants the row
+  it just wrote — the generated id, the bumped counter — and a second
+  SELECT to fetch it reopens the race the upsert closed.

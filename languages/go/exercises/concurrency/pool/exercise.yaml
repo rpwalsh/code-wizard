@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.concurrency.pool
+version: 1
+language: go
+title: Fan out, fan in, finish
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - go.concurrency.goroutines
+  - go.concurrency.channels
+  - go.concurrency.patterns
+  - go.concurrency.races
+
+prerequisites: []
+
+learningObjectives:
+  - Split work across a bounded number of goroutines and collect every result.
+  - Close channels from the sending side, and know why receivers never close.
+  - Share state through channels instead of memory, and stay race-free by shape.
+
+prompt: |
+  The bounded worker pool is Go's load-bearing pattern: N goroutines
+  pulling jobs from one channel, results flowing out another, and a
+  WaitGroup deciding when the out-channel closes.
+
+  In `main.go`:
+
+  - `SquareAll(values []int, workers int) []int` — square every value
+    using at most `workers` goroutines. Results in *input order* —
+    which, with concurrent workers, means carrying each job's index
+    with it. workers <= 0 is treated as 1; an empty input returns an
+    empty non-nil slice, and no goroutine is spawned for it.
+  - `Total(values []int, workers int) int` — the fan-in half: workers
+    each sum a share, one collector adds the partials. No mutex, no
+    atomic — the partial sums travel *through the channel*, which is
+    what "share memory by communicating" means in practice.
+  - `Pipeline(values []int) []int` — a three-stage channel pipeline:
+    generator → double → increment, each stage its own goroutine
+    feeding the next through a channel, results collected in order at
+    the end. Every stage closes its output when its input closes —
+    the close travels down the pipe.
+
+  The test suite runs with the race detector's rules in spirit: any
+  shared write outside a channel is the bug this exercise exists to
+  keep you from writing.
+
+entryPoint: main.go
+
+tests:
+  - path: pool_test.go
+    visibility: visible
+    concept: go.concurrency.patterns
+  - path: edges_test.go
+    visibility: edge
+    concept: go.concurrency.channels
+
+hints:
+  - level: conceptual
+    text: Channels own the data that flows through them. If every shared value is either owned by one goroutine or in flight on a channel, there is nothing left to race on.
+  - level: structural
+    text: "SquareAll: a jobs channel of {index, value}, N workers writing {index, squared} to results, a WaitGroup whose Wait (in its own goroutine) closes results."
+  - level: language
+    text: The sender closes; the receiver ranges. A receiver closing a channel the sender still writes to is a panic — the direction of close is not a style choice.
+  - level: syntax
+    text: "go func() { wg.Wait(); close(results) }() — the idiom that turns N finishes into one close."
+  - level: explicit
+    text: "Total: split values into `workers` chunks, each goroutine sends its chunk sum on parts; range over parts exactly `chunks` times (or close after Wait) adding into the final total."
+
+explanation: |
+  Carrying the index with the job is the small design move that makes
+  order-preserving concurrency cheap: results arrive in completion
+  order, which is arbitrary, and the index lets a plain slice write
+  put each one home — `out[r.index] = r.value` — with no sorting and,
+  more importantly, no *contention*: every worker writes a different
+  element, which the race detector correctly blesses.
+
+  The close discipline is the piece worth over-learning. Close is a
+  broadcast — every ranging receiver unblocks — and only the sender
+  knows when there is nothing left to send. The
+  `go func() { wg.Wait(); close(results) }()` idiom exists because N
+  senders must become one closer; skip it and the collector ranges
+  forever, which presents as "my test timed out" rather than anything
+  helpfully named.
+
+  Total's channel-borne partial sums versus a mutex-guarded counter is
+  the philosophy in miniature. Both are correct; the channel version
+  has no shared mutable state to guard, so an entire class of mistakes
+  (forgot the lock, locked the wrong scope, held it across a blocking
+  call) has nowhere to occur. When the data has a natural flow
+  direction, let it flow — locks are for when it genuinely does not.

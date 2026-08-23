@@ -1,0 +1,78 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.sets.ranking
+version: 1
+language: sql
+title: Ranking without a self-join
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - sql.sets.window
+  - sql.sets.aggregates
+  - sql.query.ordering
+
+prerequisites: []
+
+learningObjectives:
+  - Rank rows within a group without collapsing them.
+  - Choose between ROW_NUMBER, RANK and DENSE_RANK on what ties should do.
+  - Recognize that a window function keeps every row while an aggregate does not.
+
+prompt: |
+  `GROUP BY` answers "what is the total per customer" and destroys the rows
+  doing it. A window function answers "where does this row stand among its
+  group" and keeps them, which is a different question that people reach for
+  a self-join to answer.
+
+  `schema.sql` gives you `sales (region, seller, amount)`.
+
+  Write `main.sql` so it returns, for each region, the top two sellers by
+  amount — with columns `region`, `seller`, `amount`, `place` — ordered by
+  region then place.
+
+  Ties matter and the rule is stated: two sellers on the same amount both take
+  the same place, and the next place is not skipped. That rules out two of the
+  three ranking functions.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/ranking.sql
+    visibility: visible
+    concept: sql.sets.window
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.sets.aggregates
+
+hints:
+  - level: conceptual
+    text: You want a number per row, not one row per group.
+  - level: structural
+    text: A window function cannot be filtered in WHERE, because WHERE runs before it. Wrap it.
+  - level: language
+    text: '`OVER (PARTITION BY region ORDER BY amount DESC)` numbers within each region.'
+  - level: syntax
+    text: 'DENSE_RANK ties without skipping; RANK ties and skips; ROW_NUMBER never ties.'
+  - level: explicit
+    text: 'Put the ranked query in a CTE or subquery, then filter `WHERE place <= 2` outside it.'
+
+explanation: |
+  The three ranking functions differ only in what they do with ties, and the
+  difference is the whole exercise. On amounts 500, 500, 300: `ROW_NUMBER`
+  gives 1, 2, 3 and picks an arbitrary winner between the two 500s;
+  `RANK` gives 1, 1, 3 and skips second place; `DENSE_RANK` gives 1, 1, 2,
+  which is what "both take the same place and the next is not skipped" means.
+  Picking the wrong one produces a leaderboard that looks right until two
+  people draw.
+
+  The wrapping is not optional and is worth understanding rather than
+  memorising. `WHERE` is evaluated before the window function, so the rank
+  does not exist yet and cannot be filtered on — a subquery or a CTE is what
+  puts it in scope. `QUALIFY` does this in one step in Snowflake and DuckDB,
+  and does not exist in SQLite or Postgres.
+
+  The reason to reach for this at all: the self-join alternative — counting
+  how many sellers in the same region beat this one — is correct, quadratic,
+  and considerably harder to read.

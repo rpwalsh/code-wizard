@@ -1,0 +1,67 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.query.case-grades
+version: 1
+language: sql
+title: The CASE that must ask about NULL first
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.query.expressions
+  - sql.query.select
+  - sql.query.nulls
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  The submissions table has a score for every graded submission and NULL for
+  the rest. Write, in `main.sql`, one query listing every submission as
+  `student, score, grade`:
+
+  - 'A' for 85 and above, 'B' for 70-84, 'C' for 50-69, 'F' below 50.
+  - 'pending' when the score is NULL — and this arm has to come first,
+    because `NULL >= 85` is not false, it is *unknown*, and unknown never
+    takes a CASE arm. Without an explicit IS NULL arm, ungraded students
+    fall through every comparison and land on 'F'.
+
+  Ordered by student.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/case.sql
+    visibility: visible
+    concept: sql.query.expressions
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.query.nulls
+
+hints:
+  - level: conceptual
+    text: "CASE takes the first arm whose condition is true. NULL comparisons are never true \u2014 they are unknown."
+  - level: structural
+    text: "One CASE expression with five arms, NULL first."
+  - level: language
+    text: "'WHEN score IS NULL' — IS, not =. Equality with NULL is unknown too."
+  - level: syntax
+    text: "CASE WHEN score IS NULL THEN 'pending' WHEN score >= 85 THEN 'A' ... ELSE 'F' END"
+  - level: explicit
+    text: "SELECT student, score, CASE WHEN score IS NULL THEN 'pending' WHEN score >= 85 THEN 'A' WHEN score >= 70 THEN 'B' WHEN score >= 50 THEN 'C' ELSE 'F' END AS grade FROM submissions ORDER BY student;"
+
+explanation: |
+  Three-valued logic is the actual subject here. `score >= 85` has three
+  possible answers — true, false, unknown — and both WHERE and CASE treat
+  unknown as "not this one". That is why `WHERE score >= 0` quietly drops the
+  ungraded row (the edge test pins it), and why the pending arm must be
+  written with IS NULL and must come before any comparison that would
+  otherwise swallow the row into ELSE.
+
+  Arm order is the second lesson: CASE takes the *first* true arm, so ranges
+  written as `>= 85`, `>= 70`, `>= 50` need no upper bounds — each arm's
+  lower bound is the previous arm's rejection. Reversing the order would give
+  everyone with a score an 'F' at best a 'C'; the shape only works top-down.

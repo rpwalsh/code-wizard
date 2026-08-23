@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# # Stage 2 — Effects, and the escape hatches (lessons 15–28)
+#
+# Most of what goes wrong in a React codebase is an effect that should not
+# exist. The stage is built around removing them: half these lessons end with
+# the effect deleted rather than fixed.
+
+stage: effects
+title: Effects, and the escape hatches
+lessons:
+  - id: re.015
+    title: What an effect is for
+    focus: Synchronising with something outside React. That is the whole list.
+    skills: [react.effects.useeffect]
+    difficulty: 3
+
+  - id: re.016
+    title: The effect that should not exist
+    focus: Six effects, five of which are derived state or an event handler.
+    skills: [react.effects.useeffect, react.state.derived]
+    difficulty: 4
+
+  - id: re.017
+    title: The dependency array
+    focus: What it compares, and what happens when you lie to it.
+    skills: [react.effects.dependencies]
+    difficulty: 4
+
+  - id: re.018
+    title: The object in the dependencies
+    focus: A new object every render, and an effect that never stops running.
+    skills: [react.effects.dependencies]
+    difficulty: 4
+
+  - id: re.019
+    title: Cleanup
+    focus: The subscription nobody removed, watched leaking.
+    skills: [react.effects.cleanup]
+    difficulty: 4
+
+  - id: re.020
+    title: Fetching, and the race
+    focus: Two requests, the slow one landing last, and the wrong data on screen.
+    skills: [react.effects.fetching]
+    difficulty: 5
+
+  - id: re.021
+    title: Loading, loaded, failed
+    focus: One union instead of three booleans that allow eight states.
+    skills: [react.structure.errors, react.effects.fetching]
+    difficulty: 4
+
+  - id: re.022
+    title: The rules of hooks
+    focus: Why the order matters, shown by breaking it deliberately.
+    skills: [react.hooks.rules]
+    difficulty: 3
+
+  - id: re.023
+    title: A custom hook
+    focus: Extracting behavior, not markup, and what makes one worth having.
+    skills: [react.hooks.custom]
+    difficulty: 4
+
+  - id: re.024
+    title: Refs
+    focus: The two legitimate uses, and the many that are state in disguise.
+    skills: [react.hooks.ref]
+    difficulty: 4
+
+  - id: re.025
+    title: Context
+    focus: When prop drilling is actually the problem, and the re-render it costs.
+    skills: [react.structure.context]
+    difficulty: 4
+
+  - id: re.026
+    title: memo, and measuring first
+    focus: Add memoization, measure, then remove the ones that changed nothing.
+    skills: [react.hooks.memo]
+    difficulty: 5
+
+  - id: re.027
+    title: Testing behavior
+    focus: Querying the way a user would, not by class name.
+    skills: [react.testing.behavior]
+    difficulty: 3
+
+  - id: re.028
+    title: Testing something that loads
+    focus: Waiting for the result without waiting for a fixed time.
+    skills: [react.testing.async]
+    difficulty: 4

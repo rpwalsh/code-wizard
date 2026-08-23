@@ -1,0 +1,80 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.state.derived
+version: 1
+language: react
+title: State that cannot disagree with itself
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 25000
+
+skills:
+  - react.state.derived
+  - react.state.immutability
+  - react.render.lists
+
+prerequisites: []
+
+learningObjectives:
+  - Recognize which values are state and which are derived from it.
+  - Replace state rather than editing it in place.
+  - Give list items a key that survives reordering.
+
+prompt: |
+  A basket component, and the commonest way React state goes wrong: keeping
+  two facts that have to agree, and then discovering they do not.
+
+  In `main.tsx`, implement:
+
+  - `addItem(items, item)` — returns a **new** array with `item` appended. The
+    array passed in must not be modified.
+  - `removeItem(items, id)` — a new array without that id.
+  - `total(items)` — the sum of `price * quantity`, in whole pence.
+  - `Basket({ items })` — renders `<p>Basket is empty</p>` when there is
+    nothing, otherwise a `<ul>` with one `<li>` per item containing the name,
+    and a `<p>` with `Total: 1234p`.
+
+  `total` is deliberately not state. There is no `useState` for it and no
+  effect keeping it up to date — it is computed while rendering, which is what
+  makes it impossible for it to be stale.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/basket.test.tsx
+    visibility: visible
+    concept: react.state.derived
+  - path: tests/immutability.test.tsx
+    visibility: edge
+    concept: react.state.immutability
+  - path: tests/hidden.test.tsx
+    visibility: hidden
+    concept: react.render.lists
+
+hints:
+  - level: conceptual
+    text: If a value can always be worked out from another value, it is not state — it is a calculation.
+  - level: structural
+    text: Return new arrays instead of pushing or splicing.
+  - level: language
+    text: 'Spread builds a new array; `filter` returns one; `push` and `splice` do not.'
+  - level: syntax
+    text: '`return [...items, item];`'
+  - level: explicit
+    text: Compute the total inside the component body, above the return, with reduce.
+
+explanation: |
+  The bug this exercise removes is a total that disagrees with the basket. It
+  arrives the moment someone stores the total in state and updates it beside
+  every change: one code path is added later, forgets the second update, and
+  now the number on screen is wrong with nothing thrown and nothing logged.
+
+  A value derived during render cannot drift, because there is no second copy
+  to drift from. It also costs nothing here — summing a handful of items is
+  faster than the `useEffect` that would have kept it in step.
+
+  The immutability half is React-specific and not optional. `items.push(...)`
+  then `setItems(items)` hands React the same array reference it already had,
+  so its comparison says nothing changed and the render is skipped. The screen
+  does not update, the data is right, and nothing anywhere reports an error —
+  which is why this is the first thing to check when a list will not refresh.

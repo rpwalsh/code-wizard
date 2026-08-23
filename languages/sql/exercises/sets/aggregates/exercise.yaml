@@ -1,0 +1,73 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.sets.group-having
+version: 1
+language: sql
+title: WHERE filters rows, HAVING filters groups
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.sets.aggregates
+  - sql.sets.having
+  - sql.query.nulls
+
+prerequisites: []
+
+learningObjectives:
+  - Aggregate per group and filter on the aggregate, not the rows.
+  - Know what COUNT counts when the column holds NULLs.
+  - Put a row condition in WHERE and a group condition in HAVING, and know why.
+
+prompt: |
+  The orders table records who ordered, what it cost, and when it shipped —
+  `shipped_at` is NULL until it does. Write, in `main.sql`, one query:
+
+  For each customer who has placed **at least two orders over 100**, show the
+  customer, how many such orders they placed, and the total spent on them.
+
+  Columns: `customer`, `big_orders`, `total`. Ordered by `total` descending,
+  then by `customer` for a stable result.
+
+  The trap in the middle of this: "orders over 100" is a *row* condition, so
+  it belongs in WHERE — filtering there means the small orders never reach the
+  groups. "at least two of them" is a condition on the *group*, which only
+  HAVING can see, because the count does not exist until the rows have been
+  grouped.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/groups.sql
+    visibility: visible
+    concept: sql.sets.aggregates
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.query.nulls
+
+hints:
+  - level: conceptual
+    text: WHERE runs before grouping and sees rows; HAVING runs after and sees aggregates.
+  - level: structural
+    text: Filter the rows first, then GROUP BY customer, then keep the groups that qualify.
+  - level: language
+    text: 'An alias from the SELECT list cannot be used in HAVING in every engine — repeat the aggregate: `HAVING COUNT(*) >= 2`.'
+  - level: syntax
+    text: 'WHERE amount > 100 GROUP BY customer HAVING COUNT(*) >= 2'
+  - level: explicit
+    text: 'SELECT customer, COUNT(*) AS big_orders, SUM(amount) AS total FROM orders WHERE amount > 100 GROUP BY customer HAVING COUNT(*) >= 2 ORDER BY total DESC, customer;'
+
+explanation: |
+  Moving the amount check into HAVING — `HAVING COUNT(*) >= 2 AND amount > 100`
+  — is not just wrong, it is an error in most engines, because `amount` is a
+  row column and the rows are gone by the time HAVING runs. The reverse
+  mistake compiles fine and is worse: counting all orders in WHERE-less form
+  and filtering in HAVING gives customers credit for small orders the prompt
+  excluded.
+
+  The NULL test in the edge cases is there because `COUNT(*)` and
+  `COUNT(shipped_at)` answer different questions — every row, versus rows
+  where that column has a value. Aggregates skip NULLs; `COUNT(*)` alone does
+  not. Choosing between them is a statement about what you are counting, and
+  SQL will not warn you when you choose wrong.

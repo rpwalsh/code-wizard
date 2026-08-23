@@ -1,0 +1,149 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# SQL, read rather than run.
+#
+# Concentrated on the places where a query returns a plausible wrong answer
+# rather than an error, because those are the ones that reach production.
+
+activities:
+  - id: sql.query.nulls.mc-1
+    kind: multiple-choice
+    language: sql
+    title: Counting the missing
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [sql.query.nulls]
+    prompt: >-
+      A `people` table has 10 rows. Three have a NULL `email`. What does
+      `SELECT COUNT(email) FROM people` return?
+    options:
+      - text: '10'
+        why: This is what `COUNT(*)` returns. The difference between the two is exactly this question.
+      - text: '7'
+      - text: '3'
+        why: Nothing counts only the NULLs; you would need `COUNT(*) - COUNT(email)`.
+      - text: 'NULL'
+        why: Aggregates do not become NULL because their input contains NULLs.
+    correct: [1]
+    explanation: >-
+      `COUNT(column)` counts non-NULL values; `COUNT(*)` counts rows. The gap
+      between them is the number of missing values, and mistaking one for the
+      other is one of the quietest ways to publish a wrong number.
+
+  - id: sql.sets.joins.mc-1
+    kind: multiple-choice
+    language: sql
+    title: The filter that undoes the join
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [sql.sets.joins, sql.query.nulls]
+    prompt: Why does this return no rows for customers with no orders?
+    code: |
+      SELECT c.name, o.total
+      FROM customers c
+      LEFT JOIN orders o ON o.customer_id = c.id
+      WHERE o.total > 100;
+    options:
+      - text: LEFT JOIN only keeps rows that match, so unmatched customers were already gone.
+        why: A LEFT JOIN keeps every left-hand row. They were present after the join and removed afterwards.
+      - text: The WHERE clause runs after the join, and NULL > 100 is not true.
+      - text: The join condition should use WHERE instead of ON.
+        why: That would make it an inner join in effect — the same wrong result, arrived at deliberately.
+      - text: Comparing NULL to a number is a syntax error.
+        why: It is legal and evaluates to unknown, which is why the row disappears silently rather than loudly.
+    correct: [1]
+    explanation: >-
+      The LEFT JOIN does keep unmatched customers, filling `o.total` with NULL.
+      Then WHERE evaluates `NULL > 100`, which is unknown, not true, so those
+      rows are dropped and the LEFT JOIN has been silently turned into an inner
+      one. Put the condition in the ON clause, or test for NULL explicitly.
+
+  - id: sql.sets.aggregates.po-1
+    kind: predict-output
+    language: sql
+    title: Grouping
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [sql.sets.aggregates]
+    prompt: >-
+      Given orders (customer, total) of ('a', 10), ('a', 20), ('b', 5), what
+      does this return? One row per line, as customer|sum.
+    code: |
+      SELECT customer, SUM(total)
+      FROM orders
+      GROUP BY customer
+      ORDER BY customer;
+    expected: |
+      a|30
+      b|5
+    explanation: >-
+      GROUP BY collapses the rows into one per distinct customer, and the
+      aggregate is computed within each group. The ORDER BY is what makes the
+      output predictable — without it the order is unspecified, whatever your
+      database happens to do today.
+
+  - id: sql.sets.having.order-1
+    kind: order-lines
+    language: sql
+    title: Clause order
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [sql.sets.having, sql.sets.aggregates]
+    prompt: Put this query into the only order the parser accepts.
+    lines:
+      - SELECT customer, SUM(total) AS spend
+      - FROM orders
+      - WHERE status = 'paid'
+      - GROUP BY customer
+      - HAVING SUM(total) > 100
+      - ORDER BY spend DESC
+    explanation: >-
+      The written order is fixed, and it also tells you the evaluation order
+      that matters: WHERE filters rows before grouping, HAVING filters groups
+      after. Putting an aggregate in WHERE is an error for that reason, and
+      putting a plain row condition in HAVING works but scans more than it
+      needs to.
+
+  - id: sql.sets.window.match-1
+    kind: match-pairs
+    language: sql
+    title: Ranking functions
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [sql.sets.window]
+    prompt: Values 10, 10, 20 ordered ascending. Match each function to the ranks it produces.
+    pairs:
+      - left: ROW_NUMBER()
+        right: 1, 2, 3
+      - left: RANK()
+        right: 1, 1, 3
+      - left: DENSE_RANK()
+        right: 1, 1, 2
+      - left: COUNT(*) OVER ()
+        right: 3, 3, 3
+    explanation: >-
+      ROW_NUMBER never ties. RANK ties and then skips, leaving a gap.
+      DENSE_RANK ties without skipping. Picking the wrong one produces a
+      leaderboard that looks right until two people draw.
+
+  - id: sql.query.select.fill-1
+    kind: fill-blanks
+    language: sql
+    title: Rows with no match
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [sql.sets.joins]
+    prompt: Complete the query so it returns customers who have never ordered.
+    template: |
+      SELECT c.name
+      FROM customers c
+      LEFT JOIN orders o ON o.customer_id = c.id
+      WHERE o.id {1};
+    blanks:
+      - index: 1
+        accepts: ['IS NULL', 'is null']
+        hint: Not `= NULL`.
+    explanation: >-
+      This is the anti-join. Every customer survives the LEFT JOIN; the ones
+      with no order have NULLs on the right-hand side, and IS NULL keeps
+      exactly those. `= NULL` is legal syntax that is never true, which is why
+      it returns nothing and looks like an empty table rather than a bug.

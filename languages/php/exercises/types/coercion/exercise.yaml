@@ -1,0 +1,81 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.types.strict
+version: 1
+language: php
+title: Comparing without surprises
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 30000
+
+skills:
+  - php.types.coercion
+  - php.types.declarations
+  - php.types.null
+
+prerequisites: []
+
+learningObjectives:
+  - Compare values without letting the language convert them first.
+  - Tell an absent key from one holding null or an empty string.
+  - Declare parameter and return types so a wrong type fails at the boundary.
+
+prompt: |
+  PHP's loose comparison is the single largest source of confident wrong
+  answers in the language, and PHP 8 changed part of it — so half the advice
+  online is now wrong as well.
+
+  In `main.php`, implement:
+
+  - `same(mixed $a, mixed $b): bool` — true only when both value and type
+    match. No coercion, ever.
+  - `field(array $row, string $key): string` — the value as a string, where a
+    missing key, a null and an empty string are all `''`, but the number `0`
+    is `'0'`.
+  - `is_blank(mixed $value): bool` — true for null, the empty string, and a
+    string of only whitespace. False for `0`, `'0'`, `false` and `[]`.
+  - `to_int(mixed $value): ?int` — an int for something that really is a whole
+    number, including the string `'42'`; null for `'42abc'`, `'4.5'`, `''`,
+    arrays and booleans.
+
+  `is_blank` is where people reach for `empty()`, which is true for `0`,
+  `'0'`, `false` and `[]` — four things that are present.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/strict_test.php
+    visibility: visible
+    concept: php.types.coercion
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.types.null
+
+hints:
+  - level: conceptual
+    text: Absent, empty and zero are three different things, and PHP has helpers that blur all three.
+  - level: structural
+    text: '`empty()` and `isset()` answer different questions from the ones these functions ask.'
+  - level: language
+    text: '`===` compares type as well as value; `array_key_exists` asks about the key rather than the value.'
+  - level: syntax
+    text: "`trim($value) === ''` is the blank test once you know it is a string."
+  - level: explicit
+    text: "For to_int, `filter_var($value, FILTER_VALIDATE_INT)` returns false rather than throwing, and rejects '4.5' and '42abc' for you."
+
+explanation: |
+  PHP 8 changed `0 == 'abc'` from true to false, which removed the most famous
+  trap and left the rest. `'1' == '01'` is still true, `'10' == '1e1'` is still
+  true, and both are string comparisons that silently become numeric. `===`
+  sidesteps all of it by refusing to convert, which is why it is the default
+  in every modern style guide.
+
+  `empty()` is the other trap and it is worse, because it reads like a
+  question about emptiness and is actually a question about falsiness. It is
+  true for `0`, `'0'`, `false` and `[]` — a quantity of zero, a string
+  containing a zero, a setting explicitly turned off, and a list that exists.
+  Writing the test out with `trim` says what is meant and costs one line.
+
+  `declare(strict_types=1)` is what makes the annotations enforcement rather
+  than documentation. Without it, passing `'8'` to an `int` parameter silently
+  coerces, and the signature describes an intention nobody checks.

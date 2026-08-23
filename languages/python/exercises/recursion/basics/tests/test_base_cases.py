@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The smallest inputs, which are the base cases."""
 
 import pytest

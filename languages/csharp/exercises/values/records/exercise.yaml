@@ -1,0 +1,83 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.values.records
+version: 1
+language: csharp
+title: Equal because of what it says, not where it lives
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 60000
+
+skills:
+  - csharp.values.records
+  - csharp.values.nullable
+  - csharp.types.patterns
+
+prerequisites: []
+
+learningObjectives:
+  - Choose records for data whose identity is its content.
+  - Update immutable data with `with` instead of mutating it.
+  - Make the compiler enforce that null was handled, not the reviewer.
+
+prompt: |
+  A class is equal to itself and nothing else; a record is equal to anything
+  that says the same thing. That single difference decides which one a piece
+  of data should be, and most data in most programs is the record kind.
+
+  In `Money.cs`, using the `Money(decimal Amount, string Currency)` record in
+  the starter, implement the static class `Wallet`:
+
+  - `Add(Money left, Money right)` — the sum. Mixing currencies throws
+    `CurrencyMismatchException` (already in the starter) naming both.
+  - `Convert(Money money, string target, decimal rate)` — a *new* Money in the
+    target currency. Records are immutable; `with` is how a change happens.
+  - `TryParse(string? text, out Money money)` — accepts `"12.50 USD"`: an
+    amount, one space, a three-letter uppercase code. False for anything else,
+    including null, without throwing. `decimal.Parse` on user text is how
+    parsing code becomes throwing code; there is a Try-shaped alternative.
+  - `Describe(Money? money)` — `"nothing"` for null, `"free"` for a zero
+    amount, `"12.50 USD"` otherwise (two decimal places, invariant culture).
+    Pattern matching covers all three without a single `if (x == null)`.
+
+entryPoint: Money.cs
+
+tests:
+  - path: tests/MoneyTests.cs
+    visibility: visible
+    concept: csharp.values.records
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.values.nullable
+
+hints:
+  - level: conceptual
+    text: Value equality is the point of records — two Money(5, "USD") are the same money.
+  - level: structural
+    text: '`money with { Currency = target, Amount = ... }` builds the changed copy.'
+  - level: language
+    text: '`decimal.TryParse(part, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)` parses without throwing and without the machine locale.'
+  - level: syntax
+    text: 'Describe is one switch expression: `null => "nothing", { Amount: 0 } => "free", _ => ...`.'
+  - level: explicit
+    text: 'Split on a single space, require exactly two parts, check the code with length 3 and char.IsUpper, then TryParse the amount.'
+
+explanation: |
+  `with` looks like mutation and is not — it is a copy with one field changed,
+  and the original is untouched. That is what makes records safe to share:
+  nothing that holds one can be surprised by it changing. The compiler
+  generates the copy, the equality, the hash code and the printing, which is a
+  few hundred lines of the most bug-prone boilerplate in C# that no longer
+  exists to be wrong.
+
+  The `TryParse` pattern is the honest version of a function that can fail on
+  ordinary input. Throwing is for the exceptional; a user typing `"12,50"`
+  into a form is not exceptional, it is Tuesday. Invariant culture matters in
+  the same breath: `decimal.Parse("12.50")` fails on a machine whose locale
+  writes decimals with a comma, which is the classic bug that only exists in
+  production, on the server in the one region you did not test.
+
+  `Describe`'s switch expression is null-handling the compiler can check. The
+  `null` arm is a case like any other, and if you delete it the compiler warns
+  that the switch no longer covers its input — which is the difference between
+  "we handle null" as a fact and as a hope.

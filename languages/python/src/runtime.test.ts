@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Workspace } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 

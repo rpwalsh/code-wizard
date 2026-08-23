@@ -1,0 +1,5 @@
+{
+  "id": "sql",
+  "title": "SQL",
+  "summary": "For someone who writes queries that work and cannot say why the slow one is slow. About sets, joins, and reading a query plan."
+}

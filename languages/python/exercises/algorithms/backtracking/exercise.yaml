@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.backtracking
 version: 1
 language: python
@@ -82,12 +83,12 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: empty-return
-    line: 75
+    line: 76
     why: >-
       The caller tests the result for truthiness, and None is as falsy as
       False, so no input can distinguish the two.
   - path: main.py
     operator: empty-return
-    line: 77
+    line: 78
     why: >-
       The same truthiness equivalence on the diagonal check.

@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.components.projection
+version: 1
+language: angular
+title: Slots, and what falls through them
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - angular.components.content
+  - angular.components.binding
+
+prerequisites: []
+
+learningObjectives:
+  - Distribute projected content into named slots the way ng-content does.
+  - Send unmatched content to the default slot, in order.
+  - Bind attribute values into a template without inventing syntax.
+
+prompt: |
+  `<ng-content select="[card-title]">` is a sorting machine: children of
+  the component's tag are distributed into slots by selector, and
+  whatever matches nothing lands in the bare `<ng-content>`. Build the
+  sorting machine.
+
+  In `main.ts`, content is data:
+  `ContentNode = { tag: string, attributes: Record<string, string>,
+  text: string }`.
+
+  - `matchesSelector(node, selector)` — three selector shapes:
+    `"tag"` matches by tag name; `"[attr]"` matches nodes having that
+    attribute (any value); `".class"` matches nodes whose `class`
+    attribute contains that class name among its space-separated words —
+    `"nav"` must not match `class="navigation"`.
+  - `distribute(nodes, slots)` — `slots` is a list of selectors. Returns
+    a Map from selector to the nodes that matched it, plus a
+    `'default'` entry for the rest. Rules:
+    - Each node lands in the *first* slot whose selector matches — a
+      node never appears twice.
+    - Order within every slot is the nodes' original order.
+    - Every selector appears in the Map even when it caught nothing.
+  - `renderSlot(nodes)` — the binding half: each node becomes
+    `<tag attr="value">text</tag>` — attributes in their object order,
+    values escaped (`&` → `&amp;`, `"` → `&quot;`, `<` → `&lt;`), text
+    escaped for `&` and `<`. Nodes join with no separator.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/projection.test.ts
+    visibility: visible
+    concept: angular.components.content
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.components.binding
+
+hints:
+  - level: conceptual
+    text: Projection is a partition — every node lands in exactly one slot, and first-match-wins is what makes it deterministic.
+  - level: structural
+    text: Initialize the Map with every selector and 'default' first, then place nodes one by one.
+  - level: language
+    text: 'The class check: `(node.attributes["class"] ?? "").split(/\s+/).includes(name)` — substring matching is the bug.'
+  - level: syntax
+    text: 'Escape attribute values before wrapping them in quotes: value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").'
+  - level: explicit
+    text: 'distribute: `for (const node of nodes) { const slot = slots.find((s) => matchesSelector(node, s)) ?? "default"; map.get(slot).push(node); }`'
+
+explanation: |
+  First-match-wins is what Angular actually does with multiple
+  `ng-content` selectors, and it is the property that makes projection
+  predictable: a node with both `card-title` and a matching class lands
+  where the template author listed first, not in both places and not
+  nondeterministically. The partition framing — every node exactly once
+  — is also why the default slot exists at all: content that matched
+  nothing still has to go somewhere visible, or it silently vanishes,
+  which is the most-reported ng-content confusion.
+
+  The class-name check is a small parsing lesson with real consequences:
+  `class="navigation"` contains the substring `nav`, and matching by
+  substring makes selectors fire on half the page. Class lists are
+  space-separated words; the correct membership test splits first. Every
+  DOM API (`classList.contains`) gets this right, and every hand-rolled
+  `includes` check gets it wrong.
+
+  Escaping in `renderSlot` is the binding half of the exercise: values
+  interpolated into markup must be escaped for the context they land in
+  — attribute values need `&quot;`, text needs `&lt;` — and doing it in
+  the one function that produces markup is what makes it impossible to
+  forget at a call site. Angular's template compiler does exactly this
+  on your behalf; this is what "the framework escapes by default" means.

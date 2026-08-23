@@ -1,0 +1,303 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Python: recursion, cost, data structures and the algorithm canon.
+#
+# The back half of the course, and the part an interview actually probes. The
+# questions favor the reasoning over the recital: why this structure, what it
+# costs, and which of two plausible answers is wrong.
+
+activities:
+  - id: python.recursion.base-case.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The recursion that never stops
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.recursion.base-case, python.recursion.linear]
+    prompt: This overflows the stack on any input. Which line is wrong?
+    code: |
+      def countdown(n):
+          if n == 0:
+              return []
+          return [n] + countdown(n)
+    faultLine: 4
+    correction: '    return [n] + countdown(n - 1)'
+    explanation: >-
+      The base case is right and unreachable: nothing moves `n` toward it, so
+      every call makes an identical one. A recursive function needs both a stop
+      and *progress toward it*, and the missing half is nearly always the
+      second. Python's default limit is a thousand frames, so this fails fast —
+      which is a kindness compared with a language that would simply crash.
+
+  - id: python.recursion.memoization.po-1
+    kind: predict-output
+    language: python
+    title: What memoization actually changes
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [python.recursion.memoization, python.complexity.growth]
+    prompt: >-
+      `fib` is the naive two-call recursion, `fast` is the same function with
+      `@lru_cache`. How many calls does each make for n = 30? Answer as
+      `naive|cached`, using the order of growth rather than exact numbers.
+    code: |
+      from functools import lru_cache
+
+      def fib(n):
+          return n if n < 2 else fib(n - 1) + fib(n - 2)
+
+      @lru_cache(maxsize=None)
+      def fast(n):
+          return n if n < 2 else fast(n - 1) + fast(n - 2)
+    expected: 'exponential|linear'
+    alsoAccept: ['O(2^n)|O(n)', 'exponential|O(n)', 'O(2^n)|linear']
+    explanation: >-
+      The naive version recomputes the same subproblems over and over — about
+      1.6 to the n calls, which is roughly 2.7 million for n = 30. The cache
+      makes each distinct n happen once, so the work becomes linear and the
+      whole thing returns instantly. This is the entire idea behind dynamic
+      programming: the recursion was already correct, and only the repetition
+      was expensive.
+
+  - id: python.complexity.data-structure-choice.match-1
+    kind: match-pairs
+    language: python
+    title: What each lookup costs
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.complexity.data-structure-choice, python.complexity.counting]
+    prompt: Match each operation to its cost on a container of n items.
+    pairs:
+      - left: '`x in some_set`'
+        right: constant
+      - left: '`x in some_list`'
+        right: linear — scans until it finds it
+      - left: '`some_list.insert(0, x)`'
+        right: linear — shifts everything after it
+      - left: '`some_list.append(x)`'
+        right: amortised constant
+    explanation: >-
+      The first two are the whole reason sets exist, and swapping one for the
+      other turns a loop from linear into quadratic without changing a line of
+      logic — the commonest single performance bug in Python.
+      `insert(0, x)` is the other trap: it shifts every element, so building a
+      list by prepending is quadratic where `append` plus one `reverse` is
+      linear. `collections.deque` prepends in constant time.
+
+  - id: python.structures.stack-queue.mc-1
+    kind: multiple-choice
+    language: python
+    title: The queue that is not one
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.structures.stack-queue]
+    prompt: >-
+      A breadth-first search uses `queue.pop(0)` on a list and gets slower than
+      expected on large graphs. Why?
+    options:
+      - text: '`pop(0)` shifts every remaining element, so the traversal becomes quadratic.'
+      - text: Lists cannot hold enough items.
+        why: A Python list will hold as much as memory allows; the problem is the cost per operation, not the capacity.
+      - text: BFS is inherently quadratic.
+        why: BFS visits each node and edge once. The quadratic term comes entirely from the container.
+      - text: '`pop(0)` copies the list.'
+        why: It shifts in place rather than copying, which is cheaper and still linear.
+    correct: [0]
+    explanation: >-
+      A list is contiguous, so removing the front means moving everything after
+      it down one. Doing that once per node makes an otherwise linear traversal
+      quadratic. `collections.deque` has `popleft` in constant time and is the
+      right container for a queue — the change is one import and one method
+      name, and on a large graph it is the difference between seconds and
+      minutes.
+
+  - id: python.algorithms.binary-search.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The binary search that loops
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [python.algorithms.binary-search]
+    prompt: This hangs when the target is absent. Which line is at fault?
+    code: |
+      def search(items, target):
+          low, high = 0, len(items) - 1
+          while low <= high:
+              middle = (low + high) // 2
+              if items[middle] == target:
+                  return middle
+              if items[middle] < target:
+                  low = middle
+              else:
+                  high = middle - 1
+          return -1
+    faultLine: 8
+    correction: '            low = middle + 1'
+    explanation: >-
+      Without the `+ 1` the window stops shrinking as soon as `low` and `high`
+      are adjacent: `middle` computes to `low`, the branch sets `low = middle`,
+      and nothing has changed. Every bound must move strictly past the value
+      just examined, because that value has been ruled out. Binary search is
+      four lines and famously hard to get right; this is the way it is usually
+      wrong.
+
+  - id: python.algorithms.traversal.mc-1
+    kind: multiple-choice
+    language: python
+    title: Which traversal finds the shortest path
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.algorithms.traversal, python.algorithms.shortest-path]
+    prompt: >-
+      On an unweighted graph, which traversal finds the fewest-edges path, and
+      why?
+    options:
+      - text: Breadth-first, because it reaches every node at distance k before any at k + 1.
+      - text: Depth-first, because it explores each branch fully.
+        why: DFS finds *a* path, and there is no reason it is the shortest — it commits to the first branch and may reach the target the long way round.
+      - text: Either; they visit the same nodes.
+        why: They visit the same nodes in different orders, and the order is exactly what decides which path is found first.
+      - text: 'Neither: shortest paths need Dijkstra.'
+        why: Dijkstra is for weighted edges. With every edge costing one, it degenerates into breadth-first.
+    correct: [0]
+    explanation: >-
+      Breadth-first expands in rings of equal distance, so the first time it
+      reaches a node it has arrived by a fewest-edges route and can never do
+      better later. That is why the visited set can be marked on *enqueue*
+      rather than on dequeue. The moment edges have differing weights the
+      argument collapses and Dijkstra's priority queue replaces the plain
+      queue.
+
+  - id: python.algorithms.two-pointer.fill-1
+    kind: fill-blanks
+    language: python
+    title: Two ends, one pass
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.algorithms.two-pointer]
+    prompt: >-
+      Complete this so it finds a pair summing to `target` in a sorted list,
+      in one pass.
+    template: |
+      def pair_summing_to(items, target):
+          low, high = 0, len(items) - 1
+          while low < high:
+              total = items[low] + items[high]
+              if total == target:
+                  return (low, high)
+              if total < target:
+                  low {1} 1
+              else:
+                  high {2} 1
+          return None
+    blanks:
+      - index: 1
+        accepts: ['+=']
+        hint: The sum is too small, so the smaller end must grow.
+      - index: 2
+        accepts: ['-=']
+        hint: The sum is too large, so the larger end must shrink.
+    explanation: >-
+      Sortedness is what makes this work: if the sum is too small then no pair
+      using the current low value can help, because every remaining partner is
+      smaller than the one just tried. Each step discards a whole row of the
+      pair space, so the scan is linear where the nested loop is quadratic. It
+      is the same argument as binary search, applied from both ends.
+
+  - id: python.algorithms.dynamic-programming.mc-1
+    kind: multiple-choice
+    language: python
+    title: When dynamic programming is the answer
+    difficulty: 4
+    estimatedSeconds: 80
+    skills: [python.algorithms.dynamic-programming]
+    prompt: Which pair of properties makes a problem suit dynamic programming?
+    options:
+      - text: Overlapping subproblems, and an optimal answer built from optimal sub-answers.
+      - text: A large input and a slow solution.
+        why: That describes wanting a better algorithm, not this one. Plenty of slow problems have no useful subproblem structure at all.
+      - text: Recursion and a base case.
+        why: Every recursion has those. Without *overlap* there is nothing for a cache to save.
+      - text: Sorted input and a monotonic answer.
+        why: That is the shape binary search and two-pointer exploit.
+    correct: [0]
+    explanation: >-
+      Both halves are needed. Overlap is what makes memoization pay — merge
+      sort recurses beautifully and its subproblems never repeat, so caching
+      buys nothing. Optimal substructure is what makes combining sub-answers
+      valid; where it fails, the best overall answer may not be built from the
+      best pieces, and the recurrence is simply wrong however fast it runs.
+
+  - id: python.numerical.floats.po-1
+    kind: predict-output
+    language: python
+    title: The classic
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.numerical.floats]
+    prompt: What does this print?
+    code: |
+      print(0.1 + 0.2 == 0.3)
+      print(round(0.1 + 0.2, 10) == 0.3)
+      from decimal import Decimal
+      print(Decimal("0.1") + Decimal("0.2") == Decimal("0.3"))
+    expected: |
+      False
+      True
+      True
+    explanation: >-
+      Neither 0.1 nor 0.2 is representable in binary floating point, so their
+      sum lands a hair above 0.3. This is not a Python quirk — it is IEEE 754,
+      and every language with doubles does it. Compare with a tolerance, or use
+      `Decimal` where the values are decimal by nature. Money is the obvious
+      case: it should be integer pence or `Decimal`, never a float.
+
+  - id: python.stdlib.itertools.match-1
+    kind: match-pairs
+    language: python
+    title: The tools worth knowing
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.stdlib.itertools, python.stdlib.collections]
+    prompt: Match each helper to the hand-written loop it replaces.
+    pairs:
+      - left: itertools.groupby
+        right: Runs of adjacent equal keys
+      - left: collections.Counter
+        right: Tallying occurrences
+      - left: itertools.chain
+        right: Iterating several sequences as one
+      - left: collections.defaultdict
+        right: A missing key that builds itself
+    explanation: >-
+      `groupby` is the one that catches people out: it groups *adjacent* equal
+      keys, not all equal keys, so it does what SQL's GROUP BY does only if the
+      input is sorted by that key first. Unsorted input produces several small
+      groups for the same key, silently and plausibly — which is exactly the
+      kind of wrong answer that survives a code review.
+
+  - id: python.structures.graph-representation.mc-1
+    kind: multiple-choice
+    language: python
+    title: How to hold a graph
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.structures.graph-representation]
+    prompt: >-
+      A social graph has a million people and about a hundred friends each.
+      Adjacency list or adjacency matrix?
+    options:
+      - text: A list — the matrix would need a trillion cells, almost all empty.
+      - text: A matrix, because edge lookup is constant.
+        why: 'True and unaffordable: a million squared is 10^12 cells for 10^8 edges.'
+      - text: Either; the difference is small.
+        why: The difference is four orders of magnitude in memory here.
+      - text: A matrix, because the graph is undirected.
+        why: Direction affects neither choice; density does.
+    correct: [0]
+    explanation: >-
+      Density decides it. A matrix costs n² regardless of how many edges exist,
+      which is right for a dense graph and ruinous for a sparse one — and
+      almost every real graph is sparse. An adjacency list costs n + e and gives
+      you a node's neighbors directly, which is what a traversal actually
+      asks for. The matrix wins when you need "is there an edge between these
+      two" constantly on a small dense graph.

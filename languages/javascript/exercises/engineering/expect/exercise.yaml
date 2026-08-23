@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.engineering.expect
+version: 1
+language: javascript
+title: Build the assertion library you have been using
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - javascript.engineering.testing
+  - javascript.engineering.api
+  - javascript.syntax.modules
+
+prerequisites: []
+
+learningObjectives:
+  - Design a small module interface deliberately — what is exported is the API.
+  - Make an assertion failure carry both sides, not just a verdict.
+  - Compare by value, recursively, the way every test framework must.
+
+prompt: |
+  Every test you have written here ran through an assertion library someone
+  built. This exercise is that library, small enough to build honestly: a
+  module whose named exports are its whole contract.
+
+  In `main.js`, export exactly these:
+
+  - `AssertionError` — an `Error` subclass with `expected` and `received`
+    fields, and `name` set to `'AssertionError'`. The failure *carries its
+    evidence*; a message alone makes the reader re-run the test to see what
+    happened.
+  - `deepEqual(a, b)` — value equality: primitives by `Object.is`, arrays
+    element-wise, plain objects key-wise, recursively. Objects with
+    different key *sets* are unequal — an extra key is a difference, both
+    ways. `Object.is` semantics mean `NaN` equals `NaN` and `0` does not
+    equal `-0` — a test framework must not inherit ===' s blind spots.
+  - `expectEqual(received, expected)` — throws `AssertionError` when
+    `deepEqual` says no, with the fields filled and a message containing
+    both sides via `JSON.stringify`. Passing silently returns.
+  - `expectThrows(type, fn)` — runs `fn`; the *wrong* outcome is either no
+    throw, or a throw of the wrong type. Both are `AssertionError`. On the
+    right throw, return the thrown error so the caller can inspect it.
+
+  Do not add exports beyond these four. An API is defined as much by what it
+  refuses to include as by what it offers — and the test imports exactly
+  this surface, which is what a public contract is.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/expect.test.js
+    visibility: visible
+    concept: javascript.engineering.testing
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.engineering.api
+
+hints:
+  - level: conceptual
+    text: An assertion is a comparison plus a report. The comparison is deepEqual; the report is the error's job.
+  - level: structural
+    text: deepEqual handles three shapes — primitive, array, object — and recurses for the last two.
+  - level: language
+    text: 'Object.is(NaN, NaN) is true and Object.is(0, -0) is false — the two places === answers wrong for a test framework.'
+  - level: syntax
+    text: 'Different key sets: `const keysA = Object.keys(a); if (keysA.length !== Object.keys(b).length) return false;` then check every key of a exists in b and matches.'
+  - level: explicit
+    text: 'expectThrows: try fn(); if it returns, throw AssertionError("expected to throw"). In catch, rethrow AssertionErrors you threw yourself? No — check `error instanceof type` and wrap the mismatch; return the error when it matches.'
+
+explanation: |
+  The design constraint — exactly four exports — is the engineering content.
+  A module's exports are a promise to every caller, and every extra one is
+  surface you maintain forever. Small honest APIs come from deciding the
+  contract first and implementing inward, which is the reverse of exporting
+  whatever the file happened to accumulate.
+
+  `Object.is` over `===` is the difference between a comparison for
+  *programs* and a comparison for *tests*. A test that computes `NaN` when
+  it expected `NaN` has passed in every meaningful sense, and `NaN === NaN`
+  being false would fail it with a message showing two identical values —
+  the most maddening failure a framework can produce. The `0`/`-0` split is
+  the same care in the other direction: they behave differently downstream
+  (`1/0` versus `1/-0`), so a test framework that conflates them hides a
+  real difference.
+
+  `expectThrows` returning the error is API design paying rent. The caller
+  almost always wants to assert on the message or a field next; returning
+  the error makes that one line instead of a second try/catch. The
+  subtlety in the implementation — not letting your own "it did not throw"
+  AssertionError be caught by your own catch — is a small taste of why
+  test-framework code is trickier than it looks.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 16
+    why: >-
+      typeof returns a string, and the null check cannot meet undefined —
+      typeof undefined short-circuits the clause first — so == and === agree
+      on every reachable input.

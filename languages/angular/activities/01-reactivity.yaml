@@ -1,0 +1,100 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Angular, read rather than served.
+#
+# Change detection and subscription lifetime, which is where Angular
+# applications actually go wrong.
+
+activities:
+  - id: angular.change.onpush.mc-1
+    kind: multiple-choice
+    language: angular
+    title: The view that stops updating
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [angular.change.onpush, angular.change.detection]
+    prompt: >-
+      A component with OnPush shows stale data after its input object is
+      modified in place. Why?
+    options:
+      - text: OnPush re-checks when an input reference changes, and mutating the object does not change it.
+      - text: OnPush disables change detection entirely for that component.
+        why: It still runs on events, async pipe emissions and reference changes. It narrows when, not whether.
+      - text: The component needs to be declared in a different module.
+        why: Module declaration has no bearing on change detection strategy.
+      - text: OnPush requires zone.js to be disabled.
+        why: They are independent, and OnPush is the more useful of the two either way.
+    correct: [0]
+    explanation: >-
+      OnPush trades "check everything constantly" for "check when something
+      observably changed", and reference identity is how it observes. Replace
+      the object rather than mutating it and the view updates. This is the same
+      discipline immutable state buys elsewhere, and it is why OnPush and
+      mutation are a bad pairing.
+
+  - id: angular.reactive.subscriptions.spot-1
+    kind: spot-the-bug
+    language: angular
+    title: The subscription that outlives the component
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [angular.reactive.subscriptions]
+    prompt: This leaks every time the component is destroyed and recreated. Which line?
+    code: |
+      ngOnInit() {
+        this.service.updates$.subscribe((value) => {
+          this.value = value;
+        });
+      }
+    faultLine: 2
+    correction: 'this.service.updates$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(...)'
+    explanation: >-
+      Nothing unsubscribes, so the callback survives the component and keeps a
+      reference to it — the component is never collected and its handler keeps
+      running against a dead view. Either let the template subscribe with the
+      async pipe, which unsubscribes for you, or tie the subscription to the
+      component's lifetime explicitly.
+
+  - id: angular.di.scope.match-1
+    kind: match-pairs
+    language: angular
+    title: Where a provider lives
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [angular.di.scope, angular.di.providers]
+    prompt: Match each provider declaration to how many instances exist.
+    pairs:
+      - left: "providedIn: 'root'"
+        right: One for the whole application
+      - left: 'providers on a component'
+        right: One per instance of that component
+      - left: 'providers on a lazy route'
+        right: One per loaded route module
+      - left: "providedIn: 'platform'"
+        right: One shared across applications on the page
+    explanation: >-
+      Scope is a lifetime decision, not a wiring detail. A service holding
+      per-component state provided in root becomes shared state between
+      components that were meant to be independent, which presents as one
+      widget changing when you interact with another.
+
+  - id: angular.reactive.operators.po-1
+    kind: predict-output
+    language: angular
+    title: switchMap against mergeMap
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [angular.reactive.operators]
+    prompt: >-
+      A search box emits "a" then "ab" quickly. The request for "a" is slower
+      than the one for "ab". With switchMap, which result reaches the view?
+    code: |
+      this.results$ = this.query$.pipe(
+        switchMap((q) => this.http.get(`/search?q=${q}`))
+      );
+    expected: 'ab'
+    explanation: >-
+      `switchMap` cancels the previous inner observable when a new value
+      arrives, so the request for "a" is unsubscribed and its late response is
+      discarded. With `mergeMap` both would be live and the slower "a" would
+      arrive last and overwrite the view — the out-of-order search result bug,
+      which is why switchMap is the right default for typeahead.

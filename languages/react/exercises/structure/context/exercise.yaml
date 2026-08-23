@@ -1,0 +1,93 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.structure.context
+version: 1
+language: react
+title: Passing without threading
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - react.structure.context
+  - react.structure.composition
+  - react.structure.errors
+
+prerequisites: []
+
+learningObjectives:
+  - Provide a value through context and read it levels below.
+  - Compose components with children instead of configuration props.
+  - Decide error-fallback rendering from state, as data.
+
+prompt: |
+  Prop threading is passing `theme` through four components that do not use
+  it so the fifth one can. Context is the alternative: a provider above, a
+  reader below, and the middle untouched.
+
+  In `main.tsx`:
+
+  - `ThemeContext` — created with `createContext('light')`. The default
+    matters: it is what a reader sees with *no provider above it*, and the
+    test renders exactly that case.
+  - `Badge({ children })` — reads the theme with `useContext` and renders
+    `<span class="badge THEME">` around its children, where THEME is the
+    current theme string. Composition rule: `Badge` never inspects its
+    children — whatever you put inside it renders inside it.
+  - `Panel({ title, children })` — a `<section class="panel">` with an
+    `<h3>` title and a `<div class="body">` holding the children. Again:
+    children pass through untouched.
+  - `errorView(state)` — the pure heart of an error boundary: takes
+    `{ error: string | null, retries: number }` and returns
+    `{ kind: 'content' }` when error is null; otherwise
+    `{ kind: 'fallback', message: error, canRetry: retries < 3 }`. The
+    policy — three retries and you stop offering the button — is data, so
+    it is testable without throwing anything.
+  - `StatusPanel({ state, children })` — uses `errorView`: renders the
+    children inside a `Panel` titled "Status" when content; otherwise a
+    `<div class="fallback">` with a `<p>` of the message and — only when
+    `canRetry` — a `<button>Retry</button>`.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/context.test.tsx
+    visibility: visible
+    concept: react.structure.context
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.structure.errors
+
+hints:
+  - level: conceptual
+    text: Context is for values whose consumers are far from their source and whose intermediates do not care. Everything else is a prop.
+  - level: structural
+    text: '`<ThemeContext.Provider value="dark">` above; `useContext(ThemeContext)` below; nothing in between mentions the theme.'
+  - level: language
+    text: 'The className is a template: `` `badge ${theme}` `` — string interpolation, not conditional classes.'
+  - level: syntax
+    text: '`{state.error === null ? ... : ...}` — but errorView already made that decision; StatusPanel just renders its answer.'
+  - level: explicit
+    text: 'StatusPanel: `const view = errorView(state); if (view.kind === "content") return <Panel title="Status">{children}</Panel>; return <div className="fallback"><p>{view.message}</p>{view.canRetry && <button>Retry</button>}</div>;'
+
+explanation: |
+  The default value in `createContext` is not decoration — it is the
+  behavior of every reader that renders without a provider, which happens
+  in tests, in storybooks, and in the component you extracted to another
+  app last sprint. Choosing a sensible default ('light') means those
+  contexts degrade gracefully; choosing `undefined` as a default and
+  crashing on it is also a legitimate design — but it is a design, made on
+  purpose.
+
+  `children` as the composition mechanism is what keeps `Badge` and
+  `Panel` reusable. Neither knows what it wraps; both would work wrapping
+  each other. The alternative — a `content` prop, an `icon` prop, a
+  `titleTextSize` prop — grows a configuration surface that has to
+  anticipate every use. `children` anticipates all of them by refusing to
+  know.
+
+  Splitting `errorView` out of `StatusPanel` is the error-boundary pattern
+  with its policy made testable. Real boundaries are classes with
+  `getDerivedStateFromError`, but the decision — what to show, whether to
+  offer retry — is a pure function either way, and keeping it pure means
+  the retry-limit rule gets a unit test instead of a manual QA step.

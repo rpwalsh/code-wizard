@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 3 — Functions, closures and this (lessons 35–48)
 #
 # `this` gets four lessons, which looks disproportionate until you count the
@@ -66,7 +67,7 @@ lessons:
     difficulty: 4
 
   - id: js.044
-    title: Memoising
+    title: Memoizing
     focus: A cache keyed by argument, and where that goes wrong.
     skills: [javascript.functions.higher-order, javascript.data.collections]
     difficulty: 4
@@ -91,6 +92,6 @@ lessons:
 
   - id: js.048
     title: Writing tests
-    focus: One behaviour per test, and a test that would catch a wrong answer.
+    focus: One behavior per test, and a test that would catch a wrong answer.
     skills: [javascript.engineering.testing]
     difficulty: 3

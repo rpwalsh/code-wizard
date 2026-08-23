@@ -1,0 +1,97 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.testing.behavior
+version: 1
+language: react
+title: Test what the user gets, not how you built it
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - react.testing.behavior
+  - react.testing.async
+  - react.effects.fetching
+  - react.hooks.custom
+
+prerequisites: []
+
+learningObjectives:
+  - Extract stateful logic into a custom-hook-shaped function that tests can drive.
+  - Test asynchronous loading through its observable states, not its internals.
+  - Assert on rendered output rather than implementation details.
+
+prompt: |
+  A search box with a result list: the logic everyone owns and everyone
+  tests badly. The testable design splits it — a state machine that tests
+  drive directly, and components that render its states.
+
+  In `main.tsx`:
+
+  - `searchMachine()` — the custom-hook shape without React: returns
+    `{ getState, actions }` where state is
+    `{ query: string, status: 'idle' | 'searching' | 'done' | 'failed',
+    results: string[] }` and `actions` are pure transitions applied to an
+    internal current state:
+    - `typed(query)` — sets the query. Empty query: status `idle`, results
+      cleared. Non-empty: status `searching` (results keep their old value
+      — the list does not flicker empty while a new search runs).
+    - `resolved(results)` — status `done`, results replaced. Ignored
+      (state unchanged) unless status is `searching` — a late response
+      must not overwrite an idle screen.
+    - `failed()` — status `failed`, results cleared. Same guard.
+  - `search(fetcher, query)` — the async edge: awaits
+    `fetcher(query)`; returns `{ ok: true, results }` on success and
+    `{ ok: false }` on any throw. Tests drive it with fetchers they
+    control — resolve, reject, delay — which is how async logic is tested
+    without a network.
+  - `ResultList({ state })` — renders the observable outcome:
+    `'idle'` → `<p class="hint">Type to search</p>`;
+    `'searching'` → an `<ul class="results dim">` of the current results
+    (stale but visible);
+    `'done'` with results → `<ul class="results">`, one `<li>` each,
+    keyed by the result string; `'done'` empty → `<p class="hint">No
+    matches</p>`; `'failed'` → `<p class="error">Search failed</p>`.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/behavior.test.tsx
+    visibility: visible
+    concept: react.testing.behavior
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.testing.async
+
+hints:
+  - level: conceptual
+    text: If a test breaks when you rename a variable, it was testing the implementation. These tests see only states in and markup out.
+  - level: structural
+    text: searchMachine holds one state object and replaces it wholesale on each action — the reducer discipline without the ceremony.
+  - level: language
+    text: 'The guard is one line: `if (current.status !== "searching") return;` — resolved and failed both start with it.'
+  - level: syntax
+    text: 'search: `try { return { ok: true, results: await fetcher(query) }; } catch { return { ok: false }; }`'
+  - level: explicit
+    text: 'ResultList switches on status; the done-empty case checks `state.results.length === 0` and renders the hint instead of an empty ul.'
+
+explanation: |
+  The guard on `resolved` is the test-worthy behavior in the whole
+  exercise, because it encodes the race every search box has: the user
+  types, a request departs, the user clears the box, the request lands.
+  Without the guard the stale results resurrect an idle screen. Notice the
+  test for it never mentions promises — it just applies `typed('')` then
+  `resolved([...])` and asserts nothing changed. Async bugs are usually
+  ordering bugs, and orderings can be tested synchronously if the state
+  machine is extractable.
+
+  `search` isolates the one genuinely async line and makes its contract
+  boring: resolve or `{ ok: false }`, never a throw. Tests hand it a
+  fetcher that resolves, one that rejects — no network, no mocking
+  library, no timers. When the async edge is this thin, "how do we test
+  async code" mostly stops being a question.
+
+  Keeping stale results visible while `searching` — dimmed, not blanked —
+  is the kind of behavior worth pinning precisely because it looks like an
+  accident when you meet it in code. The test names it, so the next person
+  who "fixes" the flicker learns it was a decision.

@@ -1,0 +1,104 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.data.reference
+version: 1
+language: javascript
+title: Two names, one object
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - javascript.data.reference
+  - javascript.modeling.immutability
+  - javascript.data.collections
+
+prerequisites: []
+
+learningObjectives:
+  - Know what an assignment copies — the reference, never the object.
+  - Update nested data by building new objects along the changed path.
+  - Use Set and Map where identity and lookup are the problem.
+
+prompt: |
+  `const b = a` never copies an object; it copies the *arrow pointing at it*.
+  Every "the function changed my data" bug is this one fact, met in the field.
+
+  In `main.js`, implement — without mutating any argument, ever:
+
+  - `withScore(player, score)` — a new player object with `score` replaced
+    and every other field carried over. The original is untouched.
+  - `addBadge(player, badge)` — a new player whose `badges` array has the
+    badge appended. The original's array must not grow — a spread that
+    copies the object but shares the array fails this.
+  - `uniqueTags(players)` — every tag that appears on any player, once each,
+    in first-seen order. Player tags live at `player.tags` (an array).
+  - `scoreboard(players)` — a `Map` from player name to score. A Map, not an
+    object: a player named `"constructor"` or `"toString"` must be an
+    ordinary entry, which object property lookup does not guarantee.
+  - `sameRoster(left, right)` — true when two arrays contain the same player
+    *objects* (identity, not equality of contents) regardless of order.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/reference.test.js
+    visibility: visible
+    concept: javascript.data.reference
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.modeling.immutability
+
+hints:
+  - level: conceptual
+    text: Spread copies one level. Anything nested is still shared until you copy that level too.
+  - level: structural
+    text: 'withScore is one spread; addBadge is a spread whose badges field is itself a new array.'
+  - level: language
+    text: '`{ ...player, badges: [...player.badges, badge] }` — the inner spread is the part people forget.'
+  - level: syntax
+    text: 'A Set keeps first-insertion order, so `for (const tag of player.tags) seen.add(tag)` gives first-seen order for free.'
+  - level: explicit
+    text: 'sameRoster: count references on one side in a Map, then walk the other side decrementing — Map keys compare by identity, and counting is what catches a duplicated reference.'
+
+explanation: |
+  The trap this exercise sets — and the hidden test springs — is the shallow
+  copy that looks deep. `{ ...player }` produces a new object whose `badges`
+  field points at the *same array*, so pushing onto the copy's badges grows
+  the original's too. The rule: spread copies one level, and you copy each
+  level you intend to change. Copying levels you do not change is waste;
+  sharing them is the whole point of the technique, not a flaw in it.
+
+  `scoreboard` returning a Map is not a style choice. An object used as a
+  dictionary inherits from Object.prototype, so `scores["constructor"]` finds
+  a function you never put there, and assigning to `__proto__` can corrupt
+  the object itself. A Map has no inherited keys, accepts any key type, and
+  keeps insertion order. When keys come from data rather than from your
+  code, Map is the container that cannot be surprised.
+
+  `sameRoster` keying a Map on the objects themselves is reference identity
+  doing useful work. Two players with identical fields are still two players;
+  the Map answers "is this exact object present, and how many times" — and the
+  counting is not optional, because a Set would let one duplicated reference
+  stand in for two different players. When you instead want value equality,
+  you have to define it — JavaScript will not guess for you, and `===` on
+  objects never looks inside.
+
+mutationExceptions:
+  - path: main.js
+    operator: nullish
+    line: 45
+    why: >-
+      Map.get returns a positive count or undefined here, never 0 or another
+      falsy value, so ?? and || agree on every reachable input.
+  - path: main.js
+    operator: nullish
+    line: 49
+    why: >-
+      The stored counts are numbers and the only falsy one is 0, which both
+      operators pass through identically.
+  - path: main.js
+    operator: strictness
+    line: 50
+    why: >-
+      remaining is always a number, so == 0 and === 0 cannot disagree.

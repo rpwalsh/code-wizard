@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.structures.stack-queue
 version: 1
 language: python
@@ -16,7 +17,7 @@ prerequisites:
 
 learningObjectives:
   - Use a list as a stack, taking from the end where it is cheap.
-  - Recognise why taking from the front of a list is the wrong operation.
+  - Recognize why taking from the front of a list is the wrong operation.
   - Solve a problem that needs last-in-first-out order.
 
 prompt: |

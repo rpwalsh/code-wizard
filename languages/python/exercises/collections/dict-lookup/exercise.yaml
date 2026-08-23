@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.collections.dict-lookup
 version: 1
 language: python
@@ -17,7 +18,7 @@ prerequisites:
 learningObjectives:
   - Read a value out of a dictionary without assuming the key exists.
   - Return a caller-supplied default instead of raising KeyError.
-  - Recognise that `in` and `dict.get` solve different halves of the problem.
+  - Recognize that `in` and `dict.get` solve different halves of the problem.
 
 prompt: |
   `accounts` maps an account id to its balance in whole cents.

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.algorithms.two-pointer
 version: 1
 language: python
@@ -82,7 +83,7 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: comparison
-    line: 12
+    line: 13
     why: >-
       The equality case returns on the line above, so by the time this
       comparison runs the two values cannot be equal and `<` cannot be

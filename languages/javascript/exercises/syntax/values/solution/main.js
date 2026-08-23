@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** Values, bindings and strings. */
 
 export function divide(top, bottom) {

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Graph representation drills."""
 
 
@@ -7,12 +8,12 @@ def build_directed(edges):
 
 
 def build_undirected(edges):
-    """Return {node: sorted neighbours}, each edge going both ways."""
+    """Return {node: sorted neighbors}, each edge going both ways."""
     raise NotImplementedError
 
 
-def neighbours_of(graph, node):
-    """Return the neighbour list, or [] for an unknown node."""
+def neighbors_of(graph, node):
+    """Return the neighbor list, or [] for an unknown node."""
     raise NotImplementedError
 
 

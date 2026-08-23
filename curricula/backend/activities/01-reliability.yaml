@@ -1,0 +1,132 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Backend engineering, read rather than deployed.
+#
+# These are the decisions that look like judgment calls and are not: the
+# failure modes are known, documented, and repeatedly rediscovered.
+
+activities:
+  - id: backend.api.idempotency.mc-1
+    kind: multiple-choice
+    language: backend
+    title: The double charge
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [backend.api.idempotency, backend.reliability.retries]
+    prompt: >-
+      A payment request times out. The client retries and the customer is
+      charged twice. What fixes this properly?
+    options:
+      - text: Stop retrying on timeout.
+        why: Then a request lost in transit silently fails. Retries are correct; unsafe retries are the problem.
+      - text: The client sends a key with the request, and the server records it and returns the first result on any repeat.
+      - text: Make the client wait longer before retrying.
+        why: This changes how often the race happens, not whether it can. A timeout never tells you the work did not happen.
+      - text: Check for a recent identical charge before creating one.
+        why: Closer, but "identical" is a guess, and two genuine purchases of the same thing are indistinguishable from a retry.
+    correct: [1]
+    explanation: >-
+      A timeout tells you nothing about whether the server did the work. The
+      only sound answer is to make the operation idempotent: the client supplies
+      a key, the server stores the outcome against it, and every repeat of that
+      key returns the stored outcome instead of doing the work again. The key
+      must come from the client, because only the client knows that two requests
+      are the same intent.
+
+  - id: backend.reliability.timeouts.mc-1
+    kind: multiple-choice
+    language: backend
+    title: The service that stops responding
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [backend.reliability.timeouts, backend.reliability.breakers]
+    prompt: >-
+      A dependency slows to 30 seconds per call. Your service, which has no
+      client timeout, stops serving *all* traffic. Why?
+    options:
+      - text: Every worker ends up blocked waiting on the slow dependency, so nothing is left to serve anything else.
+      - text: The dependency is returning errors that propagate.
+        why: It is returning correct responses, only slowly. Nothing has errored yet, which is what makes this hard to spot.
+      - text: The operating system throttles the process for having open sockets.
+        why: No such mechanism. The exhaustion is of your own worker pool.
+      - text: Memory fills with queued responses.
+        why: Memory may well rise, but the outage is caused by workers being unavailable, not by allocation.
+    correct: [0]
+    explanation: >-
+      This is resource exhaustion, and it is how one slow dependency takes down
+      a service that does ten other things. A timeout shorter than your own
+      response budget bounds the damage; a circuit breaker stops sending traffic
+      to something already known to be failing. Every remote call needs a
+      timeout, and the default in most clients is no timeout at all.
+
+  - id: backend.data.concurrency.spot-1
+    kind: spot-the-bug
+    language: backend
+    title: Lost update
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [backend.data.concurrency, backend.data.transactions]
+    prompt: >-
+      Two requests decrement stock at the same time and the count ends up one
+      too high. Which line makes that possible?
+    code: |
+      const item = await db.get(id);
+      if (item.stock <= 0) throw new OutOfStock();
+      await db.update(id, { stock: item.stock - 1 });
+      return ok();
+    faultLine: 3
+    correction: 'UPDATE items SET stock = stock - 1 WHERE id = ? AND stock > 0'
+    explanation: >-
+      The value read on line 1 is stale by the time it is written on line 3, so
+      two concurrent requests both read 5 and both write 4. Doing the
+      arithmetic in the database makes it atomic, and putting the condition in
+      the WHERE clause makes the check atomic with it. Read-modify-write across
+      a network round trip is a race unless something guards it.
+
+  - id: backend.api.pagination.mc-1
+    kind: multiple-choice
+    language: backend
+    title: Paging a moving list
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [backend.api.pagination]
+    prompt: >-
+      Users report that items are occasionally skipped while paging through a
+      feed that receives new entries. The API uses OFFSET and LIMIT. Why?
+    options:
+      - text: An insert before the current offset shifts everything, so the next page starts past an unseen row.
+      - text: OFFSET is capped by the database.
+        why: Large offsets are slow but not silently truncated; the symptom would be latency, not gaps.
+      - text: The client is caching pages.
+        why: A cache would repeat rows, not skip them.
+      - text: LIMIT and OFFSET cannot be combined with ORDER BY.
+        why: They routinely are, and must be — without an ORDER BY the paging is meaningless.
+    correct: [0]
+    explanation: >-
+      Offset paging assumes the list holds still. Cursor paging asks for
+      "everything after this key" instead, which is stable under insertion and
+      also avoids the database counting past a million rows to reach page
+      twenty thousand. Offsets are fine for a static report and wrong for a
+      feed.
+
+  - id: backend.operations.slos.match-1
+    kind: match-pairs
+    language: backend
+    title: Latency numbers
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [backend.operations.slos, backend.operations.observability]
+    prompt: Match each measure to what it actually tells you.
+    pairs:
+      - left: Mean latency
+        right: Hides the slow tail almost completely
+      - left: p50
+        right: The typical request
+      - left: p99
+        right: The experience of your busiest users
+      - left: Max
+        right: One event, often a deploy or a cold start
+    explanation: >-
+      Averages are the wrong summary for latency because the distribution is
+      not symmetric — a handful of ten-second requests barely move the mean and
+      are the entire user complaint. p99 matters more than it sounds: a user
+      making a hundred requests to load one page hits it about once every page.

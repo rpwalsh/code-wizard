@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Floating point and vector drills."""
 
 
@@ -6,7 +7,7 @@ def close_enough(a, b, tolerance):
     raise NotImplementedError
 
 
-def normalise(weights):
+def normalize(weights):
     """Scale the values so they sum to 1. A zero total spreads evenly."""
     raise NotImplementedError
 

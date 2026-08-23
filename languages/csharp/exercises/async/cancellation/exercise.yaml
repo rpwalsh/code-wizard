@@ -1,0 +1,80 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.async.cancellation
+version: 1
+language: csharp
+title: Work that can be called off
+kind: focused-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 30000
+
+skills:
+  - csharp.async.cancellation
+  - csharp.async.tasks
+  - csharp.errors.results
+
+prerequisites: []
+
+learningObjectives:
+  - Accept a cancellation token and actually honor it.
+  - Distinguish cancellation from failure in a return value.
+  - Observe a token in a loop without polling a clock.
+
+prompt: |
+  A cancellation token that is accepted and then ignored is worse than one
+  that was never accepted: the signature now promises something the method
+  does not do.
+
+  In `Work.cs`, implement:
+
+  - `SumAsync(IEnumerable<int> numbers, CancellationToken token)` — adds the
+    numbers, throwing `OperationCanceledException` if the token is canceled
+    part-way. Check between items, not only at the start.
+  - `TryRunAsync(Func<CancellationToken, Task<int>> work, CancellationToken token)` —
+    returns `Outcome.Completed(value)` when the work finishes,
+    `Outcome.Canceled()` when it was canceled, and `Outcome.Failed(message)`
+    when it threw anything else.
+
+  The distinction in `TryRunAsync` is the exercise. Cancellation is not a
+  failure — it is the caller getting what they asked for — and code that logs
+  it as an error produces alert noise on every deployment.
+
+entryPoint: Work.cs
+
+tests:
+  - path: tests/WorkTests.cs
+    visibility: visible
+    concept: csharp.async.cancellation
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.errors.results
+
+hints:
+  - level: conceptual
+    text: Cancellation is cooperative — nothing stops your loop but you.
+  - level: structural
+    text: There is a method on the token that throws if cancellation has been requested.
+  - level: language
+    text: '`token.ThrowIfCancellationRequested()` inside the loop is the whole mechanism.'
+  - level: syntax
+    text: 'Catch `OperationCanceledException` *before* the general `Exception`, or it will never be reached.'
+  - level: explicit
+    text: 'Order the catch blocks narrowest first; `TaskCanceledException` derives from `OperationCanceledException`.'
+
+explanation: |
+  Cancellation in .NET is cooperative. Nothing interrupts a running loop; the
+  token is a flag, and honoring it means looking at it. `ThrowIfCancellationRequested`
+  is the idiom because it produces the exception type the whole framework
+  already understands — and because the alternative, returning early with a
+  partial result, is indistinguishable from a correct answer.
+
+  The catch ordering is a real trap and not a style point.
+  `TaskCanceledException` derives from `OperationCanceledException`, which
+  derives from `Exception`. A `catch (Exception)` placed first swallows
+  cancellation and reports it as a failure, so a user pressing Cancel produces
+  an error in your logs and, often, a retry.
+
+  Returning an outcome rather than throwing at the boundary is the same
+  argument made elsewhere in this course: the caller has three cases to handle
+  and a signature that names all three is easier to use correctly than one
+  that names none.

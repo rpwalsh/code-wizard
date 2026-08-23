@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.functions.closures
 version: 1
 language: python
@@ -16,7 +17,7 @@ prerequisites:
 learningObjectives:
   - Predict which name a function body is reading, and which it is creating.
   - Pass a function as an argument and return one from a function.
-  - Recognise the late-binding trap when functions are built in a loop.
+  - Recognize the late-binding trap when functions are built in a loop.
 
 prompt: |
   A function body can read names from outside it. Assigning to one, however,

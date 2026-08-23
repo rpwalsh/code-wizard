@@ -1,0 +1,90 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.state.reducer
+version: 1
+language: react
+title: One reducer instead of five setters
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - react.state.reducer
+  - react.state.immutability
+  - react.state.updates
+
+prerequisites: []
+
+learningObjectives:
+  - Move related state into a single reducer so it cannot disagree with itself.
+  - Return a new state object rather than mutating the one you were given.
+  - Leave the state untouched when an action does not apply.
+
+prompt: |
+  A form with five `useState` calls has thirty-two possible combinations and
+  about four legal ones. This one has a value, a submitting flag, an error and
+  a dirty flag, and the illegal combinations are the bugs: submitting with an
+  error showing, dirty after a successful save, an error left over from an
+  attempt the user has already corrected.
+
+  In `main.tsx`, implement `reducer(state: State, action: Action): State` for
+  these actions:
+
+  - `edit` — sets `value`, sets `dirty` to true, and clears any `error`.
+    Editing is how a user answers an error message, so the message goes.
+  - `submit` — sets `submitting` to true and clears `error`. Ignored entirely
+    when `submitting` is already true; a double-click must not start two saves.
+  - `succeeded` — `submitting` false, `dirty` false, `error` null.
+  - `failed` — `submitting` false, `error` set to the action's message.
+    `dirty` stays as it was, because the edit has not been saved.
+  - Any unknown action returns the state object it was given, unchanged.
+
+  Also implement `canSubmit(state)`: true only when the form is dirty, not
+  submitting, and the value is not blank after trimming.
+
+  Return the *same object reference* when nothing changes. React skips a
+  re-render when the reducer returns the state it was handed, and a reducer
+  that always spreads into a fresh object throws that away.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/reducer.test.tsx
+    visibility: visible
+    concept: react.state.reducer
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.state.immutability
+  - path: tests/hidden.test.tsx
+    visibility: hidden
+    concept: react.state.updates
+
+hints:
+  - level: conceptual
+    text: A reducer is a pure function of the state it was given and the action, and nothing else.
+  - level: structural
+    text: Switch on `action.type` and return early for the case where nothing should change.
+  - level: language
+    text: '`{ ...state, dirty: true }` builds a new object; assigning to `state.dirty` mutates the old one and React will not notice.'
+  - level: syntax
+    text: 'The no-op case is `return state;` — the same reference, not a copy of it.'
+  - level: explicit
+    text: 'For `submit`, guard first: `if (state.submitting) return state;` and only then build the new object.'
+
+explanation: |
+  The reason to reach for a reducer is not that it is tidier. It is that the
+  illegal states stop being reachable. `submitting` and `error` are cleared in
+  the same expression, so there is no ordering in which a spinner and a failure
+  message appear together — which is exactly the bug that two `setState` calls
+  in the wrong order produce, intermittently, on a slow connection.
+
+  Returning `state` itself for an action that does not apply is the small
+  detail that makes this worth doing. Object identity is how React decides
+  whether to re-render, so `{ ...state }` on every action means every
+  keystroke anywhere re-renders the subtree. The double-click guard is the same
+  idea wearing different clothes: the second `submit` genuinely changes
+  nothing, so it should produce nothing.
+
+  `canSubmit` is derived rather than stored for the reason every derived value
+  should be. A `canSubmit` field in the state is a fourth thing that can
+  disagree with the other three.

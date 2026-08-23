@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** What changed, and what came back. */
 import { test } from 'retrainer/test.js';
 import { expectEqual } from 'retrainer/expect.js';

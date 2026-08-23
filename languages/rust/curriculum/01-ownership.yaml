@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 1 — Ownership, and what the compiler is protecting (lessons 1–16)
+#
+# The borrow checker refuses programs, and the refusal is almost always
+# correct. This stage is built around writing the bug in another language
+# first — a use after free, an iterator invalidated mid-loop — so that the
+# rule arrives as a memory of something going wrong rather than as a rule.
+
+stage: ownership
+title: Ownership, and what the compiler is protecting
+lessons:
+  - id: rs.001
+    title: Where the value went
+    focus: Assign, then use the original. Read the error properly.
+    skills: [rust.own.move]
+    difficulty: 3
+
+  - id: rs.002
+    title: Borrowing instead
+    focus: Lending a value to a function that does not need to keep it.
+    skills: [rust.own.borrow]
+    difficulty: 3
+
+  - id: rs.003
+    title: One mutable borrow
+    focus: The rule, and the same code in another language corrupting data.
+    skills: [rust.own.mutable]
+    difficulty: 4
+
+  - id: rs.004
+    title: The iterator invalidated mid-loop
+    focus: Legal elsewhere, rejected here. See what it does elsewhere.
+    skills: [rust.own.mutable]
+    difficulty: 4
+
+  - id: rs.005
+    title: When cloning is right
+    focus: The cost, and the far smaller list of times it matters.
+    skills: [rust.own.clone]
+    difficulty: 3
+
+  - id: rs.006
+    title: Lifetimes, named
+    focus: A function returning a reference, and which input it came from.
+    skills: [rust.own.lifetimes]
+    difficulty: 5
+
+  - id: rs.007
+    title: Enums
+    focus: A type that is one of several things, each carrying its own data.
+    skills: [rust.types.enums]
+    difficulty: 3
+
+  - id: rs.008
+    title: Matching
+    focus: Exhaustive by default, and the compiler catching the case you added.
+    skills: [rust.types.enums]
+    difficulty: 3
+
+  - id: rs.009
+    title: Option
+    focus: No null. Say what happens when there is nothing.
+    skills: [rust.types.option]
+    difficulty: 3
+
+  - id: rs.010
+    title: Result
+    focus: Failure in the type, and the call that must acknowledge it.
+    skills: [rust.types.result]
+    difficulty: 3
+
+  - id: rs.011
+    title: The question mark
+    focus: Propagating without a pyramid, and what it converts.
+    skills: [rust.types.question]
+    difficulty: 4
+
+  - id: rs.012
+    title: String and &str
+    focus: Owned and borrowed text, and the signature that should take the second.
+    skills: [rust.data.strings]
+    difficulty: 4
+
+  - id: rs.013
+    title: Vec and slices
+    focus: A growable list, and lending part of one.
+    skills: [rust.data.vec]
+    difficulty: 3
+
+  - id: rs.014
+    title: HashMap and entry
+    focus: Counting without looking a key up twice.
+    skills: [rust.data.hashmap]
+    difficulty: 4
+
+  - id: rs.015
+    title: Traits
+    focus: Shared behavior without inheritance.
+    skills: [rust.types.traits]
+    difficulty: 4
+
+  - id: rs.016
+    title: Iterators
+    focus: A chain that compiles to the loop, and never allocates on the way.
+    skills: [rust.data.iterators]
+    difficulty: 4

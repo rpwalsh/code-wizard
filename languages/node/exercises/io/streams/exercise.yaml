@@ -1,0 +1,79 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.io.counting
+version: 1
+language: node
+title: Counting without loading
+kind: focused-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - node.io.files
+  - node.io.streams
+  - node.failure.async
+
+prerequisites: []
+
+learningObjectives:
+  - Read a file without holding all of it in memory.
+  - Handle a missing file as a value rather than as a crash.
+  - Tell an empty file apart from a file that is not there.
+
+prompt: |
+  Two functions in `main.js`, both about files, both about what happens when
+  the file is large or absent.
+
+  - `countLines(path)` returns the number of lines in a file, **read as a
+    stream**. A file ending in a newline has the same line count as one that
+    does not. An empty file has zero lines.
+  - `summarize(path)` returns `{ ok: true, lines }` for a file that exists and
+    `{ ok: false, reason }` for one that does not, where `reason` is
+    `"missing"` for a file that is not there and `"not a file"` for a
+    directory.
+
+  `countLines` must not call `readFile`. The tests include a file large enough
+  that the difference matters, and one of them checks the peak heap.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/counting.test.js
+    visibility: visible
+    concept: node.io.files
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.failure.async
+  - path: tests/hidden.test.js
+    visibility: hidden
+    concept: node.io.streams
+
+hints:
+  - level: conceptual
+    text: A stream hands you the file a chunk at a time, so the memory you need does not grow with the file.
+  - level: structural
+    text: Count the separators as they go past, and remember that the last line may have no separator after it.
+  - level: language
+    text: '`readline.createInterface({ input: createReadStream(path) })` is async-iterable and yields one line at a time.'
+  - level: syntax
+    text: '`for await (const line of rl) { count += 1; }`'
+  - level: explicit
+    text: For summarize, `stat` the path first and check `isFile()`; catch the ENOENT and turn it into a reason.
+
+explanation: |
+  `readFile` allocates the whole file. For a log that is bigger than the heap
+  that is not slow, it is fatal — and the failure arrives in production, on the
+  one day the file was large. A stream bounds the memory at one chunk however
+  big the input is, and `readline` does the line-splitting correctly, including
+  the case where a line is split across two chunks.
+
+  The trailing-newline question is the part people get wrong. A file containing
+  `"a\nb\n"` has two lines, not three: the final newline terminates the second
+  line rather than starting a third. Counting `\n` characters gives the right
+  answer here and the wrong one for `"a\nb"`, which also has two. `readline`
+  handles both, which is most of why it is worth using.
+
+  Turning ENOENT into a value rather than letting it throw is the same argument
+  as everywhere else in this course: the caller has to handle a missing file,
+  and a signature that says so is easier to use correctly than one that does
+  not.

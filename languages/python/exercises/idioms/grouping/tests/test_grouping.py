@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import pytest
 
 from retrainer.expect import expect_equal

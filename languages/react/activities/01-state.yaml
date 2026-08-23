@@ -1,0 +1,151 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# React, read rather than rendered.
+#
+# Almost every React bug people actually hit is one of three things: state
+# mutated instead of replaced, an effect that should not have been an effect,
+# or a dependency array that lies. These ask about those.
+
+activities:
+  - id: react.state.immutability.spot-1
+    kind: spot-the-bug
+    language: react
+    title: The list that will not re-render
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [react.state.immutability, react.state.updates]
+    prompt: Adding an item does nothing on screen. Which line is at fault?
+    code: |
+      const [items, setItems] = useState([]);
+
+      function add(item) {
+        items.push(item);
+        setItems(items);
+      }
+    faultLine: 4
+    correction: 'setItems([...items, item]);'
+    explanation: >-
+      `push` mutates the array that state already holds, so when `setItems` is
+      called with that same array React compares it to the previous value, sees
+      the identical reference, and skips the render. State must be replaced,
+      not edited. The fix is one new array; the habit is worth more than the
+      fix.
+
+  - id: react.state.updates.po-1
+    kind: predict-output
+    language: react
+    title: Two increments
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [react.state.updates]
+    prompt: >-
+      `count` starts at 0. The button is clicked once. What does the next
+      render show?
+    code: |
+      function onClick() {
+        setCount(count + 1);
+        setCount(count + 1);
+      }
+    expected: '1'
+    explanation: >-
+      `count` is a value captured by this render, and it is 0 for both calls, so
+      both queue "set it to 1". Writing `setCount(c => c + 1)` instead passes a
+      function that receives the latest queued value, and two of those give 2.
+      This is the difference between reading state and describing a change to
+      it.
+
+  - id: react.effects.dependencies.mc-1
+    kind: multiple-choice
+    language: react
+    title: Why the effect never re-runs
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [react.effects.dependencies, react.effects.useeffect]
+    prompt: >-
+      An effect fetches a user by `userId`, but changing `userId` never
+      refetches. The dependency array is `[]`. What is actually wrong?
+    options:
+      - text: The array should list `userId`, because it is read inside the effect.
+      - text: The array should be omitted entirely so the effect always runs.
+        why: That runs it after every render, which refetches on unrelated state changes and can loop forever.
+      - text: The effect should be wrapped in `useCallback`.
+        why: '`useCallback` memoises a function; it has no bearing on when an effect re-runs.'
+      - text: State updates cannot trigger effects.
+        why: They can, and do — that is the entire mechanism being asked about.
+    correct: [0]
+    explanation: >-
+      A dependency array is a claim: "nothing else this effect reads can
+      change." Leaving `userId` out makes that claim false, so React honors it
+      and never re-runs. The array is not a performance knob, it is a
+      description of the effect's inputs, and a wrong description produces a
+      component that renders stale data with no error anywhere.
+
+  - id: react.effects.useeffect.mc-1
+    kind: multiple-choice
+    language: react
+    title: When not to use an effect
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [react.effects.useeffect, react.state.derived]
+    prompt: >-
+      You have `items` in state and want `total`, the sum. Which is right?
+    options:
+      - text: An effect watching `items` that calls `setTotal`.
+        why: This renders twice for every change and creates a window where total disagrees with items. It is the commonest unnecessary effect.
+      - text: 'Compute it during render: `const total = items.reduce(...)`.'
+      - text: Store `total` alongside `items` and update both everywhere.
+        why: Two sources of truth for one fact, which will drift the first time somebody adds a code path.
+      - text: A `useMemo` with no dependency array.
+        why: Without a dependency array `useMemo` recomputes every render — the same as computing it directly, but with more words.
+    correct: [1]
+    explanation: >-
+      Anything derivable from existing state is not state. Computing it during
+      render means it can never be out of date, needs no synchronization, and
+      deletes a whole class of bug. Reach for `useMemo` only when the
+      computation is genuinely expensive, and never for correctness.
+
+  - id: react.hooks.rules.match-1
+    kind: match-pairs
+    language: react
+    title: What each hook is for
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [react.hooks.rules, react.hooks.ref, react.hooks.memo]
+    prompt: Match each hook to the job it exists to do.
+    pairs:
+      - left: useState
+        right: A value that, when changed, re-renders
+      - left: useRef
+        right: A value that survives renders without causing one
+      - left: useMemo
+        right: Avoid recomputing an expensive value
+      - left: useEffect
+        right: Reach outside React after a render
+    explanation: >-
+      The distinction that matters most is the first two: `useRef` is the
+      escape hatch for something you need to remember but must not trigger a
+      render — a timer id, a DOM node, the previous value. Using state for
+      those causes render loops; using a ref for real state causes a screen
+      that never updates.
+
+  - id: react.render.lists.fill-1
+    kind: fill-blanks
+    language: react
+    title: Keys
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [react.render.lists]
+    prompt: Complete the list so React can track rows across reorders.
+    template: |
+      {users.map((user) => (
+        <Row {1}={user.id} user={user} />
+      ))}
+    blanks:
+      - index: 1
+        accepts: ['key']
+        hint: Not a prop the component receives.
+    explanation: >-
+      A key tells React which element is which between renders. Using the array
+      index instead looks fine until the list reorders or something is deleted,
+      at which point state and focus attach to the wrong row — a bug that
+      appears only under interaction and is very hard to read back from a
+      screenshot.

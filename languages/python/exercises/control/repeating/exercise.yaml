@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.control.repeating
 version: 1
 language: python
@@ -75,9 +76,9 @@ explanation: |
 mutationExceptions:
   - path: main.py
     operator: comparison
-    line: 25
+    line: 26
     why: >-
       Skipping a value of exactly zero and adding a value of exactly zero
       produce the same total, so no input can distinguish `value < 0` from
       `value <= 0` here. The mutant is equivalent rather than uncaught, and the
-      neighbouring off-by-one is caught by the fractional case.
+      neighboring off-by-one is caught by the fractional case.

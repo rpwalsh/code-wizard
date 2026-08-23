@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Degenerate k, and the tiebreak."""
 
 import pytest

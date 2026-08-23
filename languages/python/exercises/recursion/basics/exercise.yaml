@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.recursion.basics
 version: 1
 language: python
@@ -18,7 +19,7 @@ prerequisites:
 learningObjectives:
   - Write the stopping condition before writing the step.
   - Reduce a sequence to one item and the rest, and trust the call on the rest.
-  - Recognise a missing base case by the error it produces.
+  - Recognize a missing base case by the error it produces.
 
 prompt: |
   Recursion is two decisions: when to stop, and how to make the problem

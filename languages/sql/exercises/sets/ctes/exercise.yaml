@@ -1,0 +1,67 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.sets.cte-average
+version: 1
+language: sql
+title: Name the middle step
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.sets.ctes
+  - sql.sets.subqueries
+
+prerequisites: []
+
+learningObjectives:
+  - Write the query the prompt asks for, in the portable subset.
+
+prompt: |
+  Which teams spend more than the average team spends? The question has a
+  middle step — total per team — that gets used twice: once to compare, once
+  to average against. Write it once.
+
+  In `main.sql`, one query using a CTE (`WITH team_totals AS (...)`):
+  columns `team, total`, only teams whose total exceeds the average of all
+  team totals, ordered by total descending.
+
+  The averaging subquery reads *from the CTE*, not from expenses — the
+  average of team totals and the average of expense rows are different
+  numbers, and conflating them is the classic version of this bug.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/ctes.sql
+    visibility: visible
+    concept: sql.sets.ctes
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.sets.subqueries
+
+hints:
+  - level: conceptual
+    text: A CTE is a named subquery. Naming the middle step lets you use it twice without computing it twice in your head.
+  - level: structural
+    text: WITH totals AS (group and sum), then SELECT from totals WHERE total > (scalar subquery over totals).
+  - level: language
+    text: The subquery in WHERE returns one value — a scalar subquery — and can compare directly with >.
+  - level: syntax
+    text: WITH team_totals AS (SELECT team, SUM(amount) AS total FROM expenses GROUP BY team)
+  - level: explicit
+    text: WITH team_totals AS (SELECT team, SUM(amount) AS total FROM expenses GROUP BY team) SELECT team, total FROM team_totals WHERE total > (SELECT AVG(total) FROM team_totals) ORDER BY total DESC;
+
+explanation: |
+  The CTE buys two things over nesting the same subquery twice. Readability:
+  the query now reads in the order you would explain it — totals, then the
+  filter. Consistency: both uses of the middle step are by construction the
+  same query, so they cannot drift apart when someone edits one and misses
+  the other.
+
+  The wrong-average trap is worth staring at: `AVG(amount)` over expenses is
+  the average *row* (235.7 here), while `AVG(total)` over the CTE is the
+  average *team* (550). Both are legitimate numbers with different meanings,
+  and only the grouping level in the FROM clause says which one you asked
+  for. Most aggregate-of-aggregate mistakes are exactly this confusion, and
+  the CTE makes the level explicit where a nested subquery buries it.

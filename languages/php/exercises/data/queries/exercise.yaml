@@ -1,0 +1,81 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.data.parameters
+version: 1
+language: php
+title: Data that cannot become code
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 420
+timeoutMs: 30000
+
+skills:
+  - php.data.injection
+  - php.data.pdo
+  - php.types.declarations
+
+prerequisites: []
+
+learningObjectives:
+  - Separate a query from the values it runs against.
+  - Build a variable-length IN clause without interpolating input.
+  - Recognize why escaping is not the same as parameterising.
+
+prompt: |
+  This is the exercise that matters most in PHP, and the reason is historical:
+  a very large amount of the PHP on the internet interpolates user input into
+  SQL, and every one of those is a vulnerability.
+
+  In `main.php`, implement:
+
+  - `find_user(PDO $pdo, string $email): ?array` — the row for that email, or
+    `null`. Parameterized.
+  - `find_many(PDO $pdo, array $ids): array` — the rows for those ids, in id
+    order. A variable number of parameters, which is the case people give up
+    on and interpolate.
+  - `count_since(PDO $pdo, string $isoDate): int` — how many users were
+    created on or after that date.
+
+  Not one of these may put a value into the SQL string. The hidden test passes
+  an email containing a quote and an `OR 1=1`, and asks whether it found
+  anything.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/queries_test.php
+    visibility: visible
+    concept: php.data.pdo
+  - path: tests/injection_test.php
+    visibility: edge
+    concept: php.data.injection
+
+hints:
+  - level: conceptual
+    text: The query and the data should travel separately.
+  - level: structural
+    text: Prepare once with placeholders, then execute with the values.
+  - level: language
+    text: '`?` placeholders positional, `:name` placeholders named.'
+  - level: syntax
+    text: "`$stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?'); $stmt->execute([$email]);`"
+  - level: explicit
+    text: "For a variable IN clause, build the placeholder list from the count: `implode(',', array_fill(0, count($ids), '?'))`."
+
+explanation: |
+  A prepared statement sends the query to the database first, on its own. The
+  engine parses it, works out its plan, and only then receives the values —
+  which arrive as data and can never be parsed as SQL. That property does not
+  depend on anybody remembering to escape anything, which is why it is a
+  different kind of safe from `addslashes` or a regular expression.
+
+  The variable-length `IN` clause is where people give up. You cannot bind an
+  array to a single placeholder, so the placeholder *list* has to be built from
+  the count — and the important detail is that only the count comes from the
+  input, never the values. `implode(',', array_fill(0, count($ids), '?'))`
+  produces `?,?,?` from three ids and nothing an attacker controls has been
+  concatenated.
+
+  Escaping fails for a reason worth understanding: it is a filter you must
+  apply correctly, in the right character set, every single time, forever. One
+  missed call is one vulnerability, and there is no way to prove you have not
+  missed one. Parameterisation removes the question.

@@ -1,0 +1,89 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.data.iterators
+version: 1
+language: rust
+title: The loop you did not have to write
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 90000
+
+skills:
+  - rust.data.iterators
+  - rust.data.vec
+  - rust.data.hashmap
+
+prerequisites: []
+
+learningObjectives:
+  - Build results with iterator adapters instead of an accumulator and a loop.
+  - Collect into the container the situation calls for, including a HashMap.
+  - Know that sum and max on an empty input differ, and why one is an Option.
+
+prompt: |
+  Every one of these functions is a for-loop in disguise, and the exercise is
+  to leave the disguise on. Iterator chains are not about brevity — each
+  adapter names a step, and a reader checks five named steps faster than one
+  loop that does all five at once.
+
+  In `main.rs`, over a slice of `Sale { product: String, quantity: u32,
+  unit_price: u32 }`, implement:
+
+  - `revenue(sales)` → `u64` — the sum of quantity times unit price. Zero for
+    an empty slice; a sum has a natural starting point, which is why this is
+    not an Option.
+  - `best_seller(sales)` → `Option<&Sale>` — the sale with the greatest
+    quantity, the *last* such on a tie (that is `max_by_key`'s rule, and part
+    of the exercise is knowing it). None when empty; a maximum has no natural
+    starting point, which is why this one *is* an Option.
+  - `product_totals(sales)` → `HashMap<String, u32>` — total quantity per
+    product.
+  - `over_quota(sales, quota)` → `Vec<&Sale>` — every sale with quantity
+    strictly over the quota, in their original order, without cloning a
+    single Sale.
+  - `receipt_lines(sales)` → `Vec<String>` — each sale as
+    `"3 x widget @ 250"`, in order.
+
+  No `for` loops, no `while`, no manual index. `iter()`, the adapters, and
+  `collect` cover all five.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/iterators_test.rs
+    visibility: visible
+    concept: rust.data.iterators
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.data.vec
+
+hints:
+  - level: conceptual
+    text: Sum has an identity element, so it never fails. Max does not, so it returns Option. The types are telling you something true.
+  - level: structural
+    text: Each function is one chain — map, filter, max_by_key, or fold into an entry.
+  - level: language
+    text: 'Widen before multiplying: `u64::from(sale.quantity) * u64::from(sale.unit_price)` — the product of two u32s can overflow u32.'
+  - level: syntax
+    text: '`*totals.entry(sale.product.clone()).or_insert(0) += sale.quantity;` inside a fold, or collect after grouping.'
+  - level: explicit
+    text: '`sales.iter().filter(|sale| sale.quantity > quota).collect()` — collecting `&Sale` borrows; no clone happens.'
+
+explanation: |
+  `max_by_key` keeping the last of equal elements (where `min_by_key` keeps
+  the first) is exactly the kind of guarantee that separates using an adapter
+  from having written the loop: the decision is made, documented, and the same
+  in every program. A hand-rolled loop with `>` keeps the first and one with
+  `>=` keeps the last, and nobody reviewing either can tell whether that
+  choice was a choice.
+
+  The widening in `revenue` is the one genuinely sharp edge here. Two u32s
+  multiply into a u32 in Rust, and 100_000 items at 50_000 each overflows it —
+  a panic in debug, a silent wrap in release, which is the worst possible
+  pair. Converting *before* the multiplication is the fix; converting the
+  result converts a value that has already wrapped.
+
+  `over_quota` collecting `Vec<&Sale>` is borrowing doing what it is for. The
+  filtered view does not own the sales, so taking references costs nothing and
+  the signature says so — a version returning `Vec<Sale>` would clone every
+  string in every matching sale to say the same thing.

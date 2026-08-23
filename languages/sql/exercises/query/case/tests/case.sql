@@ -1,0 +1,11 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: every student graded, pending included
+-- concept: sql.query.expressions
+-- uses: main.sql
+-- expect:
+-- ada|91|A
+-- bo|67|C
+-- cy|84|B
+-- dee||pending
+-- eli|45|F
+-- fay|70|B

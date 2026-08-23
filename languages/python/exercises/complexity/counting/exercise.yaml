@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.complexity.counting
 version: 1
 language: python
@@ -17,7 +18,7 @@ prerequisites:
 
 learningObjectives:
   - Instrument code to count the work it actually does.
-  - Recognise linear and quadratic growth from measured counts, not from a guess.
+  - Recognize linear and quadratic growth from measured counts, not from a guess.
   - Find a nested loop that is hidden behind a helper call.
 
 prompt: |

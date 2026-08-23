@@ -1,0 +1,5 @@
+{
+  "id": "cpp",
+  "title": "C++",
+  "summary": "For someone who writes C with classes and keeps meeting the parts that were added since. Built entirely around lifetime: what owns what, and what happens when it goes away."
+}

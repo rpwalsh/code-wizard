@@ -1,0 +1,301 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Python: functions, errors, modeling and the advanced machinery.
+#
+# The middle of the course. Most of these are about the difference between what
+# a function says it does and what it does — defaults evaluated once, scope
+# rules that only bite on assignment, exceptions caught too broadly.
+
+activities:
+  - id: python.functions.arguments.po-1
+    kind: predict-output
+    language: python
+    title: Positional, keyword, and the star
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.functions.arguments, python.functions.varargs]
+    prompt: What does this print?
+    code: |
+      def report(name, *tags, level="info", **extra):
+          print(name, tags, level, extra)
+
+      report("a")
+      report("a", "x", "y", level="warn")
+      report("a", key=1)
+    expected: |
+      a () info {}
+      a ('x', 'y') warn {}
+      a () info {'key': 1}
+    explanation: >-
+      `*tags` collects the extra positional arguments into a tuple — empty when
+      there are none, never `None`. Anything after it is keyword-only, which is
+      why `level` cannot be passed positionally however hard you try. `**extra`
+      collects the keywords that no parameter claimed. The ordering rule is
+      fixed: positional, `*args`, keyword-only, `**kwargs`.
+
+  - id: python.functions.scope.mc-1
+    kind: multiple-choice
+    language: python
+    title: The name that is not there yet
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.functions.scope]
+    prompt: What happens when this runs?
+    code: |
+      total = 0
+
+      def add(n):
+          total = total + n
+          return total
+
+      add(5)
+    options:
+      - text: UnboundLocalError, because assigning to `total` makes it local everywhere in the function.
+      - text: It returns 5 and leaves the global at 0.
+        why: That would be true if the function only *read* the global. The assignment changes the name's scope for the whole function body.
+      - text: It returns 5 and sets the global to 5.
+        why: Python never rebinds a global from a function without `global` or `nonlocal`.
+      - text: NameError, because `total` is not defined.
+        why: It is defined — at module level. The error is about scope, not existence, and Python distinguishes them.
+    correct: [0]
+    explanation: >-
+      Python decides a name's scope by looking at the whole function body
+      before running any of it. One assignment anywhere makes the name local
+      *throughout*, including on the line that reads it first — so the read
+      happens before the local has a value and raises `UnboundLocalError`.
+      `global total` fixes it and is almost always the wrong fix; passing the
+      value in and returning the new one is the right one.
+
+  - id: python.errors.exceptions.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The except that hides the bug
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.errors.exceptions]
+    prompt: A typo in this function is invisible in production. Which line hides it?
+    code: |
+      def load_score(record):
+          try:
+              return int(record["scoer"])
+          except Exception:
+              return 0
+    faultLine: 4
+    correction: '        except (KeyError, ValueError):'
+    explanation: >-
+      `except Exception` catches the `KeyError` from the misspelled key exactly
+      as it would catch a genuine bad value, and returns 0 either way. Every
+      score silently becomes zero and nothing is logged. Catching the two
+      failures you actually expect leaves the typo to raise, which is what you
+      want — a crash on the first request is far cheaper than a month of
+      quietly wrong numbers.
+
+  - id: python.errors.custom.mc-1
+    kind: multiple-choice
+    language: python
+    title: What a custom exception buys
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.errors.custom, python.errors.validation]
+    prompt: >-
+      Why define `class InsufficientFunds(Exception)` rather than raising
+      `ValueError("insufficient funds")`?
+    options:
+      - text: A caller can catch this one case without catching every other ValueError.
+      - text: It produces a better message.
+        why: The message is whatever you pass either way.
+      - text: It is faster.
+        why: Exception classes cost the same. Performance is never the argument for one.
+      - text: It prevents the error.
+        why: Naming a failure does not stop it happening.
+    correct: [0]
+    explanation: >-
+      The value is in what the caller can do. `except ValueError` around a
+      transfer catches the insufficient-funds case *and* a malformed amount and
+      a bad date, and cannot tell them apart without matching on the message —
+      which breaks the first time anyone improves the wording. A named class is
+      a stable thing to catch, and it makes the failure part of the API rather
+      than an implementation detail.
+
+  - id: python.modeling.dataclasses.fill-1
+    kind: fill-blanks
+    language: python
+    title: A record with equality
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.modeling.dataclasses, python.modeling.classes]
+    prompt: >-
+      Complete this so two accounts with the same fields compare equal and
+      neither field can be reassigned.
+    template: |
+      from dataclasses import dataclass
+
+      @dataclass({1}=True)
+      class Account:
+          id: str
+          balance: int
+    blanks:
+      - index: 1
+        accepts: ['frozen']
+        hint: Makes instances immutable — and hashable as a consequence.
+    explanation: >-
+      `@dataclass` generates `__init__`, `__repr__` and `__eq__`, which is most
+      of what a plain class was for. `frozen=True` adds immutability and, with
+      it, `__hash__` — so a frozen dataclass can be a dictionary key or go in a
+      set, and a mutable one cannot. Equality is by field value, which is
+      almost always what a record means and never what a plain class does by
+      default.
+
+  - id: python.modeling.state.match-1
+    kind: match-pairs
+    language: python
+    title: Where the state should live
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [python.modeling.state, python.modeling.composition]
+    prompt: Match each design smell to what it usually means.
+    pairs:
+      - left: A method that reads no self
+        right: Should be a function
+      - left: Two attributes that must agree
+        right: One is derived, not stored
+      - left: A class with only getters
+        right: Should be a dataclass
+      - left: A flag checked in every method
+        right: Two types wearing one name
+    explanation: >-
+      The second is the one that causes real bugs: a total kept beside the
+      items it totals will disagree with them the first time somebody adds a
+      code path that updates one and not the other. Anything derivable should
+      be computed on read. The last is the state-machine smell — an `is_draft`
+      checked at the top of nine methods is usually a `Draft` and a `Published`
+      that share an interface.
+
+  - id: python.advanced.generators.po-1
+    kind: predict-output
+    language: python
+    title: Lazy, and consumed once
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [python.advanced.generators]
+    prompt: What does this print?
+    code: |
+      squares = (n * n for n in range(4))
+      print(sum(squares))
+      print(sum(squares))
+      print(list(n * n for n in range(4)))
+    expected: |
+      14
+      0
+      [0, 1, 4, 9]
+    explanation: >-
+      A generator is an iterator, not a collection: it yields each value once
+      and then it is exhausted. The second `sum` finds nothing left and returns
+      0 — no error, no warning, just a wrong answer, which is why this is worth
+      meeting deliberately rather than in production. When a sequence has to be
+      traversed twice, build a list.
+
+  - id: python.advanced.context-managers.order-1
+    kind: order-lines
+    language: python
+    title: A context manager of your own
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [python.advanced.context-managers]
+    prompt: Put these in order to make a timer that reports even when the body raises.
+    lines:
+      - from contextlib import contextmanager
+      - import time
+      - '@contextmanager'
+      - 'def timed(label):'
+      - '    started = time.perf_counter()'
+      - '    try:'
+      - '        yield'
+      - '    finally:'
+      - '        print(label, time.perf_counter() - started)'
+    interchangeable: [[0, 1]]
+    explanation: >-
+      Everything before the `yield` is the setup, everything after is the
+      teardown, and the `try/finally` is what makes the teardown run when the
+      body raises. Without it the timer prints nothing on the one occasion you
+      most want to know how long something took before it failed — which is the
+      whole reason `with` exists rather than a pair of calls.
+
+  - id: python.advanced.decorators.mc-1
+    kind: multiple-choice
+    language: python
+    title: The decorator that eats the name
+    difficulty: 4
+    estimatedSeconds: 80
+    skills: [python.advanced.decorators]
+    prompt: >-
+      After decorating with this, `greet.__name__` is `"wrapper"` rather than
+      `"greet"`. What fixes it?
+    code: |
+      def logged(function):
+          def wrapper(*args, **kwargs):
+              print("calling", function.__name__)
+              return function(*args, **kwargs)
+          return wrapper
+    options:
+      - text: '`@functools.wraps(function)` on the wrapper.'
+      - text: Returning `function` instead of `wrapper`.
+        why: That removes the decoration entirely — the logging never happens.
+      - text: 'Setting `wrapper.__name__ = "greet"`.'
+        why: Works for one function and hard-codes a name the decorator cannot know.
+      - text: Nothing; the name is unimportant.
+        why: It is what `help()`, tracebacks, pickling and most debuggers report. A wall of `wrapper` in a stack trace is a real cost.
+    correct: [0]
+    explanation: >-
+      A decorator replaces the function with the wrapper, so every piece of
+      metadata — name, docstring, signature, module — becomes the wrapper's.
+      `functools.wraps` copies them across, and it is one line. Leaving it out
+      is how a codebase ends up with a traceback in which nine frames are all
+      called `wrapper`.
+
+  - id: python.advanced.typing.fill-1
+    kind: fill-blanks
+    language: python
+    title: Saying what might be missing
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.advanced.typing]
+    prompt: >-
+      Complete the annotation so the signature admits that a lookup can fail.
+    template: |
+      def find_user(users: dict[str, str], key: str) -> str {1} None:
+          return users.get(key)
+    blanks:
+      - index: 1
+        accepts: ['|']
+        hint: The union operator, since 3.10.
+    explanation: >-
+      `str | None` says what `Optional[str]` used to and reads better. The
+      point is not the syntax: a function that can return `None` and does not
+      say so is one every caller will eventually forget to check, and a type
+      checker cannot warn about a possibility the signature denies. Annotating
+      the failure is what turns "it crashed in production" into "it did not
+      compile".
+
+  - id: python.engineering.testing.mc-1
+    kind: multiple-choice
+    language: python
+    title: What makes a test worth having
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.engineering.testing]
+    prompt: Which of these is the strongest reason a test is not pulling its weight?
+    options:
+      - text: It still passes when the function it tests is deliberately broken.
+      - text: It is only three lines long.
+        why: Length says nothing. A three-line test of the right thing beats thirty lines of setup.
+      - text: It has no docstring.
+        why: A well-named test needs no docstring, and one does not make a weak test strong.
+      - text: It duplicates part of another test.
+        why: Some overlap is fine and occasionally deliberate — an edge case worth asserting twice.
+    correct: [0]
+    explanation: >-
+      A test that passes against a broken implementation is measuring nothing,
+      and it is worse than no test because it reports green. This is the idea
+      behind the mutation gate in this repository: the reference solution is
+      deliberately damaged, and any fault the tests fail to notice is a hole in
+      the suite rather than a fact about the learner.

@@ -1,0 +1,150 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+import type { Skill } from '@code-retrainer/core';
+import { SkillGraph } from '@code-retrainer/core';
+
+/**
+ * The C# skill graph.
+ *
+ * For someone who writes C# and has never had to think about what the
+ * runtime is doing underneath. About value and reference semantics,
+ * nullability, and asynchrony that is genuinely asynchronous.
+ *
+ * Generated once from the course design and maintained here since. The graph
+ * is the spine of everything else: exercises and activities name these ids,
+ * the map draws these edges, and mastery is recorded against these nodes. A
+ * skill that is not here cannot be practiced, measured or displayed.
+ */
+const definitions: readonly Omit<Skill, 'language'>[] = [
+  {
+    id: 'csharp.values.types',
+    name: 'Value and reference types',
+    category: 'Values',
+    prerequisites: [],
+    description: 'What gets copied, and where the surprise lives.',
+  },
+  {
+    id: 'csharp.values.nullable',
+    name: 'Nullable reference types',
+    category: 'Values',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.values.records',
+    name: 'Records and equality',
+    category: 'Values',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.values.structs',
+    name: 'Structs, and when they pay',
+    category: 'Values',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.types.interfaces',
+    name: 'Interfaces',
+    category: 'Types',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.types.generics',
+    name: 'Generics and constraints',
+    category: 'Types',
+    prerequisites: ['csharp.types.interfaces'],
+  },
+  {
+    id: 'csharp.types.patterns',
+    name: 'Pattern matching',
+    category: 'Types',
+    prerequisites: ['csharp.values.records'],
+  },
+  {
+    id: 'csharp.linq.queries',
+    name: 'LINQ',
+    category: 'LINQ',
+    prerequisites: ['csharp.types.generics'],
+  },
+  {
+    id: 'csharp.linq.deferred',
+    name: 'Deferred execution',
+    category: 'LINQ',
+    prerequisites: ['csharp.linq.queries'],
+    description:
+      'The query that ran three times, and the one that ran against a closed connection.',
+  },
+  {
+    id: 'csharp.linq.performance',
+    name: 'Where LINQ costs',
+    category: 'LINQ',
+    prerequisites: ['csharp.linq.deferred'],
+  },
+  {
+    id: 'csharp.async.tasks',
+    name: 'Tasks',
+    category: 'Asynchrony',
+    prerequisites: ['csharp.types.generics'],
+  },
+  {
+    id: 'csharp.async.await',
+    name: 'async and await',
+    category: 'Asynchrony',
+    prerequisites: ['csharp.async.tasks'],
+  },
+  {
+    id: 'csharp.async.deadlock',
+    name: 'The deadlock',
+    category: 'Asynchrony',
+    prerequisites: ['csharp.async.await'],
+    description: 'Blocking on a task, and the context that never came back.',
+  },
+  {
+    id: 'csharp.async.cancellation',
+    name: 'Cancellation tokens',
+    category: 'Asynchrony',
+    prerequisites: ['csharp.async.await'],
+  },
+  {
+    id: 'csharp.async.streams',
+    name: 'Asynchronous streams',
+    category: 'Asynchrony',
+    prerequisites: ['csharp.async.await'],
+  },
+  {
+    id: 'csharp.memory.disposal',
+    name: 'IDisposable and using',
+    category: 'Resources',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.memory.gc',
+    name: 'What the collector does',
+    category: 'Resources',
+    prerequisites: ['csharp.memory.disposal'],
+  },
+  {
+    id: 'csharp.memory.spans',
+    name: 'Span, and avoiding a copy',
+    category: 'Resources',
+    prerequisites: ['csharp.memory.gc'],
+  },
+  {
+    id: 'csharp.errors.exceptions',
+    name: 'Exceptions, thrown and caught well',
+    category: 'Errors',
+    prerequisites: ['csharp.values.types'],
+  },
+  {
+    id: 'csharp.errors.results',
+    name: 'Failure without an exception',
+    category: 'Errors',
+    prerequisites: ['csharp.types.patterns'],
+  },
+];
+
+export const csharpSkills: readonly Skill[] = definitions.map((definition) => ({
+  ...definition,
+  language: 'csharp',
+}));
+
+/** Built once at module load, so a bad edit fails immediately rather than later. */
+export const csharpSkillGraph: SkillGraph = SkillGraph.from(csharpSkills);

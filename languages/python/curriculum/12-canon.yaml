@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 12 — The interview canon (lessons 201–228)
 #
 # A different purpose from everything before it. The first eleven stages build
@@ -8,7 +9,7 @@
 #
 # Grouped by *pattern* rather than by problem, deliberately. There are not two
 # hundred interview questions; there are roughly fifteen patterns and a great
-# many dressings of them. A learner who can recognise "this is a sliding
+# many dressings of them. A learner who can recognize "this is a sliding
 # window" has done the hard part, and one who has memorised forty solutions
 # has not.
 #

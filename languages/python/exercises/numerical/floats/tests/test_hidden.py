@@ -1,20 +1,21 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Cases the visible tests did not reach."""
 
 import pytest
 
 from retrainer.expect import expect_close, expect_equal
-from main import close_enough, normalise, settled, total_error
+from main import close_enough, normalize, settled, total_error
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_normalising_a_single_key():
-    expect_close(normalise({"only": 7})["only"], 1.0)
+def test_normalizing_a_single_key():
+    expect_close(normalize({"only": 7})["only"], 1.0)
 
 
 @pytest.mark.concept("python.numerical.vectors")
-def test_normalising_is_proportional():
-    doubled = normalise({"a": 2, "b": 4})
-    plain = normalise({"a": 1, "b": 2})
+def test_normalizing_is_proportional():
+    doubled = normalize({"a": 2, "b": 4})
+    plain = normalize({"a": 1, "b": 2})
     expect_close(doubled["a"], plain["a"])
 
 

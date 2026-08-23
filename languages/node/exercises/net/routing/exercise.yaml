@@ -1,0 +1,91 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.net.routing
+version: 1
+language: node
+title: The difference between 404 and 405
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - node.net.routing
+  - node.net.validation
+  - node.failure.errors
+
+prerequisites: []
+
+learningObjectives:
+  - Match a request path against patterns that carry named parameters.
+  - Distinguish a path that does not exist from a method that is not allowed.
+  - Choose between two matching routes by specificity rather than by order.
+
+prompt: |
+  Almost every hand-rolled router gets one thing wrong: it returns 404 for a
+  path that exists but was called with the wrong verb. The client then retries,
+  reports a broken link, or gives up — when the honest answer was "this
+  resource is real, you just cannot POST to it."
+
+  In `main.js`, implement `createRouter(routes)`. Each route is
+  `{ method, pattern, name }`, where a pattern is a path whose segments may
+  be literals or `:params`, for example `/users/:id/posts/:postId`.
+
+  The returned router has one method, `route(method, path)`, which returns:
+
+  - `{ status: 200, name, params }` when a route matches, with `params` as an
+    object of the captured segments, decoded with `decodeURIComponent`.
+  - `{ status: 405, allow }` when the path matches some route but not for
+    this method. `allow` is the sorted list of methods that would have worked.
+  - `{ status: 404 }` when no route matches the path at all.
+
+  Two more rules, because both are decisions a router has to make:
+
+  - A trailing slash does not change the path: `/users/` matches `/users`.
+    The root path `/` is still `/`.
+  - When two patterns match, the more specific one wins — the one with fewer
+    parameters. `/users/me` beats `/users/:id` no matter which was registered
+    first. Ordering routes by hand is how a router becomes load-bearing.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/routing.test.js
+    visibility: visible
+    concept: node.net.routing
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.net.validation
+  - path: tests/hidden.test.js
+    visibility: hidden
+    concept: node.failure.errors
+
+hints:
+  - level: conceptual
+    text: Match on the path first, and only then ask whether the method is allowed. That ordering is the whole 404-versus-405 distinction.
+  - level: structural
+    text: Split both the pattern and the path into segments and compare them position by position.
+  - level: language
+    text: A segment beginning with a colon captures; anything else must be equal.
+  - level: syntax
+    text: "`path.split('/').filter(Boolean)` drops the empty strings that leading and trailing slashes produce."
+  - level: explicit
+    text: Collect every route whose pattern matches the path, then pick the one with the fewest parameters; if none of them allows the method, the collected methods are the `allow` list.
+
+explanation: |
+  Separating "does this path exist" from "is this method allowed" is not
+  pedantry about status codes. It is the difference between a client that can
+  correct itself and one that cannot. 405 with an `Allow` header says exactly
+  what to do next; 404 says the resource is gone and invites a retry that will
+  never work.
+
+  Specificity beating registration order matters for the same reason. A router
+  that depends on declaration order works until somebody sorts the route table
+  alphabetically, and then `/users/me` starts resolving to the handler for
+  `/users/:id` with `id` set to the string `me` — which is not an error, just a
+  lookup for a user who does not exist. Bugs that produce plausible wrong
+  answers are the expensive kind.
+
+  Decoding the parameters is the small correctness detail. A path segment is
+  percent-encoded on the wire, so an id containing a space or a slash arrives
+  as `%20` or `%2F`, and a router that hands the raw text to the handler has
+  quietly corrupted the data before anyone looks at it.

@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 # Stage 8 — Recursion and cost (lessons 143–162)
 #
 # Complexity is taught here as measurement, not notation. The learner counts
@@ -6,7 +7,7 @@
 # seen the quadratic version die at n=20000 does not need to be told what
 # O(n^2) means, and someone who has only been told will keep writing it.
 #
-# Memoisation closes the stage because it is where recursion and cost finally
+# Memoization closes the stage because it is where recursion and cost finally
 # meet, and because the tracer showing the same call happening 177 times is
 # more convincing than any explanation of why it is slow.
 
@@ -100,13 +101,13 @@ lessons:
   - id: py.157
     title: Remembering the answer
     focus: A dictionary cache written by hand, and the count collapsing.
-    skills: [python.recursion.memoisation]
+    skills: [python.recursion.memoization]
     difficulty: 4
 
   - id: py.158
     title: lru_cache
     focus: The decorator that does it, and the arguments that must be hashable.
-    skills: [python.recursion.memoisation, python.advanced.decorators]
+    skills: [python.recursion.memoization, python.advanced.decorators]
     difficulty: 4
 
   - id: py.159

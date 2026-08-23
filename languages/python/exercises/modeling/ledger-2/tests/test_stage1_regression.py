@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Stage 1 contract. These must keep passing while stage 2 is added."""
 
 import pytest

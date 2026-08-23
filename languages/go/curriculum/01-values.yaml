@@ -1,0 +1,105 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Stage 1 — Values, errors and interfaces (lessons 1–16)
+#
+# Go removes two things most people arrive with — exceptions and inheritance —
+# and the discomfort is almost entirely about those absences. The stage is
+# built to make the replacements feel like the better trade they are.
+
+stage: values
+title: Values, errors and interfaces
+lessons:
+  - id: go.001
+    title: Zero values
+    focus: Every type has a usable one, and what that removes.
+    skills: [go.basics.types]
+    difficulty: 2
+
+  - id: go.002
+    title: Multiple returns
+    focus: A value and an error, and why that is not a tuple hack.
+    skills: [go.basics.functions]
+    difficulty: 2
+
+  - id: go.003
+    title: Slices
+    focus: Length and capacity, and the append that changed someone else's data.
+    skills: [go.basics.slices]
+    difficulty: 4
+
+  - id: go.004
+    title: Maps
+    focus: The comma-ok read, and the zero that means absent.
+    skills: [go.basics.maps]
+    difficulty: 3
+
+  - id: go.005
+    title: Structs
+    focus: Composite values, and copying by default.
+    skills: [go.basics.structs]
+    difficulty: 2
+
+  - id: go.006
+    title: Errors are values
+    focus: Returning them, checking them, and not ignoring them.
+    skills: [go.errors.values]
+    difficulty: 3
+
+  - id: go.007
+    title: Wrapping
+    focus: Adding context without losing the original.
+    skills: [go.errors.wrapping]
+    difficulty: 3
+
+  - id: go.008
+    title: errors.Is and errors.As
+    focus: Asking what went wrong without comparing strings.
+    skills: [go.errors.sentinel]
+    difficulty: 4
+
+  - id: go.009
+    title: panic, and why almost never
+    focus: The two cases, and recover at a boundary.
+    skills: [go.errors.panic]
+    difficulty: 4
+
+  - id: go.010
+    title: Methods and receivers
+    focus: Value or pointer, and the mutation that did not stick.
+    skills: [go.types.methods]
+    difficulty: 4
+
+  - id: go.011
+    title: Interfaces
+    focus: Defined where they are used, satisfied without saying so.
+    skills: [go.types.interfaces]
+    difficulty: 4
+
+  - id: go.012
+    title: Accept interfaces, return structs
+    focus: Why, with a case where the opposite hurts.
+    skills: [go.types.interfaces]
+    difficulty: 4
+
+  - id: go.013
+    title: Embedding
+    focus: Composition that looks like inheritance and is not.
+    skills: [go.types.embedding]
+    difficulty: 4
+
+  - id: go.014
+    title: The nil that is not nil
+    focus: A typed nil inside an interface. The check passes; the call panics.
+    skills: [go.types.nil-interface]
+    difficulty: 5
+
+  - id: go.015
+    title: Packages and visibility
+    focus: One capital letter as the entire access modifier.
+    skills: [go.engineering.packages]
+    difficulty: 2
+
+  - id: go.016
+    title: Table tests
+    focus: One test, many cases, and a failure that names which.
+    skills: [go.engineering.testing]
+    difficulty: 3

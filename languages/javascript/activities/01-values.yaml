@@ -1,0 +1,273 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# JavaScript: values, equality, and the things people are confidently wrong about.
+#
+# Weighted toward coercion and `this`, because those produce more confident
+# wrong answers than the rest of the language put together — and because the
+# wrong answer is usually plausible enough to survive a review.
+
+activities:
+  - id: javascript.syntax.equality.po-1
+    kind: predict-output
+    language: javascript
+    title: Loose, strict, and Object.is
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [javascript.syntax.equality]
+    prompt: What does this print?
+    code: |
+      console.log(0 == '');
+      console.log(0 === '');
+      console.log(NaN === NaN);
+      console.log(Object.is(NaN, NaN));
+      console.log([] == false);
+    expected: |
+      true
+      false
+      false
+      true
+      true
+    explanation: >-
+      `==` converts before comparing, and the conversions are not the ones
+      intuition suggests: `''` becomes `0`, and `[]` becomes `''` and then `0`.
+      `===` compares without converting and is the default for that reason.
+      `NaN` is the one value not equal to itself under both, which is why
+      `array.indexOf(NaN)` never finds anything and `Object.is` exists.
+
+  - id: javascript.syntax.nullish.mc-1
+    kind: multiple-choice
+    language: javascript
+    title: The default that eats a zero
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [javascript.syntax.nullish, javascript.syntax.equality]
+    prompt: >-
+      A settings form stores `{ retries: 0 }`. Which expression returns `0`
+      rather than the fallback?
+    options:
+      - text: 'settings.retries ?? 3'
+      - text: 'settings.retries || 3'
+        why: '`||` falls back for every falsy value, and `0` is falsy. This is the bug the question is about.'
+      - text: 'settings.retries ? settings.retries : 3'
+        why: Same test as `||`, written out longer.
+      - text: 'Boolean(settings.retries) && settings.retries'
+        why: Returns `false` for zero, which is neither the stored value nor the fallback.
+    correct: [0]
+    explanation: >-
+      `??` falls back only for `null` and `undefined` — "no value was supplied"
+      — while `||` falls back for the whole falsy list, which includes `0`,
+      `''` and `false`. Every one of those is a real answer somebody meant: a
+      quantity of zero, a search box deliberately cleared, a setting explicitly
+      turned off. The bug is quiet, the replacement value is plausible, and
+      nothing throws.
+
+  - id: javascript.syntax.values.spot-1
+    kind: spot-the-bug
+    language: javascript
+    title: The const that changed
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [javascript.syntax.values, javascript.syntax.bindings]
+    prompt: >-
+      This is meant to leave `defaults` untouched and does not. Which line
+      changes it?
+    code: |
+      const defaults = { retries: 3, timeout: 1000 };
+
+      function configure(overrides) {
+        const merged = defaults;
+        Object.assign(merged, overrides);
+        return merged;
+      }
+    faultLine: 4
+    correction: '  const merged = { ...defaults, ...overrides };'
+    explanation: >-
+      `const` freezes the *binding*, not the object. `merged` is a second name
+      for the same object, so `Object.assign` writes straight through into
+      `defaults` and every later call starts from the previous call's
+      overrides. Spreading into a fresh object copies the properties instead,
+      which is what "merge" was supposed to mean.
+
+  - id: javascript.functions.this.mc-1
+    kind: multiple-choice
+    language: javascript
+    title: The callback that lost its object
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [javascript.functions.this]
+    prompt: >-
+      `setTimeout(counter.tick, 100)` reports `undefined` where
+      `counter.tick()` works. Why?
+    options:
+      - text: '`this` is decided by how a function is called, and passing it as a value discards the receiver.'
+      - text: setTimeout runs the function in a different scope.
+        why: Scope governs variable lookup and is fixed at definition. `this` is a separate mechanism decided at the call.
+      - text: The method was not declared async.
+        why: Nothing here is asynchronous in a way that would matter, and `async` does not affect `this`.
+      - text: '`counter` is out of scope by then.'
+        why: The closure holds it. The reference survives; the receiver does not.
+    correct: [0]
+    explanation: >-
+      `counter.tick()` calls with `counter` as the receiver. `counter.tick`
+      alone is just the function, and by the time setTimeout calls it there is
+      no object on the left of the dot, so `this` is undefined in a module.
+      `counter.tick.bind(counter)` or `() => counter.tick()` keeps the
+      receiver. An arrow method defined in the class body has no `this` of its
+      own and closes over the instance, which is why that style exists.
+
+  - id: javascript.data.arrays.po-1
+    kind: predict-output
+    language: javascript
+    title: Which of these copy
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [javascript.data.arrays]
+    prompt: What does this print?
+    code: |
+      const items = [3, 1, 2];
+      const sorted = items.sort();
+      const mapped = items.map((n) => n * 2);
+      console.log(items);
+      console.log(sorted === items);
+      console.log(mapped === items);
+    expected: |
+      [ 1, 2, 3 ]
+      true
+      false
+    explanation: >-
+      `sort` mutates in place and returns the same array, so `items` is now
+      sorted and `sorted` is not a copy — the commonest surprise in the array
+      API, and the reason `toSorted` was added. `map` returns a new array and
+      leaves the original alone. Knowing which methods mutate is most of using
+      arrays correctly: `push`, `splice`, `reverse` and `sort` do;
+      `map`, `filter`, `slice` and `concat` do not.
+
+  - id: javascript.async.promises.order-1
+    kind: order-lines
+    language: javascript
+    title: Handling a failure without swallowing it
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [javascript.async.promises, javascript.async.errors]
+    prompt: Put these in order so a failed fetch reports its status rather than throwing a type error.
+    lines:
+      - 'async function load(url) {'
+      - '  const response = await fetch(url);'
+      - '  if (!response.ok) {'
+      - '    throw new Error(`${url}: ${response.status}`);'
+      - '  }'
+      - '  return response.json();'
+      - '}'
+    explanation: >-
+      `fetch` rejects only when the request could not be made at all. A 404 or
+      a 500 resolves perfectly happily with `ok: false`, so code that goes
+      straight to `.json()` tries to parse an error page and fails with
+      something about unexpected tokens — a message pointing at JSON when the
+      real problem was the status. Checking `ok` first is the whole fix, and it
+      is the single most skipped line in front-end code.
+
+  - id: javascript.async.await.mc-1
+    kind: multiple-choice
+    language: javascript
+    title: Sequential when it did not need to be
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [javascript.async.await, javascript.async.promises]
+    prompt: >-
+      Three independent fetches take three seconds in total, one second each.
+      What makes them take one?
+    code: |
+      const a = await getA();
+      const b = await getB();
+      const c = await getC();
+    options:
+      - text: 'const [a, b, c] = await Promise.all([getA(), getB(), getC()]);'
+      - text: Removing the awaits.
+        why: Then the values are promises rather than results, and everything downstream breaks.
+      - text: Marking the enclosing function async.
+        why: It already is — `await` is only legal inside one.
+      - text: Running them in a for loop.
+        why: A loop with an await inside is exactly as sequential, and often accidentally so.
+    correct: [0]
+    explanation: >-
+      Each `await` suspends until that promise settles, so three of them in a
+      row is three round trips end to end. `Promise.all` starts all three
+      immediately and waits for the slowest, which is the actual dependency.
+      The rule is simple: `await` in sequence only when the next call *needs*
+      the previous result. `Promise.allSettled` is the variant to reach for
+      when one failure should not discard the other two answers.
+
+  - id: javascript.syntax.modules.match-1
+    kind: match-pairs
+    language: javascript
+    title: Imports and exports
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [javascript.syntax.modules]
+    prompt: Match each export to the import that reaches it.
+    pairs:
+      - left: 'export function add() {}'
+        right: "import { add } from './m.js'"
+      - left: 'export default function () {}'
+        right: "import add from './m.js'"
+      - left: 'export { add as sum }'
+        right: "import { sum } from './m.js'"
+      - left: "export * from './other.js'"
+        right: Re-exports without importing
+    explanation: >-
+      A default export has no name of its own, so the importing side invents
+      one — which is why two files can import the same default under different
+      names and why renaming the function changes nothing for its callers. Named
+      exports are checked: import a name that does not exist and the module
+      fails to load rather than handing you `undefined` at the point of use.
+
+  - id: javascript.functions.closures.fill-1
+    kind: fill-blanks
+    language: javascript
+    title: A counter that keeps its own state
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [javascript.functions.closures]
+    prompt: Complete this so each call to `makeCounter()` gets its own independent count.
+    template: |
+      function makeCounter() {
+        {1} count = 0;
+        return () => {
+          count += 1;
+          return count;
+        };
+      }
+    blanks:
+      - index: 1
+        accepts: ['let']
+        hint: It is reassigned, so `const` will not do.
+    explanation: >-
+      The returned function closes over `count`, and each call to `makeCounter`
+      creates a fresh one — so two counters never interfere. Declaring it
+      outside the factory would make one shared variable and every counter
+      would advance together, which is the bug this shape exists to prevent.
+      `const` fails here for the ordinary reason: the value is reassigned.
+
+  - id: javascript.syntax.values.mc-1
+    kind: multiple-choice
+    language: javascript
+    title: Adding, and what it means
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [javascript.syntax.values, javascript.syntax.equality]
+    prompt: "What is `[] + {}`, and what is `1 + '1'`?"
+    options:
+      - text: "'[object Object]' and '11' — `+` concatenates when either side is a string."
+      - text: 'An error, and 2.'
+        why: '`+` never throws on these; it coerces. That is the whole difficulty.'
+      - text: "'[object Object]' and 2."
+        why: "`1 + '1'` concatenates, because one side is a string. Only `-` forces numbers."
+      - text: "undefined and '11'."
+        why: "`[] + {}` converts both to strings: `''` and `'[object Object]'`."
+    correct: [0]
+    explanation: >-
+      `+` is overloaded: numeric addition when both sides are numbers, string
+      concatenation the moment either is a string. Every other arithmetic
+      operator only means arithmetic, which is why `'3' * 2` is 6 while
+      `'3' + 2` is `'32'`. The practical rule is to convert explicitly at the
+      boundary — `Number(input)` — rather than letting a form value stay a
+      string and discovering it four lines later.

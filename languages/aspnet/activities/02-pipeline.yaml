@@ -1,0 +1,113 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# ASP.NET: the pipeline, lifetimes and data access, read rather than served.
+
+activities:
+  - id: aspnet.di.lifetimes.mc-2
+    kind: multiple-choice
+    language: aspnet
+    title: The cached user that belongs to someone else
+    difficulty: 4
+    estimatedSeconds: 90
+    skills: [aspnet.di.lifetimes]
+    prompt: >-
+      A singleton service holds a `CurrentUser` property set from the request.
+      In production, users intermittently see someone else's name. Why?
+    options:
+      - text: A singleton is one instance for every request at once; concurrent requests overwrite each other's user.
+      - text: The property needs to be marked volatile.
+        why: Memory visibility is not the problem. The design shares one slot between requests; no keyword fixes that.
+      - text: The load balancer is routing users to the wrong server.
+        why: Then everything about the session would be wrong, not one property, and it would not correlate with concurrency.
+      - text: Scoped services are slower, so ASP.NET promoted it to singleton.
+        why: Lifetimes never change on their own. The registration says singleton because someone wrote singleton.
+    correct: [0]
+    explanation: >-
+      Singleton means one instance for the application; scoped means one per
+      request; transient means one per injection. Per-request state in a
+      singleton is therefore shared mutable state under concurrency — the
+      symptom is intermittent, the report is unreproducible, and the fix is
+      almost always to make the service scoped or to stop storing the state.
+      The related trap is captive dependency: injecting a scoped service into
+      a singleton quietly extends its life to the application's.
+
+  - id: aspnet.pipeline.binding.mc-1
+    kind: multiple-choice
+    language: aspnet
+    title: Where the argument actually came from
+    difficulty: 3
+    estimatedSeconds: 80
+    skills: [aspnet.pipeline.binding, aspnet.pipeline.routing]
+    prompt: >-
+      `GET /products/7?page=2` reaches
+      `Get(int id, int page, [FromHeader] string accept)`. Where does each
+      argument come from?
+    options:
+      - text: id from the route, page from the query string, accept from the Accept header.
+      - text: All three from the query string.
+        why: id appears in the route template, and binding checks the route before the query.
+      - text: The body, because GET requests bind from the body by default.
+        why: A GET has no body worth speaking of, and binding from one requires [FromBody] explicitly.
+      - text: It fails to compile without [FromQuery] on everything.
+        why: Attributes override the defaults; they are not required for them.
+    correct: [0]
+    explanation: >-
+      Simple types bind route-first, then query string — which is why `id`
+      matches the `{id}` template segment and `page` falls through to the
+      query. Headers and bodies are never guessed; they take an explicit
+      [FromHeader] or [FromBody]. The rule worth keeping: binding is
+      convention until the convention is ambiguous, and then the attribute is
+      documentation as much as configuration.
+
+  - id: aspnet.di.options.fill-1
+    kind: fill-blanks
+    language: aspnet
+    title: Configuration with a type and a check
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [aspnet.di.options]
+    prompt: >-
+      Complete this so the settings bind from configuration and a missing api
+      key fails at startup rather than on the first request.
+    template: |
+      builder.Services.AddOptions<MailSettings>()
+          .Bind(builder.Configuration.GetSection("Mail"))
+          .Validate(settings => !string.IsNullOrEmpty(settings.ApiKey), "Mail:ApiKey is required")
+          .{1}();
+    blanks:
+      - index: 1
+        accepts: ['ValidateOnStart']
+        hint: Without it, validation runs lazily — on the first resolve, mid-request.
+    explanation: >-
+      The options pattern gives configuration a type, and types can be
+      validated. The default timing is the trap: validation runs when the
+      options are first resolved, which is the first request that needs them —
+      the worst possible moment to learn a key is missing. ValidateOnStart
+      moves the failure to boot, where a bad deploy is caught by the deploy
+      rather than by a customer.
+
+  - id: aspnet.operations.health.fill-1
+    kind: fill-blanks
+    language: aspnet
+    title: Liveness is not readiness
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [aspnet.operations.health]
+    prompt: >-
+      Complete the readiness endpoint so the orchestrator stops sending traffic
+      while the database is unreachable, without restarting the process.
+    template: |
+      app.MapHealthChecks("/health/live");
+      app.MapHealthChecks("/health/{1}", new HealthCheckOptions
+      {
+          Predicate = check => check.Tags.Contains("dependencies"),
+      });
+    blanks:
+      - index: 1
+        accepts: ['ready']
+        hint: The probe that gates traffic rather than survival.
+    explanation: >-
+      Liveness answers "should this process be restarted" and must not depend
+      on the database — a dead dependency would put every instance into a
+      restart loop that fixes nothing. Readiness answers "should this instance
+      receive traffic", and that is exactly where dependency checks belong:
+      the instance waits out the outage and rejoins when the check passes.

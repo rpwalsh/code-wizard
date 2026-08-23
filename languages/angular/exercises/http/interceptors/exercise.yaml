@@ -1,0 +1,97 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.http.interceptors
+version: 1
+language: angular
+title: Every request through the same doors
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - angular.http.client
+  - angular.http.interceptors
+
+prerequisites: []
+
+learningObjectives:
+  - Build requests from parts — base URL, paths, query parameters — without string surgery.
+  - Chain interceptors so each wraps the rest, in registration order.
+  - Keep requests immutable so an interceptor cannot corrupt its neighbors.
+
+prompt: |
+  An HTTP client is two ideas: requests built from parts, and a chain of
+  interceptors every request flows through. Build both, without a network
+  — the "backend" is a function the caller hands in, which is also
+  exactly how HttpClient is tested in real Angular.
+
+  In `main.ts`:
+
+  - `buildUrl(base, path, params)` — joins base and path with exactly one
+    slash regardless of which side brought one, then appends query
+    parameters: keys in the object's order, values through
+    `encodeURIComponent`. Empty params object: no `?` at all.
+  - `HttpRequest` — `{ url, method, headers }`, all readonly.
+    `withHeader(request, name, value)` — a *new* request with the header
+    added; header names are stored lowercased, because HTTP header names
+    are case-insensitive and two spellings of `Authorization` must not
+    become two headers.
+  - `Client` — constructed with a backend `(request) => Response` (a
+    `Response` is `{ status, body }`) and a list of interceptors. An
+    interceptor is `(request, next) => Response` — it may modify the
+    request (via the immutable helpers), call `next(request)`, and may
+    modify the response. `client.get(url)` sends
+    `{ url, method: 'GET', headers: {} }` through the chain:
+    interceptor 0 outermost, the backend innermost. An interceptor that
+    never calls `next` short-circuits — that is how a cache interceptor
+    answers from memory.
+  - Two ready-made interceptors:
+    `authInterceptor(token)` — adds `authorization: Bearer TOKEN` to
+    every request.
+    `retryInterceptor` — calls `next` once; on a 503 response, calls it
+    once more and returns the second answer. Any other status passes
+    through untouched.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/interceptors.test.ts
+    visibility: visible
+    concept: angular.http.interceptors
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.http.client
+
+hints:
+  - level: conceptual
+    text: The chain is function composition — each interceptor receives "everything after me" as one function called next.
+  - level: structural
+    text: 'Build the chain from the inside out: start with the backend, wrap it in the last interceptor, then the one before, and so on.'
+  - level: language
+    text: '`reduceRight` builds exactly that: `interceptors.reduceRight((next, interceptor) => (request) => interceptor(request, next), backend)`.'
+  - level: syntax
+    text: 'buildUrl: `base.replace(/\/+$/, "")` and `path.replace(/^\/+/, "")` meet in the middle with one slash.'
+  - level: explicit
+    text: 'withHeader: `{ ...request, headers: { ...request.headers, [name.toLowerCase()]: value } }` — two spreads, because the inner object must be copied too.'
+
+explanation: |
+  Interceptor order is the part worth internalizing, because "outermost"
+  decides everything observable: the first-registered interceptor sees
+  the request first and the response *last*, so logging registered first
+  measures the whole pipeline including retries, while logging registered
+  last measures only the backend. Angular's real chain composes exactly
+  this way, and the reduceRight construction shows why — the chain is
+  built from the backend outward.
+
+  Immutability is what lets interceptors coexist without a contract
+  between them. If `withHeader` mutated, the retry interceptor's second
+  attempt would carry any header a downstream interceptor added to the
+  first attempt — state leaking between tries through a shared object.
+  Copy-on-write makes each call down the chain see exactly what its
+  caller intended and nothing else.
+
+  The lowercased header names are a small standards lesson: HTTP header
+  names are case-insensitive on the wire, and clients that store them
+  case-sensitively eventually send `Authorization` and `authorization`
+  in one request. Normalizing at the single place headers enter the
+  request is cheaper than remembering everywhere.

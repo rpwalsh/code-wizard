@@ -1,0 +1,80 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.memory.strings
+version: 1
+language: c
+title: Room for the terminator
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 45000
+
+skills:
+  - c.memory.strings
+  - c.memory.malloc
+  - c.errors.returns
+
+prerequisites: []
+
+learningObjectives:
+  - Allocate exactly the space a string needs, including its terminator.
+  - Check every allocation before writing through the pointer.
+  - Bound a copy by the size of the destination, not the source.
+
+prompt: |
+  Three functions, and every one of them is a place where C programs overflow
+  a buffer by exactly one byte.
+
+  In `main.c`, implement:
+
+  - `char *duplicate(const char *text)` — a heap copy the caller frees.
+    Returns `NULL` if `text` is `NULL` or the allocation fails.
+  - `size_t copy_into(char *destination, size_t capacity, const char *text)` —
+    copies as much as fits, always terminates, and returns the number of
+    characters written excluding the terminator. A capacity of 0 writes
+    nothing at all, not even a terminator.
+  - `char *join(const char *left, const char *right)` — a new heap string of
+    the two joined, or `NULL` on failure.
+
+  `copy_into` is the one to slow down for. It must never write to
+  `destination[capacity]`, and it must terminate even when the source is
+  longer than the space available.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/strings_test.c
+    visibility: visible
+    concept: c.memory.strings
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.memory.malloc
+
+hints:
+  - level: conceptual
+    text: A C string is its characters plus one byte nobody counts.
+  - level: structural
+    text: Size the allocation from strlen, then add one.
+  - level: language
+    text: '`strlen` excludes the terminator; `sizeof` on a literal includes it.'
+  - level: syntax
+    text: '`char *copy = malloc(strlen(text) + 1);`'
+  - level: explicit
+    text: For copy_into, the most you may write is capacity - 1 characters, then a terminator.
+
+explanation: |
+  `malloc(strlen(text))` is the single most common heap overflow in C. It is
+  off by exactly one byte, the byte is the terminator, and the program usually
+  appears to work — the allocator rounds up, the extra byte lands in slack
+  space, and nothing complains until the day the allocation happens to be
+  exact. Then it corrupts the next block and crashes somewhere unrelated.
+
+  `copy_into` is the interface `strncpy` should have had. `strncpy` does not
+  terminate when the source fills the buffer, so the classic "safe" copy leaves
+  an unterminated string that the next `strlen` runs off the end of. Returning
+  the number written, and always terminating, makes the function usable without
+  remembering a footnote.
+
+  The capacity-zero case exists because there is no valid write at all: even a
+  single terminator would be one byte past the end of a zero-length buffer.
+  Functions that "always terminate" and forget this are a real and recurring
+  bug.

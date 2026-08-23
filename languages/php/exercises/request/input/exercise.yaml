@@ -1,0 +1,89 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.request.input
+version: 1
+language: php
+title: Nothing from the request is a number yet
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 60000
+
+skills:
+  - php.request.input
+  - php.types.null
+  - php.errors.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Treat every request value as an absent-or-string and nothing more.
+  - Validate into typed values at the boundary, once, instead of everywhere.
+  - Reject rather than guess when input does not parse.
+
+prompt: |
+  Everything in `$_GET` and `$_POST` is a string or absent — PHP does not know
+  or care that your `page` parameter is supposed to be a positive integer.
+  Code that reaches into the array mid-function inherits that uncertainty
+  everywhere. The alternative is a boundary: one place where strings become
+  typed values or the request is rejected.
+
+  In `main.php`, implement readers that all take the raw request array:
+
+  - `read_int(array $input, string $key, ?int $default = null): int` — the
+    value as an integer. It must be an integral string: `"42"` yes, `" 42 "`
+    yes (trimmed), `"4.5"` no, `"42abc"` no, `""` no. A missing key returns
+    the default when one was given; otherwise throw `MissingInput`. A present
+    but unparseable value always throws `InvalidInput` — a default is for
+    absence, never a blanket for garbage.
+  - `read_enum(array $input, string $key, array $allowed, ?string $default =
+    null): string` — the value if it is in `$allowed` (case-sensitive), the
+    default on absence, `InvalidInput` otherwise.
+  - `read_page(array $input): array` — `['page' => int, 'per_page' => int]`
+    with defaults 1 and 20. Page must be at least 1; per_page between 1 and
+    100 — out of range throws `InvalidInput` with the key's name in the
+    message.
+
+  Both exception classes extend `InvalidArgumentException` and already exist
+  in the starter. `"42abc"` is the important case: `(int)"42abc"` is 42 in
+  PHP, silently. That coercion is the bug this exercise exists to prevent.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/input_test.php
+    visibility: visible
+    concept: php.request.input
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.types.null
+
+hints:
+  - level: conceptual
+    text: A default answers "the key was not there". It must never answer "the value made no sense".
+  - level: structural
+    text: 'Check absence first (array_key_exists), then parse, then range-check. Three separate failures, three separate answers.'
+  - level: language
+    text: 'filter_var($value, FILTER_VALIDATE_INT) returns false for anything that is not an integral string — including "4.5" and "42abc", which (int) would happily mangle.'
+  - level: syntax
+    text: '$raw = trim($input[$key]); $value = filter_var($raw, FILTER_VALIDATE_INT); if ($value === false) throw new InvalidInput(...);'
+  - level: explicit
+    text: 'read_page calls read_int twice with the defaults, then range-checks each and throws InvalidInput with "page" or "per_page" in the message.'
+
+explanation: |
+  `(int)"42abc"` being 42 is the sharpest edge in this exercise, and it is not
+  a corner case — it is what happens when a user edits a URL by hand and
+  leaves a stray character. The cast never fails; it just stops reading. Which
+  means a validation strategy built on casting cannot tell good input from
+  bad, and `filter_var` with `FILTER_VALIDATE_INT` exists precisely because of
+  that.
+
+  Keeping "missing" and "invalid" as different failures is boundary design,
+  not pedantry. Missing-with-default is the normal case for an optional
+  parameter. Invalid is a client bug and should say so loudly — mapping it to
+  the default would hide a broken caller behind a plausible page of results,
+  and those bugs stay unfound for months.
+
+  Strict comparison shows up here too: `filter_var` returns `false` on
+  failure, and `0` is a perfectly good integer, so the check has to be
+  `=== false`. A `==` comparison would call zero a failure — the same class of
+  bug the exercise is about, one layer down.

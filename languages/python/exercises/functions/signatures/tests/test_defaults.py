@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The mutable default. This is the whole exercise."""
 
 import pytest

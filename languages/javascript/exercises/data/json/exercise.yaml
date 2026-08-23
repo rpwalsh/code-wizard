@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.data.json
+version: 1
+language: javascript
+title: What survives the round trip
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - javascript.data.json
+  - javascript.engineering.errors
+  - javascript.syntax.nullish
+
+prerequisites: []
+
+learningObjectives:
+  - Know which values JSON drops, mangles or refuses, and stop them at the boundary.
+  - Turn a parse failure into a typed error that says where it came from.
+  - Use nullish coalescing to fill gaps without flattening real values.
+
+prompt: |
+  JSON is not JavaScript. `undefined`, functions, `NaN`, `Infinity`, Dates
+  and Maps all go into `JSON.stringify` and come out as something else —
+  dropped, `null`, or a string — silently. The boundary either checks, or the
+  corruption travels.
+
+  In `main.js`, implement — with `ConfigError` (in the starter, carrying a
+  `source` field) as the failure type:
+
+  - `parseConfig(text, source)` — `JSON.parse` with manners. On malformed
+    input, throw `ConfigError` whose message includes `source` (a filename,
+    a URL — where the bad text came from) and whose `source` field carries
+    it. On success the parsed value must be a plain object — an array or a
+    bare string is `ConfigError` too.
+  - `withDefaults(config, defaults)` — a new object: every key of `defaults`
+    filled from `config` when the value there is neither `null` nor
+    `undefined`, from `defaults` otherwise. Keys of `config` that `defaults`
+    does not know are carried through unchanged. `0`, `false` and `""` in
+    the config are values, and must win over the default — `??`, not `||`.
+  - `safeStringify(value)` — `JSON.stringify`, but it throws `ConfigError`
+    (source `"stringify"`) when the value contains anything JSON would
+    silently mangle: `undefined`, a function, `NaN` or `Infinity`, at any
+    depth. `null` is fine — null is JSON. Use a replacer to detect; the walk
+    is free because stringify already visits everything.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/json.test.js
+    visibility: visible
+    concept: javascript.data.json
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.engineering.errors
+
+hints:
+  - level: conceptual
+    text: JSON.parse throws on bad syntax; your job is to add where the text came from, because "Unexpected token" without a filename is a message about nothing.
+  - level: structural
+    text: try/catch around JSON.parse, rethrow as ConfigError with the source woven into the message.
+  - level: language
+    text: '`config[key] ?? defaults[key]` keeps 0, false and "" from the config; `||` would flatten all three into the default.'
+  - level: syntax
+    text: 'A replacer sees every value: `JSON.stringify(value, (key, val) => { ...check...; return val; })`.'
+  - level: explicit
+    text: 'In the replacer, throw on `typeof val === "function"`, on `val === undefined`, and on `typeof val === "number" && !Number.isFinite(val)`. Top-level undefined needs its own check before stringify — the replacer is not called for it in a useful way.'
+
+explanation: |
+  The `source` field is the whole reason `ConfigError` exists as a class.
+  "Unexpected token } at position 41" tells an operator nothing at 3am;
+  "config.json: Unexpected token" points at the file to open. Wrapping a
+  built-in error to *add context* — not to hide the original — is the pattern
+  every layered system repeats, and carrying the context as a field rather
+  than only prose lets code branch on it while humans read the message.
+
+  The `??`/`||` distinction in `withDefaults` is a bug generator with a long
+  history. `||` asks "is this falsy", which sweeps up `0`, `false` and `""` —
+  all three are configuration people actually write (`retries: 0`,
+  `verbose: false`). `??` asks "is this absent", which is the question a
+  defaults function means. The edge tests pin every one of the three.
+
+  `safeStringify` inverts JSON's worst habit. `stringify` never warns: it
+  drops function properties, turns `NaN` into `null`, turns `undefined`
+  array elements into `null` — each a small lie that surfaces as a mystery
+  weeks later on the reading side. The replacer trick gets the full
+  recursive walk for free, because stringify was already visiting every
+  value; the replacer just gets to look first.
+
+mutationExceptions:
+  - path: main.js
+    operator: strictness
+    line: 16
+    why: >-
+      typeof returns a string and JSON.parse never yields undefined, so both comparisons on this line behave identically.
+  - path: main.js
+    operator: strictness
+    line: 53
+    why: >-
+      typeof always returns a string; == and === are the same test here.
+  - path: main.js
+    operator: strictness
+    line: 55
+    why: >-
+      typeof always returns a string; == and === are the same test here.

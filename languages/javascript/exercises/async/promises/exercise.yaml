@@ -1,0 +1,83 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.async.settled
+version: 1
+language: javascript
+title: All, or every result including the failures
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 540
+timeoutMs: 20000
+
+skills:
+  - javascript.async.promises
+  - javascript.async.concurrency
+  - javascript.async.errors
+
+prerequisites: []
+
+learningObjectives:
+  - Choose between failing fast and collecting every outcome.
+  - Run limited amounts of work concurrently instead of all or one at a time.
+  - Keep results in input order even when completion order differs.
+
+prompt: |
+  `Promise.all` rejects the moment any input rejects. Sometimes that is
+  exactly right — the results are useless without all of them — and sometimes
+  it throws away nine good answers because of one bad one.
+
+  In `main.js`, implement:
+
+  - `fetchAll(tasks)` — `tasks` is an array of functions returning promises.
+    Start them **all at once**, and resolve to their results in input order.
+    One rejection rejects the whole thing: this is the fail-fast case.
+  - `fetchSettled(tasks)` — same input, but always resolves, to an array of
+    `{ ok: true, value }` or `{ ok: false, reason }` in input order. The
+    caller decides what a partial harvest is worth.
+  - `fetchLimited(tasks, limit)` — like `fetchSettled`, but at most `limit`
+    tasks are ever running at once. The next task starts only when one
+    finishes. Order of results is still input order. A limit of 3 against ten
+    thousand URLs is the difference between a crawler and an accidental
+    denial-of-service tool.
+
+  Do not call the built-ins `Promise.allSettled` — building it is the point —
+  but `Promise.all` and plain `async/await` are fine.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/settled.test.js
+    visibility: visible
+    concept: javascript.async.promises
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.async.concurrency
+
+hints:
+  - level: conceptual
+    text: Starting a task and awaiting it are separate acts. Concurrency comes from starting several before awaiting any.
+  - level: structural
+    text: 'For fetchSettled, wrap each task in a promise that catches and reshapes, then Promise.all the wrappers — a promise that cannot reject makes all collect everything.'
+  - level: language
+    text: '`task().then(value => ({ ok: true, value }), reason => ({ ok: false, reason }))` never rejects.'
+  - level: syntax
+    text: 'For the limit, share a cursor: several workers loop `while (next < tasks.length)`, each claiming `const index = next++` before awaiting.'
+  - level: explicit
+    text: 'Write results into `results[index]` rather than pushing, and the input order survives any completion order. Spawn `Math.min(limit, tasks.length)` workers with Promise.all.'
+
+explanation: |
+  The wrapper trick in `fetchSettled` is worth internalizing: `Promise.all`
+  fails fast only because its inputs can reject, so feeding it promises that
+  have already converted failure into data gives you collect-everything
+  semantics from the fail-fast tool. The two-argument form of `.then` is
+  doing the work there.
+
+  The shared-cursor pool in `fetchLimited` is the smallest real concurrency
+  limiter, and the important line is `const index = next++` *before* the
+  await. Each worker claims its task synchronously, so two workers cannot grab
+  the same index — JavaScript's single thread makes the increment atomic as
+  long as no await sits between the read and the write. Move the increment
+  after an await and the bug appears, intermittently, under load.
+
+  Writing to `results[index]` instead of `results.push(...)` is how input
+  order survives. Completion order depends on timing you do not control;
+  the index does not.

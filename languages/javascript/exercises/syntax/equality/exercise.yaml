@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: javascript.syntax.equality
 version: 1
 language: javascript
@@ -79,7 +80,7 @@ explanation: |
 mutationExceptions:
   - path: main.js
     operator: strictness
-    line: 12
+    line: 13
     why: >-
       `value == null` is true for exactly null and undefined, which is what
       this pair of strict checks already tests. No input can distinguish the
@@ -87,7 +88,7 @@ mutationExceptions:
       tool rather than a mistake.
   - path: main.js
     operator: strictness
-    line: 17
+    line: 18
     why: >-
       A string length is always a number, so strict and loose comparison to
       zero agree on every possible input.

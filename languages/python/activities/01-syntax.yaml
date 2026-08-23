@@ -1,0 +1,257 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+# Python: syntax and control flow, read rather than run.
+#
+# The first stage of the course, and the questions are chosen from where
+# confident people are confidently wrong: integer division, truthiness, the
+# difference between `is` and `==`, and what a loop variable holds after the
+# loop.
+
+activities:
+  - id: python.syntax.expressions.po-1
+    kind: predict-output
+    language: python
+    title: Division, twice
+    difficulty: 1
+    estimatedSeconds: 45
+    skills: [python.syntax.expressions]
+    prompt: What does this print?
+    code: |
+      print(7 / 2)
+      print(7 // 2)
+      print(-7 // 2)
+      print(7 % 2)
+    expected: |
+      3.5
+      3
+      -4
+      1
+    explanation: >-
+      `/` is always float division in Python 3, even when the result is whole —
+      `4 / 2` is `2.0`, not `2`. `//` floors, and flooring is not truncation:
+      `-7 // 2` is `-4` rather than `-3`, because floor rounds toward negative
+      infinity. That difference is the source of most off-by-one bugs involving
+      negative indices.
+
+  - id: python.syntax.variables.mc-1
+    kind: multiple-choice
+    language: python
+    title: Two names, one list
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.syntax.variables, python.collections.list]
+    prompt: What is `a` after this runs?
+    code: |
+      a = [1, 2, 3]
+      b = a
+      b.append(4)
+    options:
+      - text: '[1, 2, 3, 4]'
+      - text: '[1, 2, 3]'
+        why: Assignment does not copy. `b` is another name for the same list, not a second list.
+      - text: 'It raises, because a list literal is immutable.'
+        why: Tuples are immutable; lists are not. `[1, 2, 3]` is a list.
+      - text: '[4]'
+        why: '`append` adds to the end; it does not replace the contents.'
+    correct: [0]
+    explanation: >-
+      `b = a` binds a second name to the same object. There is one list, and
+      mutating it through either name is visible through both. This is the
+      single most common surprise in the language, and it is why a function
+      that takes a list and modifies it changes the caller's list too.
+      `b = a[:]` or `b = list(a)` makes the copy people usually meant.
+
+  - id: python.syntax.strings.fill-1
+    kind: fill-blanks
+    language: python
+    title: Formatting a number
+    difficulty: 2
+    estimatedSeconds: 50
+    skills: [python.syntax.strings]
+    prompt: 'Complete the f-string so it prints `Total: 1,234.50`.'
+    template: |
+      total = 1234.5
+      print(f"Total: {total{1}}")
+    blanks:
+      - index: 1
+        accepts: [':,.2f', ':,.2F']
+        hint: A colon starts the format spec; a comma groups thousands.
+    explanation: >-
+      The format spec after the colon is the same mini-language `format()` uses.
+      `,` inserts thousands separators, `.2f` fixes two decimal places, and the
+      order matters — `:,.2f`, not `:.2f,`. Reaching for string concatenation
+      and manual rounding instead is how a total ends up displayed as
+      `1234.5000000001`.
+
+  - id: python.syntax.indentation.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The line that always runs
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.syntax.indentation, python.control.conditionals]
+    prompt: This reports success even when the check fails. Which line is at fault?
+    code: |
+      def save(record):
+          if record.get("id") is None:
+              print("no id")
+              return False
+          write(record)
+          return True
+      print("saved")
+    faultLine: 7
+    correction: '    print("saved")  # inside the function, after write'
+    explanation: >-
+      `print("saved")` is at module level, not inside `save`, so it runs once
+      when the file is imported and never again. In a language with braces this
+      would be a misplaced brace and probably a syntax error; in Python it is
+      valid code that does something else entirely, which is why indentation
+      here is structure rather than style.
+
+  - id: python.syntax.imports.match-1
+    kind: match-pairs
+    language: python
+    title: What each import brings in
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.syntax.imports]
+    prompt: Match each import to the name it makes available.
+    pairs:
+      - left: import json
+        right: json.dumps
+      - left: from json import dumps
+        right: dumps
+      - left: import json as j
+        right: j.dumps
+      - left: from json import dumps as to_json
+        right: to_json
+    explanation: >-
+      `import x` binds the module; `from x import y` binds the member and not
+      the module. The practical difference is at the call site — `json.dumps`
+      says where it came from, `dumps` does not — which is why the first form
+      is the default in most style guides and the second is reserved for names
+      that are unambiguous on their own.
+
+  - id: python.control.conditionals.mc-1
+    kind: multiple-choice
+    language: python
+    title: Truthy, and what is not
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.control.conditionals]
+    prompt: Which of these is truthy?
+    options:
+      - text: '[0]'
+      - text: '[]'
+        why: An empty list is falsy. A list containing a falsy value is not.
+      - text: '0'
+        why: Zero is falsy, in every numeric type.
+      - text: "''"
+        why: The empty string is falsy; a string of whitespace is not.
+    correct: [0]
+    explanation: >-
+      Emptiness is what makes a container falsy, not what it contains. `[0]`
+      has one element, so it is truthy, even though that element is falsy
+      itself. This matters most when checking a function's return: `if items:`
+      asks "is there anything", while `if items is not None:` asks "did I get
+      a list at all", and confusing the two turns an empty result into an
+      error case.
+
+  - id: python.control.for.po-1
+    kind: predict-output
+    language: python
+    title: What survives the loop
+    difficulty: 3
+    estimatedSeconds: 70
+    skills: [python.control.for, python.functions.scope]
+    prompt: What does this print?
+    code: |
+      for i in range(3):
+          pass
+      print(i)
+
+      total = 0
+      for n in []:
+          total += n
+      print(total)
+    expected: |
+      2
+      0
+    explanation: >-
+      A `for` variable is not scoped to the loop — it survives afterwards,
+      holding the last value it took. That is occasionally useful and more
+      often a bug, because a loop that never ran leaves the name *unbound*
+      entirely, and `print(i)` after an empty range raises `NameError` rather
+      than printing anything.
+
+  - id: python.control.loop-control.mc-1
+    kind: multiple-choice
+    language: python
+    title: The else nobody expects
+    difficulty: 4
+    estimatedSeconds: 80
+    skills: [python.control.loop-control, python.control.for]
+    prompt: When does the `else` on a `for` loop run?
+    code: |
+      for item in items:
+          if item == target:
+              break
+      else:
+          print("not found")
+    options:
+      - text: When the loop finished without hitting a break.
+      - text: When the loop body never ran.
+        why: That is one case where it runs, but not the rule — it also runs after a loop that completed normally.
+      - text: When the loop raised an exception.
+        why: An exception propagates; the else is skipped along with everything after it.
+      - text: Every time, after the loop.
+        why: A `break` skips it, which is the entire reason the construct exists.
+    correct: [0]
+    explanation: >-
+      Read it as "no break" rather than "else", and it stops being strange: the
+      block runs when the search ended without finding anything. It replaces
+      the `found = False` flag that this pattern otherwise needs, and it is the
+      one piece of Python syntax that regularly surprises people who have
+      written the language for years.
+
+  - id: python.control.range-enumerate-zip.order-1
+    kind: order-lines
+    language: python
+    title: Indexing without a counter
+    difficulty: 2
+    estimatedSeconds: 70
+    skills: [python.control.range-enumerate-zip]
+    prompt: Put these in order to print each name with its one-based position.
+    lines:
+      - names = ["ada", "grace", "linus"]
+      - 'for position, name in enumerate(names, start=1):'
+      - '    print(f"{position}. {name}")'
+    explanation: >-
+      `enumerate` yields the index alongside the value, and its `start`
+      argument moves the numbering without arithmetic at the call site. The
+      alternative — `for i in range(len(names))` and then `names[i]` — is
+      longer, indexes twice, and is the single clearest signal in a code review
+      that somebody is writing another language in Python's syntax.
+
+  - id: python.control.while.spot-1
+    kind: spot-the-bug
+    language: python
+    title: The loop that never ends
+    difficulty: 2
+    estimatedSeconds: 60
+    skills: [python.control.while]
+    prompt: This never terminates. Which line is missing the work?
+    code: |
+      remaining = 10
+      while remaining > 0:
+          print(remaining)
+          if remaining % 2 == 0:
+              continue
+          remaining -= 1
+    faultLine: 5
+    correction: '        remaining -= 1  # decrement before continuing'
+    explanation: >-
+      `continue` jumps straight back to the condition, skipping the decrement
+      below it. On the first even value the counter stops moving and the loop
+      runs forever printing the same number. `continue` in a `while` is the one
+      place it is genuinely dangerous: in a `for` loop the iterator still
+      advances, so the same mistake terminates.

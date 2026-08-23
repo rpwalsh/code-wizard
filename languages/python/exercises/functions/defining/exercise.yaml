@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 id: python.functions.defining
 version: 1
 language: python
@@ -28,7 +29,7 @@ prompt: |
   - `safe_divide(top, bottom)` returns the division, or `None` when `bottom` is
     zero. Use a guard clause — check the bad case and leave, rather than
     wrapping the good case in an `else`.
-  - `label(count, noun)` returns `"1 file"` or `"3 files"`, pluralising by
+  - `label(count, noun)` returns `"1 file"` or `"3 files"`, pluralizing by
     adding an `s`.
   - `announce(message)` prints the message and returns nothing at all. Do not
     write a `return` statement in it.

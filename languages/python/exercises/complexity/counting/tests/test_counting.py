@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """The counts on small inputs, checkable by hand."""
 
 import pytest

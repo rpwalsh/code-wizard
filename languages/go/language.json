@@ -1,0 +1,5 @@
+{
+  "id": "go",
+  "title": "Go",
+  "summary": "For someone coming from a language with exceptions and inheritance, both of which are absent here. About errors as values, interfaces satisfied implicitly, and concurrency you can reason about."
+}
