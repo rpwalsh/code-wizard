@@ -1,8 +1,9 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { WorkspaceFile } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
 import type { Mutant, MutationOperator } from './mutation.ts';
-import { applyMutant, generateMutants, runMutationTesting, summarise } from './mutation.ts';
+import { applyMutant, generateMutants, runMutationTesting, summarize } from './mutation.ts';
 
 /** A trivial operator, so these tests do not depend on any language. */
 const flipZeroToOne: MutationOperator = {
@@ -109,7 +110,7 @@ describe('running mutation testing', () => {
 
   it('treats nothing to mutate as clean rather than as a failure', () => {
     // An exercise with no mutable solution has not been proven weak.
-    expect(summarise(0, []).score).toBe(1);
+    expect(summarize(0, []).score).toBe(1);
   });
 });
 

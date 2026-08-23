@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Development
 
 Node 22 or newer. Python 3.10+ with pytest for the desktop runtime and for the
@@ -8,8 +10,11 @@ npm install
 npm run verify
 ```
 
-`verify` is the whole gate: generated sources are in sync, lint passes,
-everything type-checks including both apps, and the tests pass.
+`verify` is the whole gate: generated sources are in sync, every file
+carries the copyright notice, spelling is American throughout (`npm run
+spelling` fixes what `spelling:check` reports — identifiers, directory names
+and prose alike), lint passes, everything type-checks including both apps, and
+the tests pass.
 
 ---
 
@@ -57,7 +62,7 @@ names has content behind it.
 
 `curriculum planned` lists the curricula in `curricula/` — designed, and with
 no runtime behind any of them. It is a separate report on purpose: mixing a
-course that cannot be practised into the same table as one with 228 exercises
+course that cannot be practiced into the same table as one with 228 lessons
 behind it would make the difference a percentage rather than a fact.
 
 ---
@@ -86,7 +91,7 @@ the desktop have to be measured by the same ruler.
 [PRINCIPLES.md](../PRINCIPLES.md) that can be checked mechanically: no LLM
 client anywhere in the dependency tree, no model endpoints in shipped source,
 no payment or analytics dependency in the web build, no account identifiers,
-no language name inside the engines, and both licences present and referenced.
+no language name inside the engines, and both licenses present and referenced.
 
 ---
 
@@ -115,7 +120,7 @@ re-derives history rather than invalidating it.
 packages/
   core/         The contracts. Runtime, workspace, mastery, modes, prediction.
   execution/    Sandboxed process execution: timeouts, output caps, process trees.
-  exercises/    Exercises as data — schema, loader, catalogue, validator, mutation, bundling.
+  exercises/    Exercises as data — schema, loader, catalog, validator, mutation, bundling.
   learning/     Attempts, fluency metrics, grading, the mastery model.
   curriculum/   Spaced repetition, the recommender, sessions, demonstrations, the syllabus.
   storage/      One ProgressStore contract; SQLite, IndexedDB and in-memory behind it.
@@ -135,7 +140,7 @@ languages/       Languages that run.
     exercises/  The content.
     curriculum/ The course, one file per stage.
 
-curricula/       Courses that are designed and cannot be practised yet. Data only.
+curricula/       Courses that are designed and cannot be practiced yet. Data only.
 
 apps/
   web/          The interface. Static build, runs anywhere.
@@ -151,6 +156,6 @@ processes that ignore interrupts, output floods, process trees, path traversal
 and environment leakage. They are slow and they are the point — isolation that
 has only been reasoned about is not isolation.
 
-The content gate derives its timeout from the size of the catalogue, because
+The content gate derives its timeout from the size of the catalog, because
 it executes every exercise twice and a flat limit turns a real failure into
 something that looks like a timeout as the curriculum grows.

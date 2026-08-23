@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { affordancesFor } from '@code-retrainer/core';
 
 import type { Attempt, HintLevel } from './attempt.ts';

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,15 +73,15 @@ const MANIFESTS = [
 
 describe('no AI in the learner experience', () => {
   it('declares no LLM client in any manifest', async () => {
-    const offences: string[] = [];
+    const offenses: string[] = [];
 
     for (const manifest of MANIFESTS) {
       for (const name of declaredNames(await readJson(manifest))) {
-        if (LLM_CLIENTS.includes(name)) offences.push(`${manifest} → ${name}`);
+        if (LLM_CLIENTS.includes(name)) offenses.push(`${manifest} → ${name}`);
       }
     }
 
-    expect(offences).toEqual([]);
+    expect(offenses).toEqual([]);
   });
 
   it('resolves no LLM client anywhere in the installed tree', async () => {
@@ -109,14 +110,14 @@ describe('no AI in the learner experience', () => {
     );
 
     const endpoints = /api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com/;
-    const offences: string[] = [];
+    const offenses: string[] = [];
 
     for (const file of files) {
       const contents = await readFile(path.join(root, file), 'utf8');
-      if (endpoints.test(contents)) offences.push(file);
+      if (endpoints.test(contents)) offenses.push(file);
     }
 
-    expect(offences).toEqual([]);
+    expect(offenses).toEqual([]);
   });
 });
 
@@ -146,19 +147,19 @@ describe('free forever, as an architectural constraint', () => {
     const files = await globby(['apps/web/src/**/*.{ts,tsx}'], { cwd: root, gitignore: true });
 
     const authish = /\b(signIn|signUp|logIn|oauth|accessToken|refreshToken)\b/i;
-    const offences: string[] = [];
+    const offenses: string[] = [];
 
     for (const file of files) {
       const contents = await readFile(path.join(root, file), 'utf8');
-      if (authish.test(contents)) offences.push(file);
+      if (authish.test(contents)) offenses.push(file);
     }
 
-    expect(offences).toEqual([]);
+    expect(offenses).toEqual([]);
   });
 });
 
 describe('the terms are stated, not implied', () => {
-  it('ships both licences and the notice that there is no support', async () => {
+  it('ships both licenses and the notice that there is no support', async () => {
     // An unlicensed repository means all rights reserved, which would quietly
     // contradict every sentence in PRINCIPLES.md about what a learner may do.
     for (const file of ['LICENSE.md', 'CONTENT-LICENSE.md', 'CONTRIBUTING.md']) {
@@ -167,7 +168,7 @@ describe('the terms are stated, not implied', () => {
     }
   });
 
-  it('points every manifest at the licence rather than leaving it blank', async () => {
+  it('points every manifest at the license rather than leaving it blank', async () => {
     const unlicensed: string[] = [];
 
     for (const manifest of MANIFESTS) {
@@ -182,8 +183,8 @@ describe('the terms are stated, not implied', () => {
 
   it('keeps the curriculum terms separate from the software terms', async () => {
     // The split is the whole point: the software is permissive for
-    // noncommercial use and the curriculum is not. A single licence file
-    // covering both would erase the distinction the content licence exists for.
+    // noncommercial use and the curriculum is not. A single license file
+    // covering both would erase the distinction the content license exists for.
     const software = await readFile(path.join(root, 'LICENSE.md'), 'utf8');
     expect(software).toMatch(/CONTENT-LICENSE\.md/);
     expect(software).toMatch(/PolyForm Noncommercial License 1\.0\.0/);
@@ -206,14 +207,14 @@ describe('the language is a plugin', () => {
       { cwd: root, gitignore: true, ignore: ['**/*.test.ts'] },
     );
 
-    const offences: string[] = [];
+    const offenses: string[] = [];
     for (const file of files) {
       const contents = await readFile(path.join(root, file), 'utf8');
       // Comments and doc examples may name Python; code must not branch on it.
       const code = contents.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-      if (/['"`]python['"`]/i.test(code)) offences.push(file);
+      if (/['"`]python['"`]/i.test(code)) offenses.push(file);
     }
 
-    expect(offences).toEqual([]);
+    expect(offenses).toEqual([]);
   });
 });

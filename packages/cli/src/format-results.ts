@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { RuntimeDiagnosis, TestCaseResult, TestResult } from '@code-retrainer/core';
 
 import { columns, formatDuration, indent, style, symbol } from './terminal.ts';
@@ -19,8 +20,8 @@ export function formatTestResult(result: TestResult): string {
   for (const testCase of result.cases) {
     const badge = STATUS_SYMBOL[testCase.status];
     const name =
-      testCase.status === 'passed' ? style.grey(testCase.name) : style.bold(testCase.name);
-    const tag = testCase.visibility === 'visible' ? '' : style.grey(` [${testCase.visibility}]`);
+      testCase.status === 'passed' ? style.gray(testCase.name) : style.bold(testCase.name);
+    const tag = testCase.visibility === 'visible' ? '' : style.gray(` [${testCase.visibility}]`);
     lines.push(`${badge} ${name}${tag}`);
 
     if (testCase.status === 'passed' || testCase.status === 'skipped') continue;
@@ -31,13 +32,13 @@ export function formatTestResult(result: TestResult): string {
     if (detail.length > 0) {
       lines.push(indent(columns(detail), 4));
     } else if (testCase.message) {
-      lines.push(indent(style.grey(testCase.message), 4));
+      lines.push(indent(style.gray(testCase.message), 4));
     }
     if (testCase.message && detail.length > 0 && testCase.message !== testCase.received) {
-      lines.push(indent(style.grey(testCase.message), 4));
+      lines.push(indent(style.gray(testCase.message), 4));
     }
     if (testCase.concept) {
-      lines.push(indent(style.grey(`Relevant concept: ${testCase.concept}`), 4));
+      lines.push(indent(style.gray(`Relevant concept: ${testCase.concept}`), 4));
     }
     lines.push('');
   }
@@ -53,9 +54,9 @@ function summaryLine(result: TestResult): string {
   const parts = [style.green(`${result.passed} passed`)];
   if (result.failed > 0) parts.push(style.red(`${result.failed} failed`));
   if (result.errored > 0) parts.push(style.red(`${result.errored} errored`));
-  if (result.skipped > 0) parts.push(style.grey(`${result.skipped} skipped`));
-  parts.push(style.grey(formatDuration(result.durationMs)));
-  return parts.join(style.grey(', '));
+  if (result.skipped > 0) parts.push(style.gray(`${result.skipped} skipped`));
+  parts.push(style.gray(formatDuration(result.durationMs)));
+  return parts.join(style.gray(', '));
 }
 
 export function describeOutcome(outcome: TestResult['outcome']): string {
@@ -77,7 +78,7 @@ export function formatDiagnosis(diagnosis: RuntimeDiagnosis): string {
   const rows = diagnosis.checks.map((check): [string, string] => {
     const badge =
       check.status === 'pass' ? symbol.pass : check.status === 'warn' ? symbol.warn : symbol.fail;
-    const detail = check.detail ? style.grey(check.detail) : '';
+    const detail = check.detail ? style.gray(check.detail) : '';
     return [`${badge} ${check.label}`, detail];
   });
 

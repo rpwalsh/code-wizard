@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type {
   LanguageMetadata,
   LanguageRuntime,
@@ -45,7 +46,7 @@ function checks(report: { issues: readonly { check: string }[] }): string[] {
 
 /**
  * A runtime that decides pass/fail purely from the contents of `main.py`, so
- * behavioural validation can be exercised without spawning an interpreter.
+ * behavioral validation can be exercised without spawning an interpreter.
  */
 function fakeRuntime(options: {
   solutionPasses: boolean;
@@ -192,7 +193,7 @@ describe('skill validation', () => {
   });
 });
 
-describe('behavioural validation', () => {
+describe('behavioral validation', () => {
   it('passes when the solution is green and the starter is red', async () => {
     const report = await validateExercise(exercise(), {
       skillGraph,

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillMastery } from '@code-retrainer/core';
 import type { ExperienceLevel } from '@code-retrainer/curriculum';
 import {
@@ -67,7 +68,7 @@ function diagnostic(context: CliContext): number {
 
   console.log(heading(`Onboarding diagnostic (${plan.exercises.length} exercises)`));
   if (plan.exercises.length === 0) {
-    console.log(style.grey('No exercises are suitable for a diagnostic yet.'));
+    console.log(style.gray('No exercises are suitable for a diagnostic yet.'));
     return 0;
   }
 
@@ -75,7 +76,7 @@ function diagnostic(context: CliContext): number {
     columns(
       plan.exercises.map((exercise) => [
         `  ${exercise.id}`,
-        `${style.grey(`d${exercise.difficulty}`)} ${exercise.title}`,
+        `${style.gray(`d${exercise.difficulty}`)} ${exercise.title}`,
       ]),
     ),
   );
@@ -96,7 +97,7 @@ function next(context: CliContext, level: ExperienceLevel): number {
     { limit: 5 },
   );
 
-  console.log(heading(`What to practise next (profile: ${level})`));
+  console.log(heading(`What to practice next (profile: ${level})`));
 
   if (result.recommendations.length === 0) {
     console.log(style.yellow('Nothing is unlocked yet. Run the diagnostic first.'));
@@ -104,13 +105,13 @@ function next(context: CliContext, level: ExperienceLevel): number {
 
   for (const recommendation of result.recommendations) {
     console.log(
-      `${style.bold(recommendation.exercise.id)} ${style.grey(`score ${recommendation.score}`)}`,
+      `${style.bold(recommendation.exercise.id)} ${style.gray(`score ${recommendation.score}`)}`,
     );
     console.log(indent(recommendation.reason, 2));
     for (const factor of recommendation.factors) {
       const sign =
         factor.delta >= 0 ? style.green(`+${factor.delta}`) : style.red(`${factor.delta}`);
-      console.log(indent(`${sign}  ${style.grey(factor.label)}`, 4));
+      console.log(indent(`${sign}  ${style.gray(factor.label)}`, 4));
     }
     console.log('');
   }
@@ -121,7 +122,7 @@ function next(context: CliContext, level: ExperienceLevel): number {
       columns(
         result.blocked.map((blocked) => [
           `  ${blocked.exercise.id}`,
-          style.grey(`needs ${blocked.missing.join(', ')}`),
+          style.gray(`needs ${blocked.missing.join(', ')}`),
         ]),
       ),
     );
@@ -141,11 +142,11 @@ function session(context: CliContext, level: ExperienceLevel): number {
   const plan = planSession(result.recommendations, { dueSkills: new Set() });
 
   console.log(heading(greeting(now)));
-  console.log(style.grey(`Your current focus: Python — Independent Fluency`));
+  console.log(style.gray(`Your current focus: Python — Independent Fluency`));
   console.log(heading('Today'));
 
   if (plan.items.length === 0) {
-    console.log(style.yellow('Nothing to practise — no exercises are unlocked yet.'));
+    console.log(style.yellow('Nothing to practice — no exercises are unlocked yet.'));
   }
 
   for (const group of groupBySlot(plan)) {
@@ -153,13 +154,13 @@ function session(context: CliContext, level: ExperienceLevel): number {
     for (const item of group.items) {
       console.log(
         indent(
-          `${symbol.bullet} ${item.exercise.title} ${style.grey(
+          `${symbol.bullet} ${item.exercise.title} ${style.gray(
             `· ${formatDuration(item.estimatedSeconds * 1000)}`,
           )}`,
           2,
         ),
       );
-      console.log(indent(style.grey(item.reason), 4));
+      console.log(indent(style.gray(item.reason), 4));
     }
     console.log('');
   }

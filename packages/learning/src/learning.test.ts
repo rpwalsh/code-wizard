@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { headlineMastery } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
@@ -450,7 +451,7 @@ describe('mastery updates', () => {
 });
 
 describe('retention', () => {
-  const practised = () => ({
+  const practiced = () => ({
     ...emptyMastery('s'),
     vector: { ...emptyMastery('s').vector, retention: 0.8 },
     lastPracticedAt: START,
@@ -458,25 +459,25 @@ describe('retention', () => {
   });
 
   it('decays with time away from the skill', () => {
-    const later = decayRetention(practised(), new Date(Date.parse(START) + 60 * 86_400_000));
+    const later = decayRetention(practiced(), new Date(Date.parse(START) + 60 * 86_400_000));
     expect(later.vector.retention).toBeLessThan(0.8);
   });
 
   it('does not decay on the same day', () => {
-    const same = decayRetention(practised(), new Date(Date.parse(START)));
+    const same = decayRetention(practiced(), new Date(Date.parse(START)));
     expect(same.vector.retention).toBe(0.8);
   });
 
   it('decays a well-established skill more slowly than a shaky one', () => {
-    const shaky = { ...practised(), vector: { ...practised().vector, retention: 0.2 } };
+    const shaky = { ...practiced(), vector: { ...practiced().vector, retention: 0.2 } };
     const days = 30;
     const now = new Date(Date.parse(START) + days * 86_400_000);
-    const strongLoss = 0.8 - decayRetention(practised(), now).vector.retention;
+    const strongLoss = 0.8 - decayRetention(practiced(), now).vector.retention;
     const weakLoss = 0.2 - decayRetention(shaky, now).vector.retention;
     expect(strongLoss / 0.8).toBeLessThan(weakLoss / 0.2);
   });
 
-  it('leaves a never-practised skill alone', () => {
+  it('leaves a never-practiced skill alone', () => {
     const untouched = decayRetention(emptyMastery('s'), new Date());
     expect(untouched.vector.retention).toBe(0);
   });

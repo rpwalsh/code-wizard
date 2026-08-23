@@ -1,8 +1,10 @@
-# Curriculum Licence
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
+# Curriculum License
 
 Copyright 2026 Code Retrainer contributors. All rights reserved.
 
-This licence covers the **curriculum**: the exercises, skills, prerequisites,
+This license covers the **curriculum**: the exercises, skills, prerequisites,
 prompts, hints, learning objectives, tests, reference solutions and reference
 documentation under `languages/*/exercises` and `languages/*/documentation`,
 together with any bundle generated from them (`content/catalog.json`).
@@ -25,7 +27,7 @@ never will be.
 **Host an unmodified copy** of this curriculum for others to learn from at no
 charge, keeping this notice intact.
 
-## What you may not do without a separate written licence
+## What you may not do without a separate written license
 
 - Copy or redistribute the curriculum, in whole or in substantial part, outside
   this repository.
@@ -42,13 +44,12 @@ pedagogically sound, or fit for any purpose, and no undertaking to maintain,
 correct or continue it. Contributions are not accepted; see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Getting a licence
+## Getting a license
 
-Commercial and derivative licences are available. Ask.
-
+Commercial and derivative licenses are available. Ask [ryan](http://www.linkedin.com/in/uiarchitect).
 ---
 
-## Why this is not an open content licence
+## Why this is not an open content license
 
 The software is deliberately permissive, and the curriculum deliberately is
 not. They are protecting different things.
@@ -60,7 +61,7 @@ scoring produces numbers that look comparable and are not. Sequencing,
 difficulty and hint ladders are calibrated against each other, and a partial
 copy silently breaks that calibration while still reporting a mastery figure.
 
-The measurement is the product. This licence exists so that a number produced
+The measurement is the product. This license exists so that a number produced
 by this curriculum means one thing.
 
 **None of this restricts a learner.** Reading, running and learning from the
@@ -70,4 +71,4 @@ anyone.
 ---
 
 _Not legal advice. If you need certainty about a specific use, ask for a
-written licence rather than relying on your reading of this file._
+written license rather than relying on your reading of this file._

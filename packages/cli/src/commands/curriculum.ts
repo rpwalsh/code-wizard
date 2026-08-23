@@ -1,8 +1,12 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+import { checkActivities, loadActivitiesForLanguage } from '@code-retrainer/activities';
+
+import { collectActivitySets } from '../activity-sources.ts';
 import { loadPlanned, loadSyllabus } from '@code-retrainer/exercises';
 import { readSyllabusProgress, validateSyllabus } from '@code-retrainer/curriculum';
 
 import { createContext, curriculumRoots, plannedRoot } from '../context.ts';
-import { columns, heading, indent, pluralise, style, symbol } from '../terminal.ts';
+import { columns, heading, indent, pluralize, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
 
 export async function runCurriculumCommand(
@@ -21,9 +25,13 @@ export async function runCurriculumCommand(
       return syllabus();
     case 'planned':
       return planned();
+    case 'activities':
+      return activities();
     default:
       console.error(style.red(`Unknown curriculum command "${subcommand}".`));
-      console.error('Try: code-retrainer curriculum check | skills | syllabus | planned');
+      console.error(
+        'Try: code-retrainer curriculum check | skills | syllabus | planned | activities',
+      );
       return 2;
   }
 }
@@ -40,18 +48,18 @@ async function check(): Promise<number> {
   console.log(heading('Skill graph'));
   console.log(
     columns([
-      [`${symbol.pass} skills`, style.grey(String(context.skillGraph.size))],
-      [`${symbol.pass} acyclic`, style.grey('verified when the graph was built')],
-      [`${symbol.pass} exercises`, style.grey(String(context.catalog.size))],
+      [`${symbol.pass} skills`, style.gray(String(context.skillGraph.size))],
+      [`${symbol.pass} acyclic`, style.gray('verified when the graph was built')],
+      [`${symbol.pass} exercises`, style.gray(String(context.catalog.size))],
     ]),
   );
 
   if (context.loadFailures.length > 0) {
     failed = true;
-    console.log(heading(`${pluralise(context.loadFailures.length, 'exercise')} failed to load`));
+    console.log(heading(`${pluralize(context.loadFailures.length, 'exercise')} failed to load`));
     for (const failure of context.loadFailures) {
       console.log(`${symbol.fail} ${failure.directory}`);
-      console.log(indent(style.grey(failure.message), 4));
+      console.log(indent(style.gray(failure.message), 4));
     }
   }
 
@@ -69,7 +77,7 @@ async function check(): Promise<number> {
   const covered = context.skillGraph.size - uncovered.length;
   const percentage = context.skillGraph.size === 0 ? 0 : (covered / context.skillGraph.size) * 100;
   console.log(
-    `${covered}/${context.skillGraph.size} skills have at least one exercise ${style.grey(
+    `${covered}/${context.skillGraph.size} skills have at least one exercise ${style.gray(
       `(${percentage.toFixed(0)}%)`,
     )}`,
   );
@@ -79,7 +87,7 @@ async function check(): Promise<number> {
     console.log('');
     console.log(style.yellow('Skills with no exercise yet:'));
     for (const skill of uncovered) {
-      console.log(`  ${symbol.bullet} ${skill} ${style.grey(context.skillGraph.get(skill).name)}`);
+      console.log(`  ${symbol.bullet} ${skill} ${style.gray(context.skillGraph.get(skill).name)}`);
     }
   }
 
@@ -93,8 +101,8 @@ async function skills(): Promise<number> {
   for (const skillId of context.skillGraph.topological()) {
     const skill = context.skillGraph.get(skillId);
     const count = context.catalog.forSkill(skillId).length;
-    const label = `${skill.id} ${style.grey(`— ${skill.name}`)} ${
-      count > 0 ? style.green(`(${count})`) : style.grey('(0)')
+    const label = `${skill.id} ${style.gray(`— ${skill.name}`)} ${
+      count > 0 ? style.green(`(${count})`) : style.gray('(0)')
     }`;
     const bucket = byCategory.get(skill.category);
     if (bucket) bucket.push(label);
@@ -111,7 +119,7 @@ async function skills(): Promise<number> {
 /**
  * The planned course, against what has actually been written.
  *
- * The catalogue says what exists. This says what was intended, and the gap is
+ * The catalog says what exists. This says what was intended, and the gap is
  * the only honest measure of progress — a number that goes down as content
  * lands, rather than a claim in a README that never moves.
  */
@@ -136,7 +144,7 @@ async function reportSyllabus(
 
   if (loaded.stages.length === 0) {
     console.log(heading(language));
-    console.log(indent(style.grey('No syllabus written yet.')));
+    console.log(indent(style.gray('No syllabus written yet.')));
     return 0;
   }
 
@@ -176,11 +184,11 @@ async function reportSyllabus(
     console.log(heading('Next to write'));
     for (const entry of next) {
       console.log(indent(`${entry.lesson.id}  ${entry.lesson.title}`));
-      console.log(indent(indent(style.grey(entry.lesson.focus))));
+      console.log(indent(indent(style.gray(entry.lesson.focus))));
     }
     console.log('');
     console.log(
-      indent(style.grey(`${pluralise(progress.outstanding.length, 'lesson')} still to write.`)),
+      indent(style.gray(`${pluralize(progress.outstanding.length, 'lesson')} still to write.`)),
     );
   }
 
@@ -194,7 +202,7 @@ function percent(part: number, whole: number): number {
 /** Ten cells, so every stage is comparable at a glance. */
 function renderBar(part: number, whole: number): string {
   const filled = whole === 0 ? 10 : Math.round((part / whole) * 10);
-  return style.grey('#'.repeat(filled) + '.'.repeat(10 - filled));
+  return style.gray('#'.repeat(filled) + '.'.repeat(10 - filled));
 }
 
 /**
@@ -210,16 +218,17 @@ async function planned(): Promise<number> {
 
   if (curricula.length === 0) {
     console.log(heading('Planned curricula'));
-    console.log(indent(style.grey('None.')));
+    console.log(indent(style.gray('None.')));
     return 0;
   }
 
   console.log(heading('Planned curricula'));
   console.log(
     indent(
-      style.grey(
-        'Designed, and not runnable. Each needs a runtime that can execute an ' +
-          'attempt and judge it before any of it can be practised.',
+      style.gray(
+        'Practisable through activities; not yet writable against tests. Each ' +
+          'still needs a runtime that can execute an attempt and judge it before ' +
+          'the exercise half exists.',
       ),
     ),
   );
@@ -238,23 +247,82 @@ async function planned(): Promise<number> {
     console.log(
       indent(
         indent(
-          style.grey(
-            `${pluralise(curriculum.skills.length, 'skill')} · ` +
-              `${pluralise(syllabus.stages.length, 'stage')} · ` +
-              `${pluralise(count, 'lesson')}`,
+          style.gray(
+            `${pluralize(curriculum.skills.length, 'skill')} · ` +
+              `${pluralize(syllabus.stages.length, 'stage')} · ` +
+              `${pluralize(count, 'lesson')} · ` +
+              `${pluralize((await loadActivitiesForLanguage(curriculum.directory)).length, 'activity', 'activities')}`,
           ),
         ),
       ),
     );
-    console.log(indent(indent(style.grey(curriculum.summary))));
-    console.log(indent(indent(style.grey(`Needs: ${curriculum.blockedBy}`))));
+    console.log(indent(indent(style.gray(curriculum.summary))));
+    console.log(indent(indent(style.gray(`Needs: ${curriculum.blockedBy}`))));
     console.log('');
   }
 
   console.log(
     indent(
-      `${pluralise(curricula.length, 'curriculum', 'curricula')} · ` +
-        `${pluralise(skills, 'skill')} · ${pluralise(lessons, 'lesson')} designed, none runnable.`,
+      `${pluralize(curricula.length, 'curriculum', 'curricula')} · ` +
+        `${pluralize(skills, 'skill')} · ${pluralize(lessons, 'lesson')} designed.`,
+    ),
+  );
+  return 0;
+}
+
+/**
+ * Every activity in the product, and whether any of it is wrong.
+ *
+ * The point of a separate command is that content rot is silent. A wrong
+ * answer key still loads, still renders, and still marks correct answers
+ * wrong; nothing crashes and nobody finds out except the learner, who
+ * concludes they misunderstood something they had right. This is the thing to
+ * run after writing content.
+ */
+async function activities(): Promise<number> {
+  const sets = await collectActivitySets();
+
+  console.log(heading('Activities'));
+  console.log(
+    indent(
+      style.gray(
+        'Practice that needs no runtime: read the code and answer. Graded by ' +
+          'comparison against the answer the author wrote down, never by judgment.',
+      ),
+    ),
+  );
+  console.log('');
+
+  let total = 0;
+  const problems: string[] = [];
+
+  for (const set of sets) {
+    total += set.activities.length;
+    const faults = checkActivities(set.activities);
+    problems.push(...faults);
+
+    const kinds = [...new Set(set.activities.map((activity) => activity.kind))].sort();
+    console.log(
+      columns([
+        [
+          `${faults.length === 0 ? symbol.pass : symbol.fail} ${set.title}`,
+          style.gray(`${String(set.activities.length).padStart(2)} · ${kinds.join(', ')}`),
+        ],
+      ]),
+    );
+  }
+
+  console.log('');
+  if (problems.length > 0) {
+    console.log(indent(style.red(`${pluralize(problems.length, 'problem')}:`)));
+    for (const problem of problems) console.log(indent(indent(style.red(problem))));
+    return 1;
+  }
+
+  console.log(
+    indent(
+      `${pluralize(total, 'activity', 'activities')} across ` +
+        `${pluralize(sets.length, 'course')}, all well-formed.`,
     ),
   );
   return 0;

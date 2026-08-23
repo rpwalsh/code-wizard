@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 export * from './json.ts';
 export * from './workspace.ts';
 export * from './workspace-paths.ts';

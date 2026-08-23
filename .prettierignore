@@ -11,3 +11,6 @@ node_modules/
 apps/desktop/renderer/
 apps/desktop/content/
 apps/web/public/content/
+
+# Vendored WebAssembly runtimes — somebody else's build output.
+apps/web/public/runtime/

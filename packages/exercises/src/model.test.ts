@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { describe, expect, it } from 'vitest';
 
 import { timeBudgetSeconds } from './model.ts';

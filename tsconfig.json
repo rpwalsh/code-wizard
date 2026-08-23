@@ -1,16 +1,80 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/execution" },
-    { "path": "./packages/exercises" },
-    { "path": "./packages/learning" },
-    { "path": "./packages/curriculum" },
-    { "path": "./packages/storage" },
-    { "path": "./languages/python" },
-    { "path": "./languages/javascript" },
-    { "path": "./packages/runtime-web" },
-    { "path": "./packages/session" },
-    { "path": "./packages/cli" }
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/execution"
+    },
+    {
+      "path": "./packages/toolchain"
+    },
+    {
+      "path": "./packages/exercises"
+    },
+    {
+      "path": "./packages/activities"
+    },
+    {
+      "path": "./packages/learning"
+    },
+    {
+      "path": "./packages/curriculum"
+    },
+    {
+      "path": "./packages/storage"
+    },
+    {
+      "path": "./languages/python"
+    },
+    {
+      "path": "./languages/javascript"
+    },
+    {
+      "path": "./languages/typescript"
+    },
+    {
+      "path": "./languages/node"
+    },
+    {
+      "path": "./languages/c"
+    },
+    {
+      "path": "./languages/cpp"
+    },
+    {
+      "path": "./languages/csharp"
+    },
+    {
+      "path": "./languages/go"
+    },
+    {
+      "path": "./languages/rust"
+    },
+    {
+      "path": "./languages/php"
+    },
+    {
+      "path": "./languages/sql"
+    },
+    {
+      "path": "./languages/react"
+    },
+    {
+      "path": "./languages/angular"
+    },
+    {
+      "path": "./languages/aspnet"
+    },
+    {
+      "path": "./packages/runtime-web"
+    },
+    {
+      "path": "./packages/session"
+    },
+    {
+      "path": "./packages/cli"
+    }
   ]
 }

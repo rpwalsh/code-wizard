@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 name: CI
 
 on:
@@ -74,7 +75,7 @@ jobs:
         run: node packages/cli/dist/main.js curriculum check
 
   # Browser tests run once rather than across the matrix: they exercise the
-  # deployed artefact, which is the same bytes everywhere, and each run boots
+  # deployed artifact, which is the same bytes everywhere, and each run boots
   # CPython in WebAssembly.
   browser:
     name: browser

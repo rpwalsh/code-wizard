@@ -1,10 +1,17 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Code Retrainer
 
 **Get your hands back.**
 
-A place to practise writing code yourself — in a real editor, running real
-Python, judged by real tests. Not a quiz, not a video course, and not an
-assistant that writes it for you.
+You could write this from memory once. Then came three years of accepting
+suggestions, and somewhere in there the muscle went quiet. It is still in
+there. This is the gym.
+
+Deliberate practice for programmers: short daily sessions across fourteen
+languages, and a real editor running real code judged by real tests. Not a
+quiz, not a video course, and — the whole point — not an assistant that writes
+it for you. **There is no model anywhere in this product.**
 
 ![The dashboard, light theme](docs/images/dashboard-light.png)
 
@@ -24,9 +31,55 @@ You can understand dictionaries, loops and classes perfectly and still be
 unable to write idiomatic Python without looking things up. That gap is a
 skill of its own, it is measurable, and it is what this trains.
 
-If you learned this once and have spent the last few years accepting
-suggestions, that gap is probably wider than you think. Finding out takes
-about ten minutes.
+The gap is also new, and it is not a character flaw. Autocomplete is very good
+now, and a skill you stop performing is a skill that fades — this is how
+expertise has always worked, and it is why pilots keep flying hours they do not
+strictly need. Finding out where you stand takes about ten minutes.
+
+---
+
+## Two ways to practice
+
+**Activities** — read code and answer. Predict what it prints, find the fault,
+put the lines in order, fill the gaps. Six questions, a few minutes, no editor
+and no runtime — which is why they work for every subject here, including the
+four that are disciplines rather than languages.
+
+![Practice](docs/images/practice-light.png)
+
+Every answer is graded by comparison against an answer written down by a human
+author, and every one ends in an explanation of _why_ — including why each
+wrong option was tempting.
+
+![An activity](docs/images/activity-light.png)
+
+**Exercises** — write the code yourself, against tests, with the starter
+material progressively withdrawn. This is the part that measures fluency. Every
+language has a runtime behind it; how far the _content_ has got varies, and
+`code-retrainer curriculum syllabus` prints the gap per language rather than
+rounding it up.
+
+The two are not interchangeable and the software will not pretend they are.
+Activities can move `knowledge`, `recognition`, `recall` and `debugging`. They
+can **never** move `application`, `composition`, `transfer` or `independence` —
+recognizing a right answer among four is not evidence you could produce it from
+an empty editor. That ceiling is enforced by a test, not by a convention.
+
+---
+
+## What it is not
+
+- **Not gamified.** There are no points, no combos, no hearts, no lives to run
+  out of, and nothing to buy. A wrong answer costs nothing; the activity simply
+  comes round again later in the same session, which is the spacing that
+  actually works.
+- **Not competitive.** No leaderboards, no leagues, no other learners. The only
+  useful comparison is to yourself last month.
+- **Not a clock.** Timers are opt-in, scaled to the exercise, and never appear
+  on an activity. Plenty of the people this is for are between jobs and under
+  quite enough pressure already.
+- **Not punitive.** The practice log counts days practiced, and that number
+  only ever goes up. Miss a week and you lose nothing you earned.
 
 ---
 
@@ -60,7 +113,7 @@ Not a percentage. Ten separate numbers, because they genuinely come apart:
 |                  |                                         |
 | ---------------- | --------------------------------------- |
 | **Knowledge**    | Do you know what the machine will do?   |
-| **Recognition**  | Do you recognise it when you see it?    |
+| **Recognition**  | Do you recognize it when you see it?    |
 | **Recall**       | Can you produce it from an empty file?  |
 | **Application**  | Can you build something with it?        |
 | **Composition**  | Can you combine several things at once? |
@@ -117,7 +170,7 @@ working PageRank. Every one of them has exercises behind it.
 | Functions                             | Where most self-taught programmers plateau. Ends with recursion.                         |
 | Writing it the way the language wants | Comprehensions, generators, sorting, translation from other languages.                   |
 | Failure                               | Exceptions, validation, and bug hunts as their own discipline.                           |
-| Modelling                             | Classes late, deliberately, so they are not used for everything.                         |
+| Modeling                             | Classes late, deliberately, so they are not used for everything.                         |
 | The toolkit                           | Standard library, files, dates, tests, command lines.                                    |
 | Recursion and cost                    | Complexity by counting operations, not by notation.                                      |
 | Data structures                       | Stacks, linked lists, trees, heaps, graphs — built, then discarded for the library ones. |
@@ -135,18 +188,36 @@ far. Values and equality, data and who is holding it, closures and `this`, and
 a whole stage on asynchrony — chosen from where this language costs people
 time rather than translated from the Python course.
 
-**Sixteen more curricula are designed and cannot be practised yet.**
-TypeScript, Node, React, Angular, SQL, Go, Rust, C, C++, C#, PHP, ASP.NET, and
-four cross-cutting tracks — frontend, backend, middleware and architecture.
-That is 318 skills and 396 lessons of course design with no runtime behind any
-of it.
+**Fourteen languages, each with a runtime that can execute an attempt and
+judge it.** Python, JavaScript, TypeScript, Node, React, Angular, SQL, C, C++,
+C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 81 machine-graded
+exercises and 151 activities. Every exercise ships with a reference solution
+that has been executed against its own tests, and every language has at least
+two beyond the diagnostic.
 
-A language needs three things: a skill graph, a course, and something that can
-execute an attempt and judge it. The first two are finished when they are
-written; the third is an engineering project, and for a compiled language it is
-a toolchain. Each plan states exactly what is missing, and
-`code-retrainer curriculum planned` will tell you plainly that none of them
-run.
+Six of those run with nothing to install beyond what the toolkit already
+needs. TypeScript, Node, React and Angular use the Node that runs the app
+itself; SQL uses the SQLite inside Python's standard library; and Python is
+Python. The other eight need their own toolchain — a C compiler, the Go
+toolchain, rustc, the .NET SDK, the PHP CLI — and none of them guesses. Run:
+
+```bash
+npm run code-retrainer runtime doctor
+```
+
+and every language reports whether it can build and run a trivial program on
+_this_ machine, with one sentence saying what to install if it cannot. It does
+not check that a compiler is on PATH and call that ready; it compiles and runs
+something, because "clang is installed" and "code can be executed here" are
+different claims and only the second one matters.
+
+**Four curricula have no runtime, and never will need one.** Frontend,
+backend, middleware and architecture are disciplines practiced _in_ the
+fourteen languages rather than beside them. They ship activities today, and
+their exercises need fixtures rather than a compiler.
+
+`code-retrainer curriculum planned` shows how far each one has got, and
+`code-retrainer curriculum activities` checks every answer key in the product.
 
 ---
 
@@ -158,9 +229,12 @@ run.
   makes no network request except for the Python runtime itself.
 - **No account.** No sign-in, no email, no identity. Your progress lives in
   your browser or on your disk, and export and import are files.
-- **No leaderboard, no streak, no XP.** Measurement is against your own past.
-  Ranking changes the goal from _recover capability_ to _optimise a score_,
-  and those come apart immediately.
+- **No leaderboard, no ranking, no XP.** Nobody else is in this. Ranking
+  changes the goal from _recover capability_ to _optimize a score_, and those
+  come apart immediately. There is one habit number — days practiced — and it
+  is a training log, not a score: it counts days, never minutes, cannot be
+  raised by staying longer, and **never goes down**. A missed week costs you
+  nothing you earned.
 - **No cost, ever.** Nothing to buy, nothing to upgrade to. Python runs in
   your own browser, so serving one more learner costs nothing.
 
@@ -234,15 +308,15 @@ runs offline, it never phones home, and there is no AI in it.
 
 ---
 
-## Licence
+## License
 
-Two licences, protecting different things.
+Two licenses, protecting different things.
 
 **The software** — everything under `packages/`, `apps/`, `languages/*/src`,
 `languages/*/runtime`, `scripts/` and `tests/` — is under the
 [PolyForm Noncommercial License 1.0.0](LICENSE.md). Personal use, research,
 schools, universities, public research bodies and government are all covered.
-Commercial use needs a separate written licence.
+Commercial use needs a separate written license.
 
 **The curriculum** — the exercises, skills, prompts, hints and tests under
 `languages/*/exercises` — is [licensed separately](CONTENT-LICENSE.md) and is

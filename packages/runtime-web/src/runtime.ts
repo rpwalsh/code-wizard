@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type {
   Diagnostic,
   ExecutionRequest,
@@ -23,7 +24,7 @@ import {
   assertSafeRelativePath,
   redactHiddenTests,
   toError,
-  summarise,
+  summarize,
   WorkspacePathError,
 } from '@code-retrainer/core';
 import { parseReport, parseTrace, toTestCases } from '@code-retrainer/python/report';
@@ -153,13 +154,13 @@ export class PyodideRuntime implements LanguageRuntime {
     return withDeadline(body(client), timeoutMs, async () => {
       // Forget first, then terminate: if termination were to hang or throw,
       // clearing afterwards would never happen and the dead client would stay
-      // memoised, failing every later run with "the worker is not running".
+      // memoized, failing every later run with "the worker is not running".
       this.#forget();
       await client.terminate('Execution exceeded its time limit.');
     });
   }
 
-  /** Drop all memoised worker state so the next call boots a fresh one. */
+  /** Drop all memoized worker state so the next call boots a fresh one. */
   #forget(): void {
     this.#client = null;
     this.#booting = null;
@@ -272,7 +273,7 @@ export class PyodideRuntime implements LanguageRuntime {
     const outcome: TestRunOutcome =
       hadCollectionError && redacted.length === 0 ? 'collection-error' : 'completed';
 
-    return { ...base, ...summarise(redacted), outcome, cases: redacted };
+    return { ...base, ...summarize(redacted), outcome, cases: redacted };
   }
 
   // -- tracing -------------------------------------------------------------

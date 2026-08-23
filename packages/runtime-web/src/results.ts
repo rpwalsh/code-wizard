@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Diagnostic, DiagnosticSeverity, JsonObject, JsonValue } from '@code-retrainer/core';
 import { isJsonObject, readBoolean, readNumber, readString } from '@code-retrainer/core';
 

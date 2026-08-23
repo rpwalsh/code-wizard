@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Reading columns back out of SQLite with the types still enforced.
  *

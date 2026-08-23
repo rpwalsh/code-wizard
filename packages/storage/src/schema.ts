@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { DatabaseSync } from 'node:sqlite';
 
 import { LATEST_VERSION } from './version.ts';

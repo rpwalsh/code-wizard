@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Architecture
 
 This document records _why_ the code is shaped the way it is. For what exists and how to run it,
@@ -13,12 +15,12 @@ see the [README](../README.md).
 graph, a course and its exercises. There are two — Python, with a native interpreter and a
 WebAssembly one, and JavaScript on Node.
 
-**`curricula/`** holds courses that are designed and cannot be practised, entirely as data. A
-language needs a skill graph, a course, and a runtime that can execute an attempt and judge it. The
-first two are design work and are finished when written; the third is an engineering project, and
-for a compiled language it is a toolchain. Keeping the two apart in the filesystem is what stops a
-plan looking like a product, and every manifest carries a required field saying what is missing —
-because "not done yet" with no reason is indistinguishable from forgotten.
+**`curricula/`** holds courses that have no runtime behind them, entirely as data — a skill graph,
+a syllabus, and activities. They are practisable through activities and cannot yet be practiced
+through exercises, which is the distinction the filesystem is drawing: `languages/` is where an
+attempt can be _executed and judged_, and that is an engineering project rather than a writing one.
+Every manifest carries a required field saying what is still missing, because "not done yet" with
+no reason is indistinguishable from forgotten.
 
 A test holds the plans to the same structural standard as the shipped course: real skill ids, an
 acyclic graph, contiguous numbering, and every skill taught before it is depended on. It found
@@ -91,6 +93,57 @@ implementations behind one async interface, all held to one conformance suite.
 
 ---
 
+## 1a. Fourteen languages, one implementation
+
+Ten of the fourteen runtimes share a single implementation. `packages/toolchain` provides
+`ToolchainRuntime`, which honors the whole `LanguageRuntime` contract, and each language supplies
+a `ToolchainSpec` describing only what differs: which executables to look for, how to compile, how
+to run, and how to run the tests.
+
+The observation behind it: ten languages that compile or interpret a file in a sandbox and produce
+a structured report differ in about forty lines each and are identical in the four hundred around
+them. Written ten times, that is ten subtly different timeout behaviors and one language where an
+output flood is not capped.
+
+### A missing toolchain is a reported state, never an exception
+
+Most people do not have Go, Rust, a C compiler, the .NET SDK and PHP installed at once. So every
+toolchain-backed language declares what it needs, discovery is cached and first-class, and the
+result flows into `doctor` and into every execution path. A learner who opens the Rust course
+without Rust gets one sentence naming the tool and where to get it — not a spawn error.
+
+`doctor` then goes further and **compiles and runs a trivial program**. A compiler on PATH and a
+machine that can execute code are different claims: LLVM installed on Windows with no Visual Studio
+Build Tools satisfies the first and fails the second, and it is the commonest real configuration
+problem there is. The smoke test is the only check that notices, and it maps three known failure
+signatures — no libraries to link against, missing standard headers, a sandbox on a noexec volume —
+onto the specific fix.
+
+### Two environments, one boundary
+
+Learner code runs in the locked-down sandbox environment: nothing inherited, no PATH, no home
+directory. Compilers, formatters and linters run with PATH and the variables a toolchain manager
+needs, because they are software the machine's owner installed rather than code the learner wrote.
+
+Conflating the two gives you either a compiler that cannot run or a sandbox that is not one. The
+first version did conflate them, and the symptom was `dotnet build failed with no output` — the
+process started, could not find its own runtime, and died before it could say so.
+
+### The report is the contract
+
+Every language writes the same structured JSON document. Most get a harness written in the language
+itself — one C header, one C# file, one PHP file, one Python module for SQL, the JavaScript harness
+reused for TypeScript, Node, React and Angular. Go and Rust already ship good test runners that
+emit machine-readable output, so those are converted instead: reimplementing `go test` in Go so it
+wrote our format would be more code and a worse tool.
+
+Where the thing that ran is not the thing that was written — React's `.tsx` is compiled to `.js`
+before it executes — `mapReportFile` maps the paths back. That is not cosmetic: a test file's
+visibility is keyed on its declared path, so an unmapped hidden test would have its results shown
+in full.
+
+---
+
 ## 2. Executing learner code is a security boundary
 
 Not a performance concern — a security one. Learner code is arbitrary code, and exercise content is
@@ -100,7 +153,7 @@ data that can be wrong or hostile.
 
 - A disposable sandbox directory, created per run and removed afterwards even when the body throws.
 - A wall-clock timeout that terminates the entire process tree. On Windows via `taskkill /T /F`; on
-  POSIX by spawning detached and signalling the process group. Killing only the direct child
+  POSIX by spawning detached and signaling the process group. Killing only the direct child
   reliably leaves orphans.
 - A bounded output buffer. Past the cap, chunks are counted and dropped rather than accumulated, so
   an infinite `print` loop cannot exhaust the application's memory.
@@ -110,7 +163,7 @@ data that can be wrong or hostile.
   segments, NUL bytes and Windows reserved device names, and verifying the resolved path stays
   inside the sandbox root.
 
-`code-retrainer runtime doctor` verifies these behaviours by exercising them, not by asserting that the code
+`code-retrainer runtime doctor` verifies these behaviors by exercising them, not by asserting that the code
 exists. It runs a program, trips a timeout, and floods an output buffer.
 
 ### A tradeoff worth naming
@@ -164,6 +217,37 @@ cannot silently rewrite a learner's history.
 
 ---
 
+## 4a. Activities are the half that needs no runtime
+
+An exercise needs an interpreter. An activity needs a reader.
+
+`packages/activities` defines six kinds — multiple choice, predict the output, order the lines,
+fill the gaps, spot the bug, match the pairs — each of which is **graded by comparison against an
+answer the author wrote down**. There is no scoring model, no similarity threshold and no
+interpretation, so the same activity and the same response produce the same grade on every machine.
+That is the property that lets a number derived from them mean anything.
+
+This is the reason fifteen curricula with no toolchain behind them are nonetheless practisable
+today. Content lives in `curricula/<id>/activities/*.yaml`, is validated on load, and is checked
+again in CI — because a wrong answer key is the one content failure with no visible symptom: the
+activity loads, renders, and silently marks correct answers wrong.
+
+### The ceiling is the load-bearing part
+
+Activities may move `knowledge`, `recognition`, `recall` and `debugging`. They may **never** move
+`application`, `composition`, `transfer`, `independence`, `speed` or `retention`, and no individual
+answer is worth more than `ACTIVITY_CEILING` (0.65) toward the dimensions they can reach.
+
+That is not a style guide. Recognizing a correct answer among four is not evidence that you could
+produce it from an empty editor, and without the ceiling a language with a hundred questions and no
+runtime would report full mastery while nobody had ever executed a line of it — which is precisely
+the flattering progress bar this product exists to replace. `dimensionsByKind` is data,
+`unreachableByActivities` is data, and a test asserts they never intersect.
+
+Reaching past the ceiling requires writing code that passes tests. There is no other route.
+
+---
+
 ## 5. Mastery is not one number
 
 Ten dimensions: knowledge, recognition, recall, application, composition, debugging, transfer,
@@ -192,7 +276,7 @@ gap.
 **Debugging and transfer are graded from different things than the rest.** Debugging comes from a
 red-to-green transition, scaled by how many red runs it took, or directly from a bug-fix exercise.
 Transfer needs history rather than the attempt: it counts only the first time an exercise is seen,
-and only when its skills were practised elsewhere first. That history is derived from the attempt
+and only when its skills were practiced elsewhere first. That history is derived from the attempt
 log at grading time, so changing what counts as prior experience re-reads it rather than needing it
 to have been recorded differently.
 
@@ -242,7 +326,7 @@ who cannot see why something is unavailable cannot do anything about it.
 
 Session planning fills a fixed shape (recall / review / focused / system) rather than taking the top
 N, so a learner whose weakest area is one skill still gets a varied session. Slots fill
-most-constrained-first, measured against the actual catalogue — filling in display order let the
+most-constrained-first, measured against the actual catalog — filling in display order let the
 permissive review slot swallow the one bug-fix the focused slot needed.
 
 ---
@@ -280,7 +364,7 @@ That is a stronger constraint than it first appears, because `unknown` is where 
 hides, and deferred typing has a habit of never happening. Removing it meant replacing assertions
 with validation at every boundary — parsed JSON, IPC payloads, SQL rows, the WASM bridge — and in
 every case the result was better than what it replaced. A truncated content bundle now says
-`exercise "python.x".version: expected a number` instead of yielding a catalogue that looks fine
+`exercise "python.x".version: expected a number` instead of yielding a catalog that looks fine
 and behaves strangely.
 
 The mechanisms:
@@ -310,9 +394,9 @@ than snapshotted, so a change to the grading rules moves the chart and the numbe
 together — a stored snapshot would freeze history against whatever the rules were that day.
 
 **Surfaces are glass over a drawn landscape, in two themes.** The scene is vector, authored in
-`apps/web/src/components/Backdrop.tsx`, because a photograph would need a licence trail that cannot
+`apps/web/src/components/Backdrop.tsx`, because a photograph would need a license trail that cannot
 be verified from inside the repository and would be the one thing in the product that has to be
-fetched. Every colour is a custom property, so one geometry serves both themes.
+fetched. Every color is a custom property, so one geometry serves both themes.
 
 Glass costs contrast, and contrast is what makes dense information readable for hours, so the
 regions that are read for minutes at a time — editor, test output, trace, terminal — opt out and sit
@@ -326,7 +410,7 @@ time anything moves and nobody notices, because nobody re-renders a picture.
 
 ---
 
-## 11. Content is a graded artefact, not a folder
+## 11. Content is a graded artifact, not a folder
 
 Exercises are checked four ways, and each gate exists because of a specific failure this kind of
 project has.
@@ -357,7 +441,7 @@ stays permanently red, and people stop reading it.
   test file writes have to become blob URLs before anything can be imported. The harness is already
   split into a runner that knows nothing about files and a Node entry point that does, which is the
   half of that work worth doing early.
-- **Runtimes for the planned curricula.** Sixteen courses are designed and none can be practised.
+- **Runtimes for the planned curricula.** Sixteen courses are designed and none can be practiced.
   See `curricula/`, where each one states what specifically is missing.
 - **Recognition grading.** Nothing currently produces evidence for it; it is seeded by the
   onboarding prior and otherwise left alone rather than inferred from unrelated signals. Knowledge

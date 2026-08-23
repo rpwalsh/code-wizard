@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Exercise } from '@code-retrainer/exercises';
 
 import type { Recommendation } from './recommender.ts';
@@ -138,7 +139,7 @@ export function planSession(
  * A slot with one eligible exercise must claim it before a slot with ten
  * choices does — otherwise the permissive slot takes the only candidate the
  * narrow one had, and the narrow slot reports a gap while its exercise sits in
- * the wrong bucket. Which slot is narrowest depends on the catalogue and on
+ * the wrong bucket. Which slot is narrowest depends on the catalog and on
  * what is due today, so it is measured rather than hard-coded.
  */
 function fillOrder(

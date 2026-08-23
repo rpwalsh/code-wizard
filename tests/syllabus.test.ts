@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { validateSyllabus } from '@code-retrainer/curriculum';
 import { loadSyllabus } from '@code-retrainer/exercises';
 import { pythonCurriculumDir, pythonSkillGraph } from '@code-retrainer/python';

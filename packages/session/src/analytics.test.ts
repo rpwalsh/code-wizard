@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 import { ExerciseCatalog } from '@code-retrainer/exercises';
@@ -39,7 +40,7 @@ const graph = SkillGraph.from([
   },
   {
     id: 'state',
-    name: 'State modelling',
+    name: 'State modeling',
     category: 'Data Modeling',
     prerequisites: ['dict-mutation'],
     language: 'python',
@@ -129,7 +130,7 @@ describe('trajectory', () => {
     expect(points[0]?.score).toBeGreaterThan(0);
   });
 
-  it('ignores attempts at exercises no longer in the catalogue', () => {
+  it('ignores attempts at exercises no longer in the catalog', () => {
     const attempts = [solvedAttempt('gone', 'ex.deleted', 5)];
     const points = replayTrajectory(attempts, catalog, { days: 30, now: NOW });
     expect(points.at(-1)?.score).toBe(0);
@@ -195,7 +196,7 @@ describe('skill map', () => {
     expect(map.edges).toHaveLength(4);
   });
 
-  it('marks unpractised skills as unmeasured rather than weak', () => {
+  it('marks unpracticed skills as unmeasured rather than weak', () => {
     expect(map.nodes.every((node) => node.unmeasured)).toBe(true);
   });
 

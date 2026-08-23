@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 export * from './attempt.ts';
 export * from './metrics.ts';
 export * from './grading.ts';

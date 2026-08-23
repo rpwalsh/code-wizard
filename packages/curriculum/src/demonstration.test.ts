@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { SkillGraph } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 import type { Attempt } from '@code-retrainer/learning';

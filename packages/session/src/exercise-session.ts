@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type {
   ExecutionResult,
   LanguageRuntime,
@@ -41,7 +42,7 @@ export interface SessionDependencies {
    * Which skills another exercise trains.
    *
    * Needed to tell transfer from repetition: solving something new only counts
-   * as transfer if its skills were practised elsewhere first.
+   * as transfer if its skills were practiced elsewhere first.
    */
   readonly skillsOf?: (exerciseId: string) => readonly string[];
   /**
@@ -244,7 +245,7 @@ export class ExerciseSession {
       hidden: false,
     }));
 
-    // Hidden tests are materialised for the runtime but never listed for the
+    // Hidden tests are materialized for the runtime but never listed for the
     // learner, and in Simulation mode no test source is shown at all (§9).
     const visibleTests = affordancesFor(this.mode).visibleTestSource
       ? tests.filter((file) => !file.hidden)
@@ -573,7 +574,7 @@ export class ExerciseSession {
    * Decide whether a demonstration earned the shortcut it was asking for.
    *
    * Credit is only ever applied upward. Someone who demonstrates a skill they
-   * had already practised further must not be pushed backwards by a figure
+   * had already practiced further must not be pushed backwards by a figure
    * meant to save them time.
    */
   async #settleClaim(): Promise<DemonstrationResult | null> {

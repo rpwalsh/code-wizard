@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { ExecutionLimits } from './execution.ts';
 import type { Workspace } from './workspace.ts';
 
@@ -73,7 +74,7 @@ export interface TestResult {
   readonly truncated: boolean;
 }
 
-export function summarise(cases: readonly TestCaseResult[]): {
+export function summarize(cases: readonly TestCaseResult[]): {
   passed: number;
   failed: number;
   errored: number;

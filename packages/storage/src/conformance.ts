@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { makeMastery } from '@code-retrainer/core';
 import type { Attempt } from '@code-retrainer/learning';
 import { recordEvent, startAttempt } from '@code-retrainer/learning';
@@ -118,7 +119,7 @@ export function describeProgressStoreContract(
       });
     });
 
-    it('keeps a never-practised skill null rather than epoch', async () => {
+    it('keeps a never-practiced skill null rather than epoch', async () => {
       await withStore(async (store) => {
         await store.saveMastery({
           skillId: 's',
@@ -238,7 +239,7 @@ export function describeProgressStoreContract(
       });
     });
 
-    it('refuses an unrecognised export', async () => {
+    it('refuses an unrecognized export', async () => {
       await withStore(async (store) => {
         await expect(
           store.importAll({

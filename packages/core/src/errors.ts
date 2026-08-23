@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Two independent taxonomies (spec §22). The mechanical one is derived from
  * runtime output; the skill one is authored on the exercise. They must not be

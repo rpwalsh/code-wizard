@@ -1,13 +1,17 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { checkActivities } from '@code-retrainer/activities';
 import { bundleSizeBytes, parseBundle, toBundle } from '@code-retrainer/exercises';
 
+import { collectActivitySets } from '../activity-sources.ts';
 import { createContext, relativeToRepository, repositoryRoot } from '../context.ts';
 import { columns, heading, indent, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
 
 const DEFAULT_OUTPUT = 'apps/web/public/content/catalog.json';
+const ACTIVITY_OUTPUT = 'apps/web/public/content/activities.json';
 
 function flagString(flags: Flags, name: string): string | undefined {
   const value = flags[name];
@@ -23,9 +27,11 @@ export async function runContentCommand(args: readonly string[], flags: Flags): 
       return bundle(flags);
     case 'inspect':
       return inspect(flags);
+    case 'activities':
+      return bundleActivities(flags);
     default:
       console.error(style.red(`Unknown content command "${subcommand}".`));
-      console.error('Try: code-retrainer content bundle [--out <path>]');
+      console.error('Try: code-retrainer content bundle | activities | inspect');
       return 2;
   }
 }
@@ -43,7 +49,7 @@ async function bundle(flags: Flags): Promise<number> {
     console.error(heading(`${context.loadFailures.length} exercise(s) failed to load`));
     for (const failure of context.loadFailures) {
       console.error(`${symbol.fail} ${relativeToRepository(failure.directory)}`);
-      console.error(indent(style.grey(failure.message), 4));
+      console.error(indent(style.gray(failure.message), 4));
     }
     // Publishing a bundle that silently omits broken exercises would ship a
     // curriculum with holes nobody notices until a learner hits one.
@@ -75,7 +81,7 @@ async function bundle(flags: Flags): Promise<number> {
   }
 
   const document = toBundle(exercises, skills, {
-    relativise: (directory) => relativeToRepository(directory),
+    relativize: (directory) => relativeToRepository(directory),
   });
 
   await fs.mkdir(path.dirname(output), { recursive: true });
@@ -115,6 +121,49 @@ async function inspect(flags: Flags): Promise<number> {
       ['exercises', String(document.exercises.length)],
       ['skills', String(document.skills.length)],
       ['size', `${(bundleSizeBytes(document) / 1024).toFixed(1)} KiB`],
+    ]),
+  );
+  return 0;
+}
+
+/**
+ * Emit every activity, for every curriculum, as one file the website can read.
+ *
+ * Separate from the exercise bundle, and deliberately not filtered by
+ * language. The exercise bundle must exclude anything the target cannot run,
+ * because an exercise you cannot attempt is a dead end. An activity has no
+ * such constraint — it is answered by reading — so every curriculum ships,
+ * including the fifteen with no runtime behind them. That is the entire reason
+ * this exists: it is what turns "designed, unusable" into "practisable today".
+ */
+async function bundleActivities(flags: Flags): Promise<number> {
+  const output = path.resolve(repositoryRoot, flagString(flags, 'out') ?? ACTIVITY_OUTPUT);
+  const sets = await collectActivitySets();
+
+  const problems = sets.flatMap((set) => checkActivities(set.activities));
+  if (problems.length > 0) {
+    console.error(heading(`${problems.length} malformed activity/activities`));
+    for (const problem of problems) console.error(`${symbol.fail} ${problem}`);
+    // A wrong answer key ships silently and marks correct answers wrong. It is
+    // the one content failure with no visible symptom, so it stops the build.
+    console.error('');
+    console.error(style.red('Refusing to bundle while any activity is malformed.'));
+    return 1;
+  }
+
+  const document = JSON.stringify({ curricula: sets });
+  await fs.mkdir(path.dirname(output), { recursive: true });
+  await fs.writeFile(output, document, 'utf8');
+
+  const total = sets.reduce((sum, set) => sum + set.activities.length, 0);
+  console.log(heading('Activity bundle'));
+  console.log(
+    columns([
+      ['courses', String(sets.length)],
+      ['with exercises too', String(sets.filter((set) => set.runnable).length)],
+      ['activities', String(total)],
+      ['size', `${(Buffer.byteLength(document, 'utf8') / 1024).toFixed(1)} KiB`],
+      ['written to', relativeToRepository(output)],
     ]),
   );
   return 0;

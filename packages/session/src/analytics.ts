@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { MasteryDimension, SkillGraph, SkillMastery } from '@code-retrainer/core';
 import { headlineMastery, masteryDimensions } from '@code-retrainer/core';
 import type { ExerciseCatalog } from '@code-retrainer/exercises';
@@ -58,7 +59,7 @@ export interface Constraint {
   readonly skillId: string;
   readonly name: string;
   readonly mastery: number;
-  /** True when the skill has never been practised, so 0 means untested. */
+  /** True when the skill has never been practiced, so 0 means untested. */
   readonly unmeasured: boolean;
 }
 
@@ -264,7 +265,7 @@ export function findConstraints(
   return constraints
     .filter((constraint) => constraint.unmeasured || constraint.mastery < threshold)
     .sort((a, b) => {
-      // A measured weakness is evidence; an unpractised prerequisite is only
+      // A measured weakness is evidence; an unpracticed prerequisite is only
       // an absence of it. Evidence goes first, or "you have never tried this"
       // buries "you tried this and could not do it".
       if (a.unmeasured !== b.unmeasured) return a.unmeasured ? 1 : -1;

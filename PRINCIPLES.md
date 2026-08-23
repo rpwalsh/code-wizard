@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Principles
 
 Constraints, not aspirations. Each one below is either enforced by a test or
@@ -49,7 +51,7 @@ is recorded. That is a deliberate cost, quietly stated — not a punishment.
 The same idea runs the other way in the prediction panel. Before running, the
 learner can say what the machine will do. Nothing forces it and nothing nags,
 but committing to an answer first turns pressing Run from a lookup into a test
-of their own model — and a wrong prediction is coloured as information, never
+of their own model — and a wrong prediction is colored as information, never
 as a failure, because being wrong there is the measurement working.
 
 ---
@@ -57,7 +59,7 @@ as a failure, because being wrong there is the measurement working.
 ## 3. Free forever, as an architectural constraint
 
 No ads, no tiers, no certificates, no sponsored content, no recruiter access
-to learner data, no engagement mechanics designed to maximise sessions, and no
+to learner data, no engagement mechanics designed to maximize sessions, and no
 "free until we have enough users".
 
 This is a design constraint rather than a pricing decision, and it shows up in
@@ -76,7 +78,7 @@ Progress is local — IndexedDB in the browser, SQLite on the desktop — and
 export and import already work, so moving between machines is a file rather
 than a service.
 
-If synchronisation is ever added it must be opt-in, must not store passwords,
+If synchronization is ever added it must be opt-in, must not store passwords,
 and must not be required for anything. See [docs/deploying.md](docs/deploying.md).
 
 ---
@@ -85,14 +87,14 @@ and must not be required for anything. See [docs/deploying.md](docs/deploying.md
 
 No leaderboards. No percentiles. No "better than 83% of learners".
 
-Ranking changes the goal from _recover capability_ to _optimise a score_, and
+Ranking changes the goal from _recover capability_ to _optimize a score_, and
 those come apart immediately. The comparison that matters is the learner
 against their own dependence on assistance.
 
 That comparison is built, not gestured at. A personal baseline is derived from
 the learner's first attempts and held up beside their most recent ones, and the
 assistance-dependency chart shows how often they still reached for a hint, the
-documentation or the answer. Both are drawn falling-is-good and labelled that
+documentation or the answer. Both are drawn falling-is-good and labeled that
 way. Neither has anyone else in it.
 
 ---

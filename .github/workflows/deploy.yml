@@ -1,3 +1,4 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 name: Deploy
 
 on:
@@ -33,7 +34,7 @@ jobs:
 
       # The curriculum has to be bundled before the site is built, and this
       # step refuses to emit while any exercise is broken — so a bad exercise
-      # fails the deploy rather than shipping a hole in the catalogue.
+      # fails the deploy rather than shipping a hole in the catalog.
       - name: Bundle the curriculum
         run: node packages/cli/dist/main.js content bundle
 

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillGraph, SkillId, SkillMastery, TrainingMode } from '@code-retrainer/core';
 import { makeMastery } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';

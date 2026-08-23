@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { spawn } from 'node:child_process';
 import { execFile } from 'node:child_process';
 import os from 'node:os';
@@ -105,7 +106,7 @@ export function runProcess(request: ProcessRequest): Promise<ProcessOutcome> {
       cwd: request.cwd,
       env: request.env,
       windowsHide: true,
-      // Own process group on POSIX so the whole tree can be signalled.
+      // Own process group on POSIX so the whole tree can be signaled.
       detached: os.platform() !== 'win32',
       stdio: ['pipe', 'pipe', 'pipe'],
     });

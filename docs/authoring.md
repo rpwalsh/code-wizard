@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Authoring an exercise
 
 > **This documents the format, not an invitation.** The curriculum is not open
@@ -20,7 +22,7 @@ languages/python/exercises/collections/dict-lookup/
     └── test_hidden.py     hidden
 ```
 
-Files under `starter/` and `solution/` are materialised at the workspace root, so `starter/main.py`
+Files under `starter/` and `solution/` are materialized at the workspace root, so `starter/main.py`
 becomes `main.py`. Test paths in the manifest are workspace-relative and match their location on
 disk.
 
@@ -115,10 +117,29 @@ Relevant concept: python.collections.dict-lookup
 ```
 
 The `@pytest.mark.concept(...)` marker names the skill the test probes. It is what turns a failure
-into a pointer at something to practise.
+into a pointer at something to practice.
 
 Pass a `message=` only when you have something to add beyond the expected/received pair — an
 unnecessary message just repeats the panel.
+
+### The same idea in every other language
+
+Each runtime ships a harness with the same contract — named tests, a skill per test, structured
+expected/received — in whatever shape is idiomatic there:
+
+| Languages                                        | Harness                                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| JavaScript, TypeScript, React, Angular, Node     | `import { test } from 'retrainer/test.js'` and `expectEqual` from `retrainer/expect.js`; the skill is the third argument: `{ concept: '...' }` |
+| Go                                               | Plain `go test` beside `main.go` (a `tests/` directory would be a different package); the skill comes from the manifest's per-file `concept` |
+| Rust                                             | Plain `#[test]` under `tests/`, opening with `#[path = "../main.rs"] mod exercise;` — the runner compiles every test file into one binary |
+| C, C++                                           | `RETRAINER_TEST(name, "skill") { ... }` with `RETRAINER_ASSERT_INT/STR/NEAR`; exercises split declarations into `main.h`/`main.hpp` so several test files can share them |
+| C#, ASP.NET                                      | `[RetrainerTest("name", Concept = "skill")]` methods asserting through `Retrainer.Assert`                                |
+| PHP                                              | `retrainer_test('name', fn () => ..., 'skill')` with `assert_equal`, `assert_throws` and friends                         |
+| SQL                                              | Comment-directed: `-- test:`, `-- concept:`, `-- expect:` above each statement; `-- uses: main.sql` runs the learner's query |
+
+The starter must fail honestly: `throw new Error('not implemented')`,
+`unimplemented!()`, `throw new NotImplementedException()`, or a function that
+returns the wrong shape — never a stub that happens to pass a test.
 
 ---
 
@@ -202,9 +223,14 @@ A surviving mutant is a hole:
 Nothing inside a string or a comment is ever mutated, so a docstring cannot produce a mutant no
 test could kill.
 
+Mutation operators exist for Python and JavaScript today. The other languages report
+`0 faults introduced`, which is the tool being honest about not testing them rather than a clean
+bill of health — for those, the edge and hidden suites are the whole defense, so write them as if
+no gate stands behind them.
+
 ### Equivalent mutants
 
-Some faults genuinely cannot be caught, because they do not change behaviour. `parts[-1]` and
+Some faults genuinely cannot be caught, because they do not change behavior. `parts[-1]` and
 `parts[+1]` are the same element whenever there are exactly two parts. Record those in the manifest
 rather than contriving a test to satisfy the tool:
 

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { MasteryDimension, TrainingMode } from '@code-retrainer/core';
 import { affordancesFor } from '@code-retrainer/core';
 
@@ -25,7 +26,7 @@ export interface ExerciseProfile {
  *
  * Needed because two of the dimensions are about history rather than the
  * attempt itself: solving something for the first time is only *transfer* if
- * the skills behind it were practised somewhere else first.
+ * the skills behind it were practiced somewhere else first.
  */
 export interface GradingContext {
   /** Attempts at this exact exercise, before this one. */
@@ -135,7 +136,7 @@ export function gradeAttempt(
   // -- transfer: did they carry a known skill somewhere new? ---------------
   //
   // Only meaningful the first time an exercise is seen, and only when the
-  // skills behind it were practised elsewhere first. Otherwise this is not
+  // skills behind it were practiced elsewhere first. Otherwise this is not
   // transfer, it is learning — which the other dimensions already cover.
   if (history.priorAttemptsAtExercise === 0 && history.priorAttemptsAtSkill > 0) {
     evidence.transfer = metrics.solved ? 1 : 0;

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
 import { headlineMastery, weakestDimensions } from '@code-retrainer/core';
 import type {
@@ -86,7 +87,7 @@ export class ProgressService {
     return {
       mastery,
       reviews: reviews as ReadonlyMap<string, StoredReview>,
-      attempts: summariseAttempts(attempts),
+      attempts: summarizeAttempts(attempts),
       now,
     };
   }
@@ -105,16 +106,58 @@ export class ProgressService {
     return findConstraints(this.skillGraph, await this.store.allMastery(), skillId);
   }
 
-  async dashboard(now = new Date()): Promise<Dashboard> {
+  /**
+   * The home screen's numbers, optionally scoped to one language.
+   *
+   * The scope is applied to the evidence — exercises, attempts, mastery,
+   * reviews — before any metric is computed, so a JavaScript dashboard's
+   * fluency is JavaScript fluency rather than a Python average wearing the
+   * wrong heading. Unscoped behavior is unchanged.
+   */
+  async dashboard(
+    now = new Date(),
+    options: { readonly language?: string } = {},
+  ): Promise<Dashboard> {
+    const { language } = options;
     const state = await this.learnerState(now);
-    const attempts = await this.store.allAttempts();
+    const allAttempts = await this.store.allAttempts();
 
-    const { recommendations } = recommend(this.catalog.all(), this.skillGraph, state);
+    const inLanguage = (skillId: string): boolean =>
+      language === undefined ||
+      (this.skillGraph.has(skillId) && this.skillGraph.get(skillId).language === language);
+
+    const pool =
+      language === undefined
+        ? this.catalog.all()
+        : this.catalog.all().filter((exercise) => exercise.language === language);
+
+    const attempts =
+      language === undefined
+        ? allAttempts
+        : allAttempts.filter(
+            (attempt) =>
+              this.catalog.has(attempt.exerciseId) &&
+              this.catalog.get(attempt.exerciseId).language === language,
+          );
+
+    const mastery =
+      language === undefined
+        ? state.mastery
+        : new Map([...state.mastery].filter(([skillId]) => inLanguage(skillId)));
+
+    const scoped: LearnerState = {
+      ...state,
+      mastery,
+      attempts: summarizeAttempts(attempts),
+    };
+
+    const { recommendations } = recommend(pool, this.skillGraph, scoped);
 
     const dueSkills = new Set(
       [...state.reviews.values()]
         .filter((review) => Date.parse(review.dueAt) <= now.getTime())
-        .map((review) => review.skillId),
+        .map((review) => review.skillId)
+        .filter(inLanguage),
     );
 
     const trajectory = replayTrajectory(attempts, this.catalog, {
@@ -123,11 +166,11 @@ export class ProgressService {
     });
 
     return {
-      fluency: readFluency(state.mastery, trajectory, TRAJECTORY_DAYS),
+      fluency: readFluency(mastery, trajectory, TRAJECTORY_DAYS),
       trajectory,
       plan: planSession(recommendations, { dueSkills }),
       recommendations,
-      weaknesses: this.#weaknesses(state.mastery),
+      weaknesses: this.#weaknesses(mastery),
       improvements: this.#improvements(attempts),
       independentCompletion: independentCompletionRate(attempts),
       baseline: compareToBaseline(attempts),
@@ -141,7 +184,7 @@ export class ProgressService {
   #weaknesses(mastery: ReadonlyMap<string, SkillMastery>): DashboardSkill[] {
     return (
       [...mastery.values()]
-        // A skill nobody has practised is not a weakness, it is unexplored;
+        // A skill nobody has practiced is not a weakness, it is unexplored;
         // listing it would bury the things the learner is genuinely losing.
         .filter((record) => record.observations > 0)
         .map((record) => ({
@@ -184,7 +227,7 @@ export class ProgressService {
 }
 
 /** Collapse the raw attempt log into what the recommender needs per exercise. */
-export function summariseAttempts(attempts: readonly Attempt[]): Map<string, ExerciseHistory> {
+export function summarizeAttempts(attempts: readonly Attempt[]): Map<string, ExerciseHistory> {
   const byExercise = new Map<string, Attempt[]>();
   for (const attempt of attempts) {
     const bucket = byExercise.get(attempt.exerciseId);

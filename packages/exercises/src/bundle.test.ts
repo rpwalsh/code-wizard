@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Skill } from '@code-retrainer/core';
 import { describe, expect, it } from 'vitest';
 
@@ -48,7 +49,7 @@ function exercise(id: string): Exercise {
 }
 
 describe('content bundling', () => {
-  it('round-trips through JSON into a working catalogue', () => {
+  it('round-trips through JSON into a working catalog', () => {
     const document = toBundle([exercise('python.demo.one')], skills);
     const restored = parseBundle(JSON.stringify(document));
     const catalog = catalogFromBundle(restored);
@@ -79,7 +80,7 @@ describe('content bundling', () => {
 
   it('does not publish the author absolute paths', () => {
     const document = toBundle([exercise('python.demo.one')], skills, {
-      relativise: (directory) => directory.split('/').slice(-2).join('/'),
+      relativize: (directory) => directory.split('/').slice(-2).join('/'),
     });
     expect(document.exercises[0]?.source.directory).toBe('exercises/demo');
     expect(JSON.stringify(document)).not.toContain('C:/Users/someone');
@@ -111,7 +112,7 @@ describe('content bundling', () => {
     expect(() => parseBundle('{ not json')).toThrow(/not valid JSON/);
   });
 
-  it('rejects a truncated bundle rather than yielding an empty catalogue', () => {
+  it('rejects a truncated bundle rather than yielding an empty catalog', () => {
     expect(() =>
       parseBundle(JSON.stringify({ format: BUNDLE_FORMAT, version: BUNDLE_VERSION })),
     ).toThrow(/missing its exercises/);
@@ -129,7 +130,7 @@ describe('content bundling', () => {
           }),
         ),
       // A truncated or stale bundle should say what is wrong with it, not
-      // yield a catalogue that looks fine and behaves strangely.
+      // yield a catalog that looks fine and behaves strangely.
     ).toThrow(/exercise "python.x"\.version/);
   });
 

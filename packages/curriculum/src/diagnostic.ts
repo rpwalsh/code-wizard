@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
 import type { ClaimableDimension } from '@code-retrainer/core';
 import { makeMastery } from '@code-retrainer/core';

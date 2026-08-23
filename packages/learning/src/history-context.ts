@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Attempt } from './attempt.ts';
 import type { GradingContext } from './grading.ts';
 

@@ -15,10 +15,34 @@
     "@code-retrainer/python": "*",
     "@code-retrainer/curriculum": "*",
     "@code-retrainer/learning": "*",
-    "@code-retrainer/javascript": "*"
+    "@code-retrainer/javascript": "*",
+    "@code-retrainer/activities": "*",
+    "@code-retrainer/lang-typescript": "*",
+    "@code-retrainer/lang-node": "*",
+    "@code-retrainer/lang-react": "*",
+    "@code-retrainer/lang-angular": "*",
+    "@code-retrainer/lang-sql": "*",
+    "@code-retrainer/lang-csharp": "*",
+    "@code-retrainer/lang-aspnet": "*",
+    "@code-retrainer/lang-c": "*",
+    "@code-retrainer/lang-cpp": "*",
+    "@code-retrainer/lang-go": "*",
+    "@code-retrainer/lang-rust": "*",
+    "@code-retrainer/lang-php": "*",
+    "@code-retrainer/toolchain": "*"
   },
   "scripts": {
     "build": "tsc --build"
   },
-  "license": "SEE LICENSE IN LICENSE.md"
+  "license": "SEE LICENSE IN LICENSE.md",
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./context": {
+      "types": "./dist/context.d.ts",
+      "default": "./dist/context.js"
+    }
+  }
 }

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { ValidationIssue, ValidationReport } from '@code-retrainer/exercises';
 import {
   attemptWorkspace,
@@ -12,9 +13,10 @@ import {
 import { javascriptMutationOperators } from '@code-retrainer/javascript';
 import { pythonMutationOperators } from '@code-retrainer/python';
 
+import type { CliContext } from '../context.ts';
 import { createContext, relativeToRepository } from '../context.ts';
 import { formatTestResult } from '../format-results.ts';
-import { columns, heading, indent, pluralise, style, symbol } from '../terminal.ts';
+import { columns, heading, indent, pluralize, style, symbol } from '../terminal.ts';
 import type { Flags } from './runtime.ts';
 
 function flagString(flags: Flags, name: string): string | undefined {
@@ -59,7 +61,7 @@ async function list(flags: Flags): Promise<number> {
   );
 
   if (exercises.length === 0) {
-    console.log(style.grey('No exercises found.'));
+    console.log(style.gray('No exercises found.'));
     return context.loadFailures.length > 0 ? 1 : 0;
   }
 
@@ -68,7 +70,7 @@ async function list(flags: Flags): Promise<number> {
     columns(
       exercises.map((exercise) => [
         exercise.id,
-        `${style.grey(`d${exercise.difficulty}`)} ${exercise.title} ${style.grey(
+        `${style.gray(`d${exercise.difficulty}`)} ${exercise.title} ${style.gray(
           `· ${exercise.kind} · ${Math.round(exercise.estimatedSeconds / 60)}m`,
         )}`,
       ]),
@@ -99,7 +101,7 @@ async function show(id: string | undefined): Promise<number> {
       ['difficulty', String(exercise.difficulty)],
       ['estimated', `${Math.round(exercise.estimatedSeconds / 60)} min`],
       ['skills', exercise.skills.join(', ')],
-      ['prerequisites', exercise.prerequisites.join(', ') || style.grey('none')],
+      ['prerequisites', exercise.prerequisites.join(', ') || style.gray('none')],
       ['source', relativeToRepository(exercise.source.directory)],
     ]),
   );
@@ -112,14 +114,14 @@ async function show(id: string | undefined): Promise<number> {
 
   console.log(heading('Tests'));
   console.log(
-    columns(exercise.tests.map((test) => [`  ${test.path}`, style.grey(test.visibility)])),
+    columns(exercise.tests.map((test) => [`  ${test.path}`, style.gray(test.visibility)])),
   );
 
   const hints = orderedHints(exercise);
   if (hints.length > 0) {
     console.log(heading(`Hints (${hints.length})`));
     for (const [index, hint] of hints.entries()) {
-      console.log(`  ${index + 1}. ${style.grey(`[${hint.level}]`)} ${hint.text}`);
+      console.log(`  ${index + 1}. ${style.gray(`[${hint.level}]`)} ${hint.text}`);
     }
   }
 
@@ -143,6 +145,7 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
   };
 
   let reports: ValidationReport[];
+  const skipped: string[] = [];
   if (id) {
     if (!context.catalog.has(id)) {
       console.error(style.red(`Unknown exercise "${id}".`));
@@ -159,7 +162,16 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
     reports = await validateCatalog(context.catalog, options);
   } else {
     reports = [];
+    // Which languages can actually run here, asked once rather than per
+    // exercise: `doctor` compiles and runs a program, and doing that fifty
+    // times to learn the same answer would make validation minutes slower.
+    const usable = await usableLanguages(context);
+
     for (const exercise of context.catalog.all()) {
+      if (!usable.has(exercise.language)) {
+        skipped.push(exercise.language);
+        continue;
+      }
       reports.push(
         await validateExercise(exercise, {
           ...options,
@@ -170,8 +182,25 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
   }
 
   console.log(
-    heading(`Validating ${pluralise(reports.length, 'exercise')}${fast ? ' (fast)' : ''}`),
+    heading(`Validating ${pluralize(reports.length, 'exercise')}${fast ? ' (fast)' : ''}`),
   );
+
+  if (skipped.length > 0) {
+    // Not a failure. An exercise whose toolchain is not installed has not been
+    // shown to be wrong, and failing the build here would mean nobody could
+    // validate anything without installing all twelve. It is reported loudly
+    // enough that a release build can insist on a machine that has them.
+    const byLanguage = [...new Set(skipped)].sort();
+    console.log(
+      indent(
+        style.yellow(
+          `${pluralize(skipped.length, 'exercise')} skipped — no toolchain for ` +
+            `${byLanguage.join(', ')}. Run \`code-retrainer runtime doctor\` for what to install.`,
+        ),
+      ),
+    );
+    console.log('');
+  }
 
   const issues: ValidationIssue[] = [];
   for (const report of reports) {
@@ -179,7 +208,7 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
     console.log(`${badge} ${report.exerciseId}`);
     for (const issue of report.issues) {
       const mark = issue.severity === 'error' ? style.red('error') : style.yellow('warn');
-      console.log(indent(`${mark} ${style.grey(issue.check)}  ${issue.message}`, 4));
+      console.log(indent(`${mark} ${style.gray(issue.check)}  ${issue.message}`, 4));
       issues.push(issue);
     }
   }
@@ -189,11 +218,11 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
 
   console.log('');
   if (errors === 0 && warnings === 0) {
-    console.log(style.green(`All ${pluralise(reports.length, 'exercise')} valid.`));
+    console.log(style.green(`All ${pluralize(reports.length, 'exercise')} valid.`));
   } else {
     console.log(
-      `${errors > 0 ? style.red(pluralise(errors, 'error')) : style.green('0 errors')}, ${
-        warnings > 0 ? style.yellow(pluralise(warnings, 'warning')) : '0 warnings'
+      `${errors > 0 ? style.red(pluralize(errors, 'error')) : style.green('0 errors')}, ${
+        warnings > 0 ? style.yellow(pluralize(warnings, 'warning')) : '0 warnings'
       }`,
     );
   }
@@ -218,7 +247,7 @@ async function run(id: string | undefined, flags: Flags): Promise<number> {
   const workspace = useSolution ? solutionWorkspace(exercise) : attemptWorkspace(exercise);
 
   console.log(
-    heading(`${exercise.title} ${style.grey(useSolution ? '(reference solution)' : '(starter)')}`),
+    heading(`${exercise.title} ${style.gray(useSolution ? '(reference solution)' : '(starter)')}`),
   );
 
   const result = await context.runtimeFor(exercise.language).test({
@@ -233,10 +262,10 @@ async function run(id: string | undefined, flags: Flags): Promise<number> {
 
 function reportLoadFailures(failures: readonly { directory: string; message: string }[]): boolean {
   if (failures.length === 0) return false;
-  console.error(heading(`${pluralise(failures.length, 'exercise')} failed to load`));
+  console.error(heading(`${pluralize(failures.length, 'exercise')} failed to load`));
   for (const failure of failures) {
     console.error(`${symbol.fail} ${relativeToRepository(failure.directory)}`);
-    console.error(indent(style.grey(failure.message), 4));
+    console.error(indent(style.gray(failure.message), 4));
   }
   return true;
 }
@@ -330,7 +359,7 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
     for (const exception of excused) {
       console.log(
         indent(
-          style.grey(
+          style.gray(
             `${symbol.skip} ${exception.path}${
               exception.line === undefined ? '' : `:${exception.line}`
             } — ${exception.operator} excused: ${exception.why}`,
@@ -344,7 +373,7 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
       console.log(
         indent(
           `${symbol.fail} ${survivor.path}:${survivor.line} — ${survivor.description} ` +
-            style.grey(`(${survivor.operator})`),
+            style.gray(`(${survivor.operator})`),
         ),
       );
     }
@@ -352,7 +381,7 @@ async function mutate(id: string | undefined, flags: Flags): Promise<number> {
     if (surviving.length > 0) {
       console.log(
         indent(
-          style.grey('Each line above is a change the tests accepted. Add a case that would fail.'),
+          style.gray('Each line above is a change the tests accepted. Add a case that would fail.'),
         ),
       );
     }
@@ -377,4 +406,34 @@ function operatorsFor(language: string) {
     default:
       return [];
   }
+}
+
+/**
+ * Which languages can actually build and run on this machine.
+ *
+ * Asked once. `doctor` compiles and runs a trivial program for every
+ * toolchain-backed language, which is the only check that distinguishes "the
+ * compiler is on PATH" from "code can be executed here" — and it is far too
+ * expensive to repeat per exercise.
+ *
+ * A language that cannot run is not a failure. It means the person validating
+ * does not have Go installed, which is true of most people, and refusing to
+ * validate anything until they do would make the command useless.
+ */
+async function usableLanguages(context: CliContext): Promise<ReadonlySet<string>> {
+  const ready = new Set<string>();
+
+  await Promise.all(
+    context.registry.languages().map(async (language) => {
+      try {
+        const diagnosis = await context.runtimeFor(language.id).doctor();
+        if (diagnosis.ready) ready.add(language.id);
+      } catch {
+        // A doctor that throws is a broken runtime, not an unusable one, but
+        // either way its exercises cannot be validated here.
+      }
+    }),
+  );
+
+  return ready;
 }

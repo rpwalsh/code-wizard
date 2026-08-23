@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { LanguageRuntime, SkillGraph, TestResult } from '@code-retrainer/core';
 import { isGreen } from '@code-retrainer/core';
 
@@ -52,7 +53,7 @@ export async function validateExercise(
   validateReferences(exercise, options.catalog, add);
 
   if (options.runtime) {
-    await validateBehaviour(exercise, options.runtime, options.timeoutHeadroom ?? 0.5, add);
+    await validateBehavior(exercise, options.runtime, options.timeoutHeadroom ?? 0.5, add);
   }
 
   return {
@@ -101,7 +102,7 @@ function validateStructure(exercise: Exercise, add: AddIssue): void {
     add(
       'error',
       'visible-tests',
-      'at least one visible test is required — a learner cannot practise against an opaque oracle',
+      'at least one visible test is required — a learner cannot practice against an opaque oracle',
     );
   }
 
@@ -174,7 +175,7 @@ function validateReferences(
   }
 }
 
-async function validateBehaviour(
+async function validateBehavior(
   exercise: Exercise,
   runtime: LanguageRuntime,
   headroom: number,

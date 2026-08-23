@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import fs from 'node:fs/promises';
 import path from 'node:path';
 

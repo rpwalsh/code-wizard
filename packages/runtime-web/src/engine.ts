@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { JsonValue } from '@code-retrainer/core';
 import { parseJson } from '@code-retrainer/core';
 
@@ -14,7 +15,7 @@ import { toDiagnoseResult, toExecuteResult, toTestRunResult } from './results.ts
 /**
  * What a value crossing into Python may be.
  *
- * Everything this engine passes is a primitive: payloads are serialised to
+ * Everything this engine passes is a primitive: payloads are serialized to
  * JSON first, so no Python object proxy is ever created or has to be freed.
  */
 export type PyodideGlobal = string | number | boolean;
@@ -137,7 +138,7 @@ _retrainer_pytest_version
    * previous run's files, and its imported modules, are gone before this one
    * can see them.
    */
-  #materialise(files: Readonly<Record<string, string>>): void {
+  #materialize(files: Readonly<Record<string, string>>): void {
     // Payloads travel as globals rather than being interpolated into source.
     // Escaping learner code into a Python string literal is a code-injection
     // bug waiting to happen, and there is no reason to take the risk.
@@ -154,7 +155,7 @@ _retrainer_pytest_version
     stdin: string;
     maxOutputBytes: number;
   }): ExecuteResult {
-    this.#materialise(request.files);
+    this.#materialize(request.files);
     this.pyodide.globals.set('_retrainer_entry', request.entryPoint);
     this.pyodide.globals.set('_retrainer_argv', JSON.stringify(request.args));
     this.pyodide.globals.set('_retrainer_stdin', request.stdin);
@@ -170,7 +171,7 @@ _retrainer_pytest_version
     targets: readonly string[];
     maxOutputBytes: number;
   }): TestRunResult {
-    this.#materialise(request.files);
+    this.#materialize(request.files);
     this.pyodide.globals.set('_retrainer_targets', JSON.stringify(request.targets));
     this.pyodide.globals.set('_retrainer_report_path', REPORT_PATH);
     this.pyodide.globals.set('_retrainer_limit', request.maxOutputBytes);
@@ -188,7 +189,7 @@ _retrainer_pytest_version
     maxSteps: number;
     maxOutputBytes: number;
   }): TraceRunResult {
-    this.#materialise(request.files);
+    this.#materialize(request.files);
     this.pyodide.globals.set('_retrainer_entry', request.entryPoint);
     this.pyodide.globals.set('_retrainer_stdin', request.stdin);
     this.pyodide.globals.set('_retrainer_max_steps', request.maxSteps);
@@ -210,7 +211,7 @@ _retrainer_pytest_version
     files: Readonly<Record<string, string>>;
     paths: readonly string[];
   }): DiagnoseResult {
-    this.#materialise(request.files);
+    this.#materialize(request.files);
     this.pyodide.globals.set('_retrainer_paths', JSON.stringify(request.paths));
     return this.#json(
       'import pyodide_host\npyodide_host.diagnose(_retrainer_paths)',

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { describe, expect, it } from 'vitest';
 
 import { classifyFailure } from './errors.ts';
@@ -9,7 +10,7 @@ import {
   zeroMastery,
 } from './mastery.ts';
 import type { TestCaseResult } from './testing.ts';
-import { isGreen, redactHiddenTests, summarise } from './testing.ts';
+import { isGreen, redactHiddenTests, summarize } from './testing.ts';
 
 describe('mastery vectors', () => {
   it('starts every dimension at zero', () => {
@@ -70,7 +71,7 @@ describe('mastery vectors', () => {
 });
 
 describe('failure classification', () => {
-  it('recognises a Python traceback tail', () => {
+  it('recognizes a Python traceback tail', () => {
     const traceback = [
       'Traceback (most recent call last):',
       '  File "main.py", line 4, in get_balance',
@@ -105,7 +106,7 @@ describe('test result helpers', () => {
 
   it('counts outcomes by status', () => {
     expect(
-      summarise([
+      summarize([
         base,
         { ...base, id: '2', status: 'failed' },
         { ...base, id: '3', status: 'skipped' },

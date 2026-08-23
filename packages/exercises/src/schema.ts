@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { z } from 'zod';
 
 import { hintLevels } from './model.ts';

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Skill, SkillMastery } from '@code-retrainer/core';
 import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
 import type { Exercise, ExerciseKind } from '@code-retrainer/exercises';
@@ -285,7 +286,7 @@ describe('recommendation', () => {
     expect(first.map((r) => r.exercise.id)).toEqual(second.map((r) => r.exercise.id));
   });
 
-  it('honours a limit', () => {
+  it('honors a limit', () => {
     const result = recommend([exercise('a'), exercise('b'), exercise('c')], graph, learnerState(), {
       limit: 2,
     });

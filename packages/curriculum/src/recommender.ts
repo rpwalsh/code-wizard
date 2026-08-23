@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
 import { headlineMastery, readiness } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
@@ -53,7 +54,7 @@ export interface RecommendOptions {
   readonly unlockThreshold?: number;
   /** A skill below this is considered weak and gets priority. */
   readonly weaknessThreshold?: number;
-  /** An exercise attempted within this window is deprioritised. */
+  /** An exercise attempted within this window is deprioritized. */
   readonly cooldownHours?: number;
   readonly limit?: number;
 }
@@ -82,7 +83,7 @@ export interface RecommendationResult {
 }
 
 /**
- * Decide what to practise next.
+ * Decide what to practice next.
  *
  * Every input contributes a named, signed factor and the factors are summed —
  * no weights buried in a model, no randomness. A learner who asks "why this

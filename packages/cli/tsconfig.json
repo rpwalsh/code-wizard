@@ -7,12 +7,68 @@
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
   "references": [
-    { "path": "../core" },
-    { "path": "../execution" },
-    { "path": "../exercises" },
-    { "path": "../learning" },
-    { "path": "../curriculum" },
-    { "path": "../../languages/python" },
-    { "path": "../../languages/javascript" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../execution"
+    },
+    {
+      "path": "../exercises"
+    },
+    {
+      "path": "../learning"
+    },
+    {
+      "path": "../curriculum"
+    },
+    {
+      "path": "../../languages/python"
+    },
+    {
+      "path": "../../languages/javascript"
+    },
+    {
+      "path": "../activities"
+    },
+    {
+      "path": "../../languages/typescript"
+    },
+    {
+      "path": "../../languages/node"
+    },
+    {
+      "path": "../../languages/react"
+    },
+    {
+      "path": "../../languages/angular"
+    },
+    {
+      "path": "../../languages/sql"
+    },
+    {
+      "path": "../../languages/csharp"
+    },
+    {
+      "path": "../../languages/aspnet"
+    },
+    {
+      "path": "../../languages/c"
+    },
+    {
+      "path": "../../languages/cpp"
+    },
+    {
+      "path": "../../languages/go"
+    },
+    {
+      "path": "../../languages/rust"
+    },
+    {
+      "path": "../../languages/php"
+    },
+    {
+      "path": "../toolchain"
+    }
   ]
 }

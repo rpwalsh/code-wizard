@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { describe, expect, it } from 'vitest';
 
 import { isPredictionCorrect, matchesOutput } from './prediction.ts';
@@ -13,7 +14,7 @@ describe('predicted output', () => {
     expect(matchesOutput('a  \nb', 'a\nb\n\n')).toBe(true);
   });
 
-  it('normalises line endings, so the same claim travels between platforms', () => {
+  it('normalizes line endings, so the same claim travels between platforms', () => {
     expect(matchesOutput('a\nb', 'a\r\nb')).toBe(true);
   });
 

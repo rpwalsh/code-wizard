@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Contributing
 
 **Not accepting contributions.** No pull requests, no issues, no feature

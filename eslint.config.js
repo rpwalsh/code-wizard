@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
@@ -11,6 +12,11 @@ export default tseslint.config(
       'apps/desktop/renderer/**',
       'apps/desktop/content/**',
       'apps/web/public/content/**',
+      // Vendored WebAssembly runtimes: Pyodide's loader and esbuild's, copied
+      // in by `scripts/vendor-runtimes.mjs` so the site works offline. They are
+      // somebody else's build output, they are minified, and linting them
+      // produced fourteen hundred complaints about code nobody here wrote.
+      'apps/web/public/runtime/**',
       'apps/web/e2e/.results/**',
       // Exercise content is teaching material, not platform source. A starter
       // has unused parameters by design, and a test about equality asserts

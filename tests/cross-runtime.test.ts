@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,7 +20,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  *
  * One spawns a real interpreter and one runs CPython compiled to WebAssembly.
  * If they ever disagree about whether a learner's code is correct, then a
- * learner who practises on the hosted site and one who installs the app are
+ * learner who practices on the hosted site and one who installs the app are
  * being taught different things — and every mastery number computed from
  * either becomes meaningless.
  *

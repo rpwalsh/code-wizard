@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { SkillGraph } from '@code-retrainer/core';
 import { ExerciseCatalog, validateExercise } from '@code-retrainer/exercises';
 import {
@@ -57,7 +58,7 @@ describe('shipped curriculum', () => {
 describe.skipIf(!canExecute)('exercise validation', () => {
   // Every exercise is executed twice against a real interpreter, so the time
   // this takes grows with the curriculum. Deriving the allowance from the
-  // catalogue size means adding content never silently turns a real failure
+  // catalog size means adding content never silently turns a real failure
   // into a timeout that looks like one.
   it(
     'validates every exercise against the real runtime',

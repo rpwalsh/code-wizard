@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { ExecutionLimits } from '@code-retrainer/core';
 import { defaultExecutionLimits } from '@code-retrainer/core';
 

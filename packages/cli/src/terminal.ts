@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Minimal terminal formatting. Deliberately dependency-free: the CLI is a
  * developer tool for validating curriculum, and it should stay installable
@@ -23,19 +24,19 @@ export const style = {
   blue: wrap(34, 39),
   magenta: wrap(35, 39),
   cyan: wrap(36, 39),
-  grey: wrap(90, 39),
+  gray: wrap(90, 39),
 };
 
 export const symbol = {
   pass: style.green('✓'),
   fail: style.red('✗'),
   warn: style.yellow('!'),
-  skip: style.grey('-'),
-  bullet: style.grey('•'),
+  skip: style.gray('-'),
+  bullet: style.gray('•'),
 };
 
 export function heading(text: string): string {
-  return `\n${style.bold(text)}\n${style.grey('─'.repeat(Math.max(text.length, 12)))}`;
+  return `\n${style.bold(text)}\n${style.gray('─'.repeat(Math.max(text.length, 12)))}`;
 }
 
 /** Left-aligned two-column layout; the width is measured, not guessed. */
@@ -60,7 +61,7 @@ export function indent(text: string, spaces = 2): string {
     .join('\n');
 }
 
-export function pluralise(count: number, singular: string, plural = `${singular}s`): string {
+export function pluralize(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 

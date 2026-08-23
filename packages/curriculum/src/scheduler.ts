@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { MasteryObservation } from '@code-retrainer/learning';
 
 /**

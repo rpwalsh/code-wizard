@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -135,7 +136,7 @@ export class SqliteProgressStore implements ProgressStore {
       )
       .run(
         mastery.skillId,
-        serialiseVector(mastery.vector),
+        serializeVector(mastery.vector),
         mastery.observations,
         mastery.lastPracticedAt,
       );
@@ -315,7 +316,7 @@ export class SqliteProgressStore implements ProgressStore {
 
 function toTrainingMode(value: string): TrainingMode {
   const found = trainingModes.find((candidate) => candidate === value);
-  if (!found) throw new Error('Stored attempt has an unrecognised mode: ' + value);
+  if (!found) throw new Error('Stored attempt has an unrecognized mode: ' + value);
   return found;
 }
 
@@ -323,7 +324,7 @@ const OUTCOMES: readonly AttemptOutcome[] = ['in-progress', 'solved', 'abandoned
 
 function toOutcome(value: string): AttemptOutcome {
   const found = OUTCOMES.find((candidate) => candidate === value);
-  if (!found) throw new Error('Stored attempt has an unrecognised outcome: ' + value);
+  if (!found) throw new Error('Stored attempt has an unrecognized outcome: ' + value);
   return found;
 }
 
@@ -351,7 +352,7 @@ function toFileMap(raw: string): Record<string, string> {
   return files;
 }
 
-function serialiseVector(vector: MasteryVector): string {
+function serializeVector(vector: MasteryVector): string {
   // Dimension order is fixed by `masteryDimensions`, so the JSON is stable and
   // two identical vectors always produce identical text.
   return JSON.stringify(

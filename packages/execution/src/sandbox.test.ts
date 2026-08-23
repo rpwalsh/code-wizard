@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -47,7 +48,7 @@ describe('workspace path safety', () => {
     );
   });
 
-  it('normalises backslash separators to POSIX', () => {
+  it('normalizes backslash separators to POSIX', () => {
     expect(assertSafeRelativePath('tests\\test_main.py')).toBe('tests/test_main.py');
   });
 
@@ -67,7 +68,7 @@ describe('workspace path safety', () => {
 });
 
 describe('Sandbox', () => {
-  it('materialises files, including nested ones', async () => {
+  it('materializes files, including nested ones', async () => {
     await withSandbox(
       {
         files: [

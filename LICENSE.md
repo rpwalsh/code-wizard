@@ -1,6 +1,8 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 Required Notice: Copyright 2026 Code Retrainer contributors
 
-This licence covers the software in this repository: everything under
+This license covers the software in this repository: everything under
 `packages/`, `apps/`, `languages/*/src`, `languages/*/runtime`, `scripts/`
 and `tests/`.
 
@@ -8,7 +10,7 @@ It does **not** cover the curriculum — the exercises, skills, prompts, hints
 and tests under `languages/*/exercises` and `languages/*/documentation`. Those
 are licensed separately; see [CONTENT-LICENSE.md](CONTENT-LICENSE.md).
 
-Commercial use requires a separate written licence.
+Commercial use requires a separate written license.
 
 ---
 
@@ -85,3 +87,41 @@ The **licensor** is the individual or entity offering these terms, and the **sof
 **Your licenses** are all the licenses granted to you for the software under these terms.
 
 **Use** means anything you do with the software requiring one of your licenses.
+
+---
+
+## The copyright notice
+
+Every file in this repository that can carry a comment carries this line at the
+top:
+
+```
+Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+```
+
+`npm run copyright` adds it to anything new; `npm run copyright:check` fails the
+build if a file is missing it, and runs as part of `npm run verify`.
+
+### Where the notice cannot go
+
+Some files have no syntax for a comment, so the notice is absent from them by
+necessity rather than by oversight:
+
+| Kind                 | Why                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `*.json` (71)        | JSON has no comment syntax. The `//`-tolerating parsers are a convention, not the standard, and `package.json` in particular is read by tools that reject it. |
+| `*.tsbuildinfo` (27) | TypeScript's incremental build cache — JSON, and regenerated on every build.                                                                                  |
+| `*.png` (14)         | Screenshots.                                                                                                                                                  |
+| `*.pyc` (1)          | Compiled Python bytecode, regenerated on every run.                                                                                                           |
+
+### Where the notice must not go
+
+`apps/web/public/runtime/` holds Pyodide and esbuild, vendored so the site works
+offline. Those are the work of their own authors under their own licenses, and
+the tooling excludes them deliberately: putting this project's copyright on
+somebody else's build output would be a false claim of authorship, which is the
+one thing a copyright notice must never make.
+
+The photograph in `apps/web/src/assets/` is likewise not this project's work.
+It is dedicated to the public domain under CC0 by its photographer, and its
+provenance is recorded in [docs/credits.md](docs/credits.md).

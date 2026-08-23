@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TrainingMode } from '@code-retrainer/core';
 
 /**
@@ -30,7 +31,7 @@ export type AttemptEvent =
    * The learner recorded an execution trace.
    *
    * Kept in the log because it says something real about how they work, but
-   * it is not assistance: reaching for an instrument is the behaviour the
+   * it is not assistance: reaching for an instrument is the behavior the
    * product wants, so metrics do not discount it.
    */
   | { readonly type: 'trace'; readonly at: string }

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import {
   headlineMastery,
   makeMastery,
@@ -12,7 +13,7 @@ import { MemoryProgressStore } from '@code-retrainer/storage';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ExerciseSession } from './exercise-session.ts';
-import { ProgressService, summariseAttempts } from './progress-service.ts';
+import { ProgressService, summarizeAttempts } from './progress-service.ts';
 import { fakeRuntime, type FakeRuntime } from './testing/fake-runtime.ts';
 
 const skillGraph = SkillGraph.from([
@@ -265,7 +266,7 @@ describe('demonstrating a claim', () => {
   });
 
   it('never pushes an already-stronger skill backwards', async () => {
-    // Someone who demonstrates a skill they had practised further must not be
+    // Someone who demonstrates a skill they had practiced further must not be
     // demoted by a figure that exists to save them time.
     await store.saveMastery({
       skillId: 'python.dict',
@@ -570,13 +571,13 @@ describe('completing an exercise', () => {
 });
 
 describe('ProgressService', () => {
-  it('summarises attempts into what the recommender needs', async () => {
+  it('summarizes attempts into what the recommender needs', async () => {
     const session = begin();
     session.updateFile('main.py', 'SOLVED');
     runtime.green = true;
     await session.runTests();
 
-    const summaries = summariseAttempts(await store.allAttempts());
+    const summaries = summarizeAttempts(await store.allAttempts());
     const summary = summaries.get('python.demo.lookup');
     expect(summary?.attempts).toBe(1);
     expect(summary?.solvedAttempts).toBe(1);
@@ -586,7 +587,7 @@ describe('ProgressService', () => {
 
   it('counts failures only since the last success', async () => {
     const attempts = await store.allAttempts();
-    expect(summariseAttempts(attempts).size).toBe(0);
+    expect(summarizeAttempts(attempts).size).toBe(0);
   });
 
   it('builds a dashboard from stored progress', async () => {
@@ -600,11 +601,11 @@ describe('ProgressService', () => {
 
     expect(dashboard.totalAttempts).toBe(1);
     expect(dashboard.independentCompletion).toBe(1);
-    // Practised on the 1st, first review due on the 2nd, so by the 3rd it is due.
+    // Practiced on the 1st, first review due on the 2nd, so by the 3rd it is due.
     expect(dashboard.dueCount).toBe(1);
   });
 
-  it('does not list unpractised skills as weaknesses', async () => {
+  it('does not list unpracticed skills as weaknesses', async () => {
     const service = new ProgressService(store, new ExerciseCatalog([exercise]), skillGraph);
     await store.saveMastery({
       skillId: 'python.dict',

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Training modes. The mode is not a cosmetic preference: it decides what
  * assistance exists, and therefore how much an attempt tells you about the

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Attempt } from '@code-retrainer/learning';
 import { computeMetrics } from '@code-retrainer/learning';
 
@@ -59,7 +60,7 @@ const DEFAULT_SIZE = 5;
 /**
  * The learner's opening reading, or null while there is not enough evidence.
  *
- * Refusing to answer is the right behaviour here. A baseline computed from two
+ * Refusing to answer is the right behavior here. A baseline computed from two
  * attempts would put a precise-looking number on screen that a third attempt
  * could move by fifty points, and every comparison drawn against it afterwards
  * would inherit that noise.

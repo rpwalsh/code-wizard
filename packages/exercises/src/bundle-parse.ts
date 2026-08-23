@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { JsonObject, JsonValue, Skill, TestVisibility, Workspace } from '@code-retrainer/core';
 import { isJsonObject, readBoolean, readNumber, readString } from '@code-retrainer/core';
 
@@ -8,7 +9,7 @@ import { hintLevels } from './model.ts';
  * Narrowing a content bundle back into real objects.
  *
  * A published bundle is data fetched over a network, and asserting a shape
- * onto it would mean a truncated or stale file produced a catalogue that looks
+ * onto it would mean a truncated or stale file produced a catalog that looks
  * fine and behaves strangely. Every field is checked, and a bundle that fails
  * says which exercise and which field.
  */

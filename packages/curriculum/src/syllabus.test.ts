@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { SkillGraph } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 import { describe, expect, it } from 'vitest';
@@ -60,7 +61,7 @@ describe('progress against the plan', () => {
   it('requires every skill of a lesson, not just one', () => {
     // The flattering version of this counted a three-skill lesson as done
     // because one skill had an exercise. A progress number you would consult
-    // to decide whether you can stop must not round in its own favour.
+    // to decide whether you can stop must not round in its own favor.
     const progress = readSyllabusProgress(syllabus, [exercise('e1', ['b'])]);
 
     expect(progress.covered).toBe(1);

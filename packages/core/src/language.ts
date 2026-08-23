@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Diagnostic, LintRequest, LintResult } from './diagnostics.ts';
 import type {
   ExecutionRequest,

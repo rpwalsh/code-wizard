@@ -1,7 +1,8 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """In-WASM host helpers for the Pyodide runtime.
 
 The JavaScript side owns lifecycle and timeouts; everything that is easier to
-say in Python — materialising a workspace, capturing output, running a program
+say in Python — materializing a workspace, capturing output, running a program
 or a pytest session — lives here. Every entry point returns a JSON string, so
 the boundary carries plain data rather than Python object proxies.
 
@@ -109,7 +110,7 @@ def reset_workspace() -> None:
 
 
 def write_files(payload: str) -> None:
-    """Materialise ``{path: contents}`` under the workspace root."""
+    """Materialize ``{path: contents}`` under the workspace root."""
     for relative_path, contents in json.loads(payload).items():
         target = os.path.normpath(os.path.join(WORKSPACE, relative_path))
         # The TypeScript side validates paths, but this is the last gate before

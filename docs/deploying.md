@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
+
 # Deploying
 
 Code Retrainer ships twice from one build: a static site anyone can host for nothing, and
@@ -30,7 +32,7 @@ Already wired up in [.github/workflows/deploy.yml](../.github/workflows/deploy.y
 The workflow builds the packages, bundles the curriculum, builds the site and
 publishes it. The bundling step **refuses to emit while any exercise is
 broken**, so bad content fails the deploy rather than shipping a hole in the
-catalogue.
+catalog.
 
 Assets use relative URLs, so it works at `user.github.io/code-retrainer/` without
 configuration.

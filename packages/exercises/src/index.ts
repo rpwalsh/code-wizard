@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 export * from './model.ts';
 export * from './schema.ts';
 export * from './loader.ts';

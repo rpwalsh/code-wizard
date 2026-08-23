@@ -1,10 +1,11 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillGraph, SkillId } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 
 /**
  * The planned course, from the first program to the last.
  *
- * Separate from the exercise catalogue on purpose. The catalogue is what
+ * Separate from the exercise catalog on purpose. The catalog is what
  * exists; the syllabus is what was intended, and the gap between them is the
  * only honest measure of how far the content has actually got. A README
  * claiming "200 lessons planned" is a sentence; this is a number that goes

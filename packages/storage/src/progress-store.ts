@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { SkillMastery } from '@code-retrainer/core';
 import type { Attempt } from '@code-retrainer/learning';
 

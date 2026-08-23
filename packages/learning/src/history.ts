@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Attempt } from './attempt.ts';
 import type { FluencyMetrics } from './metrics.ts';
 import { computeMetrics } from './metrics.ts';

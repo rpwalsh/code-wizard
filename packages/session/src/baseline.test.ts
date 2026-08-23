@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Attempt, AttemptEvent } from '@code-retrainer/learning';
 import { abandonAttempt, recordEvent, startAttempt } from '@code-retrainer/learning';
 import { describe, expect, it } from 'vitest';

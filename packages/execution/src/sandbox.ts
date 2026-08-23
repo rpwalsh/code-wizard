@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -59,7 +60,7 @@ export class Sandbox implements AsyncDisposable {
     await fs.writeFile(target, file.contents, 'utf8');
   }
 
-  async materialise(workspace: Workspace): Promise<void> {
+  async materialize(workspace: Workspace): Promise<void> {
     for (const file of workspace.files) await this.writeFile(file);
   }
 
@@ -96,7 +97,7 @@ export async function withSandbox<T>(
 ): Promise<T> {
   const sandbox = await Sandbox.create(options);
   try {
-    await sandbox.materialise(workspace);
+    await sandbox.materialize(workspace);
     return await body(sandbox);
   } finally {
     await sandbox.dispose();

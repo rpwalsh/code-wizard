@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TestVisibility, Workspace } from '@code-retrainer/core';
 
 /** Exercise taxonomy from spec §7. Drives UI affordances and time budgets. */
@@ -25,7 +26,7 @@ export interface Hint {
 }
 
 export interface ExerciseTestFile {
-  /** Workspace-relative path the file is materialised at. */
+  /** Workspace-relative path the file is materialized at. */
   readonly path: string;
   readonly visibility: TestVisibility;
   /** Skill this file's assertions probe; surfaced on failure as "relevant concept". */
@@ -66,7 +67,7 @@ export interface Exercise {
    * Mutants the tests are not expected to catch, each with a stated reason.
    *
    * Some faults are genuinely undetectable because they do not change
-   * behaviour: `parts[-1]` and `parts[+1]` are the same value whenever there
+   * behavior: `parts[-1]` and `parts[+1]` are the same value whenever there
    * are two parts. Equivalent mutants are inherent to the technique, and
    * without somewhere to record them the score can never reach 100%, the gate
    * stays permanently red, and people stop reading it — which costs more than

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { WorkspaceFile } from '@code-retrainer/core';
 
 /**
@@ -89,7 +90,7 @@ export interface MutationReport {
   readonly score: number;
 }
 
-export function summarise(total: number, survivors: readonly Mutant[]): MutationReport {
+export function summarize(total: number, survivors: readonly Mutant[]): MutationReport {
   const killed = total - survivors.length;
   return {
     total,
@@ -149,5 +150,5 @@ export async function runMutationTesting(
     options.onProgress?.((done += 1), mutants.length);
   }
 
-  return summarise(mutants.length, survivors);
+  return summarize(mutants.length, survivors);
 }

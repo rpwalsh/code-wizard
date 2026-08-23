@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * A workspace is the set of files an exercise attempt operates on. It is
  * language-neutral: the learning engine describes files, and a language
@@ -12,7 +13,7 @@ export interface WorkspaceFile {
    * scaffolding). Enforced by the UI, not by the filesystem.
    */
   readonly readOnly?: boolean;
-  /** Hidden files are materialised on disk but never shown to the learner. */
+  /** Hidden files are materialized on disk but never shown to the learner. */
   readonly hidden?: boolean;
 }
 

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { JsonValue, Skill } from '@code-retrainer/core';
 import { isJsonObject, parseJson, readNumber, readString, toError } from '@code-retrainer/core';
 
@@ -45,7 +46,7 @@ export interface BundleOptions {
    * portable. Absolute paths in a published bundle leak the author's machine
    * layout and mean nothing to a reader.
    */
-  readonly relativise?: (absoluteDirectory: string) => string;
+  readonly relativize?: (absoluteDirectory: string) => string;
   readonly generatedAt?: string;
 }
 
@@ -54,7 +55,7 @@ export function toBundle(
   skills: readonly Skill[],
   options: BundleOptions = {},
 ): ContentBundle {
-  const relativise = options.relativise ?? ((directory: string) => directory);
+  const relativize = options.relativize ?? ((directory: string) => directory);
 
   return {
     format: BUNDLE_FORMAT,
@@ -65,13 +66,13 @@ export function toBundle(
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((exercise) => ({
         ...exercise,
-        source: { directory: relativise(exercise.source.directory) },
+        source: { directory: relativize(exercise.source.directory) },
       })),
   };
 }
 
 /**
- * Parse a bundle back into a catalogue.
+ * Parse a bundle back into a catalog.
  *
  * Validation is structural rather than exhaustive: a bundle is produced by
  * `code-retrainer content bundle` from already-validated exercises, so the job here is
@@ -128,7 +129,7 @@ export function parseBundle(raw: string | JsonValue): ContentBundle {
 
 export function catalogFromBundle(bundle: ContentBundle): ExerciseCatalog {
   // A bundled exercise differs from a loaded one only in where `source`
-  // points, so it satisfies the catalogue's contract as it stands.
+  // points, so it satisfies the catalog's contract as it stands.
   return new ExerciseCatalog(bundle.exercises);
 }
 

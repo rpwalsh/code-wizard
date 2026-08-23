@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -100,7 +101,7 @@ describe('PyodideRuntime', () => {
     expect(result.stderr).toContain('ValueError');
   }, 60_000);
 
-  it('honours sys.exit', async () => {
+  it('honors sys.exit', async () => {
     const result = await runtime.execute({
       workspace: workspace({ 'main.py': 'import sys\nsys.exit(3)' }),
     });

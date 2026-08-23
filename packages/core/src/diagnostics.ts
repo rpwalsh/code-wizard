@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { ExecutionLimits } from './execution.ts';
 import type { Workspace } from './workspace.ts';
 
