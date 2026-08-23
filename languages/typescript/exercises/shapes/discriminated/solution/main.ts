@@ -1,47 +1,59 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
- * A result that carries its reason.
- *
- * The discriminant is `ok`, typed as the literals `true` and `false` rather
- * than as `boolean`, which is what lets a check on it narrow the union.
+ * Three kinds of payment, and a compiler that knows when one is forgotten.
  */
-export type Result<T> =
-  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: string };
 
-export function parseAge(input: string): Result<number> {
-  const trimmed = input.trim();
-  const parsed = Number(trimmed);
+/**
+ * The tag has to be a literal type on every member. Written as
+ * `method: string` this union narrows nothing, because any string could
+ * belong to any member and the compiler cannot tell them apart.
+ */
+export type Payment =
+  | { method: 'card'; last4: string; amountCents: number }
+  | { method: 'transfer'; reference: string; amountCents: number }
+  | { method: 'credit'; amountCents: number };
 
-  // `Number('')` is 0, which is a number and not what anyone meant by an
-  // empty string, so the empty case is rejected explicitly.
-  if (trimmed === '' || !Number.isFinite(parsed)) {
-    return { ok: false, reason: 'not a number' };
+export function describe(payment: Payment): string {
+  switch (payment.method) {
+    case 'card':
+      // `last4` is a string here with no assertion and no optional chaining:
+      // the switch told the compiler which member this is.
+      return `card ending ${payment.last4}`;
+    case 'transfer':
+      return `transfer ref ${payment.reference}`;
+    case 'credit':
+      return 'store credit';
+    default:
+      return assertNever(payment);
   }
-  if (!Number.isInteger(parsed)) {
-    return { ok: false, reason: 'not a whole number' };
-  }
-  if (parsed < 0 || parsed > 150) {
-    return { ok: false, reason: 'out of range' };
-  }
-
-  return { ok: true, value: parsed };
 }
 
-export function unwrapOr<T>(result: Result<T>, fallback: T): T {
-  return result.ok ? result.value : fallback;
+export function feeCents(payment: Payment): number {
+  switch (payment.method) {
+    case 'card':
+      // Fees round up. Rounding down would process every payment under
+      // fifty cents for nothing at all.
+      return Math.ceil(payment.amountCents * 0.02);
+    case 'transfer':
+      return 30;
+    case 'credit':
+      return 0;
+    default:
+      return assertNever(payment);
+  }
 }
 
-export function describe(result: Result<number>): string {
-  switch (result.ok) {
-    case true:
-      return `age ${result.value}`;
-    case false:
-      return `failed: ${result.reason}`;
-    default: {
-      // Legal only while every case above is handled. Add a member to the
-      // union and this line stops compiling, which is the whole point.
-      const impossible: never = result;
-      throw new Error(`unhandled result: ${String(impossible)}`);
-    }
-  }
+/**
+ * Reachable only if the switch above is not exhaustive.
+ *
+ * In a branch that cannot happen the value's type is `never`, and `never`
+ * is assignable to nothing — so a fourth payment method makes every switch
+ * that forgot it fail to compile, naming the file and the line.
+ */
+export function assertNever(value: never): never {
+  throw new Error(`unhandled: ${JSON.stringify(value)}`);
+}
+
+export function totalCents(payments: Payment[]): number {
+  return payments.reduce((sum, payment) => sum + payment.amountCents + feeCents(payment), 0);
 }

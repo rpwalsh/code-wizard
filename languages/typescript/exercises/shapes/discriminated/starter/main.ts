@@ -1,22 +1,22 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
- * A result that carries its reason.
- *
- * Fill in the type and the four functions. The tests describe the behavior
- * precisely; the prompt explains why the shape matters.
+ * Three kinds of payment, and a compiler that knows when one is forgotten.
  */
 
-// Replace this with a union of a success and a failure, told apart by `ok`.
-export type Result<T> = never;
+export type Payment = { method: 'card'; last4: string; amountCents: number };
 
-export function parseAge(input: string): Result<number> {
+export function describe(payment: Payment): string {
   throw new Error('not implemented');
 }
 
-export function unwrapOr<T>(result: Result<T>, fallback: T): T {
+export function feeCents(payment: Payment): number {
   throw new Error('not implemented');
 }
 
-export function describe(result: Result<number>): string {
+export function assertNever(value: never): never {
+  throw new Error('not implemented');
+}
+
+export function totalCents(payments: Payment[]): number {
   throw new Error('not implemented');
 }

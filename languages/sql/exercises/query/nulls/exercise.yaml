@@ -1,0 +1,95 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.query.missing-readings
+version: 1
+language: sql
+title: Nothing is not zero, and nothing does not equal itself
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 480
+timeoutMs: 20000
+
+skills:
+  - sql.query.nulls
+  - sql.sets.aggregates
+
+prerequisites: []
+
+learningObjectives:
+  - Count rows and count values, and know which question each answers.
+  - Read an average that is NULL as "no readings" rather than as zero.
+  - Recognize that NULL propagates through comparison rather than matching.
+
+prompt: |
+  Three sensors report a temperature every hour. When a sensor is
+  offline the row is still written, with no value in it — which is
+  not the same as a reading of zero degrees, and a report that
+  confuses the two will say the freezer was fine all night.
+
+  In `main.sql`, one row per sensor, ordered by sensor:
+
+  - `sensor`
+  - `total` — how many readings exist
+  - `measured` — how many of them carry a value
+  - `missing` — how many do not
+  - `average` — the mean of the values that exist, rounded to one
+    decimal place
+
+  A sensor that reported nothing at all must come back with an
+  empty average, not `0`. Getting that right is the whole exercise;
+  it happens by itself if you let the aggregate do its job, and
+  takes real effort to get wrong.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/nulls.sql
+    visibility: visible
+    concept: sql.query.nulls
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.query.nulls
+
+hints:
+  - level: conceptual
+    text: "NULL means unknown. Every comparison with an unknown is itself unknown, and a WHERE clause keeps only rows that are definitely true."
+  - level: structural
+    text: "You need two different counts in the same row: one of rows, one of values. SQL has both, and their difference is the third column."
+  - level: language
+    text: "COUNT(*) counts rows. COUNT(column) counts rows where that column is not null. Every other aggregate — SUM, AVG, MIN, MAX — skips nulls too."
+  - level: syntax
+    text: "ROUND(AVG(celsius), 1) — and note that ROUND of NULL is NULL, which is exactly what the silent sensor should report."
+  - level: explicit
+    text: "SELECT sensor, COUNT(*) AS total, COUNT(celsius) AS measured, COUNT(*) - COUNT(celsius) AS missing, ROUND(AVG(celsius), 1) AS average FROM readings GROUP BY sensor ORDER BY sensor;"
+
+explanation: |
+  NULL is not a value. It is a marker meaning "unknown", and the
+  consequences follow from that one sentence. `celsius = NULL` is
+  never true, because comparing anything to an unknown gives an
+  unknown, and `WHERE` keeps only what is definitely true. This is
+  why `IS NULL` exists as separate syntax: it is not a comparison,
+  it is a question about presence.
+
+  The aggregates already do the right thing, which is the pleasant
+  half. `AVG` divides the sum of the values by the count of the
+  values, skipping the unknowns entirely — so it never quietly
+  treats a missing reading as a cold one. A sensor with nothing to
+  average returns NULL, and a report that prints that as an empty
+  cell is telling the truth. The version that goes wrong is
+  `COALESCE(AVG(celsius), 0)`, written by somebody who found the
+  empty cell untidy, and it turns "we have no idea" into "it was
+  zero degrees" — the difference between a gap in the data and a
+  refrigeration failure.
+
+  `COUNT(*)` versus `COUNT(column)` is the same idea from the other
+  side, and it is the cheapest way to find missing data in any
+  table: rows minus values, no CASE expression required.
+
+  The edge tests show the rule that catches experienced people out.
+  `NOT IN` against a subquery that contains a NULL returns *nothing*
+  — not "everything except the others", but no rows at all — because
+  for every candidate the question "is it different from the
+  unknown?" answers unknown. `IN` behaves as expected; `NOT IN` does
+  not. This is why the anti-join is written with `NOT EXISTS` or a
+  left join instead, and why a query that returned data yesterday
+  can quietly return nothing today, when a single NULL arrives in a
+  column nobody was watching.

@@ -1,0 +1,8 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: every sensor summarized, with the silent one honest about it
+-- concept: sql.query.nulls
+-- uses: main.sql
+-- expect:
+-- a|4|3|1|21.3
+-- b|2|0|2|
+-- c|3|3|0|18.0

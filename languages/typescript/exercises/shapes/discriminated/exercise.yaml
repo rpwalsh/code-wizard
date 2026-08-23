@@ -1,12 +1,12 @@
 # Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-id: typescript.shapes.result
+id: typescript.shapes.discriminated
 version: 1
 language: typescript
-title: A result that cannot be misread
+title: The compiler can count the cases for you
 kind: micro-problem
 difficulty: 3
-estimatedSeconds: 420
-timeoutMs: 15000
+estimatedSeconds: 600
+timeoutMs: 20000
 
 skills:
   - typescript.shapes.discriminated
@@ -16,74 +16,95 @@ skills:
 prerequisites: []
 
 learningObjectives:
-  - Design a union whose members are told apart by a literal property.
-  - Narrow a union so the compiler grants access to the right fields.
-  - Make an unhandled case a build error instead of a runtime surprise.
+  - Model a set of alternatives as a union with a shared literal tag.
+  - Let a switch on that tag narrow each branch to one member.
+  - Make adding a case a compile error everywhere it has been forgotten.
 
 prompt: |
-  A function that might fail has three ways to say so, and two of them are
-  bad. Returning `null` loses the reason. Throwing makes the failure invisible
-  in the signature. This exercise builds the third.
+  A payment can be a card, a bank transfer, or store credit. Each
+  carries different fields. The version of this that everybody
+  writes first is one interface with every field optional, and it is
+  wrong in a specific way: it describes a card payment with a bank
+  account number and no card, which cannot exist, and it makes the
+  compiler unable to help with any of it.
 
-  In `main.ts`, implement:
+  In `main.ts`:
 
-  - `type Result<T>` — a union of a success carrying a `value` and a failure
-    carrying a `reason`, told apart by a literal `ok` property.
-  - `parseAge(input: string): Result<number>` — succeeds for a string that is
-    a whole number from 0 to 150 inclusive, and fails otherwise with one of
-    the reasons `"not a number"`, `"not a whole number"` or `"out of range"`,
-    checked in that order.
-  - `unwrapOr<T>(result: Result<T>, fallback: T): T` — the value, or the
-    fallback when it failed.
-  - `describe(result: Result<number>): string` — `"age 42"` for a success and
-    `"failed: not a number"` for a failure.
+  - Export a type `Payment` — a union of three members, each tagged
+    with a `method` property:
+      - `{ method: 'card'; last4: string; amountCents: number }`
+      - `{ method: 'transfer'; reference: string; amountCents: number }`
+      - `{ method: 'credit'; amountCents: number }`
 
-  `describe` must handle both cases through a `switch` on the discriminant,
-  with a `default` branch that assigns to `never`. That branch is the point of
-  the exercise: adding a third member to `Result` should break the build here,
-  loudly, rather than silently returning `undefined` at run time.
+  - `describe(payment: Payment): string` — switch on `method`:
+      - card → `"card ending 4242"`
+      - transfer → `"transfer ref ABC-1"`
+      - credit → `"store credit"`
+    Inside each branch the other members' fields must not be
+    reachable, and you should not need a cast to read the ones that
+    are.
+
+  - `feeCents(payment: Payment): number` — card is 2% rounded up,
+    transfer is a flat 30, credit is 0.
+
+  - `assertNever(value: never): never` — throw
+    `` `unhandled: ${JSON.stringify(value)}` ``. Call it from the
+    default branch of both switches. This is the piece that makes a
+    fourth payment method a compile error in every switch that
+    forgot it, rather than a silent wrong answer at runtime.
+
+  - `totalCents(payments: Payment[]): number` — the sum of every
+    amount plus every fee.
 
 entryPoint: main.ts
 
 tests:
-  - path: tests/result.test.ts
+  - path: tests/discriminated.test.ts
     visibility: visible
     concept: typescript.shapes.discriminated
   - path: tests/edges.test.ts
     visibility: edge
-    concept: typescript.basics.narrowing
-  - path: tests/hidden.test.ts
-    visibility: hidden
     concept: typescript.shapes.exhaustive
 
 hints:
   - level: conceptual
-    text: Two shapes that must never be confused should differ in a way the compiler can see, not in a way only a comment explains.
+    text: "A discriminated union says which combinations exist. One interface with optional fields says every combination exists, including the impossible ones."
   - level: structural
-    text: 'The property that tells them apart has to be a literal type, not `boolean` — `ok: true` rather than `ok: boolean`.'
+    text: "The tag must be a literal type, not `string`. `method: string` narrows nothing, because any string could be any member."
   - level: language
-    text: 'Narrowing happens on a check of the discriminant: inside `if (result.ok)`, the compiler knows which member it has.'
+    text: "In the default branch of an exhaustive switch, the value's type is `never` — there is nothing left it could be. That is why assertNever's parameter type is what catches the missing case."
   - level: syntax
-    text: '`type Result<T> = { ok: true; value: T } | { ok: false; reason: string };`'
+    text: "Math.ceil(amountCents * 0.02) for the card fee: a fee of 1.4 cents is charged as 2, and rounding down would mean charging nothing on small amounts."
   - level: explicit
-    text: 'In the default branch write `const impossible: never = result;` — it compiles only while every case above is handled.'
+    text: "export type Payment = { method: 'card'; last4: string; amountCents: number } | { method: 'transfer'; reference: string; amountCents: number } | { method: 'credit'; amountCents: number };"
 
 explanation: |
-  `ok: boolean` and `ok: true | false` look the same and are not. A boolean
-  property carries no information the compiler can use, so `result.value`
-  stays an error on both branches and you end up casting your way out. Literal
-  types make the check informative: after `if (result.ok)` the compiler knows
-  it is holding the success member and grants exactly that member's fields.
+  The optional-fields version fails at the one job a type has. It
+  cannot say that a card payment has `last4` and a transfer does
+  not, so every read becomes `payment.last4!` or a check the
+  compiler cannot verify, and the impossible states — a card with a
+  bank reference, a transfer with no reference at all — are as
+  representable as the real ones. A discriminated union makes those
+  states unspeakable, which is a stronger guarantee than any amount
+  of testing.
 
-  The `never` assignment in the default branch is the part worth keeping. In a
-  branch where every known case has been handled, the value has narrowed to
-  `never`, and the assignment is legal. Add a third member to the union and it
-  narrows to that member instead — which is not assignable to `never`, so the
-  build fails and points at this line. It converts "did I remember to update
-  every switch?" from a question about your memory into a question the
-  compiler answers.
+  Narrowing is what makes it comfortable to use. Switching on a
+  literal tag tells the compiler exactly which member it is holding
+  in each branch, so `payment.last4` is a string with no assertion,
+  no optional chaining and no doubt. This is the same machinery
+  behind `typeof x === 'string'`; the tag is simply a discriminator
+  you chose rather than one the language provided.
 
-  This is also why the reasons are checked in a fixed order. `"12.5"` is a
-  number and not a whole one; `"999"` is both a number and whole, and out of
-  range. Two of the three inputs fail more than one rule, so "which reason" is
-  a decision the exercise makes rather than leaves ambiguous.
+  `assertNever` is the part worth carrying to other code. In a
+  branch that should be unreachable, the value's type is `never`,
+  and `never` is assignable to nothing — so the call compiles only
+  while the switch really is exhaustive. Add a fourth payment method
+  and every switch that forgot it fails to compile, naming the file
+  and the line. Without it, the same omission is a runtime surprise
+  that reaches production, because the code still runs; it just
+  returns undefined and charges nobody.
+
+  The fee rounding is a small deliberate trap. `Math.round` on a
+  1.4-cent fee charges 1, and `Math.floor` charges 0 — meaning every
+  payment under fifty cents is processed free. Fees round up, and
+  the edge tests say so.

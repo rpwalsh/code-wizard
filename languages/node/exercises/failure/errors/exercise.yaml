@@ -1,0 +1,104 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.failure.errors
+version: 1
+language: node
+title: An error that still knows where it came from
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - node.failure.errors
+  - node.failure.async
+
+prerequisites: []
+
+learningObjectives:
+  - Attach a cause to an error instead of destroying it with a new message.
+  - Walk a chain of causes back to the failure that actually happened.
+  - Choose between all, allSettled and any by what the caller needs.
+  - Read an AggregateError, which is the only error that holds several.
+
+prompt: |
+  Four layers of code each catch an error, write their own message,
+  and throw something new. By the time it reaches a log the only
+  thing left is "Request failed" — the connection refused at the
+  bottom is gone. This is the most common way a stack trace becomes
+  useless, and the fix has been in the language since 2021.
+
+  In `main.js`:
+
+  - `wrap(cause, message, code)` — return a new `Error` carrying
+    `message`, with `cause` set to the original error and a `code`
+    property set to `code`. Nothing is lost: the new error explains
+    the layer, the cause holds what happened.
+
+  - `rootCause(error)` — follow `.cause` as far as it goes and
+    return the deepest error. An error with no cause is its own root.
+    A chain that loops back on itself must not hang: return the
+    deepest error you reached rather than looping forever.
+
+  - `settle(tasks)` — take an array of functions returning promises.
+    Run them all, wait for every one, and return
+    `{ values, failures }`: the resolved values in order, and the
+    error *messages* of the rejected ones in order. Nothing throws.
+    One task failing must not cancel the report on the others.
+
+  - `firstSuccess(tasks)` — resolve to the first task that succeeds.
+    If every one fails, reject with a single `Error` whose message
+    is the individual messages joined by `'; '`, in the order the
+    tasks were given.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/errors.test.js
+    visibility: visible
+    concept: node.failure.errors
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.failure.async
+
+hints:
+  - level: conceptual
+    text: "An error has two jobs: say what this layer was doing, and preserve what actually went wrong. `cause` is how one error does both."
+  - level: structural
+    text: "rootCause is a loop, not recursion, because the guard against a cycle is easier to write as a visited set over a loop."
+  - level: language
+    text: "Promise.all rejects on the first failure. Promise.allSettled waits for everything and rejects never. Promise.any resolves on the first success and rejects with an AggregateError only when all fail."
+  - level: syntax
+    text: "new Error(message, { cause }) — the options object is the second argument, and it is easy to pass a string there by mistake."
+  - level: explicit
+    text: "settle: const results = await Promise.allSettled(tasks.map((task) => task())); then partition on result.status, taking result.value or result.reason.message."
+
+explanation: |
+  `new Error(message, { cause })` is the whole lesson. Before it
+  existed, every layer faced a bad choice: rethrow the original and
+  lose the context of where it was caught, or throw a new one and
+  lose the failure itself. Almost everybody chose the second, which
+  is why "Request failed" is such a familiar and such a useless log
+  line. A cause chain gives you both, and Node's own error printer
+  walks it: the terminal shows the wrapper, then `[cause]`, then the
+  next one down, all the way to the socket.
+
+  rootCause has a cycle guard for the same reason every graph walk
+  does. It is not a hypothetical: two layers that wrap each other's
+  errors in a retry loop produce exactly this, and an error handler
+  that hangs is worse than the error, because it takes the process
+  down without saying anything at all.
+
+  The three combinators are the async half, and the choice between
+  them is a question about the caller, not about the tasks. `all` is
+  for when a partial answer is worthless — fetch three fields of one
+  record and you want the record or nothing. `allSettled` is for when
+  you need the report: a health check across ten services must not
+  stop at the first one that is down, which is precisely the case
+  `all` handles worst. `any` is for redundancy: three mirrors of the
+  same file, take whichever answers.
+
+  `any` also produces the only error in JavaScript that holds
+  several. `AggregateError` has an `errors` array, and code that
+  reads `error.message` alone sees an unhelpful summary while the
+  real reasons sit one property away, unread. Joining them, as here,
+  is the smallest honest thing to do with it.

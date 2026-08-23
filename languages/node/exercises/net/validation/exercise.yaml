@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.net.validation
+version: 1
+language: node
+title: Everything from outside is a string until you prove otherwise
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - node.net.validation
+  - node.failure.errors
+
+prerequisites: []
+
+learningObjectives:
+  - Reject bad input at the boundary, before it reaches anything that trusts it.
+  - Report every problem at once rather than one per round trip.
+  - Refuse the coercions JavaScript performs willingly and wrongly.
+
+prompt: |
+  A request body arrives as parsed JSON: an object of unknown
+  shape, from someone you have never met. Everything after this
+  point in the program is allowed to assume the data is right,
+  which is only true if something here makes it so.
+
+  In `main.js`:
+
+  - `validateOrder(body)` — return
+    `{ ok: true, value }` or `{ ok: false, errors }`, never throw.
+    `errors` is an array of strings, one per problem, **in field
+    order**, and every problem is reported — not just the first.
+
+    The rules, in this field order:
+      - `customer` — required, a non-empty string after trimming.
+        The value is the trimmed string.
+      - `quantity` — required, an integer, at least 1. A numeric
+        *string* is not acceptable: `"3"` is a string, and quietly
+        turning it into 3 here is how a `"3"` becomes `33` two
+        functions later.
+      - `priority` — optional. When absent the value is `'normal'`.
+        When present it must be one of `'low'`, `'normal'`, `'high'`.
+      - `notes` — optional, a string of at most 200 characters.
+        Absent means the key is missing from the result entirely.
+
+    Messages are exactly `"<field>: <reason>"`, with these reasons:
+    `is required`, `must be a string`, `must not be empty`,
+    `must be an integer`, `must be at least 1`,
+    `must be one of low, normal, high`,
+    `must be 200 characters or fewer`.
+
+  - `firstProblem(result)` — given a result from `validateOrder`,
+    return the first error string, or `null` when it succeeded.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/validation.test.js
+    visibility: visible
+    concept: node.net.validation
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.net.validation
+
+hints:
+  - level: conceptual
+    text: "Validation is a boundary, not a sprinkle of checks. On one side everything is suspect; on the other everything is known. The function's job is to be that line."
+  - level: structural
+    text: "Collect into an errors array and check its length at the end. Returning early on the first problem is what produces a form that reveals its complaints one at a time."
+  - level: language
+    text: "Number.isInteger(x) is false for strings, NaN, Infinity and 3.5 — all four of the cases here — while parseInt would accept most of them."
+  - level: syntax
+    text: "Checking presence: `'notes' in body` distinguishes a missing key from a key set to undefined, which typeof cannot."
+  - level: explicit
+    text: "Order matters: push customer's problems, then quantity's, then priority's, then notes'. Build `value` as you go and return { ok: errors.length === 0, ... }."
+
+explanation: |
+  The rule this exercise is built around is that a coercion at the
+  boundary is a bug with a delay on it. JavaScript will happily turn
+  `"3"` into a number when you multiply, and just as happily turn it
+  into `"33"` when you add — and the code doing the adding is three
+  files away from the code that let the string through. Refusing at
+  the door costs one line and removes a class of report that nobody
+  can reproduce.
+
+  `Number.isInteger` is the specific tool, and it is worth knowing
+  why the alternatives fail. `typeof x === 'number'` accepts `NaN`,
+  which is a number and is never what anyone meant. `parseInt('3kg')`
+  returns 3 and discards the rest without complaint. `Number('')` is
+  0, so an empty box becomes a valid quantity. `isInteger` says no to
+  every one of those, which is the entire reason to prefer it.
+
+  Reporting every problem at once is the other half, and it is a
+  design decision rather than a technical one. A validator that stops
+  at the first failure turns filling in a form into a conversation:
+  submit, learn one thing, fix it, submit again. Collecting the
+  errors costs an array, and it is the difference between an API
+  somebody can write a client against and one they have to guess at.
+
+  Optional-with-a-default and optional-and-absent are deliberately
+  both here, because they are genuinely different and are constantly
+  confused. `priority` always has a value afterwards, so downstream
+  code never checks. `notes` may be absent, and the result says so by
+  not having the key — which is not the same as having it set to
+  `undefined`, and `'notes' in result` is the test that can tell.
