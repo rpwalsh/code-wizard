@@ -237,8 +237,8 @@ function Chooser({
         <h1 className="practice__title">Practice</h1>
         <p className="practice__lede">
           Short sessions of reading and answering — no editor, no runtime. Six questions, a few
-          minutes. Every language here has content, including the ones whose exercises are not
-          written yet.
+          minutes. Every language has both these and written exercises; this is the half that
+          needs nothing installed.
         </p>
         <p className="practice__log numeral">{practiceLine(log)}</p>
       </header>

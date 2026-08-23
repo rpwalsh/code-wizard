@@ -19,6 +19,7 @@ import type { Command } from '../components/Palette.tsx';
 import { Results } from '../components/Results.tsx';
 import { TraceScope } from '../components/TraceScope.tsx';
 import { Walkthrough } from '../components/Walkthrough.tsx';
+import { Resizer } from '../components/layout/Resizer.tsx';
 import type { LanguageRuntime } from '@code-retrainer/core';
 import type { Platform } from '../platform/index.ts';
 
@@ -30,6 +31,13 @@ import type { Platform } from '../platform/index.ts';
  * diagnostics wider, and focus mode takes the chrome away entirely.
  */
 type Focus = 'write' | 'run' | 'diagnose' | 'inspect' | 'zen';
+
+const BRIEF_WIDTH_KEY = 'workspace.briefWidth';
+/** Narrow enough that a hint still wraps readably rather than one word a line. */
+const MIN_BRIEF_WIDTH = 200;
+/** Wide enough to read comfortably, short of crowding out the editor. */
+const MAX_BRIEF_WIDTH = 620;
+const DEFAULT_BRIEF_WIDTH = 320;
 
 interface WorkspaceProps {
   readonly platform: Platform;
@@ -55,6 +63,41 @@ export function Workspace({
   onAgain,
   onCommands,
 }: WorkspaceProps) {
+  // The task panel's width. Kept in the store rather than in the component so
+  // it survives leaving the exercise, and travels with an export like every
+  // other preference.
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const [briefWidth, setBriefWidth] = useState(DEFAULT_BRIEF_WIDTH);
+
+  const previewBriefWidth = useCallback((width: number) => {
+    workspaceRef.current?.style.setProperty('--brief-user-width', `${width}px`);
+  }, []);
+
+  useEffect(() => {
+    let canceled = false;
+    void platform.store.getSetting(BRIEF_WIDTH_KEY).then((stored) => {
+      const width = Number(stored);
+      if (canceled || !Number.isFinite(width) || width <= 0) return;
+      const clamped = Math.min(MAX_BRIEF_WIDTH, Math.max(MIN_BRIEF_WIDTH, width));
+      setBriefWidth(clamped);
+      previewBriefWidth(clamped);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [platform, previewBriefWidth]);
+
+  const commitBriefWidth = useCallback(
+    (width: number) => {
+      setBriefWidth(width);
+      previewBriefWidth(width);
+      void platform.store.setSetting(BRIEF_WIDTH_KEY, String(width)).catch(() => {
+        // A width that fails to save is a width that resets next time.
+      });
+    },
+    [platform, previewBriefWidth],
+  );
+
   const session = useMemo(
     () =>
       ExerciseSession.begin(exercise, mode, {
@@ -191,7 +234,7 @@ export function Workspace({
   ]);
 
   return (
-    <div className="workspace" data-focus={focus}>
+    <div className="workspace" data-focus={focus} ref={workspaceRef}>
       <header className="workspace__bar">
         <button type="button" className="button button--bare" onClick={onLeave}>
           ← Today
@@ -294,6 +337,18 @@ export function Workspace({
             </ul>
           </section>
         </aside>
+
+        {focus === 'write' ? (
+          <Resizer
+            label="Task panel width"
+            value={briefWidth}
+            min={MIN_BRIEF_WIDTH}
+            max={MAX_BRIEF_WIDTH}
+            reset={DEFAULT_BRIEF_WIDTH}
+            onPreview={previewBriefWidth}
+            onCommit={commitBriefWidth}
+          />
+        ) : null}
 
         <main className="editor-pane" aria-label="Editor">
           <div className="editor-pane__tabs">

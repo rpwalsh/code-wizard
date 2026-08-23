@@ -470,3 +470,75 @@ test('deletes everything on request, from the footer', async ({ page }) => {
     page.getByRole('heading', { name: 'Which language are you here to get back?' }),
   ).toBeVisible();
 });
+
+/**
+ * The task panel is adjustable, and remembers.
+ *
+ * Two things worth holding: that dragging actually moves the boundary, and
+ * that the width outlives the exercise. A resizer that forgets is worse than a
+ * fixed width, because it asks to be set again every single time.
+ */
+test('the task panel can be resized, by pointer and by keyboard', async ({ page }) => {
+  await start(page);
+  await page
+    .getByRole('button', { name: /Safe account lookup/ })
+    .first()
+    .click();
+  await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
+
+  const brief = page.getByRole('complementary', { name: 'Task' });
+  const divider = page.getByRole('separator', { name: 'Task panel width' });
+  await expect(divider).toBeVisible();
+
+  /**
+   * Settled width, not instantaneous width.
+   *
+   * The columns are transitioned, so a bounding box read straight after a
+   * change catches the animation in flight. Polling until it stops moving is
+   * what a person perceives as the width, and is what the test should judge.
+   */
+  const settledWidth = async (): Promise<number> => {
+    let last = -1;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const current = Math.round((await brief.boundingBox())?.width ?? 0);
+      if (current === last) return current;
+      last = current;
+      await page.waitForTimeout(50);
+    }
+    return last;
+  };
+
+  const before = await settledWidth();
+  expect(before).toBeGreaterThan(0);
+
+  // The keyboard moves it, which is the whole reason this is a separator with
+  // a value rather than a styled div.
+  await divider.focus();
+  await divider.press('ArrowRight');
+  await expect(divider).toHaveAttribute('aria-valuenow', String(before + 16));
+  expect(await settledWidth()).toBeGreaterThan(before);
+
+  // And so does a drag.
+  const handle = await divider.boundingBox();
+  if (!handle) throw new Error('the divider has no box to drag');
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2 + 140, handle.y + handle.height / 2, {
+    steps: 12,
+  });
+  await page.mouse.up();
+
+  const widened = await settledWidth();
+  expect(widened).toBeGreaterThan(before + 100);
+
+  // Still that wide after a reload: the width is a stored preference, not a
+  // detail of one visit. A resizer that forgets asks to be set again every
+  // time, which is worse than a fixed width.
+  await page.reload();
+  await page
+    .getByRole('button', { name: /Safe account lookup/ })
+    .first()
+    .click();
+  await expect(page.getByRole('main', { name: 'Editor' })).toBeVisible();
+  expect(Math.abs((await settledWidth()) - widened)).toBeLessThan(4);
+});

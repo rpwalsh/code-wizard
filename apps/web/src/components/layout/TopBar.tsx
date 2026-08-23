@@ -85,7 +85,7 @@ export function TopBar({
           {languages.map((option) => (
             <option key={option.id} value={option.id}>
               {option.title}
-              {option.runnable ? '' : ' (practice only)'}
+              {option.runnable ? '' : ' — needs the desktop app'}
             </option>
           ))}
         </select>
