@@ -78,19 +78,14 @@ Progress is local — IndexedDB in the browser, SQLite on the desktop — and
 export and import already work, so moving between machines is a file rather
 than a service.
 
-This is a liability position as much as a design one. Data that was never
-collected cannot be disclosed, breached, subpoenaed, sold, or mishandled, and
-there is no request for access or erasure that this project can fail to answer
-in time. Every regime that governs personal data governs the holding of it;
-holding none is the only compliance posture that does not decay the moment
-someone stops paying attention.
+Sign-in was considered and declined — not deferred pending demand, declined.
+An account is not a login screen; it is a database of people, and everything
+that comes with holding one. Storing nothing is the only version of that job
+that stays done when nobody is paying attention.
 
-So authentication was considered and declined. Not deferred pending demand —
-declined, because adding it would create the exact asset this project has
-chosen not to have. See [docs/privacy.md](docs/privacy.md) for what is stored
-and the tests that keep it that way, and
-[docs/deploying.md](docs/deploying.md) for the shape sync would take if that
-decision were ever revisited.
+See [docs/data.md](docs/data.md) for what is stored and the tests that keep it
+there, and [docs/deploying.md](docs/deploying.md) for the shape sync would take
+if that decision were ever revisited.
 
 Three tests enforce this rather than trusting it: no external address may
 appear in the browser source, no analytics or payment dependency may appear in

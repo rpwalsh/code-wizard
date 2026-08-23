@@ -438,7 +438,7 @@ test('runs a JavaScript exercise in a worker', async ({ page }) => {
  *
  * The one action in this product that cannot be undone, so it is the one that
  * most deserves a test proving it does exactly what its confirmation says. It
- * also proves the claim in docs/privacy.md: a learner can remove everything,
+ * also proves the claim in docs/data.md: a learner can remove everything,
  * without asking anyone, without a network.
  *
  * The assertion is deliberately the strongest available — after erasing, a

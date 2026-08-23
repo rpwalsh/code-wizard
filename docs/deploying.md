@@ -133,18 +133,15 @@ Not postponed — decided. Third-party sign-in was costed out and rejected, and
 this section records why so the question does not get reopened by someone who
 assumes it was simply never looked at.
 
-The cost of an account is not the login screen. It is becoming the holder of
-personal data: a provider id tied to a learning history, retention decisions,
-access and erasure requests to answer inside a deadline, a breach surface that
-exists even when the database is small, and a compliance position that has to
-be maintained by someone, indefinitely, for a project that charges nothing.
-Storing no data is the only version of that job that stays done.
+The cost of an account is not the login screen. It is a database of people that
+somebody now runs: a provider id tied to a learning history, a backup story, a
+migration story, and a breach surface that exists even when the table has four
+rows in it. All of that is permanent work, for a project that charges nothing.
 
-The benefit it would buy is cross-device sync. Export and import already solve
-that with a file, without anyone becoming a data controller.
+The benefit it buys is cross-device sync. Export and import already do that with
+a file.
 
-See [privacy.md](privacy.md) for what is stored and the tests that keep it
-there.
+See [data.md](data.md) for what is stored and the tests that keep it there.
 
 ### If that were ever revisited
 
@@ -158,8 +155,8 @@ have to hold:
 - **No passwords.** Delegated sign-in needs no password storage, no reset flow
   and no email service, and the only field worth keeping is an opaque provider
   id.
-- **Written down first.** A published notice, reviewed by someone qualified,
-  before the first row is stored rather than after.
+- **Deletable.** An account that cannot be removed from the account screen is
+  worse than no account, and export must keep working without one.
 
 At roughly two snapshot writes per learner per day, a few hundred learners sit
 around 600 writes a day, which fits inside the free tier of a hosted SQLite

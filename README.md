@@ -267,8 +267,7 @@ their exercises need fixtures rather than a compiler.
   is vendored with the site, so there is nothing to fetch.
 - **No account.** No sign-in, no email, no identity. Your progress lives in
   your browser or on your disk; saving, loading and deleting it are all things
-  you do yourself, from the footer. Nothing about you is collected, so there is
-  nothing about you to lose. See [docs/privacy.md](docs/privacy.md).
+  you do yourself, from the footer. See [docs/data.md](docs/data.md).
 - **No leaderboard, no ranking, no XP.** Nobody else is in this. Ranking
   changes the goal from _recover capability_ to _optimize a score_, and those
   come apart immediately. There is one habit number — days practiced — and it
@@ -375,7 +374,7 @@ reasoning is in [PRINCIPLES.md](PRINCIPLES.md) §10.
 [docs/development.md](docs/development.md) — building, testing, and the gates.
 [docs/authoring.md](docs/authoring.md) — the exercise format.
 [docs/deploying.md](docs/deploying.md) — putting it on a free host.
-[docs/privacy.md](docs/privacy.md) — what is stored, where, and the tests
-that keep it on your machine.
+[docs/data.md](docs/data.md) — what is stored, where, the tests that keep it on
+your machine, and how far those tests actually reach.
 [PRINCIPLES.md](PRINCIPLES.md) — the constraints, each one enforced or
 falsifiable.
