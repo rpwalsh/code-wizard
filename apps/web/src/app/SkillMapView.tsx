@@ -1,13 +1,16 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Constraint, SkillMap, SkillNode } from '@code-retrainer/session';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SkillDag } from '../components/SkillDag.tsx';
 
 interface SkillMapViewProps {
   readonly map: SkillMap;
+  /** The app-wide language; the map shows this one's graph. */
+  readonly language: string;
   readonly constraintsFor: (skillId: string) => readonly Constraint[];
   readonly exerciseCountFor: (skillId: string) => number;
-  readonly onPractise: (skillId: string) => void;
+  readonly onPractice: (skillId: string) => void;
   /** Start a demonstration: the claim "I know this", put to a test. */
   readonly onDemonstrate: (skillId: string) => void;
   /** False when nothing unseen is left to test the claim against. */
@@ -18,23 +21,58 @@ interface SkillMapViewProps {
  * The curriculum as a landscape you can explore.
  *
  * The graph carries the structure; the inspector answers what to do about it.
- * Together they let a learner go from "state modelling is weak" to "state
- * modelling is weak *because* dictionary mutation is, and here is an exercise
+ * Together they let a learner go from "state modeling is weak" to "state
+ * modeling is weak *because* dictionary mutation is, and here is an exercise
  * for that" without reading a single list.
  */
 export function SkillMapView({
   map,
+  language,
   constraintsFor,
   exerciseCountFor,
-  onPractise,
+  onPractice,
   onDemonstrate,
   canDemonstrate,
 }: SkillMapViewProps) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const node = map.nodes.find((candidate) => candidate.skillId === selected) ?? null;
+  /*
+   * One language at a time.
+   *
+   * The browser build now carries six, and merging them produced a map of a
+   * hundred and ninety-one nodes in which Python's "Syntax" band sat beside
+   * JavaScript's — same label, unrelated skills, no edge between them. It was
+   * unreadable, and half of it was off-screen at any fit that kept the labels
+   * legible.
+   *
+   * Languages share no prerequisites by construction, so a combined graph is
+   * six disconnected graphs drawn on top of each other. Showing one is not a
+   * simplification; it is the only view that is a graph at all.
+   */
+  const languages = useMemo(
+    () => [...new Set(map.nodes.map((entry) => entry.skillId.split('.')[0] ?? ''))].sort(),
+    [map],
+  );
+  // Controlled by the app-wide selector. No silent substitution: a language
+  // whose graph is not in this build gets an honest empty state, not another
+  // language's map wearing its name.
+  const shown = languages.includes(language) ? language : null;
 
-  const measured = map.nodes.filter((entry) => !entry.unmeasured).length;
-  const due = map.nodes.filter(
+  const visible = useMemo<SkillMap>(() => {
+    if (shown === null) return { ...map, nodes: [], edges: [] };
+    const kept = new Set(
+      map.nodes.filter((entry) => entry.skillId.startsWith(`${shown}.`)).map((e) => e.skillId),
+    );
+    return {
+      ...map,
+      nodes: map.nodes.filter((entry) => kept.has(entry.skillId)),
+      edges: map.edges.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
+    };
+  }, [map, shown]);
+
+  const [selected, setSelected] = useState<string | null>(null);
+  const node = visible.nodes.find((candidate) => candidate.skillId === selected) ?? null;
+
+  const measured = visible.nodes.filter((entry) => !entry.unmeasured).length;
+  const due = visible.nodes.filter(
     (entry) => entry.dueAt !== null && Date.parse(entry.dueAt) <= Date.now(),
   ).length;
 
@@ -43,13 +81,24 @@ export function SkillMapView({
       <div className="map__main">
         <div className="section__head">
           <p className="label">Skill map</p>
+
+          {/* The language is the top bar's dropdown; repeating a picker here
+              would be two controls fighting over one choice. */}
           <p className="label">
-            {measured} / {map.nodes.length} measured
+            {measured} / {visible.nodes.length} measured
             {due > 0 ? ` · ${due} due` : ''}
           </p>
         </div>
 
-        <SkillDag map={map} selected={selected} onSelect={setSelected} />
+        {shown === null ? (
+          <p className="empty" style={{ margin: 24 }}>
+            This build has no skill graph for that language yet — its exercises live in the
+            desktop app. The Practice tab has its activities, and the graph arrives with the
+            exercises.
+          </p>
+        ) : (
+          <SkillDag map={visible} selected={selected} onSelect={setSelected} />
+        )}
       </div>
 
       {node ? (
@@ -57,7 +106,7 @@ export function SkillMapView({
           node={node}
           constraints={constraintsFor(node.skillId)}
           exerciseCount={exerciseCountFor(node.skillId)}
-          onPractise={() => onPractise(node.skillId)}
+          onPractice={() => onPractice(node.skillId)}
           onDemonstrate={() => onDemonstrate(node.skillId)}
           canDemonstrate={canDemonstrate(node.skillId)}
           onClear={() => setSelected(null)}
@@ -79,7 +128,7 @@ function Inspector({
   node,
   constraints,
   exerciseCount,
-  onPractise,
+  onPractice,
   onDemonstrate,
   canDemonstrate,
   onClear,
@@ -87,7 +136,7 @@ function Inspector({
   readonly node: SkillNode;
   readonly constraints: readonly Constraint[];
   readonly exerciseCount: number;
-  readonly onPractise: () => void;
+  readonly onPractice: () => void;
   readonly onDemonstrate: () => void;
   readonly canDemonstrate: boolean;
   readonly onClear: () => void;
@@ -115,7 +164,7 @@ function Inspector({
           value={node.unmeasured ? 'not measured' : `${Math.round(node.mastery * 100)}%`}
         />
         <Fact label="Observations" value={String(node.observations)} />
-        <Fact label="Last practised" value={relative(node.lastPracticedAt)} />
+        <Fact label="Last practiced" value={relative(node.lastPracticedAt)} />
         <Fact label="Next review" value={relative(node.dueAt, true)} />
         <Fact label="Exercises" value={String(exerciseCount)} />
       </div>
@@ -144,9 +193,9 @@ function Inspector({
         type="button"
         className="button button--primary"
         disabled={exerciseCount === 0}
-        onClick={onPractise}
+        onClick={onPractice}
       >
-        {exerciseCount === 0 ? 'No exercises yet' : 'Practise this'}
+        {exerciseCount === 0 ? 'No exercises yet' : 'Practice this'}
       </button>
 
       {canDemonstrate ? (

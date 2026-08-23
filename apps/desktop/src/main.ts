@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -52,7 +53,7 @@ async function loadBundle(): Promise<ContentBundle> {
       );
     }
     return toBundle(report.catalog.all(), [...pythonSkills], {
-      relativise: (directory) => path.relative(repositoryRoot, directory),
+      relativize: (directory) => path.relative(repositoryRoot, directory),
     });
   }
 

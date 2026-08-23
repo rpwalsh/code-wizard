@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Exercise } from '@code-retrainer/exercises';
 import { timeBudgetSeconds } from '@code-retrainer/exercises';
 
@@ -23,7 +24,7 @@ export function isTimerMode(value: string): value is TimerMode {
  * problem does not tick against the same allowance as a sixty-second drill.
  * Running over changes the wording and nothing else: it does not turn red, it
  * does not stop anything, and it never reaches grading. Being slow is
- * information, and information does not need a colour to be heard.
+ * information, and information does not need a color to be heard.
  */
 export function Timer({
   mode,

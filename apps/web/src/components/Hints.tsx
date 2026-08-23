@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Hint, HintLevel } from '@code-retrainer/exercises';
 
 interface HintsProps {
@@ -10,7 +11,7 @@ interface HintsProps {
 const LADDER: readonly { level: HintLevel; label: string }[] = [
   { level: 'conceptual', label: 'Concept' },
   { level: 'structural', label: 'Structure' },
-  { level: 'language', label: 'Python' },
+  { level: 'language', label: 'Language' },
   { level: 'syntax', label: 'Syntax' },
   { level: 'explicit', label: 'Answer' },
 ];

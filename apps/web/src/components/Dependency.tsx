@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { AssistancePoint, BaselineComparison } from '@code-retrainer/session';
 
 /**
@@ -6,7 +7,7 @@ import type { AssistancePoint, BaselineComparison } from '@code-retrainer/sessio
  * For someone rebuilding fundamentals after years of assisted development,
  * this is the only chart that answers the actual question. Fluency going up is
  * pleasant; this line going down is the point. It is drawn falling-is-good and
- * labelled that way, because a chart that requires a caption to read correctly
+ * labeled that way, because a chart that requires a caption to read correctly
  * will be read incorrectly.
  *
  * Gaps are gaps. Days with no practice draw nothing rather than dropping to
@@ -27,7 +28,7 @@ export function Dependency({
   if (measured.length < 2) {
     return (
       <p className="empty">
-        This appears once you have practised over a few days. It tracks how often you reached for a
+        This appears once you have practiced over a few days. It tracks how often you reached for a
         hint, the documentation, or the answer — and the useful direction is down.
       </p>
     );
@@ -95,7 +96,7 @@ export function Dependency({
  *
  * Stated in plain language rather than as a delta badge, because "you need
  * less help than you did" is the sentence someone came here to be able to say,
- * and a number in a coloured pill does not say it.
+ * and a number in a colored pill does not say it.
  */
 function BaselineLine({ comparison }: { readonly comparison: BaselineComparison }) {
   const change = comparison.independenceChange;

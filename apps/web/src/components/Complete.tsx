@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Exercise } from '@code-retrainer/exercises';
 import type { FluencyHistory } from '@code-retrainer/learning';
 import type { CompletionReport } from '@code-retrainer/session';

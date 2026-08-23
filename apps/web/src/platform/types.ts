@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
 import type { ExerciseCatalog } from '@code-retrainer/exercises';
 import type { ProgressStore } from '@code-retrainer/storage';
@@ -11,7 +12,19 @@ import type { ProgressStore } from '@code-retrainer/storage';
  */
 export interface Platform {
   readonly kind: 'web' | 'desktop';
-  readonly runtime: LanguageRuntime;
+  /**
+   * The languages this build can actually execute.
+   *
+   * A registry rather than one runtime, because the browser is no longer a
+   * one-language environment: CPython arrives as WebAssembly, and JavaScript,
+   * TypeScript, React and Angular need nothing at all, since the page is
+   * already a JavaScript engine.
+   *
+   * A language absent here is a language this build cannot run. The catalog
+   * is filtered against it rather than the other way round, so nothing is
+   * offered that would fail when opened.
+   */
+  readonly runtimes: ReadonlyMap<string, LanguageRuntime>;
   readonly store: ProgressStore;
   readonly catalog: ExerciseCatalog;
   readonly skillGraph: SkillGraph;
@@ -22,7 +35,7 @@ export interface Platform {
    */
   readonly persistent: boolean;
   readonly storageNote?: string;
-  /** Warms the language runtime so the first exercise does not pay for it. */
+  /** Warms the heaviest runtime so the first exercise does not pay for it. */
   warmUp?(): Promise<void>;
 }
 

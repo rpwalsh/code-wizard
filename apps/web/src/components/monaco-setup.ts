@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * A Monaco build containing only what Code Retrainer uses.
  *

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { masteryDimensions } from '@code-retrainer/core';
 import { slotLabel } from '@code-retrainer/curriculum';
 import type { Exercise } from '@code-retrainer/exercises';
@@ -12,7 +13,10 @@ import { Trajectory } from '../components/Trajectory.tsx';
 interface HomeProps {
   readonly platform: Platform;
   readonly dashboard: Dashboard;
+  readonly language: string;
+  readonly languageTitle: string;
   readonly onOpen: (exercise: Exercise) => void;
+  readonly onPractice: () => void;
 }
 
 /**
@@ -22,22 +26,52 @@ interface HomeProps {
  * the app at 8am actually needs, and nothing else — no greeting, no streak, no
  * celebration for showing up. They came here to work.
  */
-export function Home({ platform, dashboard, onOpen }: HomeProps) {
+export function Home({
+  platform,
+  dashboard,
+  language,
+  languageTitle,
+  onOpen,
+  onPractice,
+}: HomeProps) {
   const { fluency, plan } = dashboard;
   const first = plan.items[0];
   const rest = plan.items.slice(1);
 
   const scheduled = new Set(plan.items.map((item) => item.exercise.id));
-  const catalogue = platform.catalog
+  const catalog = platform.catalog
     .all()
-    .slice()
+    .filter((exercise) => exercise.language === language)
     .sort((a, b) => a.difficulty - b.difficulty || a.title.localeCompare(b.title))
     .map((exercise) => ({ exercise, locked: !scheduled.has(exercise.id) }));
+
+  // A language this build cannot execute still has its reading practice, and
+  // the honest home page says so instead of showing an empty plan.
+  if (catalog.length === 0) {
+    return (
+      <div className="home">
+        <header className="reading">
+          <h1 className="reading__language">{languageTitle}</h1>
+          <p className="reading__caption">Practice-first in this build</p>
+        </header>
+        <section className="section">
+          <p className="empty">
+            This browser build cannot execute {languageTitle} — its exercises live in the desktop
+            app, where a real toolchain does the judging. The activities work right here, and they
+            are the best place to start anyway.
+          </p>
+          <button type="button" className="button button--primary" onClick={onPractice}>
+            Open {languageTitle} practice
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="home">
       <header className="reading">
-        <h1 className="reading__language">Python</h1>
+        <h1 className="reading__language">{languageTitle}</h1>
         <p className="reading__caption">Independent fluency</p>
 
         <div className="reading__figure">
@@ -95,7 +129,7 @@ export function Home({ platform, dashboard, onOpen }: HomeProps) {
         {rest.length === 0 ? (
           <p className="empty">
             {plan.items.length === 0
-              ? 'Nothing is scheduled yet. Pick anything from the catalogue below — the schedule builds itself once there is something to go on.'
+              ? 'Nothing is scheduled yet. Pick anything from the catalog below — the schedule builds itself once there is something to go on.'
               : 'That is the session.'}
           </p>
         ) : (
@@ -150,7 +184,7 @@ export function Home({ platform, dashboard, onOpen }: HomeProps) {
 
         {fluency.measuredSkills === 0 ? (
           <p className="empty">
-            These appear once you have practised something. Knowing a concept and being able to
+            These appear once you have practiced something. Knowing a concept and being able to
             write it are different numbers, which is the whole point of measuring both.
           </p>
         ) : (
@@ -178,22 +212,22 @@ export function Home({ platform, dashboard, onOpen }: HomeProps) {
         )}
       </section>
 
-      <section className="section" aria-labelledby="catalogue-heading">
+      <section className="section" aria-labelledby="catalog-heading">
         <div className="section__head">
-          <p className="label" id="catalogue-heading">
-            Catalogue
+          <p className="label" id="catalog-heading">
+            Catalog
           </p>
-          <p className="label">{catalogue.length} exercises</p>
+          <p className="label">{catalog.length} exercises</p>
         </div>
 
-        <ul className="catalogue">
-          {catalogue.map(({ exercise }) => (
+        <ul className="catalog">
+          {catalog.map(({ exercise }) => (
             <li key={exercise.id}>
-              <button type="button" className="catalogue__row" onClick={() => onOpen(exercise)}>
-                <span className="catalogue__difficulty numeral">d{exercise.difficulty}</span>
-                <span className="catalogue__title">{exercise.title}</span>
-                <span className="catalogue__kind">{exercise.kind.replace(/-/g, ' ')}</span>
-                <span className="catalogue__time numeral">
+              <button type="button" className="catalog__row" onClick={() => onOpen(exercise)}>
+                <span className="catalog__difficulty numeral">d{exercise.difficulty}</span>
+                <span className="catalog__title">{exercise.title}</span>
+                <span className="catalog__kind">{exercise.kind.replace(/-/g, ' ')}</span>
+                <span className="catalog__time numeral">
                   {Math.round(exercise.estimatedSeconds / 60)}m
                 </span>
               </button>
@@ -201,7 +235,7 @@ export function Home({ platform, dashboard, onOpen }: HomeProps) {
           ))}
         </ul>
 
-        {catalogue.some((entry) => entry.locked) ? (
+        {catalog.some((entry) => entry.locked) ? (
           <p className="empty">
             Exercises above your current level are still open — the schedule leaves them out, but
             nothing stops you trying one.

@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type {
   Diagnostic,
   ExecutionRequest,
@@ -144,7 +145,11 @@ export async function createDesktopPlatform(
 
   return {
     kind: 'desktop',
-    runtime: new BridgedRuntime(),
+    // One entry today. The main process holds all fourteen runtimes, but the
+    // preload bridge still exposes a single one, so widening this means
+    // widening the IPC contract to carry a language id — the next step for
+    // the desktop build, and the reason the type here is already a map.
+    runtimes: new Map([[bridge().metadata.id, new BridgedRuntime()]]),
     store: new BridgedStore(),
     catalog: catalogFromBundle(bundle),
     skillGraph: SkillGraph.from(bundle.skills),

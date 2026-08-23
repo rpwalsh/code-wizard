@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TraceResult, TraceStep } from '@code-retrainer/core';
 import { stateAt } from '@code-retrainer/core';
 import { useEffect, useMemo, useState } from 'react';

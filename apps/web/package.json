@@ -22,7 +22,10 @@
     "@monaco-editor/react": "^4.6.0",
     "monaco-editor": "^0.52.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@code-retrainer/activities": "*",
+    "esbuild-wasm": "^0.25.12",
+    "@code-retrainer/javascript": "*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

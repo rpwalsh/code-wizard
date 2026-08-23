@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TestCaseResult, TestResult } from '@code-retrainer/core';
 import { useState } from 'react';
 
@@ -71,7 +72,7 @@ export function Results({ result, busy, onWatch }: ResultsProps) {
         <span className="results__count">{total}</span>
         <span className="label">{total === 1 ? 'test' : 'tests'}</span>
         <span className="dim" role="status" aria-live="polite" style={{ marginLeft: 'auto' }}>
-          {summarise(result)}
+          {summarize(result)}
         </span>
       </div>
 
@@ -165,7 +166,7 @@ function Diagnosis({
   );
 }
 
-function summarise(result: TestResult): string {
+function summarize(result: TestResult): string {
   const parts: string[] = [];
   if (result.passed > 0) parts.push(`${result.passed} passed`);
   if (result.failed > 0) parts.push(`${result.failed} failed`);

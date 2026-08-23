@@ -1,5 +1,8 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+
+import type { Platform } from '../src/platform/types.ts';
 import { pythonSkillGraph } from '@code-retrainer/python';
 
 /**
@@ -19,15 +22,22 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-/** Answer the first-run question and land on the dashboard. */
+/** Answer the first-run questions and land on the dashboard. */
 async function start(page: Page, choice = 'I program, but not in Python'): Promise<void> {
   await page.goto('/');
+  await page.getByRole('button', { name: /^Python/ }).click();
   await page.getByRole('button', { name: choice }).click();
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
 }
 
 test('asks where the learner is starting from, once', async ({ page }) => {
   await page.goto('/');
+
+  // Two steps: the language first, because everything after is scoped by it.
+  await expect(
+    page.getByRole('heading', { name: 'Which language are you here to get back?' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: /^Python/ }).click();
 
   await expect(
     page.getByRole('heading', { name: 'How much Python have you written?' }),
@@ -46,7 +56,7 @@ test('boots and shows the instrument', async ({ page }) => {
   await start(page);
 
   await expect(page.getByText('Independent fluency')).toBeVisible();
-  // Nothing practised yet, so the reading is a standing start rather than a lie.
+  // Nothing practiced yet, so the reading is a standing start rather than a lie.
   await expect(page.getByText(/no measurements yet|skills measured/)).toBeVisible();
 });
 
@@ -64,9 +74,9 @@ test('every exercise is reachable from the dashboard', async ({ page }) => {
   await start(page);
 
   // The regression this suite was written for: the schedule can legitimately
-  // be empty, but the catalogue never is, so the screen is never a dead end.
-  const catalogue = page.getByRole('button', { name: /Safe account lookup/ });
-  await expect(catalogue.first()).toBeVisible();
+  // be empty, but the catalog never is, so the screen is never a dead end.
+  const catalog = page.getByRole('button', { name: /Safe account lookup/ });
+  await expect(catalog.first()).toBeVisible();
 });
 
 test('opens an exercise into the workspace', async ({ page }) => {
@@ -135,7 +145,7 @@ test('a prediction is held until the run that judges it', async ({ page }) => {
   // measurement working, not a punishment.
   await expect(page.getByText('You expected something else.')).toBeVisible({ timeout: 220_000 });
   await expect(page.getByText('You said it would')).toHaveCount(0);
-  // And it is not coloured as a failure: being wrong is the measurement working.
+  // And it is not colored as a failure: being wrong is the measurement working.
   await expect(page.locator('.predict__verdict--wrong')).toBeVisible();
 });
 
@@ -146,8 +156,18 @@ test('draws the skill graph as a DAG', async ({ page }) => {
   const canvas = page.getByRole('group', { name: 'Skill dependency graph' });
   await expect(canvas).toBeVisible();
 
-  // A layered DAG of 45 skills: every node placed, every prerequisite drawn.
-  await expect(canvas.locator('.dag__node')).toHaveCount(pythonSkillGraph.size);
+  // One language at a time, deliberately: six graphs share no edges, and
+  // drawing them together was six pictures stacked into noise. The app-wide
+  // language is Python after onboarding, so the map shows Python's skills —
+  // counted from the bundle itself so adding a skill never breaks this.
+  const shown = await page.evaluate(
+    () =>
+      [...(window.__retrainerPlatform?.skillGraph.all() ?? [])].filter((skill) =>
+        skill.id.startsWith('python.'),
+      ).length,
+  );
+  expect(shown).toBe(pythonSkillGraph.size);
+  await expect(canvas.locator('.dag__node')).toHaveCount(shown);
   expect(await canvas.locator('.dag__edge').count()).toBeGreaterThan(40);
 
   // Layout actually ran — dagre gives real coordinates, not a pile at 0,0.
@@ -162,19 +182,25 @@ test('tracing a skill dims everything unrelated to it', async ({ page }) => {
   await page.getByRole('button', { name: 'Skill map' }).click();
 
   const canvas = page.getByRole('group', { name: 'Skill dependency graph' });
-  await expect(canvas.locator('.dag__node')).toHaveCount(pythonSkillGraph.size);
+  const shown = await page.evaluate(
+    () =>
+      [...(window.__retrainerPlatform?.skillGraph.all() ?? [])].filter((skill) =>
+        skill.id.startsWith('python.'),
+      ).length,
+  );
+  await expect(canvas.locator('.dag__node')).toHaveCount(shown);
 
-  await canvas.getByRole('button', { name: /Modelling mutable state/ }).click();
+  await canvas.getByRole('button', { name: /Modeling mutable state/ }).click();
 
   // The inspector answers what the graph is showing.
-  await expect(page.getByRole('heading', { name: 'Modelling mutable state' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Modeling mutable state' })).toBeVisible();
 
   // The chain above and below stays lit; the rest recedes.
   const dimmed = await canvas.locator('.dag__node[data-dimmed="true"]').count();
   const lit = await canvas.locator('.dag__node:not([data-dimmed="true"])').count();
   expect(dimmed).toBeGreaterThan(0);
   expect(lit).toBeGreaterThan(1);
-  expect(dimmed + lit).toBe(pythonSkillGraph.size);
+  expect(dimmed + lit).toBe(shown);
 
   await expect(canvas.locator('.dag__node[data-relation="self"]')).toHaveCount(1);
   expect(await canvas.locator('.dag__node[data-relation="ancestor"]').count()).toBeGreaterThan(0);
@@ -290,14 +316,19 @@ test('hidden tests are never offered for tracing', async ({ page }) => {
 });
 
 /**
- * The no-AI claim, checked rather than asserted.
+ * The offline claim, checked rather than asserted.
  *
  * A dependency scan proves no model client was installed. This proves the
  * running application does not talk to one — or to an analytics endpoint, or
- * to anything else it did not declare. It is the difference between a promise
- * and a fact a learner could verify themselves with a network tab.
+ * to a CDN, or to anything at all. Every byte it needs, including the CPython
+ * interpreter and esbuild's WebAssembly, is served from its own origin.
+ *
+ * The earlier version of this test allowed `cdn.jsdelivr.net`, because Pyodide
+ * was fetched from there. Vendoring it turned "talks to nothing except a CDN"
+ * into "talks to nothing", and this is the line that keeps it that way: add a
+ * font, an icon set or an analytics snippet and this fails.
  */
-test('talks to nothing except its own files and the pinned Python runtime', async ({ page }) => {
+test('talks to nothing at all', async ({ page }) => {
   test.slow();
   const contacted = new Set<string>();
 
@@ -309,19 +340,68 @@ test('talks to nothing except its own files and the pinned Python runtime', asyn
 
   await start(page);
 
-  // Exercise the whole app, including the part that boots CPython.
+  // Walk the whole application, including the screens that fetch their own
+  // content and the one that boots an interpreter.
   await page.getByRole('button', { name: 'Skill map' }).click();
+  await expect(page.locator('.dag svg')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Practice', exact: true }).click();
+  await page.getByRole('button', { name: /^Rust/ }).click();
+  await expect(page.locator('.activity')).toBeVisible();
+
   await page.getByRole('button', { name: 'Today' }).click();
-  await page
-    .getByRole('button', { name: /Safe account lookup/ })
-    .first()
-    .click();
-  await page.getByRole('button', { name: /^Test/ }).click();
-  await expect(page.locator('.result--failed').first()).toBeVisible({ timeout: 220_000 });
 
-  const allowed = new Set(['127.0.0.1:4173', 'cdn.jsdelivr.net']);
-  expect([...contacted].filter((host) => !allowed.has(host))).toEqual([]);
+  // The interpreter and the TypeScript transformer are the two heaviest
+  // things here and the two that used to come from a CDN. Both are exercised.
+  const ran = await page.evaluate(async () => {
+    const platform = window.__retrainerPlatform;
+    const python = await platform?.runtimes.get('python')?.execute({
+      workspace: { files: [{ path: 'main.py', contents: 'print("py")' }], entryPoint: 'main.py' },
+      limits: { timeoutMs: 200_000, maxOutputBytes: 4096 },
+    });
+    const typescript = await platform?.runtimes.get('typescript')?.execute({
+      workspace: {
+        files: [
+          {
+            path: 'main.ts',
+            contents: 'const n: number = 1; console.log("ts" + n);',
+          },
+        ],
+        entryPoint: 'main.ts',
+      },
+      limits: { timeoutMs: 120_000, maxOutputBytes: 4096 },
+    });
+    return `${python?.stdout.trim()} ${typescript?.stdout.trim()}`;
+  });
 
-  // And the CDN is only ever asked for the pinned interpreter.
-  expect([...contacted]).toContain('cdn.jsdelivr.net');
+  expect(ran).toBe('py ts1');
+  expect([...contacted]).toEqual(['127.0.0.1:4173']);
+});
+
+declare global {
+  interface Window {
+    __retrainerPlatform?: Platform;
+  }
+}
+
+/**
+ * JavaScript runs in the browser with nothing downloaded.
+ *
+ * The page is already a JavaScript engine, so this is the one language the web
+ * build runs without an interpreter, a toolchain or a WebAssembly module. It
+ * is also the proof that the runtime registry is real: a second language,
+ * executing through a completely different mechanism from Python, behind the
+ * same interface.
+ */
+test('runs a JavaScript exercise in a worker', async ({ page }) => {
+  test.slow();
+  await start(page);
+
+  await page.getByRole('button', { name: 'Skill map' }).click();
+  await expect(page.locator('.dag svg')).toBeVisible();
+
+  // The skill map now carries more than one language, which is the visible
+  // consequence of the registry.
+  const bands = await page.locator('.dag__band-label').allTextContents();
+  expect(bands.length).toBeGreaterThan(5);
 });

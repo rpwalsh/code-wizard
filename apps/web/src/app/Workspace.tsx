@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Demonstration } from '@code-retrainer/curriculum';
 import type { TrainingMode } from '@code-retrainer/core';
 import { affordancesFor, isGreen } from '@code-retrainer/core';
@@ -17,6 +18,8 @@ import { Predict, PredictionVerdict } from '../components/Predict.tsx';
 import type { Command } from '../components/Palette.tsx';
 import { Results } from '../components/Results.tsx';
 import { TraceScope } from '../components/TraceScope.tsx';
+import { Walkthrough } from '../components/Walkthrough.tsx';
+import type { LanguageRuntime } from '@code-retrainer/core';
 import type { Platform } from '../platform/index.ts';
 
 /**
@@ -55,7 +58,7 @@ export function Workspace({
   const session = useMemo(
     () =>
       ExerciseSession.begin(exercise, mode, {
-        runtime: platform.runtime,
+        runtime: runtimeFor(platform, exercise.language),
         store: platform.store,
         skillGraph: platform.skillGraph,
         skillsOf: (exerciseId) =>
@@ -76,6 +79,12 @@ export function Workspace({
   const activeFile = state.files.find((file) => file.path === activePath) ?? state.files[0] ?? null;
   const busy = state.activity !== 'idle';
   const [traced, setTraced] = useState<{ file: string; line: number } | null>(null);
+  // Hold-my-hand: open the guided tour automatically in Learn mode, and keep
+  // it one click away wherever hints are allowed. Never during a
+  // demonstration — a walked-through claim is not a demonstrated one.
+  const [walkthroughOpen, setWalkthroughOpen] = useState(
+    mode === 'learn' && demonstration === undefined,
+  );
 
   // Hoisted, not inlined into the conditionally-rendered scope: a hook inside
   // a branch changes the hook count between renders.
@@ -155,6 +164,12 @@ export function Workspace({
         name: focus === 'zen' ? 'Leave distraction-free mode' : 'Distraction-free mode',
         run: () => setFocus((current) => (current === 'zen' ? 'write' : 'zen')),
       },
+      {
+        id: 'walkthrough',
+        name: walkthroughOpen ? 'Close the walkthrough' : 'Walk me through it',
+        disabled: !affordances.hints || demonstration !== undefined,
+        run: () => setWalkthroughOpen((current) => !current),
+      },
       { id: 'reset', name: 'Reset to starter code', run: () => session.resetFiles() },
       { id: 'leave', name: 'Back to today', run: onLeave },
     ]);
@@ -170,6 +185,9 @@ export function Workspace({
     state.remainingHints,
     focus,
     onLeave,
+    walkthroughOpen,
+    affordances.hints,
+    demonstration,
   ]);
 
   return (
@@ -180,10 +198,22 @@ export function Workspace({
         </button>
 
         <p className="crumb">
-          Python / <strong>{exercise.title}</strong>
+          {platform.runtimes.get(exercise.language)?.metadata().displayName ?? exercise.language} /{' '}
+          <strong>{exercise.title}</strong>
         </p>
 
         <span className="workspace__bar-spacer" />
+
+        {affordances.hints && !demonstration ? (
+          <button
+            type="button"
+            className="button button--bare"
+            aria-pressed={walkthroughOpen}
+            onClick={() => setWalkthroughOpen((current) => !current)}
+          >
+            Walk me through it
+          </button>
+        ) : null}
 
         {affordances.timer ? (
           <Timer mode={timerMode} elapsedMs={elapsed} exercise={exercise} />
@@ -223,6 +253,24 @@ export function Workspace({
       ) : null}
 
       <div className="workspace__body">
+      {walkthroughOpen ? (
+        <Walkthrough
+          exercise={exercise}
+          revealedHints={state.revealedHints}
+          hintsAllowed={state.hintsAllowed}
+          canRevealSolution={affordances.solutionReveal}
+          onRevealHint={() => void guard(() => session.revealNextHint())}
+          onRevealSolution={() => session.revealSolution()}
+          onOpenTests={() => {
+            const test = exercise.tests.find((entry) => entry.visibility === 'visible');
+            const open = state.files.find((file) => file.path === test?.path);
+            if (open) setActivePath(open.path);
+          }}
+          onRunTests={runTests}
+          onClose={() => setWalkthroughOpen(false)}
+        />
+      ) : null}
+
         <aside className="brief" aria-label="Task" hidden={focus !== 'write'}>
           <Prompt exercise={exercise} />
 
@@ -268,7 +316,7 @@ export function Workspace({
               <Editor
                 path={activeFile.path}
                 value={activeFile.contents}
-                language={platform.runtime.metadata().editorLanguage}
+                language={runtimeFor(platform, exercise.language).metadata().editorLanguage}
                 readOnly={activeFile.readOnly}
                 autocomplete={affordances.editorAutocomplete}
                 fontSize={fontSize}
@@ -407,4 +455,23 @@ function useElapsed(running: boolean): number {
   }, [running]);
 
   return elapsed;
+}
+
+/**
+ * The runtime for a language, or a clear failure.
+ *
+ * The catalog is filtered against the platform's registry before anything is
+ * offered, so this should never miss. When it does, the message says which
+ * language and which build rather than throwing a null dereference three
+ * frames deeper.
+ */
+function runtimeFor(platform: Platform, language: string): LanguageRuntime {
+  const runtime = platform.runtimes.get(language);
+  if (!runtime) {
+    throw new Error(
+      `The ${platform.kind} build cannot run ${language}. ` +
+        'This exercise should not have been offered.',
+    );
+  }
+  return runtime;
 }

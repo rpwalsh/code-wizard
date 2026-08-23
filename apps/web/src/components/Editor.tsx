@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import Monaco, { loader } from '@monaco-editor/react';
 import { useEffect, useRef, useState } from 'react';
 

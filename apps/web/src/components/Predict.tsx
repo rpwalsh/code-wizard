@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { Prediction } from '@code-retrainer/core';
 import type { PredictionRecord } from '@code-retrainer/session';
 import { useState } from 'react';
@@ -110,7 +111,7 @@ export function Predict({
 /**
  * How the last claim turned out, shown beside the results.
  *
- * A wrong prediction is never coloured as a failure. Being wrong here is the
+ * A wrong prediction is never colored as a failure. Being wrong here is the
  * measurement working, and it is the most useful thing that can happen: it
  * means the learner has just found a gap between what they believed and what
  * is true, which is the only place learning actually happens.

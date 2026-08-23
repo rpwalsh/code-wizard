@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +26,7 @@ async function start(page: Page, theme: 'light' | 'dark'): Promise<void> {
   // documentElement exists, so the attribute never landed.
   await page.emulateMedia({ colorScheme: theme });
   await page.goto('/');
+  await page.getByRole('button', { name: /^Python/ }).click();
   await page.getByRole('button', { name: 'I have written Python, a while ago' }).click();
   await expect(page.getByRole('heading', { name: 'Python', exact: true })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
@@ -43,6 +45,47 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.locator('.dag svg')).toBeVisible();
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(shots, `skill-map-${theme}.png`) });
+  });
+
+  test(`skill map tracing, ${theme}`, async ({ page }) => {
+    // The map at rest shows shape; pointing at a skill is what answers "what
+    // is this connected to". A screenshot of only the resting state would
+    // document half the screen.
+    await start(page, theme);
+    await page.getByRole('button', { name: 'Skill map' }).click();
+    await expect(page.locator('.dag svg')).toBeVisible();
+    await page.waitForTimeout(400);
+    // `.first()`: the map carries six languages now, and more than one of them
+    // may name a skill this way.
+    await page
+      .getByRole('button', { name: /^Breadth-first and depth/ })
+      .first()
+      .click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(shots, `skill-map-tracing-${theme}.png`) });
+  });
+
+  test(`practice, ${theme}`, async ({ page }) => {
+    await start(page, theme);
+    await page.getByRole('button', { name: 'Practice', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Practice' })).toBeVisible();
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(shots, `practice-${theme}.png`) });
+  });
+
+  test(`activity, ${theme}`, async ({ page }) => {
+    await start(page, theme);
+    await page.getByRole('button', { name: 'Practice', exact: true }).click();
+    await page.getByRole('button', { name: /^Rust/ }).click();
+    await expect(page.locator('.activity')).toBeVisible();
+    await page.waitForTimeout(300);
+    // Answer, so the shot shows the part that teaches: the explanation and
+    // why each wrong option was tempting.
+    await page.locator('.activity__option').nth(1).click();
+    await page.getByRole('button', { name: 'Check' }).click();
+    await expect(page.locator('.activity__explanation')).toBeVisible();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(shots, `activity-${theme}.png`) });
   });
 
   test(`workspace, ${theme}`, async ({ page }) => {

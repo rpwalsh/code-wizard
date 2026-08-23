@@ -1,11 +1,12 @@
+/* Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) */
 /*
  * Code Retrainer — a professional instrument for building programming fluency.
  *
  * The rules this file holds itself to:
- *   Monochrome, with exactly one accent. Skills do not get colours.
+ *   Monochrome, with exactly one accent. Skills do not get colors.
  *   Hierarchy from typography, spacing and weight — never from decoration.
  *   Big numbers only where the number means something.
- *   Status never carried by colour alone; every state has a glyph or a label.
+ *   Status never carried by color alone; every state has a glyph or a label.
  *   Motion is 160–260ms and only ever explains a change of state.
  *   Information density high, visual noise low.
  *
@@ -35,6 +36,13 @@
   --surface-inset: rgb(255 255 255 / 46%);
   --line: rgb(28 42 56 / 12%);
   --line-strong: rgb(28 42 56 / 22%);
+
+  /* The skill map's two kinds of line. A step along a branch is solid and
+     legible; a dependency arriving from another branch is the same gray,
+     thinner and dashed, because there are seventy-seven of them and no
+     styling makes seventy-seven lines readable at once. */
+  --dag-line: rgb(28 42 56 / 42%);
+  --dag-crossing: rgb(28 42 56 / 20%);
 
   /* Text, four steps and no more. */
   --text: #16202b;
@@ -137,6 +145,8 @@ body {
     --bg: #070b10;
     --line: rgb(190 214 236 / 12%);
     --line-strong: rgb(190 214 236 / 22%);
+    --dag-line: rgb(190 214 236 / 40%);
+    --dag-crossing: rgb(190 214 236 / 20%);
 
     --text: #e8eef4;
     --text-dim: #9aa8b6;
@@ -177,6 +187,8 @@ body {
   --bg: #070b10;
   --line: rgb(190 214 236 / 12%);
   --line-strong: rgb(190 214 236 / 22%);
+  --dag-line: rgb(190 214 236 / 40%);
+  --dag-crossing: rgb(190 214 236 / 20%);
 
   --text: #e8eef4;
   --text-dim: #9aa8b6;
@@ -214,14 +226,21 @@ body {
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: var(--bg);
+  background-color: var(--bg);
+  /* The inlined placeholder, stretched. It is 48 pixels wide, so it is pure
+     color at this size — which is exactly what is wanted underneath a
+     photograph that has not decoded yet. */
+  background-size: cover;
+  background-position: 50% 72%;
 }
 .backdrop__scene {
   width: 100%;
   height: 100%;
   display: block;
-  filter: blur(1.5px) saturate(0.92);
-  transform: scale(1.04);
+  object-fit: cover;
+  /* Anchored low: the ridgelines and the water belong under the page, and the
+     open sky belongs behind the reading column. */
+  object-position: 50% 72%;
 }
 
 /* A panel. Everything that reads as a surface uses this. */
@@ -426,7 +445,7 @@ kbd {
   border-left-color: var(--pass);
   color: var(--text);
 }
-/* A failed demonstration is an answer, not a fault: no status colour at all. */
+/* A failed demonstration is an answer, not a fault: no status color at all. */
 .notice--quiet {
   border-left-color: var(--line-strong);
 }
@@ -436,7 +455,12 @@ kbd {
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  /* The viewport is the frame and the main region scrolls inside it. With
+     min-height alone the document itself scrolled, which walked the top bar
+     off the screen and let the editor grow without bound — the "endless
+     blank canvas" workspace. */
+  height: 100vh;
+  height: 100dvh;
 }
 
 .topbar {
@@ -883,8 +907,13 @@ kbd {
 /* Edges. Dimming is what turns the picture into an answer. */
 .dag__edge {
   fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 1.25;
+  stroke: var(--dag-line);
+  stroke-width: 1.4;
+  /* Mitred, not rounded. A rounded corner is a small curve, and the point of
+     straight edges is that there are none. */
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+  shape-rendering: geometricPrecision;
   transition:
     stroke var(--fast) var(--ease),
     opacity var(--fast) var(--ease);
@@ -901,7 +930,10 @@ kbd {
   stroke-width: 1.5;
 }
 .dag__arrowhead {
-  fill: var(--line-strong);
+  fill: var(--dag-line);
+}
+.dag__arrowhead--crossing {
+  fill: var(--dag-crossing);
 }
 
 .dag__node {
@@ -932,7 +964,10 @@ kbd {
   stroke: var(--text-faint);
 }
 .dag__node[data-unmeasured='true'] .dag__node-body {
-  stroke-dasharray: 3 3;
+  /* Solid but quiet. A dashed border on every unmeasured card made a fresh
+     learner's map — where everything is unmeasured — read as a page of
+     broken rectangles. */
+  stroke: var(--line);
 }
 .dag__node[data-relation='self'] .dag__node-body {
   stroke: var(--accent);
@@ -1657,9 +1692,9 @@ kbd {
   color: var(--text-dim);
 }
 
-/* ── catalogue ────────────────────────────────────────────────────────── */
+/* ── catalog ────────────────────────────────────────────────────────── */
 
-.catalogue {
+.catalog {
   display: grid;
   gap: 1px;
   border: 1px solid var(--line);
@@ -1667,7 +1702,7 @@ kbd {
   background: var(--line);
   overflow: hidden;
 }
-.catalogue__row {
+.catalog__row {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto 40px;
   align-items: baseline;
@@ -1683,26 +1718,26 @@ kbd {
   cursor: pointer;
   transition: background var(--fast) var(--ease);
 }
-.catalogue__row:hover {
+.catalog__row:hover {
   background: var(--surface-raised);
 }
-.catalogue__difficulty {
+.catalog__difficulty {
   color: var(--text-faint);
   font-size: var(--step-0);
 }
-.catalogue__title {
+.catalog__title {
   color: var(--text);
 }
-.catalogue__kind {
+.catalog__kind {
   color: var(--text-faint);
   font-size: var(--step-0);
 }
-.catalogue__time {
+.catalog__time {
   color: var(--text-faint);
   font-size: var(--step-0);
   text-align: right;
 }
-.catalogue + .empty {
+.catalog + .empty {
   margin-top: var(--space-3);
 }
 
@@ -1935,7 +1970,7 @@ kbd {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-/* Status colour only where the direction is genuinely the good one, and only
+/* Status color only where the direction is genuinely the good one, and only
  * on the sentence — never on the line, which has to stay readable as shape. */
 .dependency__baseline[data-direction='down'] strong {
   color: var(--pass);
@@ -1952,7 +1987,7 @@ kbd {
  *
  * Going over is not an error state. There is no red, no flash and no sound —
  * the wording changes from "of 8:00" to "over" and that is all. Being slow is
- * information, and information does not need a colour to be heard.
+ * information, and information does not need a color to be heard.
  */
 .timer--budget {
   display: inline-flex;
@@ -2087,29 +2122,36 @@ kbd {
   display: block;
 }
 
-/* ── The scene, turned down ─────────────────────────────────────────────
+/* ── The scene, per theme ──────────────────────────────────────────────
  *
- * The first version competed with the interface: ridgelines cut across the
- * reading column and the treeline reached into the content. Scenery that you
- * notice while working is scenery that has failed, so it is now blurred well
- * past legibility, dimmed, and pushed down so the busiest part sits below
- * where text lives.
+ * The photograph ships pre-blurred, so nothing here needs a blur radius that
+ * the compositor has to re-run on every paint. What is left is the exposure:
+ * the same negative printed light or printed dark.
+ *
+ * Light: opened up and cooled, so the mist reads as morning and the white
+ * panels have something bright to sit on. It should look like weather, not
+ * like a photograph someone forgot to remove.
+ *
+ * Dark: pulled down hard. The glass in dark mode is nearly black and needs a
+ * ground darker still, or the panels float instead of resting.
  */
 .backdrop__scene {
-  filter: blur(9px) saturate(0.88);
-  transform: scale(1.1) translateY(3%);
-  opacity: 0.85;
+  filter: brightness(1.16) saturate(0.9) contrast(0.92);
+  opacity: 0.95;
+  transform: scale(1.03);
 }
 :root[data-theme='dark'] .backdrop__scene {
-  opacity: 0.7;
+  filter: brightness(0.5) saturate(0.72) contrast(1.05);
+  opacity: 0.85;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .backdrop__scene {
-    opacity: 0.7;
+    filter: brightness(0.5) saturate(0.72) contrast(1.05);
+    opacity: 0.85;
   }
 }
 
-/* A wash that lifts the middle of the page toward the panel colour, so the
+/* A wash that lifts the middle of the page toward the panel color, so the
  * reading column never sits directly on a ridgeline. */
 .backdrop::after {
   content: '';
@@ -2153,4 +2195,629 @@ kbd {
 .continue,
 .plan__item {
   background: var(--surface-inset);
+}
+
+/* ── The tech tree ──────────────────────────────────────────────────────
+ *
+ * Lanes are categories, rows are depth. The alternating band is doing the
+ * work a tech tree's building row does: telling you which branch you are
+ * looking at without having to trace a line to find out.
+ */
+.dag__band {
+  fill: transparent;
+}
+.dag__band[data-alternate='true'] {
+  fill: var(--surface-inset);
+}
+.dag__band-label {
+  fill: var(--text-faint);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* A step along a branch is solid; a dependency arriving from another branch
+ * is dashed and quiet. At rest the map is for seeing shape — which branches
+ * are long, where the work piles up. Pointing at a skill is what answers
+ * "connected to what", and then its own edges come up to full strength. */
+.dag__edge[data-span='far'] {
+  /* Quieter by color, not by dashing — dashed corridors shared by several
+     edges merged into a texture that looked like wiring damage. */
+  stroke: var(--dag-crossing);
+}
+
+/* ── Practice ──────────────────────────────────────────────────────────
+ *
+ * The screen for the half of the product that needs no runtime. It is meant
+ * to be opened for three minutes on a phone-sized window and closed again, so
+ * everything is one column, generously spaced, with exactly one thing to do
+ * at a time.
+ */
+.practice {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 32px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.practice__head,
+.practice__list,
+.practice__progress,
+.activity,
+.summary {
+  width: 100%;
+  max-width: 720px;
+}
+.practice__title {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+.practice__lede {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  max-width: 60ch;
+}
+.practice__log {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.practice__status {
+  color: var(--text-dim);
+}
+
+.practice__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.practice__card {
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  color: inherit;
+  font: inherit;
+  transition: transform var(--fast) var(--ease);
+}
+.practice__card:hover {
+  transform: translateY(-1px);
+}
+.practice__card-title {
+  font-weight: 600;
+}
+.practice__card-count {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.practice__card-summary {
+  grid-column: 1 / -1;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.45;
+  /* Two lines, so a grid of sixteen cards stays a grid. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.practice__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.practice__bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+.practice__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--slow) var(--ease);
+}
+
+/* ── One activity ──────────────────────────────────────────────────── */
+.activity {
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.activity__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.activity__kind {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.activity__title {
+  margin: 0;
+  font-size: 18px;
+}
+.activity__prompt {
+  margin: 0;
+  line-height: 1.55;
+}
+.activity__code {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  /* Wide code scrolls inside its own box; the page never moves sideways. */
+  overflow-x: auto;
+}
+
+.activity__options,
+.activity__lines,
+.activity__order,
+.activity__pairs,
+.activity__blanks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.activity__option {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
+}
+.activity__option:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.activity__option[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.activity__why {
+  margin: 6px 0 0 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.activity__line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--surface-inset);
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: pre;
+  overflow-x: auto;
+}
+.activity__line[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+.activity__line[data-fault='true'] {
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+.activity__line-number {
+  color: var(--text-faint);
+  min-width: 2ch;
+  text-align: right;
+  user-select: none;
+}
+
+.activity__order > li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+}
+.activity__order-line {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.activity__order-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.activity__pairs > li {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.activity__pair-left {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.activity__select,
+.activity__input,
+.activity__textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.activity__textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.activity__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.activity__blank-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  min-width: 2ch;
+}
+.activity__hint {
+  margin: 4px 0 0 2ch;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* The verdict. Marked plainly and never celebrated: this is a reading, and a
+   burst of confetti over a right answer cheapens the ones that were hard. */
+.activity__verdict {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.activity__mark {
+  margin: 0;
+  font-weight: 600;
+}
+.activity__verdict[data-correct='true'] .activity__mark {
+  color: var(--accent);
+}
+.activity__answer {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.activity__answer-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.activity__answer code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.activity__explanation {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+/* ── End of a run ──────────────────────────────────────────────────── */
+.summary {
+  padding: 32px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.summary__eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.summary__verdict {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.4;
+}
+.summary__figures {
+  margin: 0;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.summary__figures dt {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+.summary__figures dd {
+  margin: 0;
+  font-size: 22px;
+}
+
+/* A backticked identifier inside prose. Set in the mono face at a size that
+   sits on the same baseline as the surrounding text rather than towering
+   over it, which is what an unadjusted monospace does. */
+.inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+}
+
+/* The skill map's language picker. Only rendered when more than one language
+   is bundled, which is the browser build and not the desktop one yet. */
+.map__languages {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.map__languages .navlink {
+  text-transform: capitalize;
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+
+/* ── Layout chrome: language picker, footer, toasts, modal ─────────────
+ *
+ * The componentized shell. Each of these is one component in
+ * components/layout/, and each is styled once here so every screen shares
+ * the same chrome.
+ */
+
+.language-picker {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-3);
+}
+.language-select {
+  appearance: none;
+  padding: 4px 24px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-faint) 50%),
+    linear-gradient(135deg, var(--text-faint) 50%, transparent 50%);
+  background-position:
+    calc(100% - 13px) calc(50% + 1px),
+    calc(100% - 9px) calc(50% + 1px);
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.language-select:hover {
+  border-color: var(--text-faint);
+}
+
+.app__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* Screens that are documents (Today, Practice) scroll here; screens that
+     are surfaces (the workspace, the map) fill and manage their own panes. */
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: 10px var(--space-5);
+  border-top: 1px solid var(--line);
+  color: var(--text-faint);
+  font-size: 12px;
+  background: var(--surface);
+}
+.footer__spacer {
+  flex: 1;
+}
+
+.toasts {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 60;
+  pointer-events: none;
+}
+.toast {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+  animation: toast-in var(--fast) var(--ease);
+}
+.toast[data-tone='error'] {
+  border-color: var(--error, #b3423e);
+}
+.toast[data-tone='success'] {
+  border-color: var(--accent);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(10 16 22 / 40%);
+  z-index: 50;
+}
+.modal__surface {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: var(--space-5);
+  width: min(92vw, 440px);
+  max-height: 84vh;
+  overflow: auto;
+  outline: none;
+}
+.modal__surface[data-size='wide'] {
+  width: min(94vw, 720px);
+}
+
+.onboarding__choices--grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+
+/* ── Walkthrough: the hold-my-hand overlay ─────────────────────────────
+ *
+ * Docked as a right-hand sheet over the workspace rather than a centered
+ * modal, so the code it talks about stays visible beside it.
+ */
+.walkthrough {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(92vw, 460px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 16%);
+  z-index: 30;
+}
+.workspace__body {
+  position: relative;
+}
+.walkthrough__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+.walkthrough__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.walkthrough__title {
+  font-size: 20px;
+  font-weight: 650;
+}
+.walkthrough__lead {
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.walkthrough__hint {
+  border-left: 3px solid var(--accent);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-inset);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.55;
+}
+.walkthrough__code {
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.walkthrough__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.walkthrough__dots {
+  display: flex;
+  gap: 6px;
+}
+.walkthrough__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.walkthrough__dot[data-done='true'] {
+  background: var(--accent);
 }

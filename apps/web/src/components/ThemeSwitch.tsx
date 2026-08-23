@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Light, dark, or whatever the machine already decided.
  *

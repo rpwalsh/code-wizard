@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { DesktopChannel, PayloadOf, ResultOf } from '../../web/src/platform/bridge.ts';

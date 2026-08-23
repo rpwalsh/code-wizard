@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 

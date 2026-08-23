@@ -1,5 +1,6 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TrainingMode } from '@code-retrainer/core';
-import { isTrainingMode, withdrawalLadder } from '@code-retrainer/core';
+import { withdrawalLadder } from '@code-retrainer/core';
 import type { Exercise } from '@code-retrainer/exercises';
 import type { ExperienceLevel } from '@code-retrainer/curriculum';
 import { seedFromExperience } from '@code-retrainer/curriculum';
@@ -11,31 +12,34 @@ import type { Command } from '../components/Palette.tsx';
 import { Palette, usePaletteShortcut } from '../components/Palette.tsx';
 import type { Platform, PlatformProgress } from '../platform/index.ts';
 import { createPlatform } from '../platform/index.ts';
+import { fetchActivities } from '../platform/activities.ts';
 import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
 import type { Demonstration } from '@code-retrainer/curriculum';
 import { planDemonstration } from '@code-retrainer/curriculum';
 import { Backdrop } from '../components/Backdrop.tsx';
 import type { ThemeChoice } from '../components/ThemeSwitch.tsx';
-import {
-  applyTheme,
-  isThemeChoice,
-  ThemeSwitch,
-  themeChoices,
-} from '../components/ThemeSwitch.tsx';
+import { applyTheme, isThemeChoice, themeChoices } from '../components/ThemeSwitch.tsx';
 import type { TimerMode } from '../components/Timer.tsx';
 import { isTimerMode, timerModes } from '../components/Timer.tsx';
+import type { LanguageOption, Section } from '../components/layout/TopBar.tsx';
+import { TopBar } from '../components/layout/TopBar.tsx';
+import { Footer } from '../components/layout/Footer.tsx';
+import { ToastProvider, useToasts } from '../components/layout/Toasts.tsx';
+import { PracticeView } from './PracticeView.tsx';
 import { SkillMapView } from './SkillMapView.tsx';
 import { Workspace } from './Workspace.tsx';
 
-/** Set once the learner has answered the first-run question. */
+/** Set once the learner has answered the first-run questions. */
 const ONBOARDED_KEY = 'onboarding.level';
+const LANGUAGE_KEY = 'preferences.language';
 const TIMER_KEY = 'preferences.timer';
 const THEME_KEY = 'preferences.theme';
 
 type Screen =
   | { readonly kind: 'home' }
   | { readonly kind: 'map' }
+  | { readonly kind: 'practice' }
   | {
       readonly kind: 'workspace';
       readonly exercise: Exercise;
@@ -45,6 +49,16 @@ type Screen =
     };
 
 export function App() {
+  return (
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
+  );
+}
+
+function AppInner() {
+  const { toast } = useToasts();
+
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [progress, setProgress] = useState<PlatformProgress>({
     stage: 'catalog',
@@ -64,6 +78,8 @@ export function App() {
   // dusk is not fought with.
   const [theme, setTheme] = useState<ThemeChoice>('system');
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  const [language, setLanguage] = useState<string>('python');
+  const [courses, setCourses] = useState<readonly { id: string; title: string }[]>([]);
   const [fontSize, setFontSize] = useState(14);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -72,28 +88,57 @@ export function App() {
   usePaletteShortcut(useCallback(() => setPaletteOpen(true), []));
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
 
     void (async () => {
       try {
         const created = await createPlatform((update) => {
-          if (!cancelled) setProgress(update);
+          if (!canceled) setProgress(update);
         });
-        if (cancelled) return;
+        if (canceled) return;
         setPlatform(created);
 
         // Boot the interpreter in the background. The dashboard is usable
         // while it downloads; only pressing Run has to wait.
         void created.warmUp?.().catch(() => undefined);
       } catch (caught) {
-        if (!cancelled) setFailure(caught instanceof Error ? caught.message : String(caught));
+        if (!canceled) setFailure(caught instanceof Error ? caught.message : String(caught));
       }
     })();
 
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, []);
+
+  // The full course list — including the languages this build cannot run,
+  // which still have activities. Fetched once; the dropdown is the index of
+  // everything the product teaches, not only what the browser executes.
+  useEffect(() => {
+    void fetchActivities()
+      .then((sets) => setCourses(sets.map((set) => ({ id: set.id, title: set.title }))))
+      .catch(() => {
+        // The dropdown falls back to the runnable languages below.
+      });
+  }, []);
+
+  const languages = useMemo<readonly LanguageOption[]>(() => {
+    if (!platform) return [];
+    const runnable = new Set(platform.runtimes.keys());
+    if (courses.length === 0) {
+      return [...platform.runtimes.values()]
+        .map((runtime) => runtime.metadata())
+        .map((meta) => ({ id: meta.id, title: meta.displayName, runnable: true }))
+        .sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return courses
+      .map((course) => ({
+        id: course.id,
+        title: course.title,
+        runnable: runnable.has(course.id),
+      }))
+      .sort((a, b) => Number(b.runnable) - Number(a.runnable) || a.title.localeCompare(b.title));
+  }, [platform, courses]);
 
   const service = useMemo(
     () =>
@@ -103,10 +148,13 @@ export function App() {
 
   const refresh = useCallback(async () => {
     if (!service) return;
-    const [next, map] = await Promise.all([service.dashboard(), service.skillMap()]);
+    const [next, map] = await Promise.all([
+      service.dashboard(new Date(), { language }),
+      service.skillMap(),
+    ]);
     setDashboard(next);
     setSkillMap(map);
-  }, [service]);
+  }, [service, language]);
 
   useEffect(() => {
     void refresh();
@@ -122,23 +170,25 @@ export function App() {
       .catch(() => setOnboarded(true));
   }, [platform]);
 
-  // A preference, so it survives a reload. Validated on the way in rather than
-  // cast: the value has been sitting in the learner's own storage and anything
-  // could have happened to it.
+  // Preferences, so they survive a reload. Validated on the way in rather
+  // than cast: the values have been sitting in the learner's own storage and
+  // anything could have happened to them.
   useEffect(() => {
     if (!platform) return;
+    void platform.store
+      .getSetting(LANGUAGE_KEY)
+      .then((value) => {
+        if (value !== null && value !== '') setLanguage(value);
+      })
+      .catch(() => {
+        // A preference that cannot be read is not worth an error on screen.
+      });
     void platform.store
       .getSetting(TIMER_KEY)
       .then((value) => {
         if (value !== null && isTimerMode(value)) setTimerMode(value);
       })
-      .catch(() => {
-        // A preference that cannot be read is not worth an error on screen.
-      });
-  }, [platform]);
-
-  useEffect(() => {
-    if (!platform) return;
+      .catch(() => undefined);
     void platform.store
       .getSetting(THEME_KEY)
       .then((value) => {
@@ -147,9 +197,7 @@ export function App() {
           applyTheme(value);
         }
       })
-      .catch(() => {
-        // A preference that cannot be read is not worth an error on screen.
-      });
+      .catch(() => undefined);
   }, [platform]);
 
   const chooseTheme = useCallback(
@@ -163,6 +211,21 @@ export function App() {
     [platform],
   );
 
+  const chooseLanguage = useCallback(
+    (id: string) => {
+      setLanguage(id);
+      const title = languages.find((option) => option.id === id)?.title ?? id;
+      toast(`Switched to ${title}`);
+      // Leaving a workspace mid-attempt because the language changed would
+      // throw work away; every other screen re-scopes in place.
+      setScreen((current) => (current.kind === 'workspace' ? current : current));
+      void platform?.store.setSetting(LANGUAGE_KEY, id).catch(() => {
+        toast('Could not save the language preference', 'error');
+      });
+    },
+    [platform, languages, toast],
+  );
+
   const cycleTimer = useCallback(() => {
     const next = timerModes[(timerModes.indexOf(timerMode) + 1) % timerModes.length];
     if (!next) return;
@@ -173,14 +236,16 @@ export function App() {
   }, [platform, timerMode]);
 
   const completeOnboarding = useCallback(
-    async (level: ExperienceLevel) => {
+    async (chosenLanguage: string, level: ExperienceLevel) => {
       if (!platform) return;
       const seeded = seedFromExperience(platform.skillGraph, level, {
         at: new Date().toISOString(),
-        language: 'python',
+        language: chosenLanguage,
       });
       for (const mastery of seeded.values()) await platform.store.saveMastery(mastery);
       await platform.store.setSetting(ONBOARDED_KEY, level);
+      await platform.store.setSetting(LANGUAGE_KEY, chosenLanguage).catch(() => undefined);
+      setLanguage(chosenLanguage);
       setOnboarded(true);
       await refresh();
     },
@@ -226,6 +291,13 @@ export function App() {
     const navigation: Command[] = [
       { id: 'go-home', name: 'Go to today', run: () => setScreen({ kind: 'home' }) },
       { id: 'go-map', name: 'Open skill map', run: () => setScreen({ kind: 'map' }) },
+      { id: 'go-practice', name: 'Open practice', run: () => setScreen({ kind: 'practice' }) },
+      ...languages.map((option) => ({
+        id: `language-${option.id}`,
+        name: `Language: ${option.title}`,
+        disabled: option.id === language,
+        run: () => chooseLanguage(option.id),
+      })),
       ...themeChoices.map((candidate) => ({
         id: `theme-${candidate}`,
         name: candidate === 'system' ? 'Appearance: follow the system' : `Appearance: ${candidate}`,
@@ -260,7 +332,17 @@ export function App() {
       },
     ];
     return [...screenCommands, ...navigation];
-  }, [screenCommands, mode, theme, timerMode, chooseTheme, cycleTimer]);
+  }, [
+    screenCommands,
+    mode,
+    theme,
+    timerMode,
+    language,
+    languages,
+    chooseTheme,
+    chooseLanguage,
+    cycleTimer,
+  ]);
 
   if (failure) {
     return (
@@ -274,7 +356,7 @@ export function App() {
   }
 
   if (platform && onboarded === false) {
-    return <Onboarding onChoose={completeOnboarding} />;
+    return <Onboarding languages={languages} onChoose={completeOnboarding} />;
   }
 
   if (!platform || !dashboard || !skillMap || onboarded === null) {
@@ -288,6 +370,15 @@ export function App() {
     );
   }
 
+  const section: Section | null =
+    screen.kind === 'home'
+      ? 'home'
+      : screen.kind === 'map'
+        ? 'map'
+        : screen.kind === 'practice'
+          ? 'practice'
+          : null;
+
   return (
     <div className="app">
       <a className="skip-link" href="#main">
@@ -296,64 +387,18 @@ export function App() {
 
       <Backdrop />
 
-      <header className="topbar">
-        <span className="wordmark">Code Retrainer</span>
-
-        <nav className="topbar__nav" aria-label="Sections">
-          <button
-            type="button"
-            className="navlink"
-            aria-current={screen.kind === 'home' ? 'true' : undefined}
-            onClick={() => setScreen({ kind: 'home' })}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            className="navlink"
-            aria-current={screen.kind === 'map' ? 'true' : undefined}
-            onClick={() => setScreen({ kind: 'map' })}
-          >
-            Skill map
-          </button>
-        </nav>
-
-        <span className="topbar__spacer" />
-
-        <button
-          type="button"
-          className="button button--bare"
-          onClick={() => setPaletteOpen(true)}
-          aria-label="Open commands"
-        >
-          <kbd>Ctrl K</kbd>
-        </button>
-
-        <ThemeSwitch choice={theme} onChoose={chooseTheme} />
-
-        <span className="mode-indicator" data-mode={mode}>
-          <span className="mode-indicator__dot" aria-hidden="true" />
-          <label>
-            <span className="visually-hidden">Training mode</span>
-            <select
-              className="mode-select"
-              value={mode}
-              onChange={(event) => {
-                const chosen = event.target.value;
-                // Checked rather than asserted: the value comes back from the
-                // DOM as a plain string, and a cast would only be a promise.
-                if (isTrainingMode(chosen)) setMode(chosen);
-              }}
-            >
-              {withdrawalLadder.map((rung) => (
-                <option key={rung.mode} value={rung.mode} title={`Withdraws: ${rung.withdraws}`}>
-                  {rung.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </span>
-      </header>
+      <TopBar
+        section={section}
+        onSection={(next) => setScreen({ kind: next })}
+        languages={languages}
+        language={language}
+        onLanguage={chooseLanguage}
+        theme={theme}
+        onTheme={chooseTheme}
+        mode={mode}
+        onMode={setMode}
+        onPalette={() => setPaletteOpen(true)}
+      />
 
       {!platform.persistent ? (
         <p className="notice" role="alert" style={{ margin: 12 }}>
@@ -361,18 +406,34 @@ export function App() {
         </p>
       ) : null}
 
-      <div id="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <div id="main" className="app__main">
         {screen.kind === 'home' ? (
-          <Home platform={platform} dashboard={dashboard} onOpen={open} />
+          <Home
+            platform={platform}
+            dashboard={dashboard}
+            language={language}
+            languageTitle={languages.find((option) => option.id === language)?.title ?? language}
+            onOpen={open}
+            onPractice={() => setScreen({ kind: 'practice' })}
+          />
         ) : null}
+
+        {screen.kind === 'practice' ? <PracticeView language={language} /> : null}
 
         {screen.kind === 'map' ? (
           <SkillMapView
             map={skillMap}
+            language={language}
             constraintsFor={constraintsFor}
             exerciseCountFor={(skillId) => platform.catalog.forSkill(skillId).length}
-            onPractise={(skillId) => {
-              const candidate = platform.catalog.forSkill(skillId)[0];
+            onPractice={(skillId) => {
+              // Prefer something unseen: with few exercises per skill, always
+              // opening the first one made every click land on the same page.
+              const candidates = platform.catalog.forSkill(skillId);
+              const fresh = candidates.find(
+                (candidate) => !dashboard.attemptedExerciseIds.has(candidate.id),
+              );
+              const candidate = fresh ?? candidates[0];
               if (candidate) open(candidate);
             }}
             canDemonstrate={(skillId) => demonstrationFor(skillId) !== null}
@@ -410,6 +471,8 @@ export function App() {
           />
         ) : null}
       </div>
+
+      {screen.kind !== 'workspace' ? <Footer /> : null}
 
       <Palette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
     </div>

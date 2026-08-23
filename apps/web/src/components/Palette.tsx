@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface Command {

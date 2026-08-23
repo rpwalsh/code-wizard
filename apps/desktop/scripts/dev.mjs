@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /** Run Electron against the Vite dev server, for UI work with hot reload. */
 import { spawn } from 'node:child_process';
 

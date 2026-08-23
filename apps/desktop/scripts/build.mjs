@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
  * Bundle the Electron main and preload scripts.
  *

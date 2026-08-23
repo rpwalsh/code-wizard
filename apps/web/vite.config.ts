@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 

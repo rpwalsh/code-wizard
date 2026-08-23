@@ -1,3 +1,4 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import type { TrajectoryPoint } from '@code-retrainer/session';
 
 interface TrajectoryProps {
@@ -15,6 +16,18 @@ interface TrajectoryProps {
  */
 export function Trajectory({ points, label }: TrajectoryProps) {
   if (points.length < 2) return null;
+
+  /*
+   * Nothing measured yet is not a flat line at zero.
+   *
+   * Drawing one is technically honest and reads as a bug: a new learner's
+   * first sight of the product was a tall empty panel with a rule along the
+   * bottom, which looks like a chart that failed to load rather than a chart
+   * with nothing to say. The headline beside it already says "no measurements
+   * yet", so this says nothing and takes up no room until there is a shape
+   * worth looking at.
+   */
+  if (points.every((point) => point.score <= 0)) return null;
 
   const width = 100;
   const height = 100;

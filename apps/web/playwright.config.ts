@@ -1,9 +1,10 @@
+// Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Browser tests against the real production build.
  *
- * Not the dev server: the deployed artefact is what visitors get, and the two
+ * Not the dev server: the deployed artifact is what visitors get, and the two
  * differ in exactly the places most likely to break — worker bundling, asset
  * URLs and code splitting. Testing the build is what makes "it runs in a
  * browser" a fact rather than a hope.
