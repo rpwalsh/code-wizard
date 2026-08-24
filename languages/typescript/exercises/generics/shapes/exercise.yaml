@@ -1,0 +1,115 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.generics.shapes
+version: 1
+language: typescript
+title: A key the compiler has already checked
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - typescript.generics.functions
+  - typescript.generics.constraints
+  - typescript.types.utility
+
+prerequisites: []
+
+learningObjectives:
+  - Constrain a type parameter to the keys of another, so a typo is a build error.
+  - Return a type computed from the arguments rather than a widened one.
+  - Read Pick, Omit and Record as the small type functions they are.
+
+prompt: |
+  `pick(user, ['naem'])` should not compile. That is the whole
+  argument for generics here: a helper typed as
+  `(source: object, keys: string[]) => object` accepts the typo,
+  returns something with no known shape, and hands the mistake to
+  runtime. `K extends keyof T` moves it to the build.
+
+  In `main.ts`:
+
+  - `pick(source, keys)` — a new object holding only those keys,
+    typed as `Pick<T, K>`. A key the source does not actually carry
+    is left out rather than set to undefined.
+
+  - `omit(source, keys)` — a new object holding everything except
+    those keys, typed as `Omit<T, K>`.
+
+  - `indexBy(items, key)` — a `Map` from each item's value at that
+    key to the item, typed `Map<T[K], T>`. When two items share a
+    value, the later one wins.
+
+  - `countBy(items, key)` — a `Map` from each value at that key to
+    how many items carried it, typed `Map<T[K], number>`.
+
+  - `renameKey(source, from, to)` — a new object with `from`
+    removed and `to` added, carrying the same value. The return
+    type is `Omit<T, K> & Record<N, T[K]>`, which says exactly
+    that.
+
+  Every function is generic over `T` and constrained so the key
+  arguments must belong to it.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/shapes.test.ts
+    visibility: visible
+    concept: typescript.generics.functions
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.generics.constraints
+
+hints:
+  - level: conceptual
+    text: "`keyof T` is the union of T's key names as literal types. Constraining K to it is what makes a misspelled key a compile error rather than an undefined at runtime."
+  - level: structural
+    text: "The value at a key is `T[K]` — an indexed access type. It is how indexBy promises a Map whose keys are the right type rather than string."
+  - level: language
+    text: "Pick, Omit and Record are ordinary types written in the standard library, not compiler magic. Omit<T, K> is defined as Pick<T, Exclude<keyof T, K>>."
+  - level: syntax
+    text: "Object.entries widens keys to string, so building the result of `omit` needs one assertion at the end — the honest place for it, after the work is done."
+  - level: explicit
+    text: "renameKey: take omit(source, [from]) for the rest, then spread it with a computed key: { ...rest, [to]: source[from] }."
+
+explanation: |
+  A generic is a promise about the relationship between what goes in
+  and what comes out. `pick<T, K extends keyof T>(source: T, keys:
+  K[]): Pick<T, K>` says three things at once: the keys must belong
+  to the source, the result has exactly those keys, and their types
+  are unchanged. None of that is documentation — the compiler holds
+  you to all three, and `pick(user, ['naem'])` fails to build with
+  the misspelling underlined.
+
+  The version to compare it against is
+  `(source: object, keys: string[]) => object`, which is what these
+  helpers look like before anyone thinks about it. It accepts the
+  typo, it accepts keys from an entirely different type, and it
+  returns something the caller has to assert about before using —
+  so every call site pays for the missing constraint, forever.
+
+  `T[K]` is the piece that makes `indexBy` worth writing. An index
+  keyed by `string` would be wrong the moment you index by a numeric
+  id or a union of literals, and the caller would be casting on the
+  way out. Saying `Map<T[K], T>` keeps the key type exactly as
+  precise as the property it came from.
+
+  `Pick`, `Omit` and `Record` are worth reading rather than
+  memorizing. They are small types written in TypeScript itself:
+  `Omit<T, K>` is `Pick<T, Exclude<keyof T, K>>`, which is to say
+  "pick every key except these". Once that reads as ordinary code
+  rather than as vocabulary, the return type of `renameKey` —
+  `Omit<T, K> & Record<N, T[K]>` — stops being intimidating and
+  starts being a sentence: everything except the old key, plus the
+  new one, holding what the old one held.
+
+mutationExceptions:
+  - path: main.ts
+    operator: nullish
+    line: 40
+    why: >-
+      A count in this Map is only ever written as one or more, so get() returns
+      a positive number or undefined. Nullish and logical-or coalescing differ
+      only on a stored zero, which cannot occur here.
+

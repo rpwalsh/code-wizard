@@ -1,0 +1,118 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.operations.logging
+version: 1
+language: node
+title: Logs a machine can read, without the password in them
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - node.operations.logging
+  - node.operations.performance
+
+prerequisites: []
+
+learningObjectives:
+  - Emit one JSON object per line so logs can be queried rather than grepped.
+  - Filter by level without paying to build the messages you discard.
+  - Redact secrets on the way out, deeply, without changing the caller's data.
+
+prompt: |
+  `console.log('user ' + id + ' failed: ' + error)` produces a line
+  that a person can read and a machine cannot. Structured logging
+  is the same information as one JSON object per line, which turns
+  "find every failure for this user last Tuesday" from a regular
+  expression into a query.
+
+  In `main.js`:
+
+  - `shouldLog(configured, level)` — the levels are `debug`,
+    `info`, `warn`, `error`, in that order of severity. Return
+    whether a message at `level` is written when the logger is
+    configured at `configured`. Equal severity is written.
+
+  - `redact(value)` — return a deep copy in which the value of any
+    key named `password`, `token`, `secret` or `authorization`
+    (compared case-insensitively) is replaced with the string
+    `'[redacted]'`. Arrays and nested objects are walked. The input
+    must not be modified. Anything that is not a plain object or
+    array is returned as it is.
+
+  - `createLogger({ level, sink, now })` — return an object with
+    `debug`, `info`, `warn` and `error` methods, each taking
+    `(message, fields)`. A method that passes `shouldLog` calls
+    `sink` once with a JSON string of
+    `{ level, message, time, ...redactedFields }`, where `time` is
+    whatever `now()` returned. A method that does not pass writes
+    nothing and calls neither `now` nor `sink`. `fields` may be
+    omitted.
+
+  - `withTiming(work, now)` — call `work()`, await its result, and
+    return `{ value, ms }` where `ms` is `now()` after minus
+    `now()` before. A `work` that rejects must still be timed:
+    let the rejection through, but not before it has been measured.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/logging.test.js
+    visibility: visible
+    concept: node.operations.logging
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.operations.performance
+
+hints:
+  - level: conceptual
+    text: "A log line is a record, not a sentence. Everything a query might filter on — the user, the route, the duration — belongs in its own field rather than inside the message."
+  - level: structural
+    text: "Levels compare as positions in an ordered list, so an index lookup answers shouldLog in one line."
+  - level: language
+    text: "Redaction has to recurse: a password nested three objects deep is the one that reaches the log, because the shallow version looked like it worked."
+  - level: syntax
+    text: "Distinguishing a plain object from an array and from null: `typeof value === 'object' && value !== null` is true for all three, so test `Array.isArray(value)` first and `value === null` before that."
+  - level: explicit
+    text: "withTiming: const began = now(); try { const value = await work(); return { value, ms: now() - began }; } finally {} — and to time a rejection, capture the elapsed time in a catch before rethrowing."
+
+explanation: |
+  One JSON object per line is the whole convention, and everything
+  good about structured logging follows from it. A line is a record
+  with named fields, so a log collector can index it, and questions
+  that were regular expressions become filters. The discipline it
+  demands is putting values in fields rather than in the sentence:
+  `{"message":"login failed","user":"u_17"}` is queryable and
+  `"login failed for u_17"` is not, even though they read the same.
+
+  Level filtering deserves a moment of thought about cost. This
+  logger builds nothing when the level is filtered out — no
+  redaction, no `JSON.stringify`, not even a call to the clock —
+  because the expensive part of a debug log is not writing it, it
+  is assembling it. A logger that formats first and discards second
+  makes `debug` calls expensive in production, and the usual
+  response is to delete them, which is exactly backwards.
+
+  Redaction has to be deep and has to be non-destructive, and both
+  halves are learned the hard way. Shallow redaction looks correct
+  in the test that has `{ password: 'x' }` at the top level and
+  fails on the request body where it sits three objects down —
+  which is the one that reaches production. Mutating the caller's
+  object is worse: the log is clean, and the record the application
+  goes on to use now says the user's password is `[redacted]`.
+
+  `withTiming` measures the failure too. A timing that only records
+  successes will tell you the service is fast during an outage,
+  because every slow call now ends in an error and quietly leaves
+  the sample. The measurement people actually need is of everything
+  that happened.
+
+mutationExceptions:
+  - path: main.js
+    operator: nullish
+    line: 39
+    why: >-
+      `fields` is either an object supplied by the caller or omitted entirely,
+      so it is never a falsy non-null value. Nullish and logical-or coalescing
+      differ only on 0, '' and false, none of which can appear here.
+
