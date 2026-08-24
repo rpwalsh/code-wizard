@@ -47,9 +47,37 @@ export function formatTestResult(result: TestResult): string {
   return lines.join('\n');
 }
 
+/**
+ * What the toolchain said, when the run never got as far as a test.
+ *
+ * A compiler error is the whole answer and the summary line was hiding it:
+ * "the tests could not be collected" is true and useless, while one line
+ * lower down says `no member named 'back_inserter'`. Authoring an exercise
+ * meant writing a throwaway script to see it, which is a bad trade for a
+ * message the runtime already had.
+ *
+ * Trimmed to a handful of lines: the first error is the one that caused the
+ * rest, and a screen of template instantiation notes teaches nobody.
+ */
+function toolchainOutput(result: TestResult): readonly string[] {
+  const text = [result.stderr, result.stdout].filter((part) => part.trim() !== '').join('\n');
+  if (text.trim() === '') return [];
+
+  const lines = text.split(/\r?\n/u).filter((line) => line.trim() !== '');
+  const shown = lines.slice(0, 12);
+  if (lines.length > shown.length) {
+    shown.push(style.gray(`… ${lines.length - shown.length} more line(s)`));
+  }
+
+  return ['', ...shown.map((line) => indent(line))];
+}
+
 function summaryLine(result: TestResult): string {
   if (result.outcome !== 'completed') {
-    return style.red(`Run did not complete: ${describeOutcome(result.outcome)}`);
+    return [
+      style.red(`Run did not complete: ${describeOutcome(result.outcome)}`),
+      ...toolchainOutput(result),
+    ].join('\n');
   }
   const parts = [style.green(`${result.passed} passed`)];
   if (result.failed > 0) parts.push(style.red(`${result.failed} failed`));
