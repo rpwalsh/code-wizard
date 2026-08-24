@@ -15,6 +15,12 @@ test.describe('SQL in the browser', () => {
   test('runs a query and returns its rows', async ({ page }) => {
     test.slow();
     await page.goto('/');
+    // The platform is published on boot, and boot loads the whole
+    // catalog. Evaluating before it exists reads undefined and reports
+    // it as a runtime failure, which is a race rather than a defect.
+    await page.waitForFunction(() => window.__retrainerPlatform !== undefined, null, {
+      timeout: 60_000,
+    });
 
     const result = await page.evaluate(async () => {
       const runtime = window.__retrainerPlatform?.runtimes.get('sql');
@@ -51,6 +57,12 @@ test.describe('SQL in the browser', () => {
   test('grades a query against expectations, right and wrong', async ({ page }) => {
     test.slow();
     await page.goto('/');
+    // The platform is published on boot, and boot loads the whole
+    // catalog. Evaluating before it exists reads undefined and reports
+    // it as a runtime failure, which is a race rather than a defect.
+    await page.waitForFunction(() => window.__retrainerPlatform !== undefined, null, {
+      timeout: 60_000,
+    });
 
     const files = (query: string) => [
       {

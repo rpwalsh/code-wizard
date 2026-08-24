@@ -21,6 +21,12 @@ test.describe('PHP in the browser', () => {
     });
 
     await page.goto('/');
+    // The platform is published on boot, and boot loads the whole
+    // catalog. Evaluating before it exists reads undefined and reports
+    // it as a runtime failure, which is a race rather than a defect.
+    await page.waitForFunction(() => window.__retrainerPlatform !== undefined, null, {
+      timeout: 60_000,
+    });
 
     const result = await page.evaluate(async () => {
       const runtime = window.__retrainerPlatform?.runtimes.get('php');
@@ -56,6 +62,12 @@ test.describe('PHP in the browser', () => {
   test('grades a learner solution with the desktop harness', async ({ page }) => {
     test.slow();
     await page.goto('/');
+    // The platform is published on boot, and boot loads the whole
+    // catalog. Evaluating before it exists reads undefined and reports
+    // it as a runtime failure, which is a race rather than a defect.
+    await page.waitForFunction(() => window.__retrainerPlatform !== undefined, null, {
+      timeout: 60_000,
+    });
 
     const files = (solution: string) => [
       { path: 'main.php', contents: solution },
