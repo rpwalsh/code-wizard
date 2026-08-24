@@ -1,0 +1,100 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.types.dispatch
+version: 1
+language: rust
+title: One copy per type, or one lookup per call
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - rust.types.traits
+  - rust.types.generics
+  - rust.data.iterators
+
+prerequisites: []
+
+learningObjectives:
+  - Give a trait a default method that every implementor gets for free.
+  - Choose a generic bound when the type is known and a trait object when it is not.
+  - Recognize that a sum has an identity element and a minimum does not.
+
+prompt: |
+  A trait is a set of behaviors named together. There are two ways
+  to accept "anything that has this behavior", and they are not
+  interchangeable: `impl Trait` and `<T: Trait>` compile a separate
+  copy for each concrete type, while `dyn Trait` compiles one and
+  looks the method up at run time.
+
+  The second costs a pointer indirection. It also lets one
+  collection hold several different types, which the first cannot
+  do at all.
+
+  In `main.rs`:
+
+  - `Priced::cents` — implement for `Book` (its own price) and
+    `Subscription` (months times monthly price, saturating rather
+    than wrapping on overflow).
+
+  - `Priced::is_free` — a default method on the trait, true when
+    the price is zero. Both types get it without writing it.
+
+  - `total_static(items)` — the sum over a slice of one concrete
+    type, taken generically.
+
+  - `total_dynamic(items)` — the sum over a slice of boxed trait
+    objects, which may be different types.
+
+  - `cheapest(items)` — the smallest price among boxed trait
+    objects, or `None` when there are none.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/traits_test.rs
+    visibility: visible
+    concept: rust.types.traits
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.types.generics
+
+hints:
+  - level: conceptual
+    text: "Ask whether the collection holds one type or several. One type takes a generic; several need a trait object, because there is no single T to substitute."
+  - level: structural
+    text: "A default method can call the trait's other methods. It is written once against the interface and every implementor inherits it."
+  - level: language
+    text: "saturating_mul stops at the maximum instead of wrapping. Wrapping would make the most expensive possible subscription cost almost nothing."
+  - level: syntax
+    text: "items.iter().map(Priced::cents).sum() — a method can be named as a function when its receiver is the argument."
+  - level: explicit
+    text: "total_dynamic takes &[Box<dyn Priced>], and the closure is |item| item.cents(), because the method is found through the vtable rather than by the compiler."
+
+explanation: |
+  Static and dynamic dispatch answer the same question with
+  different trades. `<T: Priced>` is resolved at compile time, so
+  the call is direct and can be inlined, and the compiler emits one
+  copy of the function per type you actually use — fast, and larger.
+  `dyn Priced` emits one copy and finds the method through a table
+  at run time, which costs an indirection and cannot be inlined.
+
+  For most code that difference is not worth thinking about. What
+  *is* worth thinking about is that only one of them can hold a
+  mixed collection. A `Vec<T>` has exactly one `T`; a
+  `Vec<Box<dyn Priced>>` can hold a book and a subscription
+  together, which is the actual reason trait objects exist. The
+  performance argument is usually the one people quote and rarely
+  the one that decides.
+
+  The default method is the quiet win. `is_free` is written once,
+  in terms of `cents`, and every implementor now has it — including
+  implementors written later by somebody else. Any of them may
+  override it if they have a cheaper way to answer, and none has to.
+
+  The last detail is the difference between the two totals'
+  signatures. `total_dynamic` returns `u64` and `cheapest` returns
+  `Option<u64>`, and that is not inconsistency: a sum over nothing
+  is zero, because addition has an identity element, and a minimum
+  over nothing does not exist, because comparison has no such thing.
+  Returning `0` from `cheapest` would claim there was a free item.

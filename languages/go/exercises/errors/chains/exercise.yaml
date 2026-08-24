@@ -1,0 +1,95 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.errors.chains
+version: 1
+language: go
+title: One verb decides whether the error survives
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - go.errors.wrapping
+  - go.errors.sentinel
+  - go.errors.values
+
+prerequisites: []
+
+learningObjectives:
+  - Wrap with %w so that errors.Is and errors.As still work upstream.
+  - Test for a sentinel through any number of layers instead of with equality.
+  - Pull a typed error out of a chain without knowing how deep it is.
+
+prompt: |
+  `fmt.Errorf("load %s: %v", id, err)` and
+  `fmt.Errorf("load %s: %w", id, err)` produce the same message and
+  two completely different errors. The first renders the original
+  into text and throws the value away; the second keeps it, and
+  every caller above you can still ask what actually went wrong.
+
+  In `main.go`:
+
+  - `Load(id, store)` — call the store, and on failure return an
+    error reading `load <id>: <original>` that **still carries** the
+    original.
+
+  - `IsMissing(err)` — whether `ErrNotFound` is anywhere in the
+    chain.
+
+  - `FieldOf(err)` — the `Field` of a `*FieldError` anywhere in the
+    chain, and whether one was there at all.
+
+  - `FirstReason(err)` — the message of the deepest error in the
+    chain. A `nil` error has no reason.
+
+entryPoint: main.go
+
+tests:
+  - path: wrapping_test.go
+    visibility: visible
+    concept: go.errors.wrapping
+  - path: edges_test.go
+    visibility: edge
+    concept: go.errors.sentinel
+
+hints:
+  - level: conceptual
+    text: "Wrapping is about keeping the value, not about the message. The message is for a person; the value is for the code above you."
+  - level: structural
+    text: "errors.Is and errors.As both walk the chain themselves. Anything you write that walks it by hand is duplicating them."
+  - level: language
+    text: "errors.As takes a pointer to the variable you want filled, so for a *FieldError you pass a **FieldError."
+  - level: syntax
+    text: "errors.Unwrap returns nil when it reaches the bottom, which is the loop's terminator rather than a special case."
+  - level: explicit
+    text: "var field *FieldError; if errors.As(err, &field) { return field.Field, true } — declared as the pointer type, passed by address."
+
+explanation: |
+  `%w` is the whole difference, and choosing `%v` by accident is one
+  of the easiest mistakes in Go to make and one of the hardest to
+  notice. Both produce identical text, both compile, both look right
+  in a log. The `%v` version simply cannot be interrogated: three
+  layers up somebody writes `errors.Is(err, ErrNotFound)` to turn a
+  missing record into a 404, it silently returns false, and every
+  missing record becomes a 500 instead.
+
+  Equality is the other half of the trap. `err == ErrNotFound` works
+  exactly once — in the function that received the sentinel
+  directly — and stops working the moment anybody wraps it, which is
+  the moment somebody adds context to the error. `errors.Is` asks
+  the same question of the whole chain, so it survives every layer
+  that gets added later. This is why sentinel comparisons in Go are
+  written with `errors.Is` even when the author knows the error is
+  unwrapped today.
+
+  `errors.As` is the typed version, and its signature confuses
+  people for a good reason: it fills in a variable, so it needs the
+  address of the thing you want filled. For a `*FieldError` that is
+  a `**FieldError`, which looks alarming and is exactly the same
+  shape as `json.Unmarshal(data, &target)`.
+
+  `FirstReason` walking to the bottom is the reporting counterpart:
+  a log line that says "handler: service: load u_17: not found" is
+  useful to a person, and a metric labeled by the root cause is
+  useful to a graph. Both come from the same chain, which is the
+  argument for building it properly in the first place.

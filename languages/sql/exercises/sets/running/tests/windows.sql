@@ -1,0 +1,12 @@
+-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+-- test: a running total per region, and a rank within it
+-- concept: sql.sets.window
+-- uses: main.sql
+-- expect:
+-- north|2026-03-01|100|100|1
+-- north|2026-03-02|50|150|3
+-- north|2026-03-04|70|220|2
+-- south|2026-03-01|300|300|1
+-- south|2026-03-02|20|320|3
+-- south|2026-03-03|180|500|2
+-- west|2026-03-03|45|45|1

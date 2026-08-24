@@ -1,47 +1,31 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-//! Behavior shared by name, and the two ways to accept it.
+//! Traits as bounds, generics over them, and one honest lifetime.
 
-pub trait Priced {
-    fn cents(&self) -> u64;
+pub struct Rect {
+    pub width: f64,
+    pub height: f64,
+}
 
-    /// A default: overridable, but correct for anything that has a price.
-    fn is_free(&self) -> bool {
+pub struct Circle {
+    pub radius: f64,
+}
+
+pub trait Sized2d {
+    fn area(&self) -> f64;
+
+    fn describe(&self) -> String {
         unimplemented!()
     }
 }
 
-pub struct Book {
-    pub title: String,
-    pub cents: u64,
-}
-
-pub struct Subscription {
-    pub months: u64,
-    pub monthly_cents: u64,
-}
-
-impl Priced for Book {
-    fn cents(&self) -> u64 {
-        unimplemented!()
-    }
-}
-
-impl Priced for Subscription {
-    fn cents(&self) -> u64 {
-        unimplemented!()
-    }
-}
-
-/// Static dispatch: one copy compiled per concrete type.
-pub fn total_static<T: Priced>(items: &[T]) -> u64 {
+pub fn total_area(shapes: &[Box<dyn Sized2d>]) -> f64 {
     unimplemented!()
 }
 
-/// Dynamic dispatch: one function, a vtable lookup per call.
-pub fn total_dynamic(items: &[Box<dyn Priced>]) -> u64 {
+pub fn largest<T: PartialOrd>(items: &[T]) -> Option<&T> {
     unimplemented!()
 }
 
-pub fn cheapest(items: &[Box<dyn Priced>]) -> Option<u64> {
+pub fn longer<'a>(left: &'a str, right: &'a str) -> &'a str {
     unimplemented!()
 }

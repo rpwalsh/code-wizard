@@ -6,58 +6,41 @@ import (
 	"fmt"
 )
 
-// ErrNotFound is the sentinel a caller may test for.
+// ErrNotFound is the identity a caller tests for. Its message is incidental;
+// the value is the point, which is why it is compared rather than matched.
 var ErrNotFound = errors.New("not found")
 
-// FieldError reports which field was rejected and why.
-type FieldError struct {
-	Field  string
-	Reason string
-}
-
-func (e *FieldError) Error() string {
-	return e.Field + ": " + e.Reason
-}
-
-// Load wraps whatever the store returned with the operation that failed.
-func Load(id string, store func(string) error) error {
-	if err := store(id); err != nil {
-		// %w rather than %v: %v formats the error into the message and
-		// throws the value away, so errors.Is and errors.As downstream stop
-		// working and nobody notices until a caller needs them.
-		return fmt.Errorf("load %s: %w", id, err)
+// Load returns the value for key, or an error that carries ErrNotFound
+// inside it so the cause survives the added context.
+func Load(store map[string]string, key string) (string, error) {
+	value, ok := store[key]
+	if !ok {
+		return "", fmt.Errorf("load %q: %w", key, ErrNotFound)
 	}
-	return nil
+	return value, nil
 }
 
-// IsMissing reports whether anything in the chain is ErrNotFound.
+// LoadAll stops at the first failure and returns that error untouched.
+// Wrapping it again here would add a layer that says nothing new.
+func LoadAll(store map[string]string, keys []string) ([]string, error) {
+	values := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value, err := Load(store, key)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, value)
+	}
+	return values, nil
+}
+
+// IsMissing walks the wrap chain rather than comparing messages, so it keeps
+// working when somebody improves the wording.
 func IsMissing(err error) bool {
-	// errors.Is walks the chain. Comparing with == only ever sees the
-	// outermost error, which is the wrapper, not the sentinel.
 	return errors.Is(err, ErrNotFound)
 }
 
-// FieldOf returns the field name from a FieldError anywhere in the chain.
-func FieldOf(err error) (string, bool) {
-	var field *FieldError
-	if errors.As(err, &field) {
-		return field.Field, true
-	}
-	return "", false
-}
-
-// FirstReason walks to the deepest error and returns its message.
-func FirstReason(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	// Unwrap returns nil at the bottom, which is the loop's own terminator.
-	for {
-		next := errors.Unwrap(err)
-		if next == nil {
-			return err.Error()
-		}
-		err = next
-	}
+func main() {
+	value, err := Load(map[string]string{"a": "1"}, "a")
+	fmt.Println(value, err)
 }

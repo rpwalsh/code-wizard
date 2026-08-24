@@ -1,0 +1,90 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: sql.sets.running-totals
+version: 1
+language: sql
+title: Keeping every row and summarizing anyway
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - sql.sets.window
+  - sql.sets.aggregates
+
+prerequisites: []
+
+learningObjectives:
+  - Use a window function where GROUP BY would throw away the rows you need.
+  - Restart a running total per group with PARTITION BY.
+  - Choose between RANK and DENSE_RANK by what a tie should do to the next value.
+
+prompt: |
+  `GROUP BY` answers "what is the total per region" by discarding
+  the rows it summed. A window function answers the same question
+  and keeps them, which is what you need when the report has to show
+  each day *and* the total so far.
+
+  In `main.sql`, one row per row in `sales`, ordered by region then
+  day:
+
+  - `region`, `day`, `amount` — as they are.
+  - `running_total` — the sum of `amount` within that region up to
+    and including this day.
+  - `rank_in_region` — the position of this row's amount within its
+    region, largest first, where tied amounts share a rank and the
+    next distinct amount follows immediately.
+
+entryPoint: main.sql
+
+tests:
+  - path: tests/windows.sql
+    visibility: visible
+    concept: sql.sets.window
+  - path: tests/edges.sql
+    visibility: edge
+    concept: sql.sets.window
+
+hints:
+  - level: conceptual
+    text: "A window function is computed over a set of rows related to this one, and this row survives. That is the whole difference from an aggregate."
+  - level: structural
+    text: "PARTITION BY is the window's GROUP BY: it decides which rows are in the same window. ORDER BY inside the window decides what 'so far' means."
+  - level: language
+    text: "DENSE_RANK gives tied rows the same rank and continues with the next integer. RANK gives them the same rank and then skips, so two firsts are followed by third."
+  - level: syntax
+    text: "SUM(amount) OVER (PARTITION BY region ORDER BY day) — an ORDER BY inside the window makes it cumulative rather than a total over the whole partition."
+  - level: explicit
+    text: "Two window expressions in one SELECT is normal, and they may have entirely different windows: one partitioned and ordered by day, one partitioned and ordered by amount."
+
+explanation: |
+  The reason to reach for a window is that you need the detail and
+  the summary in the same result. `GROUP BY region` returns three
+  rows and cannot show you March the second; a join back to the
+  detail returns the rows again but costs a second pass and a
+  correlated subquery that most people write slightly wrong. The
+  window does it in one pass and one clause.
+
+  `PARTITION BY` is the piece that makes the total mean something.
+  Without it there is one window over the whole result, so the
+  running total keeps climbing across regions — the edge test shows
+  exactly that, and it is the failure mode people ship: a report
+  that looks plausible because the numbers do increase, and is
+  wrong on every row after the first group.
+
+  The `ORDER BY` inside the window is what makes it *running*. With
+  no ordering the window is the entire partition and every row gets
+  the same grand total, which is a perfectly good answer to a
+  different question. Adding the order narrows the frame to
+  everything up to this row, and that default — unbounded preceding
+  to current row — is why the explicit `ROWS BETWEEN` clause in the
+  reference solution changes nothing and is written anyway: the
+  default is worth being able to see.
+
+  `RANK` versus `DENSE_RANK` is a decision about what a tie costs
+  the rows below it. Two amounts tied for first are both rank 1
+  under either; `RANK` then jumps to 3, leaving a gap that means
+  "two things were ahead of you", while `DENSE_RANK` continues at 2,
+  meaning "one distinct value was ahead of you". Neither is correct
+  in general and the choice is usually made by accident, which is
+  how a leaderboard ends up with no second place.

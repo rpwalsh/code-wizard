@@ -1,17 +1,14 @@
 -- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
--- Daily sales per region. Deliberately uneven: one region joins late, and
--- one day is missing entirely, so a running total has something to say.
 CREATE TABLE sales (
-    region TEXT NOT NULL,
-    day    TEXT NOT NULL,
-    amount INTEGER NOT NULL
+  region TEXT NOT NULL,
+  seller TEXT NOT NULL,
+  amount INTEGER NOT NULL
 );
 
-INSERT INTO sales (region, day, amount) VALUES
-    ('north', '2026-03-01', 100),
-    ('north', '2026-03-02', 50),
-    ('north', '2026-03-04', 70),
-    ('south', '2026-03-01', 300),
-    ('south', '2026-03-02', 20),
-    ('south', '2026-03-03', 180),
-    ('west',  '2026-03-03', 45);
+INSERT INTO sales (region, seller, amount) VALUES
+  ('north', 'ada',   500),
+  ('north', 'bo',    500),
+  ('north', 'cy',    300),
+  ('north', 'dee',   100),
+  ('south', 'eve',   900),
+  ('south', 'fay',   400);

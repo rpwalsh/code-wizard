@@ -7,78 +7,39 @@ import (
 	"testing"
 )
 
-func TestNilIsNotAnError(t *testing.T) {
+func TestTheCauseSurvivesFurtherWrapping(t *testing.T) {
+	_, err := Load(map[string]string{}, "x")
+	deeper := fmt.Errorf("starting up: %w", err)
+	if !IsMissing(deeper) {
+		t.Fatal("the cause did not survive a second layer of wrapping")
+	}
+}
+
+func TestAnUnrelatedErrorIsNotMissing(t *testing.T) {
+	if IsMissing(errors.New("disk on fire")) {
+		t.Fatal("an unrelated error was reported as missing")
+	}
+}
+
+func TestNilIsNotMissing(t *testing.T) {
 	if IsMissing(nil) {
-		t.Fatal("nil reported as missing")
-	}
-	if _, ok := FieldOf(nil); ok {
-		t.Fatal("nil reported a field")
-	}
-	if got := FirstReason(nil); got != "" {
-		t.Fatalf("expected an empty reason, got %q", got)
+		t.Fatal("nil was reported as a missing key")
 	}
 }
 
-func TestTheSentinelSurvivesSeveralLayers(t *testing.T) {
-	// Four layers deep is ordinary in a real call stack, and == against the
-	// outermost error has never been true at any of them.
-	deep := fmt.Errorf("handler: %w", fmt.Errorf("service: %w", Load("a", func(string) error {
-		return ErrNotFound
-	})))
-
-	if !IsMissing(deep) {
-		t.Fatal("the sentinel was lost between the layers")
-	}
-	if deep == ErrNotFound { //nolint:errorlint // the point of the test
-		t.Fatal("the outermost error is not the sentinel, and equality should say so")
+func TestLoadAllStopsAtTheFirstFailure(t *testing.T) {
+	_, err := LoadAll(map[string]string{"a": "1"}, []string{"a", "missing", "a"})
+	if !IsMissing(err) {
+		t.Fatalf("expected the cause to survive, got %v", err)
 	}
 }
 
-func TestFormattingWithVerbBreaksTheChain(t *testing.T) {
-	// %v renders the error into text and discards the value. This is what
-	// the exercise is guarding against, shown directly.
-	flattened := fmt.Errorf("load: %v", ErrNotFound)
-
-	if errors.Is(flattened, ErrNotFound) {
-		t.Fatal("a chain formatted with the value verb should not be walkable")
+func TestLoadAllOfNothingSucceeds(t *testing.T) {
+	values, err := LoadAll(map[string]string{}, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !errors.Is(fmt.Errorf("load: %w", ErrNotFound), ErrNotFound) {
-		t.Fatal("a chain wrapped with the wrap verb should be walkable")
-	}
-}
-
-func TestFieldOfReachesThroughSeveralLayers(t *testing.T) {
-	deep := fmt.Errorf("handler: %w", Load("a", func(string) error {
-		return &FieldError{Field: "age", Reason: "negative"}
-	}))
-
-	field, ok := FieldOf(deep)
-	if !ok || field != "age" {
-		t.Fatalf("expected age, got %q (%v)", field, ok)
-	}
-}
-
-func TestFirstReasonOnAnUnwrappedErrorIsItself(t *testing.T) {
-	if got := FirstReason(errors.New("alone")); got != "alone" {
-		t.Fatalf("expected alone, got %q", got)
-	}
-}
-
-func TestFirstReasonOnADeepChain(t *testing.T) {
-	deep := fmt.Errorf("a: %w", fmt.Errorf("b: %w", fmt.Errorf("c: %w", errors.New("root"))))
-	if got := FirstReason(deep); got != "root" {
-		t.Fatalf("expected root, got %q", got)
-	}
-}
-
-func TestLoadPassesTheIdentifierToTheStore(t *testing.T) {
-	seen := ""
-	Load("wanted", func(id string) error {
-		seen = id
-		return nil
-	})
-
-	if seen != "wanted" {
-		t.Fatalf("expected the store to be asked for wanted, got %q", seen)
+	if len(values) != 0 {
+		t.Fatalf("got %v", values)
 	}
 }

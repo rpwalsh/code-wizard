@@ -2,52 +2,47 @@
 id: rust.types.traits
 version: 1
 language: rust
-title: One copy per type, or one lookup per call
+title: Behavior as a bound
 kind: micro-problem
 difficulty: 4
-estimatedSeconds: 720
-timeoutMs: 30000
+estimatedSeconds: 600
+timeoutMs: 90000
 
 skills:
   - rust.types.traits
   - rust.types.generics
-  - rust.data.iterators
+  - rust.own.lifetimes
 
 prerequisites: []
 
 learningObjectives:
-  - Give a trait a default method that every implementor gets for free.
-  - Choose a generic bound when the type is known and a trait object when it is not.
-  - Recognize that a sum has an identity element and a minimum does not.
+  - Define a trait and implement it for several types, yours and the library's.
+  - Write generic functions whose bounds say exactly what they use.
+  - Read and write the lifetime that ties a returned reference to its source.
 
 prompt: |
-  A trait is a set of behaviors named together. There are two ways
-  to accept "anything that has this behavior", and they are not
-  interchangeable: `impl Trait` and `<T: Trait>` compile a separate
-  copy for each concrete type, while `dyn Trait` compiles one and
-  looks the method up at run time.
-
-  The second costs a pointer indirection. It also lets one
-  collection hold several different types, which the first cannot
-  do at all.
+  A trait is a bound you can demand: "give me anything that can do
+  *this*". These functions each demand exactly what they use, and one
+  of them has to say — in a lifetime — whose memory its answer lives in.
 
   In `main.rs`:
 
-  - `Priced::cents` — implement for `Book` (its own price) and
-    `Subscription` (months times monthly price, saturating rather
-    than wrapping on overflow).
-
-  - `Priced::is_free` — a default method on the trait, true when
-    the price is zero. Both types get it without writing it.
-
-  - `total_static(items)` — the sum over a slice of one concrete
-    type, taken generically.
-
-  - `total_dynamic(items)` — the sum over a slice of boxed trait
-    objects, which may be different types.
-
-  - `cheapest(items)` — the smallest price among boxed trait
-    objects, or `None` when there are none.
+  - `trait Sized2d` — one required method `area(&self) -> f64`, one
+    *provided* method `describe(&self) -> String` returning
+    `"area 12.5"` (one decimal place) that implementors get for free.
+  - Implement it for `Rect { width: f64, height: f64 }` and
+    `Circle { radius: f64 }` (area `3.14159 * r * r` — that constant,
+    so tests are exact).
+  - `fn total_area(shapes: &[Box<dyn Sized2d>]) -> f64` — dynamic
+    dispatch: a mixed bag of shapes summed through the trait object.
+  - `fn largest<T: PartialOrd>(items: &[T]) -> Option<&T>` — generic
+    over anything comparable, returning a *reference* into the slice;
+    the elided lifetime ties the answer to the input, and the test
+    proves it works for both numbers and strings.
+  - `fn longer<'a>(left: &'a str, right: &'a str) -> &'a str` — the
+    canonical lifetime signature, written out: the longer string, the
+    left on a tie. The annotation is the exercise — it says the result
+    lives as long as the *shorter-lived* of the two inputs.
 
 entryPoint: main.rs
 
@@ -57,44 +52,37 @@ tests:
     concept: rust.types.traits
   - path: tests/edges_test.rs
     visibility: edge
-    concept: rust.types.generics
+    concept: rust.own.lifetimes
 
 hints:
   - level: conceptual
-    text: "Ask whether the collection holds one type or several. One type takes a generic; several need a trait object, because there is no single T to substitute."
+    text: "A provided method is the trait's own code running on any implementor — define describe once, in the trait, calling self.area()."
   - level: structural
-    text: "A default method can call the trait's other methods. It is written once against the interface and every implementor inherits it."
+    text: "total_area iterates and calls .area() through the Box — dyn Sized2d picks the right area at runtime, per element."
   - level: language
-    text: "saturating_mul stops at the maximum instead of wrapping. Wrapping would make the most expensive possible subscription cost almost nothing."
+    text: "largest needs only PartialOrd — demanding Ord or Copy would turn away f64 and String respectively, callers the body handles fine."
   - level: syntax
-    text: "items.iter().map(Priced::cents).sum() — a method can be named as a function when its receiver is the argument."
+    text: "fn largest<T: PartialOrd>(items: &[T]) -> Option<&T> — the elided lifetime is real; written out it is fn largest<'a, T:...>(items: &'a [T]) -> Option<&'a T>."
   - level: explicit
-    text: "total_dynamic takes &[Box<dyn Priced>], and the closure is |item| item.cents(), because the method is found through the vtable rather than by the compiler."
+    text: "largest: items.iter().fold over a candidate, or a loop keeping the index of the best; return items.first() shape for empty via Option."
 
 explanation: |
-  Static and dynamic dispatch answer the same question with
-  different trades. `<T: Priced>` is resolved at compile time, so
-  the call is direct and can be inlined, and the compiler emits one
-  copy of the function per type you actually use — fast, and larger.
-  `dyn Priced` emits one copy and finds the method through a table
-  at run time, which costs an indirection and cannot be inlined.
+  The provided method is the half of traits people underuse: `describe`
+  is written once, in the trait, in terms of `area` — and every
+  implementor present and future inherits it. That is how the standard
+  library gives you dozens of Iterator methods for the price of one
+  `next`; the pattern scales from two shapes to an ecosystem.
 
-  For most code that difference is not worth thinking about. What
-  *is* worth thinking about is that only one of them can hold a
-  mixed collection. A `Vec<T>` has exactly one `T`; a
-  `Vec<Box<dyn Priced>>` can hold a book and a subscription
-  together, which is the actual reason trait objects exist. The
-  performance argument is usually the one people quote and rarely
-  the one that decides.
+  `largest` demanding only `PartialOrd` is bound minimalism, and it is
+  a compatibility promise: every bound you add turns away callers. Ord
+  would reject f64 (NaN broke total ordering); Copy would reject
+  String. The body compares — so the bound says compares, and nothing
+  else. Returning `Option<&T>` rather than `&T` makes the empty slice
+  a value instead of a panic, the same honesty Option always buys.
 
-  The default method is the quiet win. `is_free` is written once,
-  in terms of `cents`, and every implementor now has it — including
-  implementors written later by somebody else. Any of them may
-  override it if they have a cheaper way to answer, and none has to.
-
-  The last detail is the difference between the two totals'
-  signatures. `total_dynamic` returns `u64` and `cheapest` returns
-  `Option<u64>`, and that is not inconsistency: a sum over nothing
-  is zero, because addition has an identity element, and a minimum
-  over nothing does not exist, because comparison has no such thing.
-  Returning `0` from `cheapest` would claim there was a free item.
+  The `'a` in `longer` is the one lifetime everyone must eventually
+  write, and what it *means* matters more than the syntax: the caller
+  may keep the result only while both inputs live, because the
+  compiler cannot know which one came back. The test that stores the
+  result and drops nothing is the happy case; the commented-out
+  version that would not compile is the lesson working.
