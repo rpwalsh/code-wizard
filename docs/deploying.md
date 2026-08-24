@@ -41,20 +41,45 @@ configuration.
 
 ## Cloudflare Pages
 
-No workflow needed — connect the repository and set:
+No workflow needed. In the Cloudflare dashboard, Workers & Pages → Create →
+Pages → connect to Git, pick the repository, and set:
 
-| Setting          | Value                   |
-| ---------------- | ----------------------- |
-| Build command    | `npm ci && npm run web` |
-| Output directory | `apps/web/dist`         |
-| Node version     | `22`                    |
+| Setting             | Value                   |
+| ------------------- | ----------------------- |
+| Framework preset    | None                    |
+| Build command       | `npm ci && npm run web` |
+| Output directory    | `apps/web/dist`         |
+| Node version        | `22`                    |
 
-[apps/web/public/\_headers](../apps/web/public/_headers) is committed and
-Cloudflare applies it automatically: a content security policy that permits
-WebAssembly and the pinned Pyodide CDN and nothing else, plus immutable caching
-for hashed assets and short caching for the curriculum.
+Then Custom domains → Set up a custom domain. If the domain's nameservers are
+already Cloudflare's, the record is created for you and certificates issue in
+a few minutes.
 
-GitHub Pages ignores that file, which is harmless.
+Two things about the build worth knowing before the first one fails.
+
+It is not a small build. The output is around a hundred megabytes, because
+the Python interpreter and both PHP engine builds ship with the site. That is
+inside the Pages limit for total files but well above the 25 MB **per file**
+limit — nothing here exceeds it, the largest single file being the PHP wasm
+at about 19 MB, but check before adding anything larger.
+
+`_headers` is generated into the output by the Vite build rather than
+committed, from the same constant that writes the meta tag in `index.html`
+([apps/web/security-policy.ts](../apps/web/security-policy.ts)). Two
+hand-maintained copies of a content security policy drift, and the one that
+drifts is the one nobody reads. Cloudflare applies it as real response
+headers, which covers responses that are not HTML; GitHub Pages ignores the
+file, harmlessly.
+
+### From the command line instead
+
+```bash
+npm run web
+npx wrangler pages deploy apps/web/dist --project-name code-wizard
+```
+
+The first run opens a browser to authorize, or reads `CLOUDFLARE_API_TOKEN`
+from the environment if you would rather not.
 
 ---
 
