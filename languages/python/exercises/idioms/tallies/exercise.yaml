@@ -1,0 +1,98 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: python.idioms.tallies
+version: 1
+language: python
+title: The tie nobody notices until it moves
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.idioms.grouping
+  - python.stdlib.collections
+  - python.collections.dict
+
+prerequisites: []
+
+learningObjectives:
+  - Reach for defaultdict and Counter instead of writing the same setdefault again.
+  - Sort a ranking so ties break on the data rather than on insertion order.
+  - Hand back a plain dict, so a missing key is an error rather than an empty group.
+
+prompt: |
+  Every codebase contains the same four functions, written slightly
+  differently each time. Writing them once, properly, is worth more
+  than remembering which module they came from.
+
+  In `main.py`:
+
+  - `group_by(items, key)` — a dict from `key(item)` to the list of
+    items that produced it, each list in input order. The returned
+    dict must be an ordinary `dict`: looking up a key that is not
+    there raises `KeyError` rather than inventing an empty list.
+
+  - `count_by(items, key)` — a dict from `key(item)` to how many
+    items produced it.
+
+  - `top_n(counts, n)` — the `n` highest counts as
+    `(key, count)` pairs, largest first. **Ties break on the key,
+    ascending.**
+
+  - `invert(mapping)` — swap keys and values. Several keys may
+    share a value, so each value maps to the sorted list of the
+    keys that had it.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_tallies.py
+    visibility: visible
+    concept: python.idioms.grouping
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.stdlib.collections
+
+hints:
+  - level: conceptual
+    text: "defaultdict is for building; a plain dict is for handing over. The convenience that helps while you fill it is a hazard once somebody else is reading it."
+  - level: structural
+    text: "top_n is a sort with a compound key, not two sorts. The comparison is by count descending and then key ascending, which is one tuple."
+  - level: language
+    text: "Counter(...) counts an iterable in one call, and Counter.most_common orders ties by insertion — which is why this exercise sorts explicitly instead."
+  - level: syntax
+    text: "sorted(counts.items(), key=lambda pair: (-pair[1], pair[0])) — negating the count is how you sort one field down and another up in a single pass."
+  - level: explicit
+    text: "group_by: groups = defaultdict(list); for item in items: groups[key(item)].append(item); return dict(groups)."
+
+explanation: |
+  The tie is the part of this worth carrying away.
+  `Counter.most_common` orders equal counts by the order they were
+  first seen, which is completely stable for a given input and
+  entirely different when the same data arrives in another order.
+  A report built on it agrees with itself all week and disagrees
+  the Monday somebody adds an `ORDER BY` upstream — and the
+  investigation goes looking for a data problem, because the code
+  did not change. Sorting on `(-count, key)` makes the answer a
+  fact about the data instead of a fact about the reading order.
+
+  Returning `dict(groups)` rather than the `defaultdict` is the
+  same kind of care. A defaultdict answers every lookup, so a
+  caller who misspells a city gets an empty list and a report with
+  a row for a place that does not exist. The convenience that makes
+  it pleasant to fill is a hazard the moment it leaves the function
+  that filled it: while you are building, a missing key should
+  appear; afterwards, it should complain.
+
+  `invert` mapping to lists is a small honesty. The one-line version
+  everybody writes first —
+  `{value: key for key, value in mapping.items()}` — is correct
+  only when values happen to be unique, silently drops every
+  collision but the last, and is usually written at a moment when
+  they do happen to be unique. Collecting them is barely longer and
+  does not have a hidden precondition.
+
+  Underneath all four is one idea: the standard library has already
+  written the awkward half. `defaultdict` removes the
+  `if key not in groups` line, `Counter` removes the loop entirely,
+  and what remains is the part that is actually about your problem.
