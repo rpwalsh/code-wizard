@@ -1,0 +1,114 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.structure.enums
+version: 1
+language: php
+title: The states, and the moves between them
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - php.structure.enums
+  - php.types.declarations
+
+prerequisites: []
+
+learningObjectives:
+  - Replace a set of magic strings with a type the engine checks.
+  - Keep a transition table in one place instead of scattered across conditions.
+  - Use match over an enum, so a new case breaks the code that forgot it.
+
+prompt: |
+  A status column holding `'draft'`, `'review'`, `'published'` and
+  `'archived'` is four magic strings and a typo waiting to happen.
+  A backed enum is the same four values with a type behind them, so
+  `'publised'` stops being a runtime mystery and starts being a
+  refusal at the door.
+
+  In `main.php`, `Status` is already declared:
+
+  - `parse_status(string $raw): Status` — the matching case, or
+    `InvalidArgumentException` whose message contains the offending
+    value **and** the list of accepted ones. Matching is exact:
+    `'Draft'` is not `'draft'`.
+
+  - `next_states(Status $from): array` — the states reachable in
+    one step: draft goes to review or archived; review goes back to
+    draft or on to published; published may only be archived;
+    archived goes nowhere.
+
+  - `can_move(Status $from, Status $to): bool` — whether that move
+    is in the table. Nothing may move to itself.
+
+  - `label(Status $status): string` — a name for a person:
+    `'Draft'`, `'In review'`, `'Published'`, `'Archived'`.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/enums_test.php
+    visibility: visible
+    concept: php.structure.enums
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.structure.enums
+
+hints:
+  - level: conceptual
+    text: "An enum turns a set of valid values into a type. Everything downstream can then stop asking whether the value is one of the four."
+  - level: structural
+    text: "Put the transitions in a single match keyed on the source state. Spread across if statements they drift, and the drift is invisible."
+  - level: language
+    text: "Status::tryFrom returns null for an unknown value and Status::from throws. tryFrom lets you write the message; from writes it for you and names nothing useful."
+  - level: syntax
+    text: "array_column(Status::cases(), 'value') gives the backing values, which is how the error message lists what was expected."
+  - level: explicit
+    text: "can_move is in_array($to, next_states($from), true) — the third argument is strict comparison, which is what makes it compare cases rather than coerce."
+
+explanation: |
+  The reason to reach for an enum is not tidiness, it is that the
+  set of valid values stops being a fact you have to remember.
+  Every function taking `Status` is guaranteed one of four things;
+  no function needs a guard clause; and a typo cannot get past the
+  parse, which is the only place a string ever becomes a status.
+
+  `tryFrom` against `from` is the small choice worth making
+  deliberately. `from` throws a `ValueError` from inside the engine,
+  naming the enum and the bad value in the language's words, which
+  is fine for a bug and unhelpful for input somebody typed.
+  `tryFrom` hands back `null` and lets you say which field was wrong
+  and what would have been right — the difference between a stack
+  trace and a form error.
+
+  `match` over an enum is the piece that keeps paying. It is
+  exhaustive: add a fifth status and every `match` without an arm
+  for it fails, immediately, naming the file. The `switch` it
+  replaces would fall through to a `default` nobody thought about,
+  and the new status would render as a blank label in a template
+  three screens away. The edge test that loops over `Status::cases()`
+  is the same insurance written down.
+
+  Keeping the transitions in one table is the part that survives
+  contact with a growing product. As soon as "can this move" is
+  answered by conditions scattered across a controller, a model and
+  a template, they disagree — and the symptom is not an error, it is
+  a button that is visible and does nothing.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 20
+    why: >-
+      tryFrom returns either a Status case or null, and an enum case is never
+      loosely equal to null, so both comparisons answer identically on every
+      value this variable can hold.
+  - path: main.php
+    operator: constant
+    line: 43
+    why: >-
+      The array holds only Status cases and enum cases are singletons, so
+      loose object comparison agrees with identity on every pair: the same
+      case matches either way, and two different cases differ in both their
+      name and their value.
+
