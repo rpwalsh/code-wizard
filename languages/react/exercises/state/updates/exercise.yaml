@@ -1,0 +1,127 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.state.updates
+version: 1
+language: react
+title: Three increments that land on one
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - react.state.updates
+  - react.state.immutability
+
+prerequisites: []
+
+learningObjectives:
+  - Explain why several updates in one handler produce one increment.
+  - Use the updater form so queued updates compose instead of overwriting.
+  - Build new state that shares the untouched parts of the old.
+
+prompt: |
+  `setCount(count + 1)` three times in one click handler increments
+  by one, not three. This is not a bug and not a race: `count` is a
+  value captured when the component rendered, and all three calls
+  compute the same number from it. The updater form —
+  `setCount(c => c + 1)` — queues a *function* instead, and React
+  runs them in order, each on the result of the last.
+
+  This exercise implements that queue, so the rule stops being
+  folklore.
+
+  In `main.tsx`:
+
+  - `applyQueue(initial, queue)` — `queue` holds entries that are
+    either a replacement value or a function from the previous
+    state to the next. Return the final state after applying them
+    in order. A value discards whatever came before it; a function
+    receives it.
+
+  - `toggle(items, id)` — given
+    `{ id: string; done: boolean }[]`, return a new array in which
+    the matching item's `done` is flipped. Every item that did not
+    change must be **the same object** in the new array, and the
+    input array must not be modified.
+
+  - `rename(items, id, label)` — the same rules, setting `label`
+    on the matching item. Items carry a `label` too.
+
+  - `sameShape(before, after)` — return whether the two arrays hold
+    the same items by identity, in the same order. This is what a
+    memoized child effectively asks before deciding to re-render.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/updates.test.tsx
+    visibility: visible
+    concept: react.state.updates
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.state.immutability
+
+hints:
+  - level: conceptual
+    text: "A value in the queue answers 'the next state is this'. A function answers 'the next state is this much more than whatever it was'. Only the second composes."
+  - level: structural
+    text: "applyQueue is a reduce over the queue, where each step asks whether the entry is callable."
+  - level: language
+    text: "typeof entry === 'function' is the test React itself uses, which is why you cannot store a function as state without wrapping it."
+  - level: syntax
+    text: "Structural sharing in one line: items.map((item) => item.id === id ? { ...item, done: !item.done } : item) — the else branch returns the original object, not a copy of it."
+  - level: explicit
+    text: "sameShape: before.length === after.length && before.every((item, index) => item === after[index]) — identity, not deep equality."
+
+explanation: |
+  The three-increments puzzle is the clearest window into how React
+  state actually works. `count` is not a variable the component
+  reads live; it is a value that was fixed when this render began.
+  Three calls to `setCount(count + 1)` therefore all compute the
+  same number, and the last one wins — which looks like a lost
+  update and is really three identical instructions.
+
+  The updater form changes what is queued. `c => c + 1` is a
+  description of a change rather than a destination, so React can
+  run all three against successive results and arrive at three.
+  `applyQueue` is that algorithm, and once written the rule follows
+  from the code rather than from memory: use the updater form
+  whenever the next state depends on the previous one.
+
+  Structural sharing is the other half, and it is why immutability
+  in React is a performance feature rather than a purity one.
+  Rebuilding every item on every change would be correct, and would
+  also make every memoized row re-render, because React compares
+  props by identity. Returning the *same object* for untouched items
+  means an unchanged row is recognizably unchanged. `sameShape` is
+  the comparison that decision rests on — identity, not deep
+  equality, because deep equality on a large list costs more than
+  the render it was trying to avoid.
+
+  The input array must survive untouched for the same reason. A
+  handler that pushes into the existing array leaves React holding
+  a list whose contents changed while its identity did not, and the
+  screen keeps showing the old state until something unrelated
+  causes a render. That is the hardest kind of bug to see, because
+  the data is right and only the picture is wrong.
+
+mutationExceptions:
+  - path: main.tsx
+    operator: strictness
+    line: 23
+    why: >-
+      Both sides are strings — an item id and the id being looked for — and
+      JavaScript compares two strings identically under == and ===.
+  - path: main.tsx
+    operator: strictness
+    line: 27
+    why: >-
+      The same string-to-string comparison as the toggle above.
+  - path: main.tsx
+    operator: strictness
+    line: 33
+    why: >-
+      Two comparisons, neither of which loose equality can change: array
+      lengths are both numbers, and the item comparison has an object on the
+      left, where == and === differ only between null and undefined.
+
