@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.errors.exceptions
+version: 1
+language: cpp
+title: Absent and unreadable are different problems
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - cpp.errors.exceptions
+  - cpp.types.polymorphism
+
+prerequisites: []
+
+learningObjectives:
+  - Give each distinct failure its own type, carrying the details of that failure.
+  - Catch the failure you can answer for and let the rest travel.
+  - Order catch clauses so that a base-class handler does not swallow everything.
+
+prompt: |
+  A record looks like `id=7,qty=12,cost=350`. Two things can go
+  wrong reading a field out of it, and they are not the same thing.
+  The field can be absent, which the caller may well have an answer
+  for. Or it can be present and unreadable, which means the data is
+  wrong and somebody needs to know.
+
+  In `main.cpp`:
+
+  - `MissingField` — carries the field name. Its `what()` reads
+    `missing field: qty`.
+  - `BadValue` — carries the field name and the text that would not
+    parse. Its `what()` reads `bad value for qty: twelve`.
+  - `read_field(record, field)` — the integer, or a throw. A value
+    is an integer if it is an optional `-` followed by at least one
+    digit and nothing else. Keys match whole, never as prefixes,
+    and the first entry with a given key wins.
+  - `read_field_or(record, field, fallback)` — returns `fallback`
+    for a missing field. A `BadValue` is not its business and must
+    continue on to the caller.
+  - `diagnose(record, field)` — one line: `ok: 12`, `missing qty`,
+    or `bad qty: twelve`.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/exceptions_test.cpp
+    visibility: visible
+    concept: cpp.errors.exceptions
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.errors.exceptions
+
+hints:
+  - level: conceptual
+    text: "The type of the exception is the part a handler can act on. A single error type with a different string inside forces every caller to parse prose to find out what happened."
+  - level: structural
+    text: "read_field_or wraps read_field in a try and catches only MissingField. Anything it does not name goes past it untouched."
+  - level: language
+    text: "The first catch clause that matches wins, and a handler for a base class matches every class derived from it. std::exception therefore goes last or not at all."
+  - level: syntax
+    text: "Both exception types pass their message up to std::runtime_error's constructor in the member initializer list, which is what makes what() work."
+  - level: explicit
+    text: "Catch by const reference, always. Catching by value copies the exception into a base-class object and loses everything the derived type was carrying."
+
+explanation: |
+  The type of an exception is the part a handler can act on. Throw
+  one error type with different text inside it and every caller who
+  wants to treat a missing field differently from a corrupt one has
+  to read prose and guess — which is how error handling ends up
+  matching on message strings, and how it breaks the day somebody
+  improves the wording.
+
+  So `read_field_or` catches `MissingField` and nothing else. That
+  restraint is the whole design. Absent is a question this function
+  has an answer for, and a default is a legitimate answer to it.
+  Unreadable means the data is wrong, and returning a default there
+  would substitute a plausible number for a real problem — the value
+  would be quietly incorrect, and the record that caused it would
+  never be looked at.
+
+  Catch order is a rule with a sharp edge. The first clause whose
+  type matches wins, and a handler for a base class matches every
+  class derived from it, so `catch (const std::exception &)` placed
+  first makes every clause below it dead. The compiler will not
+  usually warn, the tests still pass, and the specific handling is
+  simply gone.
+
+  Catch by `const` reference for the same reason you pass
+  polymorphic objects by reference anywhere else. `catch (BadValue
+  error)` copies, and `catch (std::exception error)` copies the
+  object down into a base-class object — the field name and the
+  offending text are cut away, and `what()` returns whatever the
+  base was constructed with. It is the one place slicing happens
+  silently in code that looks entirely reasonable.

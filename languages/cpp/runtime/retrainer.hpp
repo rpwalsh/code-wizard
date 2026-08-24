@@ -2,7 +2,7 @@
 /*
  * The C++ test harness: one header, no build system, no dependencies.
  *
- * A learner practicing C should be writing C, not fighting CMake. So the whole
+ * A learner practicing C++ should be writing C++, not fighting CMake. So the whole
  * harness is a single header, and running the tests is compiling a handful of
  * files together. Nothing to install and nothing to configure.
  *
@@ -45,6 +45,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <sstream>
 #include <string>
 
@@ -116,14 +117,27 @@ int retrainer_run(const char *report_path);
         }                                                                             \
     } while (0)
 
-#define RETRAINER_ASSERT_STR(actual, wanted)                                          \
-    do {                                                                              \
-        const char *r_a = (actual);                                                   \
-        const char *r_w = (wanted);                                                   \
-        if (r_a == NULL || r_w == NULL || strcmp(r_a, r_w) != 0) {                    \
-            retrainer_fail(#actual " != " #wanted, r_w ? r_w : "(null)",              \
-                           r_a ? r_a : "(null)");                                     \
-        }                                                                             \
+/*
+ * Takes std::string as readily as const char *, and copies before comparing.
+ *
+ * The earlier version bound a `const char *` from whatever it was handed, which
+ * dangled for the commonest call there is: a function returning std::string by
+ * value, asserted on with `.c_str()`. The temporary died at the end of the
+ * declaration and the comparison then read freed memory, reporting an empty
+ * string for a reason nothing in the test could show.
+ */
+inline std::string retrainer_text(const char *value) {
+    return value == NULL ? std::string("(null)") : std::string(value);
+}
+inline std::string retrainer_text(const std::string &value) { return value; }
+
+#define RETRAINER_ASSERT_STR(actual, wanted)                                         \
+    do {                                                                             \
+        const std::string r_a = retrainer_text(actual);                              \
+        const std::string r_w = retrainer_text(wanted);                              \
+        if (r_a != r_w) {                                                            \
+            retrainer_fail(#actual " != " #wanted, r_w.c_str(), r_a.c_str());        \
+        }                                                                            \
     } while (0)
 
 /* Floating point is compared with a tolerance, never with ==, because the
@@ -247,7 +261,20 @@ int retrainer_run(const char *report_path) {
         retrainer_message[0] = retrainer_expected[0] = retrainer_received[0] = 0;
 
         clock_t began = clock();
-        entry->body();
+        /* An exception that escapes a test body would otherwise reach
+         * std::terminate and take the entire run with it, so a single throwing
+         * case would look like "the harness wrote no report" rather than like
+         * one failing test. Catching here keeps the blast radius at one case
+         * and puts what() where the learner can read it. */
+        try {
+            entry->body();
+        } catch (const std::exception &error) {
+            retrainer_fail("the test threw an exception", "no exception thrown",
+                           error.what());
+        } catch (...) {
+            retrainer_fail("the test threw an exception", "no exception thrown",
+                           "something not derived from std::exception");
+        }
         double ms = (double)(clock() - began) * 1000.0 / CLOCKS_PER_SEC;
 
         if (retrainer_failed) failures++;

@@ -302,7 +302,19 @@ export function Workspace({
           revealedHints={state.revealedHints}
           hintsAllowed={state.hintsAllowed}
           canRevealSolution={affordances.solutionReveal}
-          onRevealHint={() => void guard(() => session.revealNextHint())}
+          onRevealHint={(rung) =>
+            void guard(async () => {
+              // Down to the rung being read, not just the next one. The
+              // walkthrough shows a chosen step while the session only ever
+              // uncovered the following hint, so anyone who paged ahead
+              // before asking for help clicked a button that visibly did
+              // nothing. Revealing the ones passed over is also the honest
+              // accounting: reaching rung three is reaching rung three.
+              while (session.state.revealedHints.length <= rung) {
+                if ((await session.revealNextHint()) === null) break;
+              }
+            })
+          }
           onRevealSolution={async () => {
             // Guarded like every other session call: unguarded, a refusal
             // rejects into nothing and the button appears to do nothing.

@@ -1,0 +1,107 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.polymorphism
+version: 1
+language: cpp
+title: The pointer's type decides nothing
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - cpp.types.polymorphism
+  - cpp.lifetime.rule
+
+prerequisites: []
+
+learningObjectives:
+  - Call a function on a base pointer and have the derived one run.
+  - Give a base class a virtual destructor and see what happens without one.
+  - Ask a run-time question about a real type with dynamic_cast.
+
+prompt: |
+  A `Shape *` can point at a rectangle, a square, or a circle, and
+  the code holding it does not need to know which. That is the whole
+  bargain: the pointer's type decides what you may ask, and the
+  object's type decides what answer you get.
+
+  In `main.cpp`:
+
+  - `Rectangle::area()` — width times height. `Rectangle::name()` —
+    `"rectangle"`.
+  - `Square` — a rectangle whose sides match. It writes no `area()`
+    of its own. `name()` is `"square"`.
+  - `Circle::area()` — `kPi` times the radius squared. `name()` is
+    `"circle"`.
+  - `Shape::describe()` — `"a "` followed by the shape's name. Not
+    pure, so this one implementation serves every shape that has
+    nothing better to say.
+  - `Square::describe()` — has something better to say:
+    `"a square, which is also a rectangle"`.
+  - `Circle::~Circle()` — add one to `circles_destroyed`, so the
+    tests can prove the destructor ran at all.
+  - `total_area`, `largest`, `count_circles` — over a collection of
+    `Shape` pointers. `largest` returns `nullptr` for an empty
+    collection, and a tie goes to the first.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/polymorphism_test.cpp
+    visibility: visible
+    concept: cpp.types.polymorphism
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.rule
+
+hints:
+  - level: conceptual
+    text: "A virtual call looks up the function on the object, not on the pointer. The base class does not know its derived classes and does not need to."
+  - level: structural
+    text: "Square passes the same length twice to Rectangle's constructor. Everything Rectangle can already compute then works, unchanged."
+  - level: language
+    text: "dynamic_cast<const Circle *>(pointer) returns null when the object is not a Circle. Null is the answer no, not an error."
+  - level: syntax
+    text: "Shape::describe() can call name() directly. Inside a base class, an unqualified call to a virtual function is still a virtual call."
+  - level: explicit
+    text: "Circle::~Circle() increments the counter. It only runs through a Shape pointer because ~Shape is virtual, which is what the edge test is really checking."
+
+explanation: |
+  Dynamic dispatch is one indirection and a great deal of leverage.
+  Each polymorphic object carries a pointer to a table of its own
+  function addresses, so a call through `Shape *` reads the table
+  the object brought with it. `Shape::describe()` calls `name()` and
+  gets the circle's, without a line of code in the base class that
+  has ever heard of `Circle`.
+
+  Which is why `Square::describe()` can differ while
+  `Circle::describe()` does not. A non-pure virtual is a default,
+  not a demand: it says every shape can be described, and any shape
+  with something better to say may say it. A pure virtual — `= 0` —
+  says the opposite, that the base has no sensible answer, and the
+  compiler then refuses to let anyone construct a bare `Shape`.
+
+  The virtual destructor is the part that bites. Delete a `Circle`
+  through a `Shape *` when `~Shape` is not virtual, and the program
+  runs `~Shape` alone: the derived part is never destroyed, every
+  member it owns leaks, and nothing reports anything. The standard
+  calls it undefined behavior, which in practice means it works
+  perfectly until the class acquires a member that matters. The rule
+  that avoids all of it is small: if a class is meant to be deleted
+  through a base pointer, that base needs a virtual destructor.
+
+  `dynamic_cast` is the escape hatch, and worth being slightly
+  suspicious of. It asks a real question — is this object actually
+  one of these — and answers honestly with null when it is not. But
+  a chain of `dynamic_cast`s is usually a virtual function that was
+  never written, since asking every object what it is, in order, is
+  the manual version of what the vtable already does for free.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: off-by-one
+    line: 5
+    why: >-
+      The starting value of the destructor counter. Every test that reads it
+      calls Circle::reset_destroyed() first, so whatever it began as is
+      overwritten before anything can observe it.

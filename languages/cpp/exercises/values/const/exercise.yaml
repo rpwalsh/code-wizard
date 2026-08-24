@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.const
+version: 1
+language: cpp
+title: What const actually promises
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.values.const
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Mark the members that answer questions const, and mean it.
+  - Use mutable for state that is not part of what a caller observes.
+  - Look a key up in a map without inserting it by accident.
+
+prompt: |
+  `const` is a promise about what a caller can observe, not a
+  promise that no byte inside the object will move. That distinction
+  is what `mutable` is for, and it is the difference between a
+  useful rule and a rule people work around.
+
+  `Catalog` maps a sku to a price in whole cents. Two of its members
+  are already declared `mutable` for you.
+
+  In `main.cpp`:
+
+  - `add(sku, cents)` — sets the price, replacing any price already
+    there, and makes the remembered total no longer true.
+  - `price(sku)` — the price, or nothing. Counts as a lookup. Must
+    not add anything to the catalog.
+  - `lookups()` — how many times `price` has been asked.
+  - `total()` — every price added up. Computed on the first ask and
+    remembered until something changes.
+  - `skus()` — every sku, in order.
+  - `dearest(catalog)` — takes a `const Catalog &`, so only the
+    const members are reachable. Returns the highest-priced sku, or
+    an empty string. Ties go to the first.
+
+  A zero price is a price. A missing sku is not.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/const_test.cpp
+    visibility: visible
+    concept: cpp.values.const
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.containers
+
+hints:
+  - level: conceptual
+    text: "Ask what a caller can observe. A hit counter and a cached sum change nothing anybody can see through the public interface, which is exactly the case mutable exists for."
+  - level: structural
+    text: "The cache needs invalidating in one place: the only function that changes what the cache summarizes."
+  - level: language
+    text: "operator[] on a map inserts a default-constructed value when the key is missing. A const map does not offer it at all, which is the language telling you something."
+  - level: syntax
+    text: "prices_.find(sku) returns an iterator; compare it against prices_.end() before reading found->second."
+  - level: explicit
+    text: "total(): if total_ already has a value, return it. Otherwise add up prices_, store the sum in total_, and return it. add() calls total_.reset()."
+
+explanation: |
+  The useful way to read `const` on a member function is as a
+  promise to the caller, not a claim about memory. Nothing a caller
+  can observe through the public interface will differ because they
+  called it. Whether some counter moved is not their business, and
+  `mutable` is how you say so in a way the compiler will accept.
+
+  That is also why `mutable` is not a loophole for whatever is
+  inconvenient. A cache and a hit counter qualify because removing
+  them would change no answer the class gives. A field that alters
+  what `price()` returns would not qualify no matter how the
+  keyword is spelled, and marking it `mutable` would only move the
+  bug somewhere less visible.
+
+  A cache brings its own obligation, and it is the one people skip.
+  `add` has to reset `total_` — not because the sum is expensive,
+  but because a remembered answer that outlives what it summarized
+  is a wrong answer stored somewhere convenient. Every cache in
+  every system has this shape: the invalidation is the hard half,
+  and it lives in whichever function changes the underlying thing.
+
+  `find` rather than `operator[]` is the other habit worth forming.
+  Subscripting a map inserts a default-constructed value when the
+  key is missing, so a lookup for something you do not stock adds it
+  at a price of zero — and then `total()` is right about a catalog
+  that is wrong. The language is already telling you: a const map
+  has no `operator[]` at all, because there is no way for it to
+  behave.
+
+  `dearest` takes `const Catalog &` for the same reason any function
+  should: it says in the signature that this is a question, not a
+  change. The compiler then enforces it, so anyone reading the
+  declaration knows what happens without reading the body — which
+  is the entire return on const-correctness, and why it has to be
+  everywhere to be worth anything.

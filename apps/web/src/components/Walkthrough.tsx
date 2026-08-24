@@ -25,7 +25,8 @@ interface WalkthroughProps {
   readonly revealedHints: readonly Hint[];
   readonly hintsAllowed: boolean;
   readonly canRevealSolution: boolean;
-  readonly onRevealHint: () => void;
+  /** Reveal the ladder down to `rung`, so the step being read fills in. */
+  readonly onRevealHint: (rung: number) => void;
   readonly onRevealSolution: () => Promise<Record<string, string> | null>;
   readonly onOpenTests: () => void;
   readonly onRunTests: () => void;
@@ -109,6 +110,10 @@ export function Walkthrough({
     if (rung >= 0 && rung < hintSteps) {
       const intro = RUNG_INTRO[rung] ?? RUNG_INTRO[RUNG_INTRO.length - 1];
       const revealed = revealedHints[rung];
+      // Asking for a rung uncovers the ones passed over on the way to it,
+      // because the ladder is only meaningful in order. Say how many rather
+      // than spending them quietly.
+      const alsoUncovers = Math.max(0, rung - revealedHints.length);
       return (
         <>
           <h2 className="walkthrough__title">{intro?.title}</h2>
@@ -124,13 +129,19 @@ export function Walkthrough({
                 counted, the same as the hint panel — guidance is never free and never punished,
                 just measured.
               </p>
+              {alsoUncovers > 0 ? (
+                <p className="walkthrough__lead">
+                  The ladder only reads in order, so this also uncovers the{' '}
+                  {alsoUncovers === 1 ? 'step' : `${alsoUncovers} steps`} you paged past.
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="button"
-                onClick={onRevealHint}
+                onClick={() => onRevealHint(rung)}
                 style={{ alignSelf: 'start' }}
               >
-                Show me
+                {alsoUncovers > 0 ? 'Show me, and the rest of the way here' : 'Show me'}
               </button>
             </>
           )}

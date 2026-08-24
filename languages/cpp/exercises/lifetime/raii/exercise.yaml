@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.lifetime.raii
+version: 1
+language: cpp
+title: Nobody wrote a catch and it closed anyway
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - cpp.lifetime.raii
+  - cpp.errors.guarantees
+
+prerequisites: []
+
+learningObjectives:
+  - Tie a resource to a scope so releasing it is not a step anyone can forget.
+  - Use a dismissible guard to make the undo automatic and the commit deliberate.
+  - Predict the order destructors run in when an exception is unwinding.
+
+prompt: |
+  A `finally` block is a promise that somebody will remember to write
+  one. C++ has no `finally` because it does not need the promise: a
+  scope ends the same way whether control leaves by `return`, by
+  `break`, or by an exception passing through, and every object in
+  that scope is destroyed on the way out.
+
+  `journal()` is provided. It is the only way to see any of this
+  work, since a destructor returns nothing and cannot be called on
+  purpose.
+
+  In `main.cpp`:
+
+  - `Session` — journals `open <name>` when constructed and
+    `close <name>` when destroyed.
+
+  - `ScopeGuard` — runs its action when destroyed, unless
+    `dismiss()` was called first. A guard starts armed.
+
+  - `with_session(name, body)` — runs `body` inside a session named
+    `name`. The session closes whether `body` returns or throws.
+    You should not need `try` for this.
+
+  - `transact(body)` — runs `body`. If it returns, journal
+    `committed`. If it throws, journal `rolled back` and let the
+    exception continue on its way.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/raii_test.cpp
+    visibility: visible
+    concept: cpp.lifetime.raii
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.errors.guarantees
+
+hints:
+  - level: conceptual
+    text: "Arm the undo before the risky work starts, not after. Something that throws on its first statement still has to be cleaned up."
+  - level: structural
+    text: "A guard is one bool and one action. The destructor asks the bool whether it still has a job, and dismiss() is the answer changing."
+  - level: language
+    text: "with_session needs no try and no catch. Declare the session, call the body, and let the language do the rest — that is the entire point of the pattern."
+  - level: syntax
+    text: "transact: construct the guard, call body(), then dismiss the guard and journal the commit. Both of those last two only happen if body returned."
+  - level: explicit
+    text: "The order matters. dismiss() before journaling `committed` is fine, but journaling `committed` before body() is not, because a throw would leave a commit in the record for work that never happened."
+
+explanation: |
+  The reason C++ has no `finally` is that `finally` solves the
+  problem in the wrong place. A `finally` block is written by the
+  person who acquires the resource, once per acquisition, and every
+  one of those is a chance to forget. A destructor is written by the
+  person who wrote the type, once ever, and after that the resource
+  cannot be leaked by ordinary code no matter how carelessly it is
+  used.
+
+  Once a resource is bound to a scope, the shape of the code stops
+  mattering. `with_session` has no `try` in it and cannot be made to
+  leak by adding an early return, a `break`, or a throw three calls
+  deep. The session closes because the scope ended, and scopes end
+  exactly once.
+
+  Order falls out of the same rule. Destruction is construction
+  backwards, so unwinding releases from the inside out — which is
+  why the session opened inside a failing transaction is already
+  closed by the time the rollback runs. Any other order would let an
+  inner object outlive the outer one it borrowed from, and every
+  dangling reference bug is that sentence happening by accident.
+
+  Dismissal is what separates an undo from a cleanup. The guard is
+  armed at construction because failure is the case that arrives
+  without being asked for; success has to speak up. That inversion
+  is worth internalizing: code that commits by default and rolls
+  back on request fails open, and every path you forgot about is a
+  path that committed.
+
+  One rule holds all of this up: a destructor must not throw. If it
+  throws while an exception is already traveling, there are two
+  exceptions in flight and no rule for which one wins, so the
+  standard stops calling and terminates the program. Cleanup is
+  therefore written to be incapable of failing, rather than careful
+  about failing — which in practice means it does the smallest,
+  dullest thing that can possibly work.

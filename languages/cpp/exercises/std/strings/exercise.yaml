@@ -1,0 +1,99 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.strings
+version: 1
+language: cpp
+title: A view owns nothing
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.strings
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Pass text without copying it, using a view into somebody else's buffer.
+  - Return a view when the text already exists and a string when it does not.
+  - Treat empty fields as fields, at both ends and in the middle.
+
+prompt: |
+  `std::string_view` is a pointer and a length. It copies nothing,
+  allocates nothing, and outlives nothing — every one of those is
+  the same fact stated differently.
+
+  In `main.cpp`:
+
+  - `trimmed(text)` — the text without leading or trailing
+    whitespace, as a **view into the original**. Space, tab,
+    newline and carriage return all count. All-whitespace trims to
+    empty.
+
+  - `split(text, separator)` — the fields, as views. Empty fields
+    count: `"a,,b"` is three, `"a,"` is two, `",a"` is two, and
+    `""` is none at all.
+
+  - `join(parts, separator)` — the fields with the separator
+    between them, as an owned `std::string`. Nothing at either end.
+
+  - `starts_with_any(text, prefixes)` — whether the text begins
+    with any of them.
+
+  Note which of these returns a view and which returns a string.
+  That difference is the exercise.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/strings_test.cpp
+    visibility: visible
+    concept: cpp.std.strings
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "Ask whether the text already exists somewhere. If it does, return a view of it. If you are making new text, you have to own it."
+  - level: structural
+    text: "remove_prefix and remove_suffix move the view's own ends, so trimming touches no buffer and costs nothing. find_first_not_of and find_last_not_of take a whole set of characters, which is how you find the ends to move them to."
+  - level: language
+    text: "find returns npos when there is no separator left, and that case is the final field rather than the end of the loop's work."
+  - level: syntax
+    text: "text.substr(start, found - start) is the field; text.substr(start) is the tail after the last separator."
+  - level: explicit
+    text: "join returns std::string because the joined text does not exist until it is built. A view of a local string would dangle the moment the function returned."
+
+explanation: |
+  A view is a pointer and a length, and everything that is pleasant
+  and everything that is dangerous about it follows from that.
+  Passing one costs two words and no allocation, so a function taking
+  `std::string_view` accepts a `std::string`, a literal, or a slice
+  of either without copying any of them.
+
+  The danger is the same sentence read the other way: it owns
+  nothing, so it is valid exactly as long as the buffer behind it.
+  `std::string_view bad = std::string("hello");` compiles and
+  dangles immediately, because the temporary dies at the semicolon.
+  That is why `join` returns a `std::string` — the joined text does
+  not exist until the function builds it, and there is nothing for a
+  view to point at afterwards.
+
+  The empty-field rules look pedantic until a file goes through
+  them. `"a,"` is two fields, the second empty, and a splitter that
+  stops at the last separator drops it — so a row that should have
+  eight columns arrives with seven, the header no longer lines up,
+  and every value after that point is attributed to the wrong
+  column. The same applies at the front: `",a"` has an empty first
+  field, and treating it as one field shifts everything left.
+
+  Trimming an all-whitespace view is the edge that catches people.
+  `find_first_not_of` returns `npos` there — there is no non-space to
+  find — and that case has to return before any arithmetic is done
+  with it, because `npos` is the largest `size_t` there is and
+  subtracting from it wraps rather than fails. Returning
+  `text.substr(text.size())` gives an empty view that still points
+  inside the caller's buffer, which is a more honest answer than a
+  default-constructed view pointing at nothing.
