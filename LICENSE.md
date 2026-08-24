@@ -1,7 +1,6 @@
 <!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
 
-Required Notice: Copyright 2026 Code Wizard contributors
-
+Required Notice: Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 This license covers the software in this repository: everything under
 `packages/`, `apps/`, `languages/*/src`, `languages/*/runtime`, `scripts/`
 and `tests/`.
