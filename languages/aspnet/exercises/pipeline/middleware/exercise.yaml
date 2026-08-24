@@ -1,0 +1,108 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: aspnet.pipeline.middleware
+version: 1
+language: aspnet
+title: The order you register them is the order it breaks
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - aspnet.pipeline.middleware
+  - aspnet.operations.errors
+  - aspnet.security.authn
+
+prerequisites: []
+
+learningObjectives:
+  - Compose a request pipeline from the inside out and see why order is registration order.
+  - Recognize that a stage which never calls next stops everything below it.
+  - Place error handling and authentication where they can actually do their job.
+
+prompt: |
+  A middleware pipeline is a stack of functions, each holding a
+  reference to the next. That single fact explains everything people
+  find surprising about it: why the order of registration matters,
+  why an exception handler registered last catches nothing, and why
+  a stage that forgets to call `next` makes the rest of the
+  application disappear.
+
+  In `Pipeline.cs`:
+
+  - `Build(stages)` — compose the stages into one
+    `Func<Context, Task>`. The first stage in the list is the
+    outermost: it runs first on the way in and last on the way out.
+    The innermost `next` does nothing.
+
+  - `Trace(name)` — append `"{name}:in"` before calling next and
+    `"{name}:out"` after it, to `context.Trail`.
+
+  - `ShortCircuit(status)` — set `context.Status` and do **not**
+    call next.
+
+  - `RequireUser()` — when `context.User` is null, set
+    `context.Status` to 401 and stop. Otherwise call next.
+
+  - `CatchErrors()` — call next inside a try, and on any exception
+    set `context.Status` to 500 and swallow it.
+
+  `Build` is called once and its result is used for many requests,
+  so nothing may be remembered between them.
+
+entryPoint: Pipeline.cs
+
+tests:
+  - path: tests/PipelineTests.cs
+    visibility: visible
+    concept: aspnet.pipeline.middleware
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: aspnet.operations.errors
+
+hints:
+  - level: conceptual
+    text: "Each stage wraps the rest of the pipeline. Composing therefore starts at the innermost end and works outward, which is why the loop runs over the stages in reverse."
+  - level: structural
+    text: "The terminal is a function that does nothing. Every step replaces it with a function that calls the current stage, handing it a closure over the previous terminal."
+  - level: language
+    text: "Capturing a loop variable directly is the classic trap: copy it into a local inside the loop body so each closure keeps its own stage."
+  - level: syntax
+    text: "next = context => current(context, () => inner(context)); — `inner` is what was built so far, and the lambda is what the stage receives as `next`."
+  - level: explicit
+    text: "Func<Context, Task> next = _ => Task.CompletedTask; foreach (var stage in stages.Reverse()) { var inner = next; var current = stage; next = context => current(context, () => inner(context)); } return next;"
+
+explanation: |
+  Composing from the inside out is the part worth doing once by
+  hand. You start with a terminal that does nothing, then wrap it
+  with the last stage, then wrap that with the one before, and so
+  on — so the first stage registered ends up outermost. Every
+  surprising thing about middleware follows from that shape rather
+  than from any framework rule.
+
+  A stage that never calls `next` short-circuits. That is not an
+  error and not an escape hatch: it is the ordinary way a pipeline
+  refuses a request, and it is why an authorization stage can return
+  403 without the handler ever knowing there was a request. It is
+  also why a stage that forgets `next` by accident makes the entire
+  application below it vanish, silently, with a 200 and an empty
+  body.
+
+  Error handling has to be outermost because it can only catch what
+  it wrapped. An exception handler registered after the stage that
+  throws is inside it, and the exception escapes past the whole
+  pipeline — which is the version of this bug that gets found during
+  an incident, when the handler everyone believed was catching
+  things turns out to have been below the problem all along.
+
+  Authentication has the same shape and a sharper consequence. A
+  `RequireUser` registered after the handler still sets 401, and the
+  handler has already run: the row is written, the email is sent,
+  and the status code is a fiction. Order in a pipeline is not
+  style. It is the security boundary.
+
+  The last detail is that `Build` runs once and its result serves
+  every request. Anything a stage remembers outside the context is
+  shared between callers, which is the mechanism behind the worst
+  category of bug in a web application — one user seeing another
+  user's data, produced by code that looks entirely reasonable.
