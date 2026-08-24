@@ -1,0 +1,105 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: node.runtime.modules
+version: 1
+language: node
+title: Where a specifier points, and what the environment really said
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - node.runtime.modules
+  - node.runtime.process
+
+prerequisites: []
+
+learningObjectives:
+  - "Tell the five kinds of module specifier apart, and why the node: prefix exists."
+  - Resolve a relative import against the importing file rather than the process.
+  - Read configuration without letting an empty variable become a default.
+
+prompt: |
+  Two things a Node program does before it runs any of your logic:
+  it works out what your imports point at, and it reads the world
+  it was started in. Both have quiet failure modes.
+
+  In `main.js`:
+
+  - `classify(specifier)` — return `'builtin'` for `node:`-prefixed
+    names, `'imports-field'` for names starting `#`, `'relative'`
+    for `./` and `../`, `'absolute'` for absolute paths, and
+    `'bare'` for everything else.
+
+  - `resolveRelative(fromFile, specifier)` — the absolute path a
+    relative specifier points at, resolved against the directory of
+    `fromFile`. Return `null` for any specifier that is not
+    relative.
+
+  - `readConfig(env, defaults)` — build a config object with one
+    key per entry in `defaults`. A variable absent from `env` takes
+    its default. A variable that is present is converted to the
+    type of its default: a number default parses the value and
+    throws `` `${key} is not a number: ${value}` `` if it will not
+    parse; a boolean default accepts exactly `'true'` and
+    `'false'` and throws `` `${key} must be true or false:
+    ${value}` `` otherwise; anything else is taken as a string.
+    Variables with no matching default are ignored.
+
+  - `exitCodeFor(outcome)` — `0` for `'ok'`, `2` for `'usage'`,
+    and `1` for anything else.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/modules.test.js
+    visibility: visible
+    concept: node.runtime.modules
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: node.runtime.process
+
+hints:
+  - level: conceptual
+    text: "A specifier is not a path until the resolver decides it is one. The prefix decides which of five entirely different lookups happens."
+  - level: structural
+    text: "Absent and empty are different states. Test for undefined explicitly rather than for falsiness, or an empty variable silently becomes the default."
+  - level: language
+    text: "path.resolve(path.dirname(fromFile), specifier) resolves against the importing file. Using process.cwd() instead works until somebody starts the program from another directory."
+  - level: syntax
+    text: "Number('eighty') is NaN, but Number('') is 0 — so isFinite refuses the first and accepts the second. An empty value needs its own test."
+  - level: explicit
+    text: "readConfig: for each [key, fallback] of Object.entries(defaults), read env[key]; if undefined take fallback, otherwise branch on typeof fallback."
+
+explanation: |
+  The `node:` prefix looks like ceremony and is not. Without it,
+  `require('fs')` searches `node_modules` first in some
+  configurations, so a package published under a builtin's name can
+  take over an import you believed was the standard library. The
+  prefix says "the builtin, definitely", and it is why modern code
+  writes `node:fs` even though `fs` usually works.
+
+  Resolving against the importing file rather than the working
+  directory is the difference between a program that runs and one
+  that runs *when started from the right folder*. Relative
+  specifiers have always been relative to the file; using
+  `process.cwd()` produces code that works in development, works in
+  the test suite, and fails in the service manager that starts it
+  from `/`.
+
+  The configuration half is one rule with sharp consequences:
+  absent and empty are different. `PORT=` in a compose file is
+  somebody deliberately clearing it, and code written as
+  `env.PORT || 8080` cannot tell that from the variable never being
+  set — so the deployment silently runs on the default and nobody
+  learns until the wrong port is in a log. Worse, `Number('')` is
+  `0`, so the version that does convert turns an empty variable
+  into port zero, which binds to a random free port and produces a
+  service nobody can reach.
+
+  `exitCodeFor` ends on the smallest rule with the widest blast
+  radius. Zero means success; every other number means something
+  else, and which number is a convention you are free to choose.
+  Defaulting an unrecognized outcome to zero is how a failing job
+  reports success to the scheduler that ran it, and the next thing
+  in the pipeline proceeds on data that was never produced.

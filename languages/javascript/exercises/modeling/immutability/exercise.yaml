@@ -1,0 +1,133 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.modeling.immutability
+version: 1
+language: javascript
+title: Frozen on the outside only
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 20000
+
+skills:
+  - javascript.modeling.immutability
+  - javascript.data.reference
+
+prerequisites: []
+
+learningObjectives:
+  - Recognize that Object.freeze and the spread operator are both one level deep.
+  - Copy only the path that changed and share everything else.
+  - Handle a structure that refers back to itself without recursing forever.
+
+prompt: |
+  `Object.freeze(config)` and `{ ...state }` look like they make
+  something safe. Both stop at the first level: the outer object is
+  new or locked, and every object inside it is the same one it
+  always was, still writable, still shared. That is the single most
+  common misunderstanding about immutable state in JavaScript.
+
+  In `main.js`:
+
+  - `deepFreeze(value)` — freeze the value and everything reachable
+    inside it, then return it. Values that are not objects are
+    returned as they are. A structure containing a reference back
+    to itself must not recurse forever.
+
+  - `getIn(source, keyPath)` — the value at a path of keys, or
+    `undefined` if the path runs out before the keys do.
+
+  - `setIn(source, keyPath, value)` — a copy with the value set at
+    that path. Every object *on* the path is new; everything off it
+    is shared. An array on the path must come back an array.
+    Missing intermediate objects are created. An empty path
+    replaces the whole value.
+
+  - `updateIn(source, keyPath, change)` — the same, with the new
+    value computed by calling `change` with the current one, which
+    is `undefined` when the path is not there.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/immutability.test.js
+    visibility: visible
+    concept: javascript.modeling.immutability
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.data.reference
+
+hints:
+  - level: conceptual
+    text: "Copying the path and sharing the rest is called structural sharing. It is what makes immutable updates cheap: a change three levels down copies three objects, not the whole tree."
+  - level: structural
+    text: "setIn is recursive on the tail of the path. The base case is an empty path, which returns the new value outright."
+  - level: language
+    text: "Object.isFrozen doubles as the visited check: an object already frozen has been walked, so returning early both saves work and stops a cycle."
+  - level: syntax
+    text: "Array.isArray(source) ? [...source] : { ...source } — an array spread into an object becomes {0:..,1:..}, which prints almost the same and has no array methods at all."
+  - level: explicit
+    text: "setIn: if the path is empty return value; otherwise copy, then set copy[key] to either the value or setIn(source[key] ?? {}, rest, value)."
+
+explanation: |
+  `Object.freeze` is shallow, and the shallow version of
+  `deepFreeze` is the one that looks correct in every test somebody
+  writes for it — because the test freezes `{ a: 1 }`, not
+  `{ server: { port: 80 } }`. The nested object is untouched and
+  fully writable, so the configuration everyone believes is
+  immutable can be edited by any code holding a reference to a
+  branch of it.
+
+  The cycle guard is not a hypothetical either. Structures refer
+  back to themselves constantly — a node with a parent pointer, a
+  graph, a cached response holding its own request — and the walk
+  that does not notice runs until the stack ends. Using
+  `Object.isFrozen` as the visited marker is a small pleasure: it
+  is exactly the question "have I already dealt with this?" and it
+  needs no second data structure.
+
+  `setIn` is the operation behind every immutable state library,
+  and writing it once makes the cost model obvious. Changing a
+  value three levels deep copies three objects and shares
+  everything else, which is why immutable updates are cheap rather
+  than wasteful: the work is proportional to the depth of the
+  change, not the size of the state. It is also why identity
+  comparison works as a change detector — anything that did not
+  change is still the same object, so a memoized consumer can skip
+  it in one comparison.
+
+  The array case is a real trap rather than a detail. Spreading an
+  array into an object literal produces `{0: 'a', 1: 'b'}`, which
+  logs almost identically, passes a loose equality check on its
+  contents, and has no `length`, no `map` and no `push`. The bug
+  surfaces far from the line that caused it, usually as "why is
+  this not an array any more".
+
+mutationExceptions:
+  - path: main.js
+    operator: logical
+    line: 10
+    why: >-
+      typeof null is 'object', so for null the second test is false and for
+      every other primitive the first is; either connective reaches the same
+      answer on every value, and Object.isFrozen already returns true for
+      primitives on the path that follows.
+  - path: main.js
+    operator: empty-return
+    line: 21
+    why: >-
+      The line returns undefined already, so replacing its value with
+      undefined leaves the function identical.
+  - path: main.js
+    operator: logical
+    line: 34
+    why: >-
+      The same null-versus-primitive guard as line 10, reached only when the
+      recursion has already descended past a non-object.
+  - path: main.js
+    operator: nullish
+    line: 36
+    why: >-
+      The fallback feeds a spread, and spreading a falsy primitive yields the
+      same empty object the fallback would have supplied, so both coalescing
+      operators produce identical output.
+
