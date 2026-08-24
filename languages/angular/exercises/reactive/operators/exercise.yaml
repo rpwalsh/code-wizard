@@ -24,7 +24,7 @@ prompt: |
   answers come back in whatever order the network feels like, and
   the last one to arrive wins — so the results shown are for
   whatever you typed two letters ago. Nothing is broken; nothing was
-  cancelled.
+  canceled.
 
   These operators are the fix, written out rather than imported, so
   the cancellation is visible.
