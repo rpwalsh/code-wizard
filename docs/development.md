@@ -13,8 +13,20 @@ npm run verify
 `verify` is the whole gate: generated sources are in sync, every file
 carries the copyright notice, spelling is American throughout (`npm run
 spelling` fixes what `spelling:check` reports — identifiers, directory names
-and prose alike), lint passes, everything type-checks including both apps, and
-the tests pass.
+and prose alike), lint passes, everything type-checks including both apps, the
+browser bundle builds, and 553 tests pass.
+
+The bundle is built inside `verify` because two of the tests read it: one
+scans the shipped JavaScript for external hosts, the other reads the content
+security policy out of the built HTML. A test that checks an artifact needs
+the artifact.
+
+The browser suite is separate and slower — 45 tests in a real Chromium,
+including a full Python run and a PHP one:
+
+```bash
+npx playwright test --config apps/web/playwright.config.ts
+```
 
 ---
 
@@ -69,7 +81,7 @@ behind it would make the difference a percentage rather than a fact.
 
 ## The gates
 
-Four things stand between a change and the main branch, and each exists
+Five things stand between a change and the main branch, and each exists
 because of a specific way this kind of project rots.
 
 **`exercise validate`** executes every shipped exercise: the reference
@@ -88,15 +100,24 @@ The number to read is the count of *unexplained* survivors, not the
 percentage: an excused mutant is neither caught nor a hole, so a suite with
 every survivor accounted for can sit below 100% and still be finished.
 
-**`tests/cross-runtime.test.ts`** puts the whole curriculum through both
-runtimes and requires identical verdicts. A learner on the website and one on
-the desktop have to be measured by the same ruler.
+**`tests/cross-runtime.test.ts`** puts the whole Python curriculum through
+the native interpreter and the WebAssembly one and requires identical
+verdicts. A learner on the website and one on the desktop have to be measured
+by the same ruler.
 
 **`tests/principles.test.ts`** enforces the claims in
 [PRINCIPLES.md](../PRINCIPLES.md) that can be checked mechanically: no LLM
 client anywhere in the dependency tree, no model endpoints in shipped source,
 no payment or analytics dependency in the web build, no account identifiers,
 no language name inside the engines, and both licenses present and referenced.
+
+**The egress guards** are the fifth, and they are three tests rather than one:
+no external host named in the browser source, absolute or protocol-relative;
+no new external host in the built bundle beyond a recorded list; and a
+content security policy in the shipped HTML naming no host at all. The browser
+suite adds two more — that the policy is enforced rather than merely present,
+and that no screen in the app makes a request off its own origin. See
+[data.md](data.md).
 
 ---
 

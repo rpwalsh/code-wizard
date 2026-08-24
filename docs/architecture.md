@@ -58,13 +58,13 @@ seven ordering faults the first time it ran, including two dependencies that wer
 Everything above `LanguageRuntime` is language-agnostic. There is no `if (language === 'python')`
 anywhere outside `languages/` and the one registry call that names the concrete runtimes.
 
-This is not aesthetic, and it is no longer untested. There are three runtimes now, across two
-languages: one spawns a real interpreter, one runs CPython compiled to WebAssembly, and one runs
-JavaScript on the Node the toolkit is already running under. Adding the second language changed
-nothing above the boundary — which is the only test of an abstraction that counts.
+This is not aesthetic, and it is tested by there being fourteen languages behind it. Four
+distinct execution models sit under one interface: a spawned interpreter or compiler, CPython
+compiled to WebAssembly, the browser's own JavaScript engine, and PHP compiled to WebAssembly.
+Nothing above the boundary knows which it is talking to.
 
-Both languages' harnesses write the same structured report, which is why that parser lives in
-`packages/core` rather than with either of them: it is the wire format between a runtime and the
+Every language's harness writes the same structured report, which is why that parser lives in
+`packages/core` rather than with any of them: it is the wire format between a runtime and the
 engine, not a fact about Python. Mutation operators go the other way and live with the language they
 mutate, because "the mistakes people make" is a fact about a language. Two of the JavaScript
 operators exist only because of how that language fails: `??` swapped for `||`, and `===` swapped
@@ -95,7 +95,7 @@ implementations behind one async interface, all held to one conformance suite.
 
 ## 1a. Fourteen languages, one implementation
 
-Ten of the fourteen runtimes share a single implementation. `packages/toolchain` provides
+Twelve of the fourteen runtimes share a single implementation. Only Python and JavaScript have bespoke ones. `packages/toolchain` provides
 `ToolchainRuntime`, which honors the whole `LanguageRuntime` contract, and each language supplies
 a `ToolchainSpec` describing only what differs: which executables to look for, how to compile, how
 to run, and how to run the tests.
@@ -436,13 +436,12 @@ stays permanently red, and people stop reading it.
 - **Accounts and sync.** Local-only, with export/import as the transfer mechanism. The shape if it
   is ever wanted is in [deploying.md](deploying.md): opt-in, OAuth rather than passwords, snapshots
   rather than a live connection.
-- **JavaScript in the browser.** The JavaScript runtime runs on Node, so it works on the desktop
-  and not on the website. What it needs is module resolution without a filesystem: the specifiers a
-  test file writes have to become blob URLs before anything can be imported. The harness is already
-  split into a runner that knows nothing about files and a Node entry point that does, which is the
-  half of that work worth doing early.
-- **Runtimes for the planned curricula.** Sixteen courses are designed and none can be practiced.
-  See `curricula/`, where each one states what specifically is missing.
+- **Compilers in the browser.** C, C++, C#, ASP.NET, Go and Rust run on the desktop only. A
+  browser Roslyn or clang is possible and large; rustc and the Go compiler are not practically
+  available at all. The desktop gives them the real toolchain, which is the better answer anyway.
+- **Exercises for the four disciplines.** Frontend, backend, middleware and architecture ship
+  activities and no exercises: theirs need fixtures — a request, a schema, a component tree —
+  rather than a compiler. See `curricula/`.
 - **Recognition grading.** Nothing currently produces evidence for it; it is seeded by the
   onboarding prior and otherwise left alone rather than inferred from unrelated signals. Knowledge
   used to be in the same position and is now earned by prediction.

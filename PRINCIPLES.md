@@ -27,8 +27,9 @@ There is also a practical argument. The moment an LLM is in the loop:
 - "Why did the system score me 71.4 on 14 March?" stops having an answer.
 
 **Enforced by** `tests/principles.test.ts` — no LLM client may appear anywhere
-in the dependency tree — and by a browser test asserting the running app makes
-no network request other than the pinned Python runtime.
+in the dependency tree — and by a browser test that walks every screen with a
+request recorder attached and fails on a single request off this origin. The
+interpreters are vendored with the site, so there is nothing to fetch.
 
 When a learner is stuck, the answer is a better instrument, never a better
 sentence. That is what the execution tracer is for.

@@ -141,6 +141,13 @@ The starter must fail honestly: `throw new Error('not implemented')`,
 `unimplemented!()`, `throw new NotImplementedException()`, or a function that
 returns the wrong shape — never a stub that happens to pass a test.
 
+Two languages want the zero value rather than a throw. In Go a panic aborts
+the whole test binary, so the learner sees one failure and nothing after it;
+return `nil` and a zero-valued struct instead. In C and C++ a starter that
+returns `NULL` where the tests dereference crashes the process before it can
+write a report, so return an empty-but-valid structure where the shape allows
+it. Either way, run the starter and read what a learner would see.
+
 ---
 
 ## Rules the validator enforces

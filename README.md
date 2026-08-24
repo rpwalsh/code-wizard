@@ -220,23 +220,29 @@ suite has been checked by deliberately breaking the reference solution to
 confirm the tests notice. A suite that passes a wrong answer is worse than no
 suite, because it tells you that you were right.
 
-**JavaScript: 64 lessons, four stages**, and about a fifth of them written so
-far. Values and equality, data and who is holding it, closures and `this`, and
-a whole stage on asynchrony — chosen from where this language costs people
-time rather than translated from the Python course.
+**JavaScript: 64 lessons, four stages.** Values and equality, data and who is
+holding it, closures and `this`, and a whole stage on asynchrony — chosen from
+where this language costs people time rather than translated from the Python
+course.
 
 **Fourteen languages, each with a runtime that can execute an attempt and
 judge it.** Python, JavaScript, TypeScript, Node, React, Angular, SQL, C, C++,
-C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 167 machine-graded
+C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 176 machine-graded
 exercises and 168 activities. Every one of the 347 skills has at least one
 exercise behind it, and every exercise ships with a reference solution that
 has been executed against its own tests.
 
-Six of those run with nothing to install beyond what the toolkit already
-needs. TypeScript, Node, React and Angular use the Node that runs the app
-itself; SQL uses the SQLite inside Python's standard library; and Python is
-Python. The other eight need their own toolchain — a C compiler, the Go
-toolchain, rustc, the .NET SDK, the PHP CLI — and none of them guesses. Run:
+Per language: Python 50, JavaScript 16, SQL 11, and between 7 and 10 each for
+the rest.
+
+Eight run in a browser tab with nothing installed. Python and SQL are CPython
+compiled to WebAssembly, SQL through the SQLite in its standard library;
+JavaScript, TypeScript, React, Angular and Node are the browser's own engine;
+PHP is a real PHP compiled to WebAssembly, fetched on first use.
+
+The other six want a compiler — C, C++, C#, ASP.NET, Go and Rust — and run on
+the desktop, where they get the real toolchain rather than an approximation.
+None of them guesses. Run:
 
 ```bash
 npm run code-wizard runtime doctor
@@ -285,20 +291,12 @@ their exercises need fixtures rather than a compiler.
 
 There are two ways, from one codebase.
 
-**In a browser.** It is a static site — no server executes your code, because
-CPython runs in the page as WebAssembly. Any free static host will serve it.
+**In a browser.** A static site. No server executes your code — the
+interpreters run in the page as WebAssembly, so any free static host will
+serve it and eight of the fourteen languages work with nothing installed.
 
-**On the desktop.** An Electron app that uses your real Python interpreter,
-which is faster and works with no network at all.
-
-Eight of the fourteen run in the browser. Python and SQL are CPython
-compiled to WebAssembly — SQL through the SQLite inside its standard library.
-JavaScript, TypeScript, React, Angular and Node are the browser's own engine.
-PHP is a real PHP compiled to WebAssembly, nineteen megabytes, fetched on
-first use so that nobody who never opens it pays for it.
-
-C, C++, C#, ASP.NET, Go and Rust need a compiler, so they run on the desktop,
-where they get the real toolchain rather than an approximation of one.
+**On the desktop.** An Electron app using the real interpreters and compilers
+on your machine. All fourteen languages, faster, and with no network at all.
 
 ```bash
 npm install
@@ -314,8 +312,10 @@ npm run build --workspace @code-wizard/desktop
 cd apps/desktop && npx electron .
 ```
 
-Node 22 or newer. The desktop runtime wants Python 3.10+ with pytest; the
-browser version needs neither.
+Node 22 or newer, and nothing else for the browser build. The desktop app
+wants a toolchain per language; `code-wizard runtime install <language>`
+downloads a portable one into your home directory without administrator
+rights, and `runtime doctor` says which are ready.
 
 Before relying on the desktop runtime, check it:
 
