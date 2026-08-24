@@ -1,0 +1,109 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.types.narrow-interfaces
+version: 1
+language: go
+title: The interface belongs to the caller
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - go.types.interfaces
+  - go.types.embedding
+  - go.basics.maps
+
+prerequisites: []
+
+learningObjectives:
+  - Accept the narrowest behavior a function actually uses.
+  - Embed a small interface in a larger one instead of repeating its methods.
+  - Ask whether a value has more behavior, with the form that cannot panic.
+
+prompt: |
+  Go interfaces are satisfied implicitly, which changes where they
+  belong: the package that *needs* a behavior declares it, and the
+  package that provides one does not have to know. A one-method
+  `Store` is not a simplification — it is the whole set of things a
+  reader needs.
+
+  In `main.go`:
+
+  - `NewMapStore()` — a usable store. A zero-value struct has a nil
+    map, and writing to a nil map panics.
+
+  - `MapStore.Get` / `MapStore.Put` — read and write. `Get` reports
+    presence separately from the value, so a stored empty string is
+    still a hit.
+
+  - `Frozen.Get` — read through to the wrapped store.
+    `Frozen.Put` — return `ErrReadOnly` and change nothing.
+
+  - `FirstFound(stores, key)` — the first value present, searching
+    in order, with a miss reported as `("", false)`.
+
+  - `CanWrite(store)` — whether the value behind a `Store` also
+    satisfies `Writer`, without panicking when it does not. Note
+    that `Frozen` does satisfy it: having the method and honoring
+    it are different things.
+
+entryPoint: main.go
+
+tests:
+  - path: interfaces_test.go
+    visibility: visible
+    concept: go.types.interfaces
+  - path: edges_test.go
+    visibility: edge
+    concept: go.basics.maps
+
+hints:
+  - level: conceptual
+    text: "Ask what the function reads, not what the object can do. A parameter typed to the whole object is a dependency on everything it will ever grow."
+  - level: structural
+    text: "Writer embeds Store rather than repeating Get, so anything satisfying Writer satisfies Store automatically."
+  - level: language
+    text: "The comma-ok form of a map read distinguishes 'absent' from 'present and empty', which a bare read cannot do at all."
+  - level: syntax
+    text: "value, ok := thing.(Writer) — the two-result form asks; the one-result form demands and panics when it is wrong."
+  - level: explicit
+    text: "Frozen.Get is one line: return f.Inner.Get(key). The wrapper only has to change the behavior it is there to change."
+
+explanation: |
+  "The interface belongs to the caller" is the sentence that makes
+  Go's interfaces feel different from other languages'. Because
+  satisfaction is implicit, a consumer can declare exactly the
+  method it uses and every existing type that happens to have that
+  method already fits — no interface list to edit, no dependency
+  added in the other direction. The practical result is that
+  interfaces in Go are small, and a function taking a one-method
+  `Store` can be given a database, a cache, a test double or a map
+  without any of them having heard of it.
+
+  Embedding is how the larger set is built without repetition.
+  `Writer` embeds `Store`, so every `Writer` is a `Store`, and code
+  that only reads can accept the smaller one while code that writes
+  asks for more. Copying `Get` into both would compile and would
+  quietly allow them to drift apart.
+
+  The nil map is Go's sharpest zero-value edge. Reading from one is
+  perfectly legal and returns the zero value; writing to one panics.
+  That asymmetry means a struct with a map field is usable enough to
+  pass a naive test and fatal in production, which is why the
+  constructor is not ceremony.
+
+  `CanWrite` reporting true for `Frozen` is the sharp edge worth
+  sitting with. Satisfaction is structural — `Frozen` has a `Put`
+  method, so it is a `Writer` — and the type system has no way to
+  say "has the method and will refuse". That is precisely why `Put`
+  returns an error: the refusal has to live in the value, because it
+  cannot live in the type. Code that asks `CanWrite` and then writes
+  without checking the error has learned nothing from the answer.
+
+  The comma-ok form appears twice here for the same reason both
+  times. On a map read it separates "no such key" from "the empty
+  string was stored", which are different facts a caller may need to
+  act on differently. On a type assertion it separates "also a
+  Writer" from a panic — asking is almost always what you meant, and
+  the one-result form should be reserved for the cases where being
+  wrong really is a bug.
