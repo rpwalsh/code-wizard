@@ -1,0 +1,120 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: go.concurrency.channels
+version: 1
+language: go
+title: Who closes the channel
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - go.concurrency.channels
+  - go.concurrency.goroutines
+  - go.concurrency.patterns
+
+prerequisites: []
+
+learningObjectives:
+  - Give every channel exactly one closer, and close it only when senders are done.
+  - Fan several producers into one consumer without losing any of them.
+  - Bound concurrency with a worker pool that keeps results in input order.
+
+prompt: |
+  Almost every Go deadlock is one of two mistakes: nobody closed the
+  channel, or somebody closed it while a sender was still using it.
+  The rule that avoids both is that the side doing the sending owns
+  the closing — and when there are several senders, a WaitGroup
+  decides when they are all finished.
+
+  In `main.go`:
+
+  - `FanIn(inputs ...<-chan T) <-chan T` — merge every input into
+    one channel, closed once all inputs are drained. Order between
+    sources is not defined; nothing may be lost.
+
+  - `Collect(in <-chan T) []T` — read until the channel closes and
+    return the values in arrival order. An already-closed empty
+    channel gives an empty slice.
+
+  - `Pool(jobs []T, n int, work func(T) R) []R` — run the jobs on
+    at most `n` goroutines and return results **in input order**.
+    An `n` below one behaves as one; an `n` above the number of
+    jobs starts no idle workers.
+
+  - `FirstError(errs <-chan error) error` — the first non-nil error
+    the channel carried, or nil. Read the channel to the end
+    regardless, so no sender is left blocked.
+
+entryPoint: main.go
+
+tests:
+  - path: channels_test.go
+    visibility: visible
+    concept: go.concurrency.channels
+  - path: edges_test.go
+    visibility: edge
+    concept: go.concurrency.goroutines
+
+hints:
+  - level: conceptual
+    text: "A channel is closed by its senders, never by its receivers. A receiver that closes is telling a sender it may panic on the next send."
+  - level: structural
+    text: "FanIn needs two kinds of goroutine: one per input that copies values across, and exactly one more that waits for all of them and then closes."
+  - level: language
+    text: "wg.Wait() cannot run on the goroutine that returns the channel — the function would block before the caller could read. It goes in a goroutine of its own."
+  - level: syntax
+    text: "for value := range ch loops until the channel is closed, so a producer that forgets to close leaves the consumer blocked forever."
+  - level: explicit
+    text: "Pool: send indexes down a channel, have each worker range over it and write results[index], close the index channel when the jobs are all sent, then wg.Wait()."
+
+explanation: |
+  "The sender closes" is the whole discipline, and it exists because
+  closing is a message: it tells receivers that nothing more is
+  coming. A receiver has no way to know that, so a receiver that
+  closes is guessing — and if it guesses wrong, the next send panics
+  on a closed channel, which is not recoverable in any useful sense.
+
+  `FanIn` is where that rule needs help. There are several senders
+  and none of them individually knows when the *others* are done, so
+  a WaitGroup counts them and one extra goroutine does the closing.
+  That extra goroutine is not decoration: calling `wg.Wait()` inline
+  would block `FanIn` before it returned the channel, so nobody
+  would ever read from it and the waiting would never end. The
+  function would deadlock on its own first line.
+
+  `Pool` writing into `results[index]` needs no mutex, and the
+  reason is worth being precise about. Distinct elements of a slice
+  are distinct memory, and each index is handled by exactly one
+  worker, so no two goroutines ever touch the same location. This is
+  a genuine guarantee, not a probability — but it stops holding the
+  moment two workers could receive the same index, which is why the
+  index channel is the coordination.
+
+  `FirstError` draining after it has its answer is the small
+  courtesy that avoids a leak. Returning at the first non-nil error
+  leaves every remaining sender blocked on a send nobody will
+  receive — goroutines that never finish, holding whatever they
+  captured, invisible until a profiler is pointed at them.
+
+mutationExceptions:
+  - path: main.go
+    operator: comparison
+    line: 60
+    why: >-
+      The clamp raises anything below one up to one. Making the test
+      inclusive re-assigns one to itself, which is the value it already had.
+  - path: main.go
+    operator: comparison
+    line: 63
+    why: >-
+      The same shape at the other end: when the worker count equals the job
+      count, the inclusive test assigns that number to itself.
+  - path: main.go
+    operator: off-by-one
+    line: 60
+    why: >-
+      The guard raises anything below the floor up to one, and the floor is
+      compared against the same constant the body assigns. Reading it as two
+      still assigns one, which is what a count of one already was.
+

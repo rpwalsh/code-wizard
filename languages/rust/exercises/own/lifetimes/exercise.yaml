@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: rust.own.lifetimes
+version: 1
+language: rust
+title: A slice is a promise about somebody else's memory
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 30000
+
+skills:
+  - rust.own.lifetimes
+  - rust.own.borrow
+  - rust.data.strings
+
+prerequisites: []
+
+learningObjectives:
+  - Return a borrow of an input rather than an allocation, and say which input.
+  - Recognize when the compiler infers a lifetime and when it needs telling.
+  - Slice a string on character boundaries rather than on bytes.
+
+prompt: |
+  A `&str` is a pointer and a length into text somebody else owns.
+  That makes returning one free — no copy, no allocation — and it
+  is why the compiler wants to know *which* input it came from,
+  because the answer decides how long it stays valid.
+
+  In `main.rs`:
+
+  - `longest_word(text) -> Option<&str>` — the longest
+    whitespace-separated word, or `None` when there are none. On a
+    tie, the last of the longest.
+
+  - `meaningful_lines(text) -> Vec<&str>` — every line trimmed,
+    with blank ones dropped. The `Vec` is owned; the strings in it
+    are borrowed.
+
+  - `value_of(line, key) -> Option<&str>` — for a line shaped
+    `key = value`, the trimmed value when the trimmed key matches,
+    otherwise `None`. Split on the **first** separator only, so a
+    value may contain more of them. A line with no separator is
+    `None`; an empty value is `Some("")`.
+
+  - `common_prefix(left, right) -> &str` — the shared leading text,
+    as a slice of `left`. It must not panic on text outside ASCII.
+
+  Two of these need a lifetime annotation and two do not. Working
+  out which is the exercise.
+
+entryPoint: main.rs
+
+tests:
+  - path: tests/lifetimes_test.rs
+    visibility: visible
+    concept: rust.own.lifetimes
+  - path: tests/edges_test.rs
+    visibility: edge
+    concept: rust.own.borrow
+
+hints:
+  - level: conceptual
+    text: "The annotation answers one question: if the result is still alive, which input must also still be alive? With a single input reference the answer is obvious and the compiler fills it in."
+  - level: structural
+    text: "Elision covers the common case: one input reference means the output gets its lifetime. Two input references means you have to say which."
+  - level: language
+    text: "split_once returns the text before and after the first separator, which is what keeps a value containing '=' intact."
+  - level: syntax
+    text: "char_indices yields byte offsets that are real character boundaries; slicing at an offset from a plain byte loop panics on any multi-byte character."
+  - level: explicit
+    text: "value_of<'a>(line: &'a str, key: &str) -> Option<&'a str> — the value borrows from the line, never from the key, and the signature is where you say so."
+
+explanation: |
+  Lifetimes are not a second kind of type; they are the compiler
+  writing down a fact that was always true. `longest_word` returns
+  a pointer into `text`, so the result cannot outlive `text` — in a
+  language without lifetimes that is still true, and finding out
+  the hard way is called a use-after-free. The annotation is only
+  ever describing which input the result points into.
+
+  That is why two of these need one and two do not. With a single
+  input reference there is nothing to disambiguate, so elision
+  assigns the output that lifetime and the code reads as if
+  lifetimes did not exist. `value_of` has two references and the
+  compiler will not guess: the value borrows from the line, never
+  from the key, and only you know that. `common_prefix` is the same
+  shape, and notice its second parameter needs no lifetime at all —
+  it is read, not returned, so nothing depends on how long it
+  lives.
+
+  The payoff is that `meaningful_lines` allocates exactly one
+  thing: the `Vec`. Every string in it points into the original
+  text. In most languages that function copies the whole document a
+  second time and nobody notices until the documents get large.
+
+  `common_prefix` ends on the detail that separates working string
+  code from code that works on English. `str` is UTF-8, indices are
+  byte offsets, and slicing between the two bytes of `é` does not
+  return half a character — it panics. `char_indices` yields offsets
+  that are always real boundaries, which is why the loop tracks the
+  index it was given rather than counting bytes of its own.
