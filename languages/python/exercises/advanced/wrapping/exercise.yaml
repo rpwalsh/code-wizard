@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: python.advanced.wrapping
+version: 1
+language: python
+title: The wrapper that forgot whose function it was
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - python.advanced.decorators
+  - python.functions.varargs
+
+prerequisites: []
+
+learningObjectives:
+  - Preserve a wrapped function's identity with functools.wraps.
+  - Pass every argument through untouched, including keyword-only ones.
+  - Cache a falsy result, which the obvious membership test loses.
+
+prompt: |
+  A decorator replaces a function with a different one. Everything
+  awkward about writing them comes from that: the replacement has
+  to accept any arguments, return whatever the original returned,
+  and — the part almost everybody skips — still look like the
+  function it replaced.
+
+  In `main.py`:
+
+  - `counted(func)` — count the calls on the wrapper as `.calls`,
+    starting at zero. Each decorated function has its own count.
+
+  - `memoized(func)` — call the function once per distinct
+    positional-argument tuple and return the stored result after
+    that. Expose the store as `.cache`. A result of `None`, `0` or
+    `''` is a real result and must not be recomputed.
+
+  - `retried(attempts)` — a decorator factory. Call the function up
+    to `attempts` times, returning the first success. If every
+    attempt raises, re-raise the **last** exception unchanged. An
+    `attempts` below one still calls the function once.
+
+  - `defaulted(value)` — a decorator factory returning `value` when
+    the function raises, and the function's own result otherwise —
+    including when that result is falsy.
+
+  Every wrapper must keep the wrapped function's `__name__` and
+  `__doc__`.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_wrapping.py
+    visibility: visible
+    concept: python.advanced.decorators
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.functions.varargs
+
+hints:
+  - level: conceptual
+    text: "A decorator factory is a function that returns a decorator, which returns a wrapper. Three levels, and the middle one is the only one that sees the function."
+  - level: structural
+    text: "State a decorator keeps must live inside the decorator call, not beside it, or every function it decorates shares one counter."
+  - level: language
+    text: "functools.wraps copies __name__, __doc__ and __wrapped__ onto the wrapper. Without it, help(), tracebacks and logs all name the wrapper."
+  - level: syntax
+    text: "*args, **kwargs on the wrapper and func(*args, **kwargs) inside it is what makes a decorator work on a function whose signature it has never seen."
+  - level: explicit
+    text: "memoized: `if args not in cache: cache[args] = func(*args)` then return cache[args] — the membership test, not `cache.get(args)`, so a cached None stays cached."
+
+explanation: |
+  `functools.wraps` is one line and it is the difference between a
+  decorator you can debug and one you cannot. Without it, every
+  decorated function reports itself as `wrapper` — in a traceback,
+  in `help()`, in a log line naming which function was slow, in the
+  registry that a web framework builds from function names. The
+  wrapper has genuinely replaced the function, and unless you copy
+  the identity across, the original one is simply gone.
+
+  Where the state lives is the second thing decorators teach. A
+  counter written beside the decorator rather than inside it is
+  shared by every function that decorator ever touched, so three
+  decorated functions report one combined number and each of them is
+  wrong. Creating it inside means each decoration gets its own,
+  which is what the closure is for.
+
+  The caching detail is small and catches almost everyone.
+  `if not cache.get(key)` reads naturally and quietly recomputes
+  every falsy result forever — `None`, `0`, `''`, `False` and empty
+  containers are all real answers a function might return, and a
+  cache that cannot hold them is doing nothing at all for exactly
+  the calls that look cheapest. Membership is the question you meant:
+  is this key present, not is its value interesting.
+
+  Re-raising the last exception rather than wrapping it is the same
+  respect for the caller. Somebody who called a retried function
+  wants to know why it failed, and `RuntimeError("all 3 attempts
+  failed")` has thrown that away — the connection error, the
+  timeout, the bad credential are all now one message that names
+  none of them.
