@@ -1,0 +1,115 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: typescript.boundaries.parsing
+version: 1
+language: typescript
+title: Where JSON stops being a guess
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - typescript.boundaries.validation
+  - typescript.boundaries.unknown
+  - typescript.basics.narrowing
+
+prerequisites: []
+
+learningObjectives:
+  - Turn parsed JSON into a typed value by checking it, not by asserting it.
+  - Write a type predicate that narrows for the compiler and is true at run time.
+  - Report every problem with the path that produced it.
+
+prompt: |
+  `JSON.parse` returns something the compiler knows nothing about.
+  The usual next line is `as User`, which is a promise you have not
+  kept: nothing was checked, and the first missing field is a
+  crash somewhere else entirely.
+
+  In `main.ts`:
+
+  - `isRecord(value)` — a type predicate: true for a plain object,
+    false for an array and for `null`.
+
+  - `asString(value, path, problems)` — the string, or `undefined`
+    after pushing `` `${path}: expected a string` `` onto
+    `problems`.
+
+  - `parseUser(value)` — `{ ok: true, value }` or
+    `{ ok: false, problems }`. `id` must be an integer, `name` a
+    string, `roles` an array of strings, and `email` is optional:
+    absent is fine, present-and-wrong is a problem. Report **every**
+    problem, and give array elements a path like `roles[1]`. A
+    value that is not an object at all is one problem: `expected an
+    object`.
+
+  - `parseUsers(value)` — the same over an array, prefixing each
+    problem with `[index] `.
+
+  No `as` casts on the way in. The point is that the checks are
+  what make the type true.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/parsing.test.ts
+    visibility: visible
+    concept: typescript.boundaries.validation
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: typescript.boundaries.unknown
+
+hints:
+  - level: conceptual
+    text: "A cast tells the compiler to stop asking. A predicate answers the question. Only one of them is still true at run time."
+  - level: structural
+    text: "Collect problems into an array and decide at the end. Returning on the first one turns a form into a conversation."
+  - level: language
+    text: "`value is Record<string, Json>` in the return position makes a function a type guard, so the compiler narrows inside every branch that called it."
+  - level: syntax
+    text: "typeof null is 'object' and Array.isArray([]) is true, so a record check needs all three conditions rather than just typeof."
+  - level: explicit
+    text: "For the optional field: `if ('email' in value)` then validate, so absent is accepted and present-but-null is refused."
+
+explanation: |
+  A type assertion and a type predicate look similar and do
+  opposite things. `value as User` erases at compile time and
+  checks nothing; `value is User` on a function that actually looks
+  at the value gives the compiler the same confidence *and* is true
+  when the program runs. Every `as` on data from outside is a place
+  where the type system has been told to stop paying attention,
+  which is precisely where it was most useful.
+
+  `typeof null === 'object'` is the oldest wrong answer in
+  JavaScript and it survives into every hand-written validator that
+  forgets it. `Array.isArray` is the second half, because an array
+  is an object too, and a validator that accepts `[1, 2, 3]` as a
+  user will happily read `.name` from it and find `undefined`.
+
+  Optional and nullable are different, and the difference is a
+  decision rather than a detail. `{ }` says the field was not sent;
+  `{ email: null }` says it was sent as nothing. Treating them the
+  same accepts data your schema does not describe, and `'email' in
+  value` is the only test that distinguishes them — reading the
+  value gives `undefined` for both.
+
+  The paths are what make the errors usable. `expected a string`
+  tells a caller nothing; `[3] roles[1]: expected a string` tells
+  them which record, which field, which element. That is the
+  difference between an error somebody can act on and one they have
+  to reproduce with a debugger.
+
+mutationExceptions:
+  - path: main.ts
+    operator: constant
+    line: 8
+    why: >-
+      A type alias. Literal types are erased before anything runs, so
+      changing one alters no emitted code and no test could observe it.
+  - path: main.ts
+    operator: empty-return
+    line: 26
+    why: >-
+      The line already returns undefined on the failure path, so replacing
+      its value with undefined leaves the function identical.
+
