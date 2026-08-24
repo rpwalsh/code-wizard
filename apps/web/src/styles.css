@@ -55,6 +55,11 @@
   --scroll-thumb: rgb(28 42 56 / 22%);
   --scroll-thumb-hover: rgb(28 42 56 / 38%);
 
+  /* Opaque, for anything that floats: a dialog you can read the page
+     through is a dialog you read twice. */
+  --solid: #f7fafc;
+  --solid-raised: #ffffff;
+
   /* One accent. */
   --accent: #2f6d9e;
   --accent-dim: #a9c6dc;
@@ -161,6 +166,9 @@ body {
     --scroll-thumb: rgb(190 214 236 / 20%);
     --scroll-thumb-hover: rgb(190 214 236 / 34%);
 
+    --solid: #131a22;
+    --solid-raised: #1a222c;
+
     --accent: #7fb0e0;
     --accent-dim: #2c4a68;
 
@@ -205,6 +213,9 @@ body {
 
   --scroll-thumb: rgb(190 214 236 / 20%);
   --scroll-thumb-hover: rgb(190 214 236 / 34%);
+
+  --solid: #131a22;
+  --solid-raised: #1a222c;
 
   --accent: #7fb0e0;
   --accent-dim: #2c4a68;
@@ -2131,14 +2142,13 @@ body.is-resizing .resizer__grip {
 .brief,
 .aside,
 .inspector,
-.workspace__bar,
-.palette {
+.workspace__bar {
   background: var(--surface);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
 }
 .palette {
-  background: var(--glass-strong);
+  background: var(--solid-raised);
 }
 
 /* The reading surfaces, opaque and slightly inset from the glass. */
@@ -2772,6 +2782,17 @@ body.is-resizing .resizer__grip {
   font-family: var(--font-mono);
   font-size: 13px;
 }
+/* The native popup is drawn by the platform, not by this stylesheet, so an
+   inherited color lands on whatever background the platform chose. Saying
+   both is the only way an option is legible in either theme. */
+option,
+.activity__select option,
+.language-select option,
+.mode-select option {
+  background-color: var(--solid-raised);
+  color: var(--text);
+}
+
 .activity__textarea {
   resize: vertical;
   line-height: 1.5;
@@ -3048,6 +3069,92 @@ body.is-resizing .resizer__grip {
 /* The data panel: one action per row, each with the sentence that says what
    it does. A button labeled "Delete everything" with no consequence next to
    it is a trap. */
+/* The handbook: contents on the left, one article on the right, and the
+   article is the only thing that scrolls — a reference whose navigation
+   scrolls away with the text is a reference you get lost in. */
+.handbook {
+  display: grid;
+  grid-template-columns: minmax(170px, 240px) minmax(0, 1fr);
+  gap: var(--space-4);
+  /* Fills the dialog, which is sized in the modal rather than here: the
+     body is the only thing that scrolls, which is what makes remembering a
+     scroll offset meaningful. */
+  flex: 1;
+  min-height: 0;
+}
+.handbook__nav {
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  padding-right: var(--space-3);
+}
+.handbook__group + .handbook__group {
+  margin-top: var(--space-4);
+}
+.handbook__section {
+  margin: 0 0 6px;
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.handbook__nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.handbook__link {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.handbook__link:hover {
+  background: var(--surface-inset);
+  color: var(--text);
+}
+.handbook__link[aria-current='page'] {
+  background: var(--surface-inset);
+  color: var(--text);
+  font-weight: 600;
+}
+.handbook__body {
+  overflow-y: auto;
+  padding-right: var(--space-3);
+}
+.handbook__body:focus-visible {
+  outline: none;
+}
+.handbook__title {
+  margin: 0 0 var(--space-3);
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.handbook__body p {
+  margin: 0 0 var(--space-3);
+  max-width: 62ch;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+@media (max-width: 720px) {
+  .handbook {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 78dvh;
+  }
+  .handbook__nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 var(--space-3);
+    max-height: 30dvh;
+  }
+}
+
 .datapanel {
   display: grid;
   gap: var(--space-3);
@@ -3120,7 +3227,7 @@ body.is-resizing .resizer__grip {
   z-index: 50;
 }
 .modal__surface {
-  background: var(--surface-raised);
+  background: var(--solid-raised);
   border: 1px solid var(--line-strong);
   border-radius: 12px;
   padding: var(--space-5);
@@ -3131,6 +3238,18 @@ body.is-resizing .resizer__grip {
 }
 .modal__surface[data-size='wide'] {
   width: min(94vw, 720px);
+}
+/* The handbook is a reference, not a notice: it gets the screen. */
+.modal__surface[data-size='full'] {
+  width: 90vw;
+  height: 90dvh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  /* The panes inside scroll, not the dialog. Left on auto, the surface
+     scrolls instead and the article never overflows, so there is no
+     position to remember. */
+  overflow: hidden;
 }
 
 .onboarding__choices--grid {
@@ -3238,7 +3357,7 @@ body.is-resizing .resizer__grip {
 }
 .tour__card {
   width: min(94vw, 460px);
-  background: var(--surface-raised);
+  background: var(--solid-raised);
   border: 1px solid var(--line-strong);
   border-radius: 14px;
   padding: var(--space-5);

@@ -26,7 +26,7 @@ interface WalkthroughProps {
   readonly hintsAllowed: boolean;
   readonly canRevealSolution: boolean;
   readonly onRevealHint: () => void;
-  readonly onRevealSolution: () => Promise<Record<string, string>>;
+  readonly onRevealSolution: () => Promise<Record<string, string> | null>;
   readonly onOpenTests: () => void;
   readonly onRunTests: () => void;
   readonly onClose: () => void;

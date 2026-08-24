@@ -90,9 +90,19 @@ export default defineConfig({
       },
     },
   },
+  // `.so` is a PHP extension binary, not something to parse. Declaring it an
+  // asset stops the dev server treating one as source if it ever resolves it.
+  assetsInclude: ['**/*.so'],
+
   optimizeDeps: {
     // Pyodide loads its own wasm assets at runtime and must not be pre-bundled.
-    exclude: ['pyodide'],
+    //
+    // The PHP packages are excluded for a sharper reason: dependency
+    // pre-bundling runs esbuild over them, and esbuild has no loader for the
+    // `.so` extensions or the Emscripten `.wasm` its loader imports. The
+    // production build never hit this because it does not pre-bundle; the dev
+    // server did, immediately, and the site would not start at all.
+    exclude: ['pyodide', '@php-wasm/web', '@php-wasm/web-8-4', '@php-wasm/universal'],
   },
   server: { port: 5173 },
 });

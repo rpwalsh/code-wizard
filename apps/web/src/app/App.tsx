@@ -26,6 +26,7 @@ import { isTimerMode, timerModes } from '../components/Timer.tsx';
 import type { LanguageOption, Section } from '../components/layout/TopBar.tsx';
 import { TopBar } from '../components/layout/TopBar.tsx';
 import { Footer } from '../components/layout/Footer.tsx';
+import { Handbook } from '../components/layout/Handbook.tsx';
 import { Modal } from '../components/layout/Modal.tsx';
 import { ToastProvider, useToasts } from '../components/layout/Toasts.tsx';
 import { Tour } from '../components/layout/Tour.tsx';
@@ -37,6 +38,7 @@ import { Workspace } from './Workspace.tsx';
 const ONBOARDED_KEY = 'onboarding.level';
 /** Set once the tour has been seen or skipped. Stored, never inferred. */
 const TOUR_KEY = 'onboarding.tour';
+const HANDBOOK_KEY = 'handbook.article';
 const LANGUAGE_KEY = 'preferences.language';
 const TIMER_KEY = 'preferences.timer';
 const THEME_KEY = 'preferences.theme';
@@ -86,6 +88,11 @@ function AppInner() {
   const [language, setLanguage] = useState<string>('python');
   const [tourSeen, setTourSeen] = useState<boolean | null>(null);
   const [dataPanel, setDataPanel] = useState<'closed' | 'open' | 'confirm'>('closed');
+
+  // The handbook remembers which article you were reading; where you were
+  // inside it is kept by the component, for this visit only.
+  const [handbookOpen, setHandbookOpen] = useState(false);
+  const [handbookArticle, setHandbookArticle] = useState('what-this-is');
   const [courses, setCourses] = useState<readonly { id: string; title: string }[]>([]);
   const [fontSize, setFontSize] = useState(14);
 
@@ -224,6 +231,23 @@ function AppInner() {
    * A store that refuses the write still dismisses. Seeing the tour twice is a
    * small cost; a card that cannot be closed is not.
    */
+  useEffect(() => {
+    if (!platform) return;
+    void platform.store.getSetting(HANDBOOK_KEY).then((stored) => {
+      if (stored) setHandbookArticle(stored);
+    });
+  }, [platform]);
+
+  const chooseArticle = useCallback(
+    (id: string) => {
+      setHandbookArticle(id);
+      void platform?.store.setSetting(HANDBOOK_KEY, id).catch(() => {
+        // Losing your place in a reference is a shrug, not a failure.
+      });
+    },
+    [platform],
+  );
+
   const finishTour = useCallback(() => {
     const store = platform?.store;
     if (!store) {
@@ -252,9 +276,6 @@ function AppInner() {
       setLanguage(id);
       const title = languages.find((option) => option.id === id)?.title ?? id;
       toast(`Switched to ${title}`);
-      // Leaving a workspace mid-attempt because the language changed would
-      // throw work away; every other screen re-scopes in place.
-      setScreen((current) => (current.kind === 'workspace' ? current : current));
       void platform?.store.setSetting(LANGUAGE_KEY, id).catch(() => {
         toast('Could not save the language preference', 'error');
       });
@@ -341,6 +362,11 @@ function AppInner() {
         },
       },
       {
+        id: 'handbook',
+        name: 'Open the handbook',
+        run: () => setHandbookOpen(true),
+      },
+      {
         id: 'erase-progress',
         name: 'Delete everything stored on this device',
         run: () => setDataPanel('confirm'),
@@ -365,7 +391,7 @@ function AppInner() {
       ...languages.map((option) => ({
         id: `language-${option.id}`,
         name: `Language: ${option.title}`,
-        disabled: option.id === language,
+        disabled: screen.kind === 'workspace' || option.id === language,
         run: () => chooseLanguage(option.id),
       })),
       ...themeChoices.map((candidate) => ({
@@ -472,6 +498,8 @@ function AppInner() {
         mode={mode}
         onMode={setMode}
         onPalette={() => setPaletteOpen(true)}
+        onHandbook={() => setHandbookOpen(true)}
+        languageLocked={screen.kind === 'workspace'}
       />
 
       {!platform.persistent ? (
@@ -551,6 +579,13 @@ function AppInner() {
       {screen.kind !== 'workspace' ? <Footer onData={() => setDataPanel('open')} /> : null}
 
       {tourSeen === false ? <Tour onClose={finishTour} /> : null}
+
+      <Handbook
+        open={handbookOpen}
+        onClose={() => setHandbookOpen(false)}
+        articleId={handbookArticle}
+        onArticle={chooseArticle}
+      />
 
       {/* Every data action in one place, reachable from the footer.
           Hiding "delete everything" behind a keyboard palette would make the

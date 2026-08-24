@@ -37,6 +37,9 @@ interface TopBarProps {
   readonly onMode: (mode: TrainingMode) => void;
 
   readonly onPalette: () => void;
+  readonly onHandbook: () => void;
+  /** True while an attempt is open: switching would discard it. */
+  readonly languageLocked?: boolean;
 }
 
 const SECTIONS: readonly { readonly id: Section; readonly name: string }[] = [
@@ -56,6 +59,8 @@ export function TopBar({
   mode,
   onMode,
   onPalette,
+  onHandbook,
+  languageLocked = false,
 }: TopBarProps) {
   const practiceOnly = languages.some(
     (option) => option.id === language && !option.runnable,
@@ -84,6 +89,12 @@ export function TopBar({
         <select
           className="language-select"
           value={language}
+          disabled={languageLocked}
+          title={
+            languageLocked
+              ? 'Finish or leave this exercise before switching language'
+              : undefined
+          }
           onChange={(event) => onLanguage(event.target.value)}
         >
           {languages.map((option) => (
@@ -103,6 +114,16 @@ export function TopBar({
       ) : null}
 
       <span className="topbar__spacer" />
+
+      <button
+        type="button"
+        className="button button--bare"
+        onClick={onHandbook}
+        aria-label="Open the handbook"
+        title="Handbook"
+      >
+        ?
+      </button>
 
       <button
         type="button"

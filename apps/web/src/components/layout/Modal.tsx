@@ -16,7 +16,7 @@ interface ModalProps {
   readonly onClose: () => void;
   readonly children: ReactNode;
   /** Wide for pickers and palettes; narrow for confirmations. */
-  readonly size?: 'narrow' | 'wide';
+  readonly size?: 'narrow' | 'wide' | 'full';
 }
 
 export function Modal({ open, label, onClose, children, size = 'narrow' }: ModalProps) {

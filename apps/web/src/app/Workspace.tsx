@@ -303,7 +303,16 @@ export function Workspace({
           hintsAllowed={state.hintsAllowed}
           canRevealSolution={affordances.solutionReveal}
           onRevealHint={() => void guard(() => session.revealNextHint())}
-          onRevealSolution={() => session.revealSolution()}
+          onRevealSolution={async () => {
+            // Guarded like every other session call: unguarded, a refusal
+            // rejects into nothing and the button appears to do nothing.
+            try {
+              return await session.revealSolution();
+            } catch (caught) {
+              setError(caught instanceof Error ? caught.message : String(caught));
+              return null;
+            }
+          }}
           onOpenTests={() => {
             const test = exercise.tests.find((entry) => entry.visibility === 'visible');
             const open = state.files.find((file) => file.path === test?.path);

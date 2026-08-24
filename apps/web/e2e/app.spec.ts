@@ -655,3 +655,57 @@ test('no screen in the app talks to anywhere else', async ({ page }) => {
 
   expect(external).toEqual([]);
 });
+
+/**
+ * The handbook keeps its place.
+ *
+ * The behavior the feature exists for: close it mid-article, do something
+ * else, open it again and be where you were. A reference that resets to its
+ * front page is one nobody consults twice.
+ */
+test('the handbook reopens where you left it', async ({ page }) => {
+  // Short enough that an article overflows: at full height on a large
+  // screen there is nothing to scroll, and the test would prove nothing.
+  await page.setViewportSize({ width: 760, height: 360 });
+  await start(page);
+
+  await page.getByRole('button', { name: 'Open the handbook' }).click();
+  const handbook = page.getByRole('dialog', { name: 'Handbook' });
+  await expect(handbook).toBeVisible();
+
+  // Move off the front page and scroll down inside the article.
+  await handbook.getByRole('button', { name: 'The ten numbers' }).click();
+  await expect(handbook.getByRole('heading', { name: 'The ten numbers' })).toBeVisible();
+
+  const body = handbook.locator('.handbook__body');
+  await body.evaluate((element) => {
+    element.scrollTop = 120;
+  });
+  const left = await body.evaluate((element) => element.scrollTop);
+  expect(left).toBeGreaterThan(0);
+
+  // Dismissed by clicking away, which fires no final scroll event — the
+  // case a naive implementation loses.
+  await page.keyboard.press('Escape');
+  await expect(handbook).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Open the handbook' }).click();
+  await expect(handbook.getByRole('heading', { name: 'The ten numbers' })).toBeVisible();
+  expect(await body.evaluate((element) => element.scrollTop)).toBe(left);
+});
+
+test('the handbook remembers the article across a reload', async ({ page }) => {
+  await start(page);
+
+  await page.getByRole('button', { name: 'Open the handbook' }).click();
+  const handbook = page.getByRole('dialog', { name: 'Handbook' });
+  await handbook.getByRole('button', { name: 'Assistance dependency' }).click();
+  await expect(handbook.getByRole('heading', { name: 'Assistance dependency' })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // The article is a preference and goes through the store; the scroll
+  // offset is a fact about one visit and deliberately does not.
+  await page.reload();
+  await page.getByRole('button', { name: 'Open the handbook' }).click();
+  await expect(handbook.getByRole('heading', { name: 'Assistance dependency' })).toBeVisible();
+});
