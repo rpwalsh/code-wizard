@@ -1,0 +1,114 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.move
+version: 1
+language: cpp
+title: A name is an lvalue however it got there
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 780
+timeoutMs: 30000
+
+skills:
+  - cpp.values.move
+  - cpp.lifetime.rule
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Write all five special members so ownership is never duplicated or dropped.
+  - Leave a moved-from object valid rather than merely finished with.
+  - Recognize that std::move moves nothing; it only changes what overload is chosen.
+
+prompt: |
+  `std::move` does not move anything. It is a cast that says "you may
+  take this apart", and whether anything is taken apart depends
+  entirely on which constructor the compiler then picks.
+
+  `Buffer` owns a block of bytes and counts what happens to it, so
+  the tests can see the difference between a copy and a move.
+
+  In `main.cpp`:
+
+  - The copy constructor and copy assignment allocate their own
+    block and copy the bytes across. Both count a copy.
+  - The move constructor and move assignment take the pointer and
+    **leave the source empty** — size zero, pointer null. Both count
+    a move, and both are `noexcept`.
+  - Assignment guards against being handed itself.
+  - `duplicate(source)` returns a copy of a const reference.
+  - `take(source)` takes by value and returns the buffer with no
+    further copy.
+  - `collect(count, size)` returns a vector of `count` buffers,
+    each of `size` bytes, with **no copies and no moves along the
+    way**.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/move_test.cpp
+    visibility: visible
+    concept: cpp.values.move
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.rule
+
+hints:
+  - level: conceptual
+    text: "Copying duplicates the resource. Moving transfers it. The source of a move must end up in a state its destructor can safely run on."
+  - level: structural
+    text: "Every special member that manages a resource comes as a set of five. Writing one and not the others is where double frees come from."
+  - level: language
+    text: "A vector only moves its elements when growing if the move constructor is noexcept; otherwise it copies them, silently, to keep the strong guarantee."
+  - level: syntax
+    text: "In `take`, `source` is a named parameter and therefore an lvalue. Returning it without std::move copies it again."
+  - level: explicit
+    text: "collect: reserve(count) before the loop, then emplace_back(size) — constructing in place rather than building a Buffer and moving it in."
+
+explanation: |
+  The single most useful sentence about move semantics is that a name
+  is an lvalue however it got there. A parameter declared
+  `Buffer source` may have been moved into, but inside the function
+  `source` is a named object, so using it copies — which is why
+  `return Buffer(std::move(source))` is not superstition. The edge
+  test that passes a named object without `std::move` and watches a
+  copy appear is the same fact from the other side.
+
+  Leaving the source empty is what makes a move legal rather than
+  merely fast. The moved-from object still has a destructor, and it
+  still runs; if it kept the pointer, the block would be freed twice
+  and the program would be undefined some time later, somewhere
+  else. "Valid but unspecified" is the standard's phrasing, and
+  empty is the simplest way to be valid.
+
+  `noexcept` on the move constructor looks decorative and is not.
+  When a `vector` grows it must not lose your data if something
+  throws halfway, so it only moves elements when it can prove moving
+  cannot throw. Leave `noexcept` off and every reallocation copies
+  instead — correct, several times slower, and completely silent.
+
+  The five members come as a set for the same reason. Write a
+  destructor that frees and forget the copy constructor, and the
+  compiler generates one that copies the pointer: two objects, one
+  block, two frees. That is why the rule is stated as all-or-nothing
+  rather than as a list of things to consider.
+
+  `reserve` before the loop is the last piece and the cheapest. A
+  vector that grows organically reallocates on the way to sixteen
+  and moves everything it holds each time — work that is invisible
+  in a profiler at this size and very visible at a million.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: off-by-one
+    line: 8
+    why: >-
+      The starting value of the copy counter. Every test calls reset() before
+      it measures anything, so whatever the counter began as is overwritten
+      before it can be observed.
+  - path: main.cpp
+    operator: off-by-one
+    line: 9
+    why: >-
+      The move counter, for the same reason as the line above.
+
