@@ -2,10 +2,10 @@
 id: go.errors.wrapping
 version: 1
 language: go
-title: An error that keeps its cause
+title: One verb decides whether the error survives
 kind: micro-problem
 difficulty: 3
-estimatedSeconds: 420
+estimatedSeconds: 600
 timeoutMs: 30000
 
 skills:
@@ -16,30 +16,31 @@ skills:
 prerequisites: []
 
 learningObjectives:
-  - Add context to an error without discarding what it was.
-  - Let a caller test for a cause several layers down.
-  - Choose between %w and %v deliberately.
+  - Wrap with %w so that errors.Is and errors.As still work upstream.
+  - Test for a sentinel through any number of layers instead of with equality.
+  - Pull a typed error out of a chain without knowing how deep it is.
 
 prompt: |
-  Go errors are values, and the useful question about a value is what a caller
-  can do with it. An error that says only "loading config" tells them nothing;
-  one that says "loading config: not found" and can still be *tested* for "not
-  found" tells them everything.
+  `fmt.Errorf("load %s: %v", id, err)` and
+  `fmt.Errorf("load %s: %w", id, err)` produce the same message and
+  two completely different errors. The first renders the original
+  into text and throws the value away; the second keeps it, and
+  every caller above you can still ask what actually went wrong.
 
-  In `main.go`, implement:
+  In `main.go`:
 
-  - `ErrNotFound` — a sentinel error with the message `not found`.
-  - `Load(store map[string]string, key string) (string, error)` — returns the
-    value, or an error wrapping `ErrNotFound` with the message
-    `load "<key>": not found`.
-  - `LoadAll(store map[string]string, keys []string) ([]string, error)` —
-    every value in order, stopping at the first failure and returning that
-    error unchanged so the cause survives.
-  - `IsMissing(err error) bool` — true when `ErrNotFound` is anywhere in the
+  - `Load(id, store)` — call the store, and on failure return an
+    error reading `load <id>: <original>` that **still carries** the
+    original.
+
+  - `IsMissing(err)` — whether `ErrNotFound` is anywhere in the
     chain.
 
-  `IsMissing` must not compare messages. A caller matching on the text of an
-  error is coupled to your wording forever.
+  - `FieldOf(err)` — the `Field` of a `*FieldError` anywhere in the
+    chain, and whether one was there at all.
+
+  - `FirstReason(err)` — the message of the deepest error in the
+    chain. A `nil` error has no reason.
 
 entryPoint: main.go
 
@@ -53,32 +54,42 @@ tests:
 
 hints:
   - level: conceptual
-    text: Adding context should not destroy identity.
+    text: "Wrapping is about keeping the value, not about the message. The message is for a person; the value is for the code above you."
   - level: structural
-    text: There is a formatting verb that keeps the original error reachable.
+    text: "errors.Is and errors.As both walk the chain themselves. Anything you write that walks it by hand is duplicating them."
   - level: language
-    text: '`%w` wraps; `%v` only formats. `errors.Is` walks the chain.'
+    text: "errors.As takes a pointer to the variable you want filled, so for a *FieldError you pass a **FieldError."
   - level: syntax
-    text: '`fmt.Errorf("load %q: %w", key, ErrNotFound)`'
+    text: "errors.Unwrap returns nil when it reaches the bottom, which is the loop's terminator rather than a special case."
   - level: explicit
-    text: '`errors.Is(err, ErrNotFound)` is the whole of IsMissing.'
+    text: "var field *FieldError; if errors.As(err, &field) { return field.Field, true } — declared as the pointer type, passed by address."
 
 explanation: |
-  `%w` and `%v` produce the same message and different values. With `%v` the
-  original error is formatted into a string and then thrown away, so
-  `errors.Is` finds nothing and a caller has no way to distinguish "missing"
-  from "the disk caught fire". With `%w` the cause is carried inside the new
-  error and stays reachable however many layers are added on top.
+  `%w` is the whole difference, and choosing `%v` by accident is one
+  of the easiest mistakes in Go to make and one of the hardest to
+  notice. Both produce identical text, both compile, both look right
+  in a log. The `%v` version simply cannot be interrogated: three
+  layers up somebody writes `errors.Is(err, ErrNotFound)` to turn a
+  missing record into a 404, it silently returns false, and every
+  missing record becomes a 500 instead.
 
-  The rule of thumb is about the caller, not about you: wrap when a caller
-  might reasonably branch on the cause, and format when the error really is
-  just a message. Wrapping everything leaks internals into your API — the
-  wrapped error becomes part of what callers depend on.
+  Equality is the other half of the trap. `err == ErrNotFound` works
+  exactly once — in the function that received the sentinel
+  directly — and stops working the moment anybody wraps it, which is
+  the moment somebody adds context to the error. `errors.Is` asks
+  the same question of the whole chain, so it survives every layer
+  that gets added later. This is why sentinel comparisons in Go are
+  written with `errors.Is` even when the author knows the error is
+  unwrapped today.
 
-  Comparing error text is the alternative people reach for, and it breaks the
-  first time anyone improves a message. `errors.Is` compares identity, which
-  is what a sentinel is for.
+  `errors.As` is the typed version, and its signature confuses
+  people for a good reason: it fills in a variable, so it needs the
+  address of the thing you want filled. For a `*FieldError` that is
+  a `**FieldError`, which looks alarming and is exactly the same
+  shape as `json.Unmarshal(data, &target)`.
 
-# Go tests live beside the code they test, not under `tests/`: a test in a
-# different directory is a different package and cannot see the functions it
-# is testing. The platform's `isTestFile` hook exists for exactly this.
+  `FirstReason` walking to the bottom is the reporting counterpart:
+  a log line that says "handler: service: load u_17: not found" is
+  useful to a person, and a metric labeled by the root cause is
+  useful to a graph. Both come from the same chain, which is the
+  argument for building it properly in the first place.
