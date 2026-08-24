@@ -1,0 +1,106 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.data.collections
+version: 1
+language: javascript
+title: When an object is the wrong container
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - javascript.data.collections
+  - javascript.data.objects
+
+prerequisites: []
+
+learningObjectives:
+  - Use a Map when the keys come from data rather than from you.
+  - Use a Set for membership, and know why it beats indexOf on large inputs.
+  - Recognize the two ways a plain object silently loses or invents keys.
+
+prompt: |
+  `{}` is the container everybody reaches for, and it is the wrong
+  one whenever the keys arrive from outside the program. It has a
+  prototype full of names it did not ask for, and it turns every
+  key into a string on the way in.
+
+  In `main.js`:
+
+  - `countBy(items, keyOf)` — return a `Map` from key to how many
+    items produced it. Keys keep the order they were first seen.
+
+  - `groupBy(items, keyOf)` — return a `Map` from key to the array
+    of items that produced it, each array in input order.
+
+  - `uniqueBy(items, keyOf)` — return an array holding the **first**
+    item for each distinct key, in input order.
+
+  - `intersect(left, right)` — return the values present in both,
+    in the order they appear in `left`, without duplicates. It must
+    stay fast when both lists are long: no scanning `right` once per
+    element of `left`.
+
+  - `pluck(record, key)` — return `record`'s own value for `key`,
+    or `undefined` when it has none. A key that exists only on the
+    prototype is not the record's own.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/collections.test.js
+    visibility: visible
+    concept: javascript.data.collections
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.data.objects
+
+hints:
+  - level: conceptual
+    text: "The question to ask is where the keys come from. Keys you wrote in the source are fine in an object; keys that arrive from a file, a form or a database belong in a Map."
+  - level: structural
+    text: "Every one of these is one pass over the input. If you find yourself looping over the second list inside a loop over the first, build a Set from it instead."
+  - level: language
+    text: "map.get(key) is undefined when absent, so `map.set(key, (map.get(key) ?? 0) + 1)` counts in one line. A Map preserves insertion order for every key type, which an object does not."
+  - level: syntax
+    text: "Object.hasOwn(record, key) is the modern form of Object.prototype.hasOwnProperty.call(record, key), and unlike `key in record` it ignores the prototype."
+  - level: explicit
+    text: "intersect: const wanted = new Set(right); then left.filter with a second Set of what you have already emitted, so duplicates in left appear once."
+
+explanation: |
+  Two failures make a plain object the wrong container for external
+  keys, and both are silent.
+
+  The first is coercion. Object keys are strings, always — so `1`
+  and `'1'` are the same key, `true` and `'true'` are the same key,
+  and a count keyed on values from a CSV merges rows that were never
+  the same. A Map keeps keys as they are, compared by identity,
+  which is why `countBy` returns one.
+
+  The second is inheritance. Every object literal starts with a
+  prototype, so `record['constructor']` is a function nobody put
+  there and `'toString' in record` is true for a record that is
+  empty. Code written as `if (counts[key])` therefore behaves
+  differently for a key called `constructor` than for any other
+  string, and an attacker who chooses `__proto__` as a key can do
+  considerably worse than confuse a count. `Object.hasOwn` asks the
+  question that was actually meant.
+
+  `intersect` is the algorithmic half. The obvious version calls
+  `right.includes(value)` for each element of the left list, which
+  scans the right list every time: a thousand elements against a
+  thousand is a million comparisons. Building a `Set` first makes
+  each lookup constant, and the whole operation one pass — the same
+  work, arranged so the machine does far less of it. The edge test
+  measures this rather than trusting it, because it is the kind of
+  difference that never shows up on the ten-element example and
+  takes the service down on real data.
+
+mutationExceptions:
+  - path: main.js
+    operator: nullish
+    line: 12
+    why: >-
+      A count in this Map is only ever written as one or more, so get() returns
+      either a positive number or undefined. Nullish and logical-or coalescing
+      differ only on a stored zero, which cannot occur here.

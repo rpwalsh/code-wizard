@@ -1,0 +1,104 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.values.nullable-contacts
+version: 1
+language: csharp
+title: The compiler knows what might be missing
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - csharp.values.nullable
+  - csharp.types.patterns
+
+prerequisites: []
+
+learningObjectives:
+  - Read a nullable annotation as a claim the compiler will hold you to.
+  - Narrow a nullable to a non-nullable by testing it, not by asserting it.
+  - Use pattern matching where a chain of null checks would otherwise go.
+
+prompt: |
+  A contact record has a name, and everything else is optional: no
+  email, no phone, no address, or any combination. Written with
+  nullable reference types turned on, the compiler will not let you
+  read one of those without saying what happens when it is absent —
+  which is the entire feature, and the reason the null-forgiving
+  `!` operator should make you uncomfortable.
+
+  In `Contacts.cs`, complete the static class `Contacts`:
+
+  - `string Display(Contact contact)` — the contact's name, and
+    when an email is present, the name followed by the email in
+    angle brackets: `"Ada <ada@example.com>"`. No email means just
+    `"Ada"`.
+
+  - `string BestChannel(Contact contact)` — `"email"` when there is
+    an email, otherwise `"phone"` when there is a phone, otherwise
+    `"post"` when there is an address, otherwise `"none"`. Written
+    as one switch expression rather than a ladder of ifs.
+
+  - `int Reachable(IEnumerable<Contact> contacts)` — how many have
+    at least one way to reach them.
+
+  - `string Initials(Contact contact)` — the first letter of each
+    whitespace-separated part of the name, upper-cased and joined:
+    `"Ada Lovelace"` gives `"AL"`. A name that is only whitespace
+    gives `""`.
+
+  `Contact` is given: `record Contact(string Name, string? Email,
+  string? Phone, string? Address)`.
+
+entryPoint: Contacts.cs
+
+tests:
+  - path: tests/ContactTests.cs
+    visibility: visible
+    concept: csharp.values.nullable
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.types.patterns
+
+hints:
+  - level: conceptual
+    text: "A `string?` is not a different type at runtime. It is a claim in the type system that this may be null, and the compiler's warnings are the only thing enforcing it."
+  - level: structural
+    text: "Testing a nullable narrows it: inside `if (contact.Email is not null)` the compiler knows Email is a string, and no `!` is needed."
+  - level: language
+    text: "A switch expression over `contact` can match property patterns: `{ Email: not null } => \"email\"`. The arms are tried in order, so the first match wins."
+  - level: syntax
+    text: "Splitting a name: Name.Split(' ', StringSplitOptions.RemoveEmptyEntries) drops the empty pieces that repeated spaces would otherwise produce."
+  - level: explicit
+    text: "BestChannel: return contact switch { { Email: not null } => \"email\", { Phone: not null } => \"phone\", { Address: not null } => \"post\", _ => \"none\" };"
+
+explanation: |
+  Nullable reference types do not change what runs. `string?` and
+  `string` are the same type to the runtime; the annotation is a
+  claim, and the compiler's job is to notice when you break it. That
+  makes the feature exactly as valuable as your willingness to leave
+  the warnings alone — which is why `!`, the null-forgiving
+  operator, deserves suspicion every time it appears. It does not
+  check anything. It tells the compiler to stop asking, and the
+  `NullReferenceException` it was trying to prevent arrives at
+  runtime instead.
+
+  Testing, rather than asserting, is the habit worth building.
+  `if (contact.Email is not null)` narrows the type inside the
+  block: the compiler now knows it is a `string`, no annotation is
+  needed, and the code is correct rather than merely quiet. The
+  analysis follows ordinary control flow, so an early `return` on
+  the null case narrows everything after it too.
+
+  The switch expression earns its place in `BestChannel`. The
+  if-ladder version is four statements, a mutable local and a chance
+  to forget the last `else`; the switch is one expression that the
+  compiler checks for a default arm, evaluated in order so the
+  priority is visible as the order the arms are written in. Property
+  patterns are what make it read like the rule it implements rather
+  than like a series of unrelated tests.
+
+  `Initials` is where the empty case hides. A name of `"   "` splits
+  into no parts at all, and code that reaches for the first
+  character of the first part throws on data that a form with a
+  space bar produces every day.

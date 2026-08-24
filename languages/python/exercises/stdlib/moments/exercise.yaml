@@ -1,0 +1,114 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: python.stdlib.moments
+version: 1
+language: python
+title: A time without a place is not a time
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 20000
+
+skills:
+  - python.stdlib.datetime
+  - python.errors.validation
+
+prerequisites: []
+
+learningObjectives:
+  - Tell a timezone-aware datetime from a naive one, and refuse the naive one.
+  - Compare and subtract instants across offsets without hand arithmetic.
+  - Use half-open intervals so that touching ranges do not count as overlapping.
+
+prompt: |
+  `datetime.now()` returns an object with no timezone. It looks
+  like a moment in time and is not one: it is a wall-clock reading
+  with no way to know whose wall. Comparing it to a real instant
+  raises, storing it loses information, and subtracting two of them
+  from different machines produces a number that means nothing.
+
+  In `main.py`:
+
+  - `parse_moment(text)` — parse an ISO 8601 timestamp and return a
+    timezone-aware `datetime` **in UTC**. Accept both a trailing
+    `Z` and an explicit offset such as `+02:00`. A timestamp with
+    no offset at all is not a moment: raise
+    `ValueError(f"no timezone: {text}")`.
+
+  - `minutes_between(start, end)` — whole minutes from `start` to
+    `end`, truncated toward zero, negative when `end` is earlier.
+    If either argument is naive, raise
+    `ValueError("naive datetime")` rather than letting Python raise
+    its own error later.
+
+  - `overlaps(first, second)` — each argument is a
+    `(start, end)` pair of aware datetimes. Return whether the two
+    intervals overlap, treating them as half-open: an interval
+    includes its start and excludes its end, so a meeting ending at
+    10:00 and one starting at 10:00 do **not** overlap. An interval
+    whose start is not before its end contains no instants at all,
+    and overlaps nothing.
+
+  - `hours_histogram(moments)` — a `dict` from UTC hour (0–23) to
+    how many of the given aware datetimes fall in it. Hours with no
+    moments are absent from the dict.
+
+entryPoint: main.py
+
+tests:
+  - path: tests/test_moments.py
+    visibility: visible
+    concept: python.stdlib.datetime
+  - path: tests/test_edges.py
+    visibility: edge
+    concept: python.errors.validation
+
+hints:
+  - level: conceptual
+    text: "Aware or naive is a property of the object: `moment.tzinfo is None` tells you which one you are holding, and it is the only reliable test."
+  - level: structural
+    text: "Parse first, then convert. Once the object is aware, `astimezone(timezone.utc)` gives you the same instant expressed in UTC — it does not change when the moment is."
+  - level: language
+    text: "`datetime.fromisoformat` did not understand a trailing `Z` before Python 3.11, so replacing `Z` with `+00:00` before parsing is the portable move."
+  - level: syntax
+    text: "Truncating toward zero: `int(delta.total_seconds() // 60)` floors instead, which is wrong for negatives. Use `int(delta.total_seconds() / 60)`."
+  - level: explicit
+    text: "overlaps: reject the empty intervals first, then two half-open intervals overlap exactly when `first_start < second_end and second_start < first_end`. Both comparisons are strict, which is what makes touching intervals separate."
+
+explanation: |
+  A naive datetime is a wall-clock reading. It says "half past
+  nine", not "this instant", and the missing half is not recoverable
+  from the object — you have to know, from somewhere else, whose
+  clock it was. That is why Python refuses to compare a naive
+  datetime with an aware one at all: the answer would depend on an
+  assumption, and it declines to guess. The habit that follows is
+  simple and worth adopting everywhere: make it aware at the
+  boundary, keep it aware, and let it become naive only when you
+  format it for a person.
+
+  Validating at the door, as `parse_moment` does, is the same
+  boundary argument that applies to any external input. The naive
+  timestamp will fail eventually — three functions later, on a
+  comparison, with a `TypeError` naming neither the field nor the
+  file it came from. Refusing it where it arrives turns a confusing
+  runtime failure into a message that names the offending text.
+
+  Half-open intervals are the quiet detail that saves an entire
+  class of bug. If an interval included both ends, a meeting from
+  09:00 to 10:00 and one from 10:00 to 11:00 would overlap, and a
+  calendar would refuse a perfectly ordinary back-to-back booking.
+  Making the end exclusive means adjacent intervals tile without
+  gaps and without collisions — which is also why Python's own
+  `range` and slicing work the same way.
+
+  The empty interval is the case the standard formula gets wrong.
+  `first_start < second_end and second_start < first_end` reports
+  that a zero-length interval at 10:00 overlaps a meeting from 09:00
+  to 11:00 — and it does not, because it contains no instants for
+  them to share. A calendar that stores a zero-length entry, which
+  every calendar eventually does, is enough to meet this.
+
+  The truncation in `minutes_between` is a real trap rather than
+  pedantry. `//` floors, so ninety seconds becomes one minute and
+  *minus* ninety seconds becomes minus two — an asymmetry that shows
+  up as an off-by-one only when a duration happens to be negative,
+  which is exactly when nobody is looking.
