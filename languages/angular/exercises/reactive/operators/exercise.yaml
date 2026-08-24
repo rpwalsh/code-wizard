@@ -1,0 +1,100 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: angular.reactive.operators
+version: 1
+language: angular
+title: The search box that shows the wrong answer
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - angular.reactive.operators
+  - angular.reactive.subscriptions
+
+prerequisites: []
+
+learningObjectives:
+  - Build an operator as a stream that wraps a stream.
+  - Cancel work that a newer value has made irrelevant.
+  - Return teardown from every subscription, and keep operator state per subscriber.
+
+prompt: |
+  Type "ada" into a search box quickly and four requests go out. The
+  answers come back in whatever order the network feels like, and
+  the last one to arrive wins — so the results shown are for
+  whatever you typed two letters ago. Nothing is broken; nothing was
+  cancelled.
+
+  These operators are the fix, written out rather than imported, so
+  the cancellation is visible.
+
+  In `main.ts`, a `Stream<T>` is anything with
+  `subscribe(listener)` returning a function that stops delivery.
+
+  - `of(...values)` — emit each value to every new subscriber.
+  - `map(source, transform)` — every value, transformed.
+  - `filter(source, keep)` — only the values that pass.
+  - `distinctUntilChanged(source)` — drop a value equal to the one
+    immediately before it. Each subscriber remembers its own last
+    value.
+  - `switchMap(source, project)` — for each value from `source`,
+    subscribe to the stream `project` returns, **after
+    unsubscribing from the previous one**. Unsubscribing from the
+    result stops both the inner and the outer subscription.
+  - `subject()` — a stream you can push into: `next(value)` sends
+    to every current listener, `listeners()` reports how many there
+    are, and unsubscribing removes exactly one.
+
+entryPoint: main.ts
+
+tests:
+  - path: tests/operators.test.ts
+    visibility: visible
+    concept: angular.reactive.operators
+  - path: tests/edges.test.ts
+    visibility: edge
+    concept: angular.reactive.subscriptions
+
+hints:
+  - level: conceptual
+    text: "An operator is not a transformation applied to a value; it is a new stream that, when subscribed to, subscribes to the one it wraps. Everything else follows from that."
+  - level: structural
+    text: "State inside an operator belongs inside subscribe, not outside it. Two subscribers must not share the memory of what was last seen."
+  - level: language
+    text: "switchMap keeps one handle to the current inner subscription, calls it before starting the next, and calls both in its own teardown."
+  - level: syntax
+    text: "A Set of listeners gives you add, delete and size for free; deliver over a copy — [...listeners] — so a listener removing itself mid-delivery cannot skip the next one."
+  - level: explicit
+    text: "map: return { subscribe: (listener) => source.subscribe((value) => listener(transform(value))) } — the returned unsubscribe passes straight through."
+
+explanation: |
+  The stale-response bug is not a race that better luck would fix;
+  it is a missing cancellation. Four requests are in flight and all
+  four are still wanted by the code that started them, because
+  nothing told the first three that they had been superseded.
+  `switchMap` is the instruction that they have: on every new value
+  it unsubscribes from the previous inner stream before subscribing
+  to the next, so an answer that arrives late has nobody listening.
+
+  Writing the operators out makes the shape obvious. An operator is
+  a stream that wraps a stream — subscribing to it subscribes to the
+  source, and its teardown is the source's teardown. That is why
+  they compose in any order and why a pipeline of five costs one
+  subscription chain rather than five buffers.
+
+  Where the state lives is the detail that separates a working
+  `distinctUntilChanged` from one that is subtly wrong. Kept outside
+  `subscribe`, the "previous value" is shared by every subscriber,
+  so a component that subscribes second silently misses the first
+  value it should have seen — a bug that only appears when a second
+  consumer arrives, which is usually long after the code was
+  written. Kept inside, each subscription has its own memory.
+
+  Returning teardown is the contract that makes any of this safe. A
+  `subscribe` that returns nothing cannot be undone by the caller,
+  so every component that subscribes leaks until the page reloads.
+  It is the reason Angular's own subscriptions want unsubscribing in
+  a destroy hook, and the reason `switchMap`'s teardown has to stop
+  the inner subscription as well as the outer one — forgetting the
+  inner leaks a stream that a destroyed component is still feeding.
