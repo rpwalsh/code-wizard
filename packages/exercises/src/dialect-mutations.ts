@@ -31,6 +31,16 @@ export interface Dialect {
    * them and silently drop mutants — the scanner needs to know.
    */
   readonly singleQuoteIsCharLiteral?: boolean;
+  /**
+   * Prefixes that make a whole line a preprocessor directive.
+   *
+   * `#include <stdlib.h>` is not code, and the angle brackets around a header
+   * name are not comparison operators — but a scanner that does not know
+   * about directives sees `<` and `>` and offers to swap them, producing
+   * mutants that cannot compile and survivors that mean nothing. C and C++
+   * declare `#`; languages without a preprocessor declare nothing.
+   */
+  readonly directivePrefixes?: readonly string[];
 }
 
 /**
@@ -48,9 +58,32 @@ export function codeMask(source: string, dialect: Dialect): boolean[] {
   };
 
   const multiline = new Set(dialect.multilineQuotes ?? []);
+  const directives = dialect.directivePrefixes ?? [];
+
+  /** True at the start of a line, ignoring leading blanks. */
+  const atLineStart = (at: number): boolean => {
+    for (let back = at - 1; back >= 0; back -= 1) {
+      const previous = source[back]!;
+      if (previous === '\n') return true;
+      if (previous !== ' ' && previous !== '\t' && previous !== '\r') return false;
+    }
+    return true;
+  };
 
   while (index < source.length) {
     const character = source[index]!;
+
+    if (
+      directives.length > 0 &&
+      atLineStart(index) &&
+      directives.some((prefix) => source.startsWith(prefix, index))
+    ) {
+      const end = source.indexOf('\n', index);
+      const stop = end === -1 ? source.length : end;
+      hide(index, stop);
+      index = stop;
+      continue;
+    }
 
     const lineComment = dialect.lineComments.find((token) => source.startsWith(token, index));
     if (lineComment !== undefined) {

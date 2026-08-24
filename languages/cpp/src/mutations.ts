@@ -6,6 +6,8 @@ const dialect: Dialect = {
   lineComments: ['//'],
   blockComment: ['/*', '*/'] as const,
   stringQuotes: ['"', "'"],
+  // `#include <stdio.h>` carries angle brackets that are not comparisons.
+  directivePrefixes: ['#'],
 };
 
 /**

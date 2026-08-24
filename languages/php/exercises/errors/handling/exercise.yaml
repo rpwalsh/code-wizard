@@ -1,0 +1,117 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: php.errors.handling
+version: 1
+language: php
+title: Exception is not the top of the hierarchy
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - php.errors.handling
+  - php.errors.exceptions
+  - php.types.coercion
+
+prerequisites: []
+
+learningObjectives:
+  - Catch Throwable when you mean everything, because Error is not an Exception.
+  - Carry the field at fault on the exception rather than in prose.
+  - Release a resource in finally, where a throw cannot skip it.
+
+prompt: |
+  `catch (Exception $e)` looks like it catches everything and does
+  not. Since PHP 7 the hierarchy has two branches under
+  `Throwable`: `Exception`, which is yours, and `Error`, which is
+  the engine's — `TypeError`, `DivisionByZeroError`,
+  `ArgumentCountError`. Under `declare(strict_types=1)` the engine's
+  branch is the one you meet most.
+
+  In `main.php`:
+
+  - `parse_quantity(mixed $raw): int` — accept an `int`, or a
+    string of digits with an optional minus. Anything else, and
+    anything below 1, throws `ValidationError` (already written)
+    with the field `'quantity'`. A float is not a whole number even
+    when it looks like one; `'3kg'` and `''` are not numbers; and
+    `true` is not `1`.
+
+  - `attempt(callable $work): array` — run it and return
+    `['ok' => true, 'value' => ...]`, or on **any** throwable
+    `['ok' => false, 'error' => $message]`.
+
+  - `first_of(array $sources, callable $load): mixed` — return the
+    result of the first source that loads. If all of them throw,
+    throw a `RuntimeException` whose message is every failure joined
+    by `'; '`, in order. An empty list of sources also throws.
+
+  - `with_cleanup(callable $work, callable $cleanup): mixed` —
+    return the work's value, and run the cleanup on the way out
+    whether the work returned or threw. The original throwable must
+    still reach the caller.
+
+entryPoint: main.php
+
+tests:
+  - path: tests/handling_test.php
+    visibility: visible
+    concept: php.errors.handling
+  - path: tests/edges_test.php
+    visibility: edge
+    concept: php.types.coercion
+
+hints:
+  - level: conceptual
+    text: "Throwable is the interface both branches implement. Catch it when you mean everything, and catch something narrower when you mean something narrower."
+  - level: structural
+    text: "A custom exception carrying the field is worth more than a message naming it: the caller can act on a property and cannot parse prose."
+  - level: language
+    text: "is_int is false for '3' and for 3.0 alike. is_numeric would accept both, along with '1e3' and ' 42 '."
+  - level: syntax
+    text: "finally runs after a return and after a throw, and it is the only construct that does. Code placed after the try block runs on neither path when something throws."
+  - level: explicit
+    text: "preg_match('/^-?\\d+$/', $raw) === 1 accepts only a whole number in digits, refusing '3kg', '' and ' 3 '."
+
+explanation: |
+  The two-branch hierarchy is the single most common gap in PHP
+  error handling. `catch (Exception $e)` reads as "catch
+  everything" and catches half — and the half it misses is the half
+  `strict_types` generates, because passing a string where an `int`
+  was declared raises `TypeError`, which extends `Error`. The result
+  is a handler that works in testing, where the types are right, and
+  lets the real failure through in production.
+
+  Putting the field on the exception rather than in the message is
+  a small design decision with a long tail. A message reading
+  "quantity must be at least 1" is for a person; a caller that needs
+  to highlight the offending input has to parse English to find out
+  which one. A `public readonly string $field` is the same
+  information in a form the code can use, and it survives
+  translation, rewording and being wrapped by another layer.
+
+  The type checks are deliberately narrow, and each rejection has a
+  specific victim. `is_numeric('1e3')` is true, and scientific
+  notation in a quantity field is not what anyone meant. `(int)
+  '3kg'` is `3`, silently discarding the unit somebody typed for a
+  reason. `3.0` is a float, and admitting it means admitting
+  `3.0000001` at the next call site. `true` casts to `1` in a
+  language that will happily do it for you, which is exactly why
+  refusing it has to be deliberate.
+
+  `finally` is the last piece and the one that shows up in
+  production. Cleanup written after the try block runs on the
+  success path only — a throw jumps straight past it — so the
+  connection stays open, the lock stays held, and the temporary
+  file stays on disk in precisely the situation where those matter
+  most. `finally` is the only construct that runs on both ways out.
+
+mutationExceptions:
+  - path: main.php
+    operator: strictness
+    line: 21
+    why: >-
+      preg_match returns int 1, int 0, or false, and the comparison is against
+      int 1. Loose equality agrees with strict on all three: false and 0 both
+      fail either way, and 1 matches either way.
+

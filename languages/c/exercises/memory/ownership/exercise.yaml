@@ -1,0 +1,114 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: c.memory.ownership
+version: 1
+language: c
+title: Who frees this
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 780
+timeoutMs: 30000
+
+skills:
+  - c.memory.malloc
+  - c.memory.lifetime
+  - c.memory.strings
+
+prerequisites: []
+
+learningObjectives:
+  - Give every allocation exactly one owner and one matching free.
+  - Copy a string into memory you own rather than storing somebody else's pointer.
+  - Grow a buffer with realloc without losing it when the growth fails.
+
+prompt: |
+  C has no answer to "who frees this" except the one you write
+  down. A `StringList` that stores the caller's pointer works
+  perfectly until the caller's buffer is reused, and then it holds
+  text nobody put there.
+
+  In `main.c`:
+
+  - `list_init(list)` — an empty list owning nothing.
+
+  - `duplicate(text)` — a fresh copy of the string, or `NULL` if
+    the allocation fails. The caller owns the result.
+
+  - `list_push(list, text)` — store a **copy** of the text and
+    return 1, or return 0 if any allocation fails. Grow the array
+    when it is full; the list must survive a failed growth with
+    everything it already held.
+
+  - `list_free(list)` — free every string and the array, and leave
+    the list as `list_init` would.
+
+  - `join(list, separator)` — one owned string with the separator
+    between adjacent items and none at either end. An empty list
+    joins to an empty string, not `NULL`.
+
+entryPoint: main.c
+
+tests:
+  - path: tests/ownership_test.c
+    visibility: visible
+    concept: c.memory.malloc
+  - path: tests/edges_test.c
+    visibility: edge
+    concept: c.memory.lifetime
+
+hints:
+  - level: conceptual
+    text: "Ownership is a rule you enforce by convention: for every malloc there is exactly one free, and the code that allocates decides who is responsible."
+  - level: structural
+    text: "list_free frees each string first and the array second. Freeing the array first loses the only pointers to the strings, and they can never be freed."
+  - level: language
+    text: "realloc returns NULL on failure and leaves the original block intact, so assigning its result straight back to the field you passed in leaks everything on failure."
+  - level: syntax
+    text: "malloc(strlen(text) + 1) — the +1 is the terminator, and leaving it off writes exactly one byte past the end of the block."
+  - level: explicit
+    text: "join: walk once to total the lengths plus the separators plus one for the terminator, allocate, then walk again copying with memcpy and tracking the offset."
+
+explanation: |
+  `duplicate` is where the ownership rule becomes concrete. Storing
+  the caller's pointer costs nothing and is correct exactly as long
+  as the caller's buffer outlives the list and never changes —
+  which is a promise nobody made. Copying means the list owns what
+  it holds, and the price is that it must also free it.
+
+  The `+1` for the terminator is the most consequential single
+  character in C. Without it every write of the closing byte lands
+  one past the end of the allocation, which corrupts whatever the
+  allocator kept there. It does not usually crash: it corrupts, and
+  the crash happens later somewhere unrelated, which is why this
+  particular off-by-one has a reputation.
+
+  The `realloc` pattern deserves the temporary. On failure realloc
+  returns `NULL` and leaves the old block exactly where it was — so
+  `list->items = realloc(list->items, ...)` overwrites the only
+  pointer to a live allocation with `NULL`, leaking the entire list
+  precisely when memory is already short. Assigning to a local and
+  checking it before committing costs one line and one variable.
+
+  Freeing in the right order matters for the same reason. The array
+  holds the only pointers to the strings, so freeing the array first
+  makes them unreachable and unfreeable — a leak created by the
+  cleanup function. And resetting the fields afterwards is what
+  turns a dangling pointer into a `NULL` one: both are wrong to use,
+  but only one of them is reliably caught.
+
+mutationExceptions:
+  - path: main.c
+    operator: off-by-one
+    line: 17
+    why: >-
+      One byte more than the copy needs is still enough for it. An
+      over-allocation changes nothing a program can observe, and C offers no
+      portable way to ask an allocation how large it is.
+  - path: main.c
+    operator: off-by-one
+    line: 21
+    why: >-
+      Copying one byte past the terminator writes past the end of the string
+      but before the end of the block, so the copy still reads identically.
+      Only an address sanitizer can see the difference, and it is not part of
+      the harness.
+
