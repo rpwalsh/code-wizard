@@ -227,8 +227,8 @@ time rather than translated from the Python course.
 
 **Fourteen languages, each with a runtime that can execute an attempt and
 judge it.** Python, JavaScript, TypeScript, Node, React, Angular, SQL, C, C++,
-C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 147 machine-graded
-exercises and 151 activities. Every one of the 347 skills has at least one
+C#, ASP.NET, Go, Rust and PHP — 347 skills, 598 lessons, 167 machine-graded
+exercises and 168 activities. Every one of the 347 skills has at least one
 exercise behind it, and every exercise ships with a reference solution that
 has been executed against its own tests.
 
@@ -291,9 +291,14 @@ CPython runs in the page as WebAssembly. Any free static host will serve it.
 **On the desktop.** An Electron app that uses your real Python interpreter,
 which is faster and works with no network at all.
 
-JavaScript currently runs on the desktop only — it uses the Node that the
-toolkit already runs on. The browser version of that runtime is not built yet,
-so the website is Python.
+Eight of the fourteen run in the browser. Python and SQL are CPython
+compiled to WebAssembly — SQL through the SQLite inside its standard library.
+JavaScript, TypeScript, React, Angular and Node are the browser's own engine.
+PHP is a real PHP compiled to WebAssembly, nineteen megabytes, fetched on
+first use so that nobody who never opens it pays for it.
+
+C, C++, C#, ASP.NET, Go and Rust need a compiler, so they run on the desktop,
+where they get the real toolchain rather than an approximation of one.
 
 ```bash
 npm install

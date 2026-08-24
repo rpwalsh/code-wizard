@@ -1,0 +1,98 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.algorithms
+version: 1
+language: cpp
+title: remove_if does not remove anything
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.algorithms
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Pair remove_if with erase, because the algorithm cannot resize a container.
+  - Pick the algorithm that says what you mean rather than writing the loop.
+  - Choose stable_sort when equal elements have an order worth keeping.
+
+prompt: |
+  The standard algorithms work on iterators, and iterators know
+  nothing about the container they came from. That one fact
+  explains the most surprising thing in the library: `remove_if`
+  cannot remove anything, because removing changes a container's
+  size and an iterator cannot do that.
+
+  In `main.cpp`:
+
+  - `drop_below(readings, floor)` — the readings at or above the
+    floor, in their original order, in a vector of the right size.
+
+  - `sensors_of(readings)` — the sensor names, in order.
+
+  - `any_above(readings, ceiling)` — whether any reading is
+    strictly above the ceiling.
+
+  - `total(readings)` — the sum of the temperatures. An empty range
+    totals zero.
+
+  - `sorted_by_temperature(readings)` — coldest first, and readings
+    at the same temperature keep the order they arrived in.
+
+  Each takes one call to the standard library. Writing the loop
+  yourself is not the exercise.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/algorithms_test.cpp
+    visibility: visible
+    concept: cpp.std.algorithms
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.containers
+
+hints:
+  - level: conceptual
+    text: "An algorithm sees a range, never a container. Anything that changes a container's size has to be a call on the container itself."
+  - level: structural
+    text: "remove_if returns the new logical end. Everything from there to the real end is unspecified, and erase is what discards it."
+  - level: language
+    text: "accumulate takes its type from the initial value, so the literal 0 is a decision: pass 0.0 and the whole sum happens in double."
+  - level: syntax
+    text: "transform needs somewhere to write: back_inserter(names) grows the destination as it goes, rather than requiring it to be sized first."
+  - level: explicit
+    text: "readings.erase(std::remove_if(readings.begin(), readings.end(), predicate), readings.end()); — the erase-remove idiom, one line, both halves."
+
+explanation: |
+  `remove_if` moves the elements you are keeping to the front and
+  returns an iterator to where they end. The container is still
+  exactly as long as it was; the tail holds values that are valid to
+  destroy and nothing else. Calling `remove_if` alone therefore
+  leaves a vector that has the right elements at the front, the
+  wrong size, and garbage behind — which passes any test that only
+  checks `[0]` and fails the moment anything iterates the whole
+  thing.
+
+  It is not a design mistake. An iterator is a position in a range
+  and has no idea whether it points into a vector, a deque or an
+  array, so it cannot shrink anything. That constraint is what makes
+  a single implementation of `remove_if` work across every container
+  in the language, and the price is that removal is two operations.
+
+  `accumulate` hides a similar sharp edge in its initial value. The
+  accumulator's type is the type of that argument, so
+  `accumulate(begin, end, 0)` sums in `int` and
+  `accumulate(begin, end, 0.0)` sums in `double`. Pass `0` to a
+  range of doubles and every value is truncated on the way in — a
+  wrong answer produced by a correct-looking line, with no warning.
+
+  `stable_sort` over `sort` is the reproducibility choice.
+  `std::sort` is free to reorder elements that compare equal, and
+  usually does, so a report sorted by one column and read by another
+  disagrees with itself between runs on the same data. The stable
+  version costs a little memory and removes the entire class of
+  "why did these two rows swap" question.
