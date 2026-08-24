@@ -1,62 +1,51 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-//! Traits as bounds, generics over them, and one honest lifetime.
+//! Behavior shared by name, and the two ways to accept it.
 
-pub struct Rect {
-    pub width: f64,
-    pub height: f64,
-}
+pub trait Priced {
+    fn cents(&self) -> u64;
 
-pub struct Circle {
-    pub radius: f64,
-}
-
-pub trait Sized2d {
-    fn area(&self) -> f64;
-
-    // Provided once, inherited by every implementor — the Iterator trick
-    // at learnable scale.
-    fn describe(&self) -> String {
-        format!("area {:.1}", self.area())
+    /// A default: overridable, but correct for anything that has a price.
+    fn is_free(&self) -> bool {
+        self.cents() == 0
     }
 }
 
-impl Sized2d for Rect {
-    fn area(&self) -> f64 {
-        self.width * self.height
+pub struct Book {
+    pub title: String,
+    pub cents: u64,
+}
+
+pub struct Subscription {
+    pub months: u64,
+    pub monthly_cents: u64,
+}
+
+impl Priced for Book {
+    fn cents(&self) -> u64 {
+        self.cents
     }
 }
 
-impl Sized2d for Circle {
-    fn area(&self) -> f64 {
-        3.14159 * self.radius * self.radius
+impl Priced for Subscription {
+    fn cents(&self) -> u64 {
+        // saturating rather than wrapping: a nonsense subscription length
+        // should cost a great deal, not wrap around to almost nothing.
+        self.months.saturating_mul(self.monthly_cents)
     }
 }
 
-pub fn total_area(shapes: &[Box<dyn Sized2d>]) -> f64 {
-    // Dynamic dispatch: each element answers with its own area.
-    shapes.iter().map(|shape| shape.area()).sum()
+/// Static dispatch: one copy compiled per concrete type.
+pub fn total_static<T: Priced>(items: &[T]) -> u64 {
+    items.iter().map(Priced::cents).sum()
 }
 
-pub fn largest<T: PartialOrd>(items: &[T]) -> Option<&T> {
-    // Only PartialOrd: Ord would turn away f64, Copy would turn away
-    // String — callers the body handles fine.
-    let mut best: Option<&T> = None;
-    for item in items {
-        match best {
-            None => best = Some(item),
-            Some(current) if item > current => best = Some(item),
-            _ => {}
-        }
-    }
-    best
+/// Dynamic dispatch: one function, a vtable lookup per call.
+pub fn total_dynamic(items: &[Box<dyn Priced>]) -> u64 {
+    // The elements are different concrete types, so there is no single T to
+    // be generic over. That is exactly when dyn earns its indirection.
+    items.iter().map(|item| item.cents()).sum()
 }
 
-pub fn longer<'a>(left: &'a str, right: &'a str) -> &'a str {
-    // The 'a says: the result lives only while BOTH inputs do, because
-    // the caller cannot know which one came back.
-    if right.len() > left.len() {
-        right
-    } else {
-        left
-    }
+pub fn cheapest(items: &[Box<dyn Priced>]) -> Option<u64> {
+    items.iter().map(|item| item.cents()).min()
 }

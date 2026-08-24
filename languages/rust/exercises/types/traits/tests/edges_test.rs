@@ -2,41 +2,53 @@
 #[path = "../main.rs"]
 mod exercise;
 
-use exercise::{largest, longer, total_area};
+use exercise::{cheapest, total_dynamic, total_static, Book, Priced, Subscription};
 
-#[test]
-fn an_empty_slice_has_no_largest() {
-    let nothing: [i32; 0] = [];
-    assert_eq!(largest(&nothing), None);
+fn book(cents: u64) -> Book {
+    Book { title: String::from("a"), cents }
 }
 
 #[test]
-fn largest_handles_floats_where_ord_could_not() {
-    // f64 is only PartialOrd — a stricter bound would refuse this call.
-    assert_eq!(largest(&[1.5, 0.5, 2.5]), Some(&2.5));
+fn empty_totals_are_zero_not_none() {
+    // A sum has an identity element, so there is nothing to report as
+    // missing. A minimum does not, which is why cheapest returns Option.
+    let books: Vec<Book> = vec![];
+    assert_eq!(total_static(&books), 0);
+
+    let items: Vec<Box<dyn Priced>> = vec![];
+    assert_eq!(total_dynamic(&items), 0);
+    assert_eq!(cheapest(&items), None);
 }
 
 #[test]
-fn an_empty_bag_of_shapes_sums_to_zero() {
-    assert_eq!(total_area(&[]), 0.0);
+fn a_zero_month_subscription_costs_nothing() {
+    assert_eq!(Subscription { months: 0, monthly_cents: 999 }.cents(), 0);
 }
 
 #[test]
-fn the_lifetime_lets_the_result_outlive_the_call() {
-    // Both inputs live to the end of the function, so keeping the result
-    // is fine — this compiling IS the lifetime working.
-    let a = String::from("long enough");
-    let b = String::from("short");
-    let kept = longer(&a, &b);
-    assert_eq!(kept, "long enough");
-    // The version that must NOT compile (and does not):
-    // let kept; { let b = String::from("short"); kept = longer(&a, &b); }
-    // println!("{kept}"); — b died while kept still borrowed from the call.
+fn an_absurd_subscription_saturates_rather_than_wrapping() {
+    // Wrapping multiplication would make the most expensive possible
+    // subscription cost almost nothing, which is the wrong way to be wrong.
+    let sub = Subscription { months: u64::MAX, monthly_cents: 2 };
+    assert_eq!(sub.cents(), u64::MAX);
 }
 
 #[test]
-fn largest_returns_a_reference_into_the_slice() {
-    let items = [10, 30, 20];
-    let best = largest(&items).unwrap();
-    assert!(std::ptr::eq(best, &items[1]));
+fn free_items_are_still_counted_as_items() {
+    let items: Vec<Box<dyn Priced>> = vec![Box::new(book(0)), Box::new(book(500))];
+    assert_eq!(cheapest(&items), Some(0));
+    assert_eq!(total_dynamic(&items), 500);
+}
+
+#[test]
+fn the_default_can_be_reasoned_about_through_a_trait_object() {
+    let item: Box<dyn Priced> = Box::new(book(0));
+    assert!(item.is_free());
+}
+
+#[test]
+fn one_element_is_its_own_cheapest() {
+    let items: Vec<Box<dyn Priced>> = vec![Box::new(book(42))];
+    assert_eq!(cheapest(&items), Some(42));
+    assert_eq!(total_dynamic(&items), 42);
 }

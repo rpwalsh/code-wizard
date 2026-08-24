@@ -2,38 +2,50 @@
 #[path = "../main.rs"]
 mod exercise;
 
-use exercise::{largest, longer, total_area, Circle, Rect, Sized2d};
+use exercise::{cheapest, total_dynamic, total_static, Book, Priced, Subscription};
 
-#[test]
-fn areas_compute_per_shape() {
-    assert!((Rect { width: 3.0, height: 4.0 }.area() - 12.0).abs() < 1e-9);
-    assert!((Circle { radius: 2.0 }.area() - 12.56636).abs() < 1e-4);
+fn book(cents: u64) -> Book {
+    Book { title: String::from("a"), cents }
 }
 
 #[test]
-fn describe_comes_free_with_the_trait() {
-    assert_eq!(Rect { width: 5.0, height: 2.5 }.describe(), "area 12.5");
-    assert_eq!(Circle { radius: 1.0 }.describe(), "area 3.1");
+fn a_book_costs_what_it_says() {
+    assert_eq!(book(1200).cents(), 1200);
 }
 
 #[test]
-fn a_mixed_bag_sums_through_the_trait_object() {
-    let shapes: Vec<Box<dyn Sized2d>> = vec![
-        Box::new(Rect { width: 2.0, height: 3.0 }),
-        Box::new(Circle { radius: 1.0 }),
+fn a_subscription_multiplies_out() {
+    let sub = Subscription { months: 12, monthly_cents: 500 };
+    assert_eq!(sub.cents(), 6000);
+}
+
+#[test]
+fn the_default_method_works_for_both() {
+    assert!(book(0).is_free());
+    assert!(!book(1).is_free());
+    assert!(Subscription { months: 3, monthly_cents: 0 }.is_free());
+}
+
+#[test]
+fn static_dispatch_sums_one_concrete_type() {
+    let books = vec![book(100), book(250)];
+    assert_eq!(total_static(&books), 350);
+}
+
+#[test]
+fn dynamic_dispatch_sums_a_mixed_collection() {
+    let items: Vec<Box<dyn Priced>> = vec![
+        Box::new(book(100)),
+        Box::new(Subscription { months: 2, monthly_cents: 300 }),
     ];
-    assert!((total_area(&shapes) - 9.14159).abs() < 1e-5);
+    assert_eq!(total_dynamic(&items), 700);
 }
 
 #[test]
-fn largest_works_for_numbers_and_strings() {
-    assert_eq!(largest(&[3, 9, 4]), Some(&9));
-    let words = ["pear".to_string(), "zebra".to_string(), "apple".to_string()];
-    assert_eq!(largest(&words), Some(&"zebra".to_string()));
-}
-
-#[test]
-fn longer_picks_by_length() {
-    assert_eq!(longer("hi", "hello"), "hello");
-    assert_eq!(longer("first", "tied!"), "first");
+fn cheapest_finds_the_smallest() {
+    let items: Vec<Box<dyn Priced>> = vec![
+        Box::new(book(900)),
+        Box::new(Subscription { months: 1, monthly_cents: 250 }),
+    ];
+    assert_eq!(cheapest(&items), Some(250));
 }
