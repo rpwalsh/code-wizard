@@ -1,0 +1,97 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: javascript.async.concurrency
+version: 1
+language: javascript
+title: All at once is not the same as as fast as possible
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - javascript.async.concurrency
+  - javascript.async.errors
+
+prerequisites: []
+
+learningObjectives:
+  - Bound how many operations run at once without processing them one by one.
+  - Keep results in input order while tasks finish out of order.
+  - Release a held resource on the failure path as well as the success path.
+
+prompt: |
+  `await Promise.all(urls.map(fetch))` with a thousand urls opens a
+  thousand connections. The other reflex — a `for` loop with `await`
+  inside it — opens one and takes a thousand round trips. The useful
+  answer is in between, and it is worth being able to write.
+
+  In `main.js`:
+
+  - `mapLimit(items, limit, worker)` — call
+    `worker(item, index)` for every item, with **at most `limit`
+    running at any moment**, and resolve to the results **in input
+    order**. A worker that rejects rejects the whole call.
+
+    Keeping the pool full matters: when a slot frees it takes the
+    next item immediately, rather than waiting for the rest of a
+    batch to finish.
+
+  - `createLimiter(limit)` — return a function `limited(work)` that
+    runs `work()` under the same ceiling and resolves to its
+    result. Callers that arrive when the pool is full wait, and are
+    admitted in the order they arrived. A slot is freed whether the
+    work succeeds or throws.
+
+entryPoint: main.js
+
+tests:
+  - path: tests/concurrency.test.js
+    visibility: visible
+    concept: javascript.async.concurrency
+  - path: tests/edges.test.js
+    visibility: edge
+    concept: javascript.async.errors
+
+hints:
+  - level: conceptual
+    text: "Think of it as workers rather than as batches: start `limit` of them, and have each one pull the next item when it finishes."
+  - level: structural
+    text: "A shared index that each worker increments is enough coordination. There are no threads here, so nothing can interleave between reading it and adding one."
+  - level: language
+    text: "Writing each result to results[index] rather than pushing keeps the output in input order no matter which task finishes first."
+  - level: syntax
+    text: "await Promise.all(Array.from({ length: slots }, () => run())) — the workers are started together and awaited together."
+  - level: explicit
+    text: "The limiter parks a caller by pushing a resolve function onto a queue and awaiting the promise; releasing shifts one off and calls it. Do the release in a finally."
+
+explanation: |
+  The two reflexes are wrong in opposite directions. `Promise.all`
+  over a mapped array starts everything at once, which is why a
+  script that worked on ten records takes down a database on ten
+  thousand — the concurrency is set by the size of the input, which
+  is exactly the thing you do not control. A `for` loop with `await`
+  inside sets it to one, and spends the whole run waiting for a
+  network that was happy to do more.
+
+  A pool of workers pulling from a shared cursor is the shape worth
+  remembering, and it is a few lines. Each worker loops: take the
+  next index, do the work, repeat until there is nothing left. The
+  pool stays full because a worker that finishes early takes more
+  work immediately, which is the difference between this and
+  chunking. Chunking — ten, wait for all ten, next ten — is easier
+  to write and leaves the whole pool idle while the slowest of each
+  batch finishes.
+
+  There is no lock on the shared index, and none is needed. This is
+  one thread: nothing can interleave between reading `next` and
+  incrementing it, because there is no `await` between those two
+  lines. That is a real property of the language rather than luck,
+  and knowing exactly where it stops holding — at every `await` — is
+  most of what concurrency in JavaScript requires.
+
+  The `finally` in the limiter is the detail that separates working
+  code from code that works until something fails. A slot released
+  only on success is a slot lost forever the first time a task
+  throws; lose all of them and the pool stops admitting anyone. The
+  symptom is not an error, it is a service that quietly stops
+  responding, which is far harder to diagnose than a crash.
