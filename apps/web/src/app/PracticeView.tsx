@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { ActivityGrade, PracticeLog, RunState } from '@code-retrainer/activities';
+import type { ActivityGrade, PracticeLog, RunState } from '@code-wizard/activities';
 import {
   answer,
   carryForward,
@@ -12,9 +12,9 @@ import {
   startRun,
   summarize,
   verdict,
-} from '@code-retrainer/activities';
-import type { JsonValue } from '@code-retrainer/core';
-import type { ProgressStore } from '@code-retrainer/storage';
+} from '@code-wizard/activities';
+import type { JsonValue } from '@code-wizard/core';
+import type { ProgressStore } from '@code-wizard/storage';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ActivityCard } from '../components/ActivityCard.tsx';

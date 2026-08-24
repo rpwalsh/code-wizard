@@ -5,8 +5,8 @@ import type {
   TestRequest,
   TestResult,
   Workspace,
-} from '@code-retrainer/core';
-import { SkillGraph } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { SkillGraph } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 import { ExerciseCatalog } from './catalog.ts';

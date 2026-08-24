@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { runProcess } from '@code-retrainer/execution';
+import { runProcess } from '@code-wizard/execution';
 
 import { inheritedPath } from './discovery.ts';
 

@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Attempt, AttemptEvent } from '@code-retrainer/learning';
-import { abandonAttempt, recordEvent, startAttempt } from '@code-retrainer/learning';
+import type { Attempt, AttemptEvent } from '@code-wizard/learning';
+import { abandonAttempt, recordEvent, startAttempt } from '@code-wizard/learning';
 import { describe, expect, it } from 'vitest';
 
 import { compareToBaseline, readAssistance, readBaseline } from './baseline.ts';

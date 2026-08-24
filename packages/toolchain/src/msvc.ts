@@ -2,7 +2,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { runProcess } from '@code-retrainer/execution';
+import { runProcess } from '@code-wizard/execution';
 
 import { inheritedPath } from './discovery.ts';
 

@@ -19,7 +19,7 @@ worth.
 | Review schedule | Spacing practice |
 | Settings: language, theme, teaching mode, tour dismissal | Preferences |
 
-**In the browser:** an IndexedDB database named `code-retrainer-progress`,
+**In the browser:** an IndexedDB database named `code-wizard-progress`,
 scoped by the browser to the origin serving the page.
 
 **On the desktop:** a SQLite file named `progress.db` in the per-user

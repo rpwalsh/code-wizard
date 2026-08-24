@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MutationOperator } from '@code-retrainer/exercises';
+import type { MutationOperator } from '@code-wizard/exercises';
 
 /**
  * Small, plausible faults — the ones a JavaScript programmer actually makes.

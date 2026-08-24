@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { WorkspaceFile } from '@code-retrainer/core';
+import type { WorkspaceFile } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 import type { Mutant, MutationOperator } from './mutation.ts';

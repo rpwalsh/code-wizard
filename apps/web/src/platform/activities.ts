@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Activity } from '@code-retrainer/activities';
-import { activityFileSchema } from '@code-retrainer/activities';
-import type { JsonValue } from '@code-retrainer/core';
+import type { Activity } from '@code-wizard/activities';
+import { activityFileSchema } from '@code-wizard/activities';
+import type { JsonValue } from '@code-wizard/core';
 import { z } from 'zod';
 
 /**

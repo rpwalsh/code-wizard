@@ -5,7 +5,7 @@ import type {
   TestRequest,
   TestResult,
   Workspace,
-} from '@code-retrainer/core';
+} from '@code-wizard/core';
 
 export interface FakeRuntime extends LanguageRuntime {
   /** Flip to make the next test run pass. */

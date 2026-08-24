@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillMastery } from '@code-retrainer/core';
-import type { Attempt } from '@code-retrainer/learning';
+import type { SkillMastery } from '@code-wizard/core';
+import type { Attempt } from '@code-wizard/learning';
 
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
 import { assertImportable, selectDue, SNAPSHOT_FORMAT } from './progress-store.ts';

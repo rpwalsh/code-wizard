@@ -2,8 +2,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { JsonValue } from '@code-retrainer/core';
-import { toError } from '@code-retrainer/core';
+import type { JsonValue } from '@code-wizard/core';
+import { toError } from '@code-wizard/core';
 import { parse as parseYaml } from 'yaml';
 import type { ZodError } from 'zod';
 

@@ -2,7 +2,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Workspace } from '@code-retrainer/core';
+import type { Workspace } from '@code-wizard/core';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { nodeChannel } from './channel.ts';

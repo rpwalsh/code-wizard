@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { LanguageRuntime } from '@code-retrainer/core';
-import { SkillGraph } from '@code-retrainer/core';
-import { catalogFromBundle, parseBundle } from '@code-retrainer/exercises';
-import { browserChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
+import type { LanguageRuntime } from '@code-wizard/core';
+import { SkillGraph } from '@code-wizard/core';
+import { catalogFromBundle, parseBundle } from '@code-wizard/exercises';
+import { browserChannel, PyodideRuntime } from '@code-wizard/runtime-web';
 
 import { createScriptRuntimes } from './script-runtimes.ts';
 import { PhpWebRuntime } from './php-runtime.ts';
@@ -11,7 +11,7 @@ import { SqlWebRuntime } from './sql-runtime.ts';
 // Vite's `?worker` suffix compiles the module as a worker entry and hands back
 // a constructor, which guarantees it is in the build.
 import PyodideWorker from '../worker/pyodide-worker.ts?worker';
-import { IndexedDbProgressStore } from '@code-retrainer/storage/indexeddb';
+import { IndexedDbProgressStore } from '@code-wizard/storage/indexeddb';
 
 import type { Platform, PlatformProgress } from './types.ts';
 
@@ -33,7 +33,7 @@ import type { Platform, PlatformProgress } from './types.ts';
  */
 const PYODIDE_INDEX_URL = new URL('runtime/pyodide/', document.baseURI).href;
 
-/** Where `code-retrainer content bundle` writes the curriculum. */
+/** Where `code-wizard content bundle` writes the curriculum. */
 const CATALOG_URL = 'content/catalog.json';
 
 export async function createWebPlatform(
@@ -45,7 +45,7 @@ export async function createWebPlatform(
   if (!response.ok) {
     throw new Error(
       `Could not load the exercise catalog (${response.status}). ` +
-        'The site may have been deployed without running `code-retrainer content bundle`.',
+        'The site may have been deployed without running `code-wizard content bundle`.',
     );
   }
   const bundle = parseBundle(await response.text());

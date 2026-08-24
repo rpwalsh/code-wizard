@@ -11,14 +11,14 @@
  * The snapshot is the store's own export format, so the same file restores
  * into the browser build and the desktop build alike.
  */
-import type { JsonValue } from '@code-retrainer/core';
-import type { ProgressStore } from '@code-retrainer/storage';
-import { LATEST_VERSION, parseSnapshot, SNAPSHOT_FORMAT } from '@code-retrainer/storage';
+import type { JsonValue } from '@code-wizard/core';
+import type { ProgressStore } from '@code-wizard/storage';
+import { LATEST_VERSION, parseSnapshot, SNAPSHOT_FORMAT } from '@code-wizard/storage';
 
 /** A filename that sorts by date and says what it is. */
 function suggestedName(at: Date): string {
   const stamp = at.toISOString().slice(0, 10);
-  return `code-retrainer-progress-${stamp}.json`;
+  return `code-wizard-progress-${stamp}.json`;
 }
 
 /**

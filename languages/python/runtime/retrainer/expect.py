@@ -1,7 +1,7 @@
 # Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 """Assertion helpers that carry structured expectation data.
 
-Plain ``assert`` works fine in Code Retrainer exercises, but pytest can only hand the
+Plain ``assert`` works fine in Code Wizard exercises, but pytest can only hand the
 reporter a rendered string. These helpers raise an exception that carries the
 expected and received values as separate fields, so the test panel can show
 

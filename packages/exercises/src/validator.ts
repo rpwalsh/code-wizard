@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { LanguageRuntime, SkillGraph, TestResult } from '@code-retrainer/core';
-import { isGreen } from '@code-retrainer/core';
+import type { LanguageRuntime, SkillGraph, TestResult } from '@code-wizard/core';
+import { isGreen } from '@code-wizard/core';
 
 import type { ExerciseCatalog } from './catalog.ts';
 import type { Exercise } from './model.ts';

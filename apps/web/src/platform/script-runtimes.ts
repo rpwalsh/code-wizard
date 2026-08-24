@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { LanguageMetadata, WorkspaceFile } from '@code-retrainer/core';
-import { EXPECT_JS, RUN_JS, TEST_JS } from '@code-retrainer/javascript/sources';
-import type { ScriptFile } from '@code-retrainer/runtime-web';
-import { ScriptWebRuntime } from '@code-retrainer/runtime-web';
+import type { LanguageMetadata, WorkspaceFile } from '@code-wizard/core';
+import { EXPECT_JS, RUN_JS, TEST_JS } from '@code-wizard/javascript/sources';
+import type { ScriptFile } from '@code-wizard/runtime-web';
+import { ScriptWebRuntime } from '@code-wizard/runtime-web';
 
 // Vite compiles this to a worker entry and hands back a constructor, which is
 // what guarantees the module is in the build.

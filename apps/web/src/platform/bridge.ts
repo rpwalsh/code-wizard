@@ -12,10 +12,10 @@ import type {
   SkillMastery,
   TestRequest,
   TestResult,
-} from '@code-retrainer/core';
-import type { ContentBundle } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
-import type { ProgressSnapshot, StoredReview } from '@code-retrainer/storage';
+} from '@code-wizard/core';
+import type { ContentBundle } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
+import type { ProgressSnapshot, StoredReview } from '@code-wizard/storage';
 
 /**
  * The desktop IPC contract, written once and shared by both sides.

@@ -3,15 +3,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { TestStatus, WorkspaceFile } from '@code-retrainer/core';
+import type { TestStatus, WorkspaceFile } from '@code-wizard/core';
 import type {
   Command,
   CompileStep,
   RunContext,
   TestContext,
   ToolchainSpec,
-} from '@code-retrainer/toolchain';
-import { reportWriter, ToolchainRuntime } from '@code-retrainer/toolchain';
+} from '@code-wizard/toolchain';
+import { reportWriter, ToolchainRuntime } from '@code-wizard/toolchain';
 
 /**
  * Rust, on rustc directly rather than on Cargo.

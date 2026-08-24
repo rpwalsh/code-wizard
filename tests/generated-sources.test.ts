@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { EXPECT_PY, REPORT_PY } from '@code-retrainer/python/support';
+import { EXPECT_PY, REPORT_PY } from '@code-wizard/python/support';
 import { describe, expect, it } from 'vitest';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,7 +29,7 @@ describe('generated Python sources', () => {
   });
 
   it('matches pyodide_host.py exactly', async () => {
-    const { PYODIDE_HOST_PY } = await import('@code-retrainer/runtime-web');
+    const { PYODIDE_HOST_PY } = await import('@code-wizard/runtime-web');
     expect(PYODIDE_HOST_PY).toBe(await onDisk('packages/runtime-web/python/pyodide_host.py'));
   });
 });

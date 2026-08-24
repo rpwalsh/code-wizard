@@ -2,10 +2,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Activity } from '@code-retrainer/activities';
-import { loadActivitiesForLanguage } from '@code-retrainer/activities';
-import type { Skill } from '@code-retrainer/core';
-import { loadPlanned } from '@code-retrainer/exercises';
+import type { Activity } from '@code-wizard/activities';
+import { loadActivitiesForLanguage } from '@code-wizard/activities';
+import type { Skill } from '@code-wizard/core';
+import { loadPlanned } from '@code-wizard/exercises';
 
 import { buildSkillGraph, curriculumRoots, plannedRoot, repositoryRoot } from './context.ts';
 

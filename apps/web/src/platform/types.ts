@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
-import type { ExerciseCatalog } from '@code-retrainer/exercises';
-import type { ProgressStore } from '@code-retrainer/storage';
+import type { LanguageRuntime, SkillGraph } from '@code-wizard/core';
+import type { ExerciseCatalog } from '@code-wizard/exercises';
+import type { ProgressStore } from '@code-wizard/storage';
 
 /**
  * Everything the application needs from the machine it is running on.

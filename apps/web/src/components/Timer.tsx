@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Exercise } from '@code-retrainer/exercises';
-import { timeBudgetSeconds } from '@code-retrainer/exercises';
+import type { Exercise } from '@code-wizard/exercises';
+import { timeBudgetSeconds } from '@code-wizard/exercises';
 
 import { formatDuration } from './Complete.tsx';
 

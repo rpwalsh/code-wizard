@@ -1,11 +1,11 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TrainingMode } from '@code-retrainer/core';
-import { withdrawalLadder } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import type { ExperienceLevel } from '@code-retrainer/curriculum';
-import { seedFromExperience } from '@code-retrainer/curriculum';
-import type { Constraint, Dashboard, SkillMap } from '@code-retrainer/session';
-import { ProgressService } from '@code-retrainer/session';
+import type { TrainingMode } from '@code-wizard/core';
+import { withdrawalLadder } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import type { ExperienceLevel } from '@code-wizard/curriculum';
+import { seedFromExperience } from '@code-wizard/curriculum';
+import type { Constraint, Dashboard, SkillMap } from '@code-wizard/session';
+import { ProgressService } from '@code-wizard/session';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Command } from '../components/Palette.tsx';
@@ -16,8 +16,8 @@ import { fetchActivities } from '../platform/activities.ts';
 import { eraseProgress, exportProgress, importProgress, pickJsonFile } from '../platform/transfer.ts';
 import { Home } from './Home.tsx';
 import { Onboarding } from './Onboarding.tsx';
-import type { Demonstration } from '@code-retrainer/curriculum';
-import { planDemonstration } from '@code-retrainer/curriculum';
+import type { Demonstration } from '@code-wizard/curriculum';
+import { planDemonstration } from '@code-wizard/curriculum';
 import { Backdrop } from '../components/Backdrop.tsx';
 import type { ThemeChoice } from '../components/ThemeSwitch.tsx';
 import { applyTheme, isThemeChoice, themeChoices } from '../components/ThemeSwitch.tsx';
@@ -420,7 +420,7 @@ function AppInner() {
   if (failure) {
     return (
       <main className="boot">
-        <p className="boot__mark">Code Retrainer</p>
+        <p className="boot__mark">Code Wizard</p>
         <p className="notice notice--error" role="alert">
           {failure}
         </p>
@@ -435,7 +435,7 @@ function AppInner() {
   if (!platform || !dashboard || !skillMap || onboarded === null) {
     return (
       <main className="boot" aria-busy="true">
-        <p className="boot__mark">Code Retrainer</p>
+        <p className="boot__mark">Code Wizard</p>
         <p className="boot__status" role="status" aria-live="polite">
           <span className="spinner" data-size="small" aria-hidden="true" />
           {progress.message}

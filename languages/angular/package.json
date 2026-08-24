@@ -1,5 +1,5 @@
 {
-  "name": "@code-retrainer/lang-angular",
+  "name": "@code-wizard/lang-angular",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
     }
   },
   "dependencies": {
-    "@code-retrainer/core": "*",
-    "@code-retrainer/execution": "*",
-    "@code-retrainer/toolchain": "*"
+    "@code-wizard/core": "*",
+    "@code-wizard/execution": "*",
+    "@code-wizard/toolchain": "*"
   },
   "scripts": {
     "build": "tsc --build"

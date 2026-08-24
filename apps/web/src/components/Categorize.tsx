@@ -10,7 +10,7 @@
  * Each item is judged on its own, so the review after the answer marks the one
  * that moved to the wrong column rather than reddening the whole exercise.
  */
-import type { CategorizeActivity } from '@code-retrainer/activities';
+import type { CategorizeActivity } from '@code-wizard/activities';
 
 import { usePlacement } from './use-placement.ts';
 

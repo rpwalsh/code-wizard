@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { headlineMastery } from '@code-retrainer/core';
+import { headlineMastery } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 import type { Attempt, AttemptEvent, HintLevel } from './attempt.ts';

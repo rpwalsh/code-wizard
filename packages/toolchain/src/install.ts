@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { runProcess } from '@code-retrainer/execution';
+import { runProcess } from '@code-wizard/execution';
 
 import { inheritedPath } from './discovery.ts';
 import type { PortableSource } from './portable.ts';

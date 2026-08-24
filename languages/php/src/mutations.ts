@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Dialect, MutationOperator } from '@code-retrainer/exercises';
-import { braceFamilyOperators, swapOperator } from '@code-retrainer/exercises';
+import type { Dialect, MutationOperator } from '@code-wizard/exercises';
+import { braceFamilyOperators, swapOperator } from '@code-wizard/exercises';
 
 const dialect: Dialect = {
   lineComments: ['//', '#'],

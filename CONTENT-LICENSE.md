@@ -2,7 +2,7 @@
 
 # Curriculum License
 
-Copyright 2026 Code Retrainer contributors. All rights reserved.
+Copyright 2026 Code Wizard contributors. All rights reserved.
 
 This license covers the **curriculum**: the exercises, skills, prerequisites,
 prompts, hints, learning objectives, tests, reference solutions and reference

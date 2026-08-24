@@ -39,7 +39,7 @@ jobs:
         run: node packages/cli/dist/main.js content bundle
 
       - name: Build the site
-        run: npm run build --workspace @code-retrainer/web
+        run: npm run build --workspace @code-wizard/web
 
       - uses: actions/configure-pages@v5
 

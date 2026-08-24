@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { RuntimeDiagnosis, TestCaseResult, TestResult } from '@code-retrainer/core';
+import type { RuntimeDiagnosis, TestCaseResult, TestResult } from '@code-wizard/core';
 
 import { columns, formatDuration, indent, style, symbol } from './terminal.ts';
 
@@ -96,7 +96,7 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'runtime-unavailable':
       return 'the language runtime is not available';
     case 'internal-error':
-      return 'Code Retrainer could not read the test report';
+      return 'Code Wizard could not read the test report';
     case 'completed':
       return 'completed';
   }

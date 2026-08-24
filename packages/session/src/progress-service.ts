@@ -1,17 +1,17 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
-import { headlineMastery, weakestDimensions } from '@code-retrainer/core';
+import type { SkillGraph, SkillMastery } from '@code-wizard/core';
+import { headlineMastery, weakestDimensions } from '@code-wizard/core';
 import type {
   ExerciseHistory,
   LearnerState,
   Recommendation,
   SessionPlan,
-} from '@code-retrainer/curriculum';
-import { planSession, recommend } from '@code-retrainer/curriculum';
-import type { ExerciseCatalog } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
-import { buildHistory, computeMetrics, independentCompletionRate } from '@code-retrainer/learning';
-import type { ProgressStore, StoredReview } from '@code-retrainer/storage';
+} from '@code-wizard/curriculum';
+import { planSession, recommend } from '@code-wizard/curriculum';
+import type { ExerciseCatalog } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
+import { buildHistory, computeMetrics, independentCompletionRate } from '@code-wizard/learning';
+import type { ProgressStore, StoredReview } from '@code-wizard/storage';
 
 import type { Constraint, FluencyReading, SkillMap, TrajectoryPoint } from './analytics.ts';
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';

@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { WorkspaceFile } from '@code-retrainer/core';
+import type { WorkspaceFile } from '@code-wizard/core';
 
 /**
  * Deliberately breaking the reference solution to find out whether the tests

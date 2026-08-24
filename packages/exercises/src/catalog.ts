@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph } from '@code-retrainer/core';
+import type { SkillGraph } from '@code-wizard/core';
 
 import { findExerciseDirectories, loadExercise, ExerciseLoadError } from './loader.ts';
 import type { Exercise } from './model.ts';

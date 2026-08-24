@@ -5,8 +5,8 @@ import type {
   TestCaseResult,
   TestStatus,
   TestVisibility,
-} from '@code-retrainer/core';
-import { isJsonObject, parseJson, readNumber, readObject, readString } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { isJsonObject, parseJson, readNumber, readObject, readString } from '@code-wizard/core';
 
 /** Shape written by `retrainer/report.py`. Versioned so the plugin can evolve. */
 export interface PytestReportDocument {

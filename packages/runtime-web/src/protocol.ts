@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Diagnostic } from '@code-retrainer/core';
+import type { Diagnostic } from '@code-wizard/core';
 
 /**
  * The wire format between the page and the Pyodide worker.

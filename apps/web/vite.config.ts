@@ -65,7 +65,7 @@ function contentSecurityPolicy(): Plugin {
 
 export default defineConfig({
   // Relative asset URLs, so the same build works at a domain root, under a
-  // GitHub Pages project path (/code-retrainer/), and from Electron's file:// loader.
+  // GitHub Pages project path (/code-wizard/), and from Electron's file:// loader.
   base: './',
   // `wasm` teaches the bundler the WebAssembly ESM import that the PHP engine
   // uses; `topLevelAwait` covers the await that its loader performs at module

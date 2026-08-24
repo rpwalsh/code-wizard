@@ -1,12 +1,12 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { JsonValue, Skill } from '@code-retrainer/core';
-import { isJsonObject, parseJson, readNumber, readString, toError } from '@code-retrainer/core';
+import type { JsonValue, Skill } from '@code-wizard/core';
+import { isJsonObject, parseJson, readNumber, readString, toError } from '@code-wizard/core';
 
 import { toExercise, toSkill } from './bundle-parse.ts';
 import { ExerciseCatalog } from './catalog.ts';
 import type { Exercise } from './model.ts';
 
-export const BUNDLE_FORMAT = 'code-retrainer-content';
+export const BUNDLE_FORMAT = 'code-wizard-content';
 export const BUNDLE_VERSION = 1;
 
 /**
@@ -75,7 +75,7 @@ export function toBundle(
  * Parse a bundle back into a catalog.
  *
  * Validation is structural rather than exhaustive: a bundle is produced by
- * `code-retrainer content bundle` from already-validated exercises, so the job here is
+ * `code-wizard content bundle` from already-validated exercises, so the job here is
  * to fail clearly on a stale, truncated or foreign file rather than to
  * re-litigate content rules the authoring pipeline already enforced.
  */
@@ -97,7 +97,7 @@ export function parseBundle(raw: string | JsonValue): ContentBundle {
 
   const format = readString(parsed, 'format');
   if (format !== BUNDLE_FORMAT) {
-    throw new BundleError(`Not a Code Retrainer content bundle (format: ${String(format)}).`);
+    throw new BundleError(`Not a Code Wizard content bundle (format: ${String(format)}).`);
   }
 
   const version = readNumber(parsed, 'version');

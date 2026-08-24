@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TrajectoryPoint } from '@code-retrainer/session';
+import type { TrajectoryPoint } from '@code-wizard/session';
 
 interface TrajectoryProps {
   readonly points: readonly TrajectoryPoint[];

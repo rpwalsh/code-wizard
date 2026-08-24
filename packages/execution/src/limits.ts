@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { ExecutionLimits } from '@code-retrainer/core';
-import { defaultExecutionLimits } from '@code-retrainer/core';
+import type { ExecutionLimits } from '@code-wizard/core';
+import { defaultExecutionLimits } from '@code-wizard/core';
 
 /** Hard ceilings the application will not exceed regardless of what an exercise asks for. */
 export const maximumLimits: ExecutionLimits = Object.freeze({

@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { JsonValue } from '@code-retrainer/core';
-import { parseJson } from '@code-retrainer/core';
+import type { JsonValue } from '@code-wizard/core';
+import { parseJson } from '@code-wizard/core';
 
 import type {
   BootConfig,
@@ -49,8 +49,8 @@ export interface PyodideLoadOptions {
 
 export type PyodideLoader = (options: PyodideLoadOptions) => Promise<PyodideApi>;
 
-const SUPPORT_DIR = '/code-retrainer';
-const REPORT_PATH = '/work/.code-retrainer/report.json';
+const SUPPORT_DIR = '/code-wizard';
+const REPORT_PATH = '/work/.code-wizard/report.json';
 
 /**
  * Drives CPython-in-WebAssembly.

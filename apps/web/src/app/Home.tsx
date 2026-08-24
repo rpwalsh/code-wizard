@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { masteryDimensions } from '@code-retrainer/core';
-import { slotLabel } from '@code-retrainer/curriculum';
-import type { Exercise } from '@code-retrainer/exercises';
-import type { Dashboard } from '@code-retrainer/session';
+import { masteryDimensions } from '@code-wizard/core';
+import { slotLabel } from '@code-wizard/curriculum';
+import type { Exercise } from '@code-wizard/exercises';
+import type { Dashboard } from '@code-wizard/session';
 
 import type { Platform } from '../platform/index.ts';
 

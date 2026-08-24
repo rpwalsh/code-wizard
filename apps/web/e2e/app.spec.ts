@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 import type { Platform } from '../src/platform/types.ts';
-import { pythonSkillGraph } from '@code-retrainer/python';
+import { pythonSkillGraph } from '@code-wizard/python';
 
 /**
  * The app, in a real browser, against the real production build.

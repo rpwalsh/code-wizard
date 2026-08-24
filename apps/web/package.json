@@ -1,5 +1,5 @@
 {
-  "name": "@code-retrainer/web",
+  "name": "@code-wizard/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,20 +12,20 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.1.1",
-    "@code-retrainer/core": "*",
-    "@code-retrainer/curriculum": "*",
-    "@code-retrainer/exercises": "*",
-    "@code-retrainer/learning": "*",
-    "@code-retrainer/runtime-web": "*",
-    "@code-retrainer/session": "*",
-    "@code-retrainer/storage": "*",
+    "@code-wizard/core": "*",
+    "@code-wizard/curriculum": "*",
+    "@code-wizard/exercises": "*",
+    "@code-wizard/learning": "*",
+    "@code-wizard/runtime-web": "*",
+    "@code-wizard/session": "*",
+    "@code-wizard/storage": "*",
     "@monaco-editor/react": "^4.6.0",
     "monaco-editor": "^0.52.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@code-retrainer/activities": "*",
+    "@code-wizard/activities": "*",
     "esbuild-wasm": "^0.25.12",
-    "@code-retrainer/javascript": "*"
+    "@code-wizard/javascript": "*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

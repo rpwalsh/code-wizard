@@ -1,12 +1,12 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { SkillGraph } from '@code-retrainer/core';
-import { ExerciseCatalog, validateExercise } from '@code-retrainer/exercises';
+import { SkillGraph } from '@code-wizard/core';
+import { ExerciseCatalog, validateExercise } from '@code-wizard/exercises';
 import {
   discoverPython,
   PythonRuntime,
   pythonExercisesDir,
   pythonSkills,
-} from '@code-retrainer/python';
+} from '@code-wizard/python';
 import { describe, expect, it } from 'vitest';
 
 /**

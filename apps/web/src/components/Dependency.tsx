@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { AssistancePoint, BaselineComparison } from '@code-retrainer/session';
+import type { AssistancePoint, BaselineComparison } from '@code-wizard/session';
 
 /**
  * How much help the learner needed, over time, against where they started.

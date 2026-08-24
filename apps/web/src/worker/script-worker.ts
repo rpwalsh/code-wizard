@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { ScriptRequest, ScriptResponse } from '@code-retrainer/runtime-web';
-import { serveScriptWorker } from '@code-retrainer/runtime-web';
+import type { ScriptRequest, ScriptResponse } from '@code-wizard/runtime-web';
+import { serveScriptWorker } from '@code-wizard/runtime-web';
 
 /**
  * The worker that runs a learner's JavaScript.

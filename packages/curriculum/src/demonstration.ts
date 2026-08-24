@@ -1,9 +1,9 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph, SkillId, SkillMastery, TrainingMode } from '@code-retrainer/core';
-import { makeMastery } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
-import { computeMetrics } from '@code-retrainer/learning';
+import type { SkillGraph, SkillId, SkillMastery, TrainingMode } from '@code-wizard/core';
+import { makeMastery } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
+import { computeMetrics } from '@code-wizard/learning';
 
 /**
  * "I know this. Skip it."

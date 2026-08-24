@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { SkillGraph } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
-import { abandonAttempt, recordEvent, startAttempt } from '@code-retrainer/learning';
+import { SkillGraph } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
+import { abandonAttempt, recordEvent, startAttempt } from '@code-wizard/learning';
 import { describe, expect, it } from 'vitest';
 
 import {

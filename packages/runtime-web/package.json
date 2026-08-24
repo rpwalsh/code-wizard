@@ -1,5 +1,5 @@
 {
-  "name": "@code-retrainer/runtime-web",
+  "name": "@code-wizard/runtime-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     }
   },
   "dependencies": {
-    "@code-retrainer/core": "*",
-    "@code-retrainer/python": "*",
+    "@code-wizard/core": "*",
+    "@code-wizard/python": "*",
     "pyodide": "^314.0.5"
   },
   "scripts": {

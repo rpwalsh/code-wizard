@@ -1,9 +1,9 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import { ExerciseCatalog } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
-import { recordEvent, startAttempt } from '@code-retrainer/learning';
+import { makeMastery, masteryDimensions, SkillGraph } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import { ExerciseCatalog } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
+import { recordEvent, startAttempt } from '@code-wizard/learning';
 import { describe, expect, it } from 'vitest';
 
 import { buildSkillMap, findConstraints, readFluency, replayTrajectory } from './analytics.ts';

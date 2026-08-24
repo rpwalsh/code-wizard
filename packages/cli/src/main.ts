@@ -11,19 +11,19 @@ import { runRuntimeCommand } from './commands/runtime.ts';
 import { style } from './terminal.ts';
 
 const USAGE = `
-${style.bold('code-retrainer')} — code fluency training toolkit
+${style.bold('code-wizard')} — code fluency training toolkit
 
 ${style.bold('Usage')}
-  code-retrainer runtime doctor [--language <id>]     Check that a language toolchain is usable
-  code-retrainer exercise list [--language <id>]      List loadable exercises
-  code-retrainer exercise show <id>                   Print one exercise, including its hints
-  code-retrainer exercise validate [<id>] [--fast]    Validate exercise content
-  code-retrainer exercise run <id> [--solution]       Run an exercise's tests
-  code-retrainer curriculum check                     Check the skill graph and its coverage
-  code-retrainer plan session [--level <id>]          Build today's training session
-  code-retrainer plan next [--level <id>]             Explain what to practice next
-  code-retrainer plan diagnostic                      Show the onboarding diagnostic
-  code-retrainer content bundle [--out <path>]        Emit the curriculum as static JSON
+  code-wizard runtime doctor [--language <id>]     Check that a language toolchain is usable
+  code-wizard exercise list [--language <id>]      List loadable exercises
+  code-wizard exercise show <id>                   Print one exercise, including its hints
+  code-wizard exercise validate [<id>] [--fast]    Validate exercise content
+  code-wizard exercise run <id> [--solution]       Run an exercise's tests
+  code-wizard curriculum check                     Check the skill graph and its coverage
+  code-wizard plan session [--level <id>]          Build today's training session
+  code-wizard plan next [--level <id>]             Explain what to practice next
+  code-wizard plan diagnostic                      Show the onboarding diagnostic
+  code-wizard content bundle [--out <path>]        Emit the curriculum as static JSON
 
 ${style.bold('Options')}
   --help, -h        Show this message

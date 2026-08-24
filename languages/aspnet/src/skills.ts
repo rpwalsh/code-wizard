@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Skill } from '@code-retrainer/core';
-import { SkillGraph } from '@code-retrainer/core';
+import type { Skill } from '@code-wizard/core';
+import { SkillGraph } from '@code-wizard/core';
 
 /**
  * The ASP.NET skill graph.

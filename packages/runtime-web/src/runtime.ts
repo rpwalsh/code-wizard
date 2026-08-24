@@ -19,16 +19,16 @@ import type {
   TraceRequest,
   TraceResult,
   Workspace,
-} from '@code-retrainer/core';
+} from '@code-wizard/core';
 import {
   assertSafeRelativePath,
   redactHiddenTests,
   toError,
   summarize,
   WorkspacePathError,
-} from '@code-retrainer/core';
-import { parseReport, parseTrace, toTestCases } from '@code-retrainer/python/report';
-import { EXPECT_PY, INIT_PY, REPORT_PY, TRACE_PY } from '@code-retrainer/python/support';
+} from '@code-wizard/core';
+import { parseReport, parseTrace, toTestCases } from '@code-wizard/python/report';
+import { EXPECT_PY, INIT_PY, REPORT_PY, TRACE_PY } from '@code-wizard/python/support';
 
 import type { WorkerChannel } from './channel.ts';
 import { WorkerClient, WorkerTerminatedError } from './channel.ts';

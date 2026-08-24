@@ -2,8 +2,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { checkActivities } from '@code-retrainer/activities';
-import { bundleSizeBytes, parseBundle, toBundle } from '@code-retrainer/exercises';
+import { checkActivities } from '@code-wizard/activities';
+import { bundleSizeBytes, parseBundle, toBundle } from '@code-wizard/exercises';
 
 import { collectActivitySets } from '../activity-sources.ts';
 import { createContext, relativeToRepository, repositoryRoot } from '../context.ts';
@@ -31,7 +31,7 @@ export async function runContentCommand(args: readonly string[], flags: Flags): 
       return bundleActivities(flags);
     default:
       console.error(style.red(`Unknown content command "${subcommand}".`));
-      console.error('Try: code-retrainer content bundle | activities | inspect');
+      console.error('Try: code-wizard content bundle | activities | inspect');
       return 2;
   }
 }
@@ -109,7 +109,7 @@ async function inspect(flags: Flags): Promise<number> {
     raw = await fs.readFile(target, 'utf8');
   } catch {
     console.error(style.red(`No bundle at ${relativeToRepository(target)}.`));
-    console.error('Build one with: code-retrainer content bundle');
+    console.error('Build one with: code-wizard content bundle');
     return 2;
   }
 

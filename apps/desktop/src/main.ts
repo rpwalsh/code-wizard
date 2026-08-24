@@ -2,24 +2,24 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { LanguageRuntime, Skill } from '@code-retrainer/core';
-import type { ContentBundle } from '@code-retrainer/exercises';
-import { ExerciseCatalog, parseBundle, toBundle } from '@code-retrainer/exercises';
-import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-retrainer/python';
-import * as angular from '@code-retrainer/lang-angular';
-import * as aspnet from '@code-retrainer/lang-aspnet';
-import * as c from '@code-retrainer/lang-c';
-import * as cpp from '@code-retrainer/lang-cpp';
-import * as csharp from '@code-retrainer/lang-csharp';
-import * as go from '@code-retrainer/lang-go';
-import * as javascript from '@code-retrainer/javascript';
-import * as node from '@code-retrainer/lang-node';
-import * as php from '@code-retrainer/lang-php';
-import * as react from '@code-retrainer/lang-react';
-import * as rust from '@code-retrainer/lang-rust';
-import * as sql from '@code-retrainer/lang-sql';
-import * as typescript from '@code-retrainer/lang-typescript';
-import { SqliteProgressStore } from '@code-retrainer/storage/sqlite';
+import type { LanguageRuntime, Skill } from '@code-wizard/core';
+import type { ContentBundle } from '@code-wizard/exercises';
+import { ExerciseCatalog, parseBundle, toBundle } from '@code-wizard/exercises';
+import { PythonRuntime, pythonExercisesDir, pythonSkills } from '@code-wizard/python';
+import * as angular from '@code-wizard/lang-angular';
+import * as aspnet from '@code-wizard/lang-aspnet';
+import * as c from '@code-wizard/lang-c';
+import * as cpp from '@code-wizard/lang-cpp';
+import * as csharp from '@code-wizard/lang-csharp';
+import * as go from '@code-wizard/lang-go';
+import * as javascript from '@code-wizard/javascript';
+import * as node from '@code-wizard/lang-node';
+import * as php from '@code-wizard/lang-php';
+import * as react from '@code-wizard/lang-react';
+import * as rust from '@code-wizard/lang-rust';
+import * as sql from '@code-wizard/lang-sql';
+import * as typescript from '@code-wizard/lang-typescript';
+import { SqliteProgressStore } from '@code-wizard/storage/sqlite';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 
 import type { DesktopChannel, PayloadOf, ResultOf } from '../../web/src/platform/bridge.ts';
@@ -205,7 +205,7 @@ function createWindow(): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: '#0f1115',
-    title: 'Code Retrainer',
+    title: 'Code Wizard',
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),
       // The renderer gets no Node, an isolated context, and a sandbox. Its

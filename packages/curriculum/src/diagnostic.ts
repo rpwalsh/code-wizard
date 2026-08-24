@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
-import type { ClaimableDimension } from '@code-retrainer/core';
-import { makeMastery } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
+import type { SkillGraph, SkillMastery } from '@code-wizard/core';
+import type { ClaimableDimension } from '@code-wizard/core';
+import { makeMastery } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
 
 /**
  * Onboarding (spec §30).

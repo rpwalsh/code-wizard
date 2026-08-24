@@ -115,7 +115,7 @@ describe('runProcess', () => {
 
   it('reports a spawn failure rather than throwing', async () => {
     const outcome = await runProcess({
-      command: 'code-retrainer-definitely-not-a-real-binary',
+      command: 'code-wizard-definitely-not-a-real-binary',
       args: [],
       cwd: os.tmpdir(),
       env: buildSandboxEnvironment(),

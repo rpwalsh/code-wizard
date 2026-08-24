@@ -60,7 +60,7 @@ export default tseslint.config(
       //
       // The single exception is a `catch` binding, which the language types as
       // `unknown` and where the only alternative TypeScript offers is `any`.
-      // `toError()` in @code-retrainer/core is the one place that is allowed.
+      // `toError()` in @code-wizard/core is the one place that is allowed.
       'no-restricted-syntax': [
         'error',
         {

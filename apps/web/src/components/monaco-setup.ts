@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 /**
- * A Monaco build containing only what Code Retrainer uses.
+ * A Monaco build containing only what Code Wizard uses.
  *
  * Importing the `monaco-editor` barrel pulls in every language it ships with —
  * ABAP, Solidity, Razor and eighty more — which is over 3 MB of grammars for a

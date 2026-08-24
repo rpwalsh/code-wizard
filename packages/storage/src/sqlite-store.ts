@@ -8,15 +8,15 @@ import type {
   MasteryVector,
   SkillMastery,
   TrainingMode,
-} from '@code-retrainer/core';
+} from '@code-wizard/core';
 import {
   isJsonObject,
   makeMastery,
   masteryDimensions,
   parseJson,
   trainingModes,
-} from '@code-retrainer/core';
-import type { Attempt, AttemptEvent, AttemptOutcome } from '@code-retrainer/learning';
+} from '@code-wizard/core';
+import type { Attempt, AttemptEvent, AttemptOutcome } from '@code-wizard/learning';
 
 import type { ProgressSnapshot, ProgressStore, StoredReview } from './progress-store.ts';
 import { assertImportable, SNAPSHOT_FORMAT } from './progress-store.ts';

@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { JsonObject } from '@code-retrainer/core';
-import { isJsonObject, parseJson } from '@code-retrainer/core';
+import type { JsonObject } from '@code-wizard/core';
+import { isJsonObject, parseJson } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 /**

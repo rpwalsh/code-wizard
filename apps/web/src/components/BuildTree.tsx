@@ -13,7 +13,7 @@
  * learner should have to discover through a broken diagram: a cycle is not a
  * wrong answer, it is not a tree at all, so the move is simply refused.
  */
-import type { BuildTreeActivity } from '@code-retrainer/activities';
+import type { BuildTreeActivity } from '@code-wizard/activities';
 
 import { usePlacement } from './use-placement.ts';
 

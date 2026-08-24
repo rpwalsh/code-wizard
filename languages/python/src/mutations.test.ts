@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { generateMutants } from '@code-retrainer/exercises';
+import { generateMutants } from '@code-wizard/exercises';
 import { describe, expect, it } from 'vitest';
 
 import { pythonMutationOperators } from './mutations.ts';

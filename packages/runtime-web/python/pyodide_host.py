@@ -25,7 +25,7 @@ import traceback
 from typing import Any
 
 WORKSPACE = "/work"
-SUPPORT = "/code-retrainer"
+SUPPORT = "/code-wizard"
 
 __all__ = [
     "reset_workspace",
@@ -179,7 +179,7 @@ def run_program(entry_point: str, argv_json: str, stdin_text: str, limit: int) -
 
 
 def run_tests(targets_json: str, report_path: str, limit: int) -> str:
-    """Run pytest with the Code Retrainer reporting plugin loaded."""
+    """Run pytest with the Code Wizard reporting plugin loaded."""
     _purge_workspace_modules()
     targets = json.loads(targets_json)
     status = -1

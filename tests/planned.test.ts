@@ -2,9 +2,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SkillGraph } from '@code-retrainer/core';
-import { validateSyllabus } from '@code-retrainer/curriculum';
-import { loadPlanned, loadSyllabus } from '@code-retrainer/exercises';
+import { SkillGraph } from '@code-wizard/core';
+import { validateSyllabus } from '@code-wizard/curriculum';
+import { loadPlanned, loadSyllabus } from '@code-wizard/exercises';
 import { describe, expect, it } from 'vitest';
 
 /**

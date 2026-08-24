@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { ValidationIssue, ValidationReport } from '@code-retrainer/exercises';
+import type { ValidationIssue, ValidationReport } from '@code-wizard/exercises';
 import {
   attemptWorkspace,
   orderedHints,
@@ -8,17 +8,17 @@ import {
   testVisibility,
   validateCatalog,
   validateExercise,
-} from '@code-retrainer/exercises';
+} from '@code-wizard/exercises';
 
-import { javascriptMutationOperators } from '@code-retrainer/javascript';
-import { pythonMutationOperators } from '@code-retrainer/python';
-import { cMutationOperators } from '@code-retrainer/lang-c';
-import { cppMutationOperators } from '@code-retrainer/lang-cpp';
-import { csharpMutationOperators } from '@code-retrainer/lang-csharp';
-import { goMutationOperators } from '@code-retrainer/lang-go';
-import { phpMutationOperators } from '@code-retrainer/lang-php';
-import { rustMutationOperators } from '@code-retrainer/lang-rust';
-import { sqlMutationOperators } from '@code-retrainer/lang-sql';
+import { javascriptMutationOperators } from '@code-wizard/javascript';
+import { pythonMutationOperators } from '@code-wizard/python';
+import { cMutationOperators } from '@code-wizard/lang-c';
+import { cppMutationOperators } from '@code-wizard/lang-cpp';
+import { csharpMutationOperators } from '@code-wizard/lang-csharp';
+import { goMutationOperators } from '@code-wizard/lang-go';
+import { phpMutationOperators } from '@code-wizard/lang-php';
+import { rustMutationOperators } from '@code-wizard/lang-rust';
+import { sqlMutationOperators } from '@code-wizard/lang-sql';
 
 import type { CliContext } from '../context.ts';
 import { createContext, relativeToRepository } from '../context.ts';
@@ -52,7 +52,7 @@ export async function runExerciseCommand(args: readonly string[], flags: Flags):
     default:
       console.error(style.red(`Unknown exercise command "${subcommand ?? ''}".`));
       console.error(
-        'Try: code-retrainer exercise list | show <id> | validate | run <id> | mutate [id]',
+        'Try: code-wizard exercise list | show <id> | validate | run <id> | mutate [id]',
       );
       return 2;
   }
@@ -88,7 +88,7 @@ async function list(flags: Flags): Promise<number> {
 
 async function show(id: string | undefined): Promise<number> {
   if (!id) {
-    console.error(style.red('Usage: code-retrainer exercise show <id>'));
+    console.error(style.red('Usage: code-wizard exercise show <id>'));
     return 2;
   }
   const context = await createContext();
@@ -202,7 +202,7 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
       indent(
         style.yellow(
           `${pluralize(skipped.length, 'exercise')} skipped — no toolchain for ` +
-            `${byLanguage.join(', ')}. Run \`code-retrainer runtime doctor\` for what to install.`,
+            `${byLanguage.join(', ')}. Run \`code-wizard runtime doctor\` for what to install.`,
         ),
       ),
     );
@@ -239,7 +239,7 @@ async function validate(id: string | undefined, flags: Flags): Promise<number> {
 
 async function run(id: string | undefined, flags: Flags): Promise<number> {
   if (!id) {
-    console.error(style.red('Usage: code-retrainer exercise run <id> [--solution]'));
+    console.error(style.red('Usage: code-wizard exercise run <id> [--solution]'));
     return 2;
   }
 

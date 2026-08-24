@@ -1,5 +1,5 @@
 # Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-"""pytest plugin that emits a structured JSON report for Code Retrainer.
+"""pytest plugin that emits a structured JSON report for Code Wizard.
 
 Parsing human-readable pytest output is brittle and version-dependent, so the
 runtime adapter never does it. This plugin writes one JSON document describing

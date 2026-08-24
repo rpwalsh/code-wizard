@@ -13,8 +13,8 @@ import type {
   TestRequest,
   TestResult,
   WorkspaceFile,
-} from '@code-retrainer/core';
-import { parseReport, toTestCases } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { parseReport, toTestCases } from '@code-wizard/core';
 
 import type { ScriptCall, ScriptFile, ScriptRequest, ScriptResponse } from './protocol.ts';
 

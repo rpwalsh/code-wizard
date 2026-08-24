@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TestVisibility, Workspace } from '@code-retrainer/core';
+import type { TestVisibility, Workspace } from '@code-wizard/core';
 
 /** Exercise taxonomy from spec §7. Drives UI affordances and time budgets. */
 export type ExerciseKind =
@@ -137,7 +137,7 @@ export function attemptWorkspace(exercise: Exercise): Workspace {
   return mergeWorkspace(exercise.starter, exercise.tests);
 }
 
-/** The reference solution, plus tests. Used by validation and by `code-retrainer exercise verify`. */
+/** The reference solution, plus tests. Used by validation and by `code-wizard exercise verify`. */
 export function solutionWorkspace(exercise: Exercise): Workspace {
   return mergeWorkspace(exercise.solution, exercise.tests);
 }

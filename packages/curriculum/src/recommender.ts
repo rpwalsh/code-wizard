@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph, SkillMastery } from '@code-retrainer/core';
-import { headlineMastery, readiness } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
+import type { SkillGraph, SkillMastery } from '@code-wizard/core';
+import { headlineMastery, readiness } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
 
 import type { ReviewState } from './scheduler.ts';
 import { isDue, overdueDays } from './scheduler.ts';

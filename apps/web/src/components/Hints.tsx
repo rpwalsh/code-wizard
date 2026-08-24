@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Hint, HintLevel } from '@code-retrainer/exercises';
+import type { Hint, HintLevel } from '@code-wizard/exercises';
 
 interface HintsProps {
   readonly revealed: readonly Hint[];

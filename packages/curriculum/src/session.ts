@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Exercise } from '@code-retrainer/exercises';
+import type { Exercise } from '@code-wizard/exercises';
 
 import type { Recommendation } from './recommender.ts';
 

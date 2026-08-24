@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Activity, ActivityGrade, ActivityResponse } from '@code-retrainer/activities';
-import { grade } from '@code-retrainer/activities';
+import type { Activity, ActivityGrade, ActivityResponse } from '@code-wizard/activities';
+import { grade } from '@code-wizard/activities';
 import { useEffect, useMemo, useState } from 'react';
 
 import { BuildTree } from './BuildTree.tsx';

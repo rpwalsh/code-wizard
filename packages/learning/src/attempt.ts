@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TrainingMode } from '@code-retrainer/core';
+import type { TrainingMode } from '@code-wizard/core';
 
 /**
  * Everything the learning engine knows about one sitting with one exercise.

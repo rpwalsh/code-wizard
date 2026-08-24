@@ -1,5 +1,5 @@
 {
-  "name": "@code-retrainer/session",
+  "name": "@code-wizard/session",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,11 +12,11 @@
     }
   },
   "dependencies": {
-    "@code-retrainer/core": "*",
-    "@code-retrainer/curriculum": "*",
-    "@code-retrainer/exercises": "*",
-    "@code-retrainer/learning": "*",
-    "@code-retrainer/storage": "*"
+    "@code-wizard/core": "*",
+    "@code-wizard/curriculum": "*",
+    "@code-wizard/exercises": "*",
+    "@code-wizard/learning": "*",
+    "@code-wizard/storage": "*"
   },
   "scripts": {
     "build": "tsc --build"

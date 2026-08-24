@@ -2,102 +2,102 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { LanguageRuntime, SkillGraph } from '@code-retrainer/core';
-import type { InstallablePackage, ToolchainSpec } from '@code-retrainer/toolchain';
-import { LanguageRegistry, SkillGraph as SkillGraphClass } from '@code-retrainer/core';
-import type { ExerciseCatalog } from '@code-retrainer/exercises';
-import { ExerciseCatalog as Catalog } from '@code-retrainer/exercises';
+import type { LanguageRuntime, SkillGraph } from '@code-wizard/core';
+import type { InstallablePackage, ToolchainSpec } from '@code-wizard/toolchain';
+import { LanguageRegistry, SkillGraph as SkillGraphClass } from '@code-wizard/core';
+import type { ExerciseCatalog } from '@code-wizard/exercises';
+import { ExerciseCatalog as Catalog } from '@code-wizard/exercises';
 import {
   JavaScriptRuntime,
   javascriptSkills,
   exercisesDir as javascriptExercisesDir,
   curriculumDir as javascriptCurriculumDir,
-} from '@code-retrainer/javascript';
+} from '@code-wizard/javascript';
 import {
   PythonRuntime,
   pythonCurriculumDir,
   pythonExercisesDir,
   pythonSkills,
-} from '@code-retrainer/python';
+} from '@code-wizard/python';
 import {
   createTypeScriptRuntime,
   curriculumDir as typescriptCurriculumDir,
   exercisesDir as typescriptExercisesDir,
   typescriptSkills,
-} from '@code-retrainer/lang-typescript';
+} from '@code-wizard/lang-typescript';
 import {
   createNodeRuntime,
   curriculumDir as nodeCurriculumDir,
   exercisesDir as nodeExercisesDir,
   nodeSkills,
-} from '@code-retrainer/lang-node';
+} from '@code-wizard/lang-node';
 import {
   createReactRuntime,
   curriculumDir as reactCurriculumDir,
   exercisesDir as reactExercisesDir,
   reactSkills,
-} from '@code-retrainer/lang-react';
+} from '@code-wizard/lang-react';
 import {
   createAngularRuntime,
   curriculumDir as angularCurriculumDir,
   exercisesDir as angularExercisesDir,
   angularSkills,
-} from '@code-retrainer/lang-angular';
+} from '@code-wizard/lang-angular';
 import {
   createSqlRuntime,
   curriculumDir as sqlCurriculumDir,
   exercisesDir as sqlExercisesDir,
   sqlSkills,
-} from '@code-retrainer/lang-sql';
+} from '@code-wizard/lang-sql';
 import {
   createCSharpRuntime,
   curriculumDir as csharpCurriculumDir,
   exercisesDir as csharpExercisesDir,
   csharpSkills,
   csharpSpec,
-} from '@code-retrainer/lang-csharp';
+} from '@code-wizard/lang-csharp';
 import {
   createAspNetRuntime,
   curriculumDir as aspnetCurriculumDir,
   exercisesDir as aspnetExercisesDir,
   aspnetSkills,
   aspnetSpec,
-} from '@code-retrainer/lang-aspnet';
+} from '@code-wizard/lang-aspnet';
 import {
   createCRuntime,
   curriculumDir as cCurriculumDir,
   exercisesDir as cExercisesDir,
   cSkills,
   cSpec,
-} from '@code-retrainer/lang-c';
+} from '@code-wizard/lang-c';
 import {
   createCppRuntime,
   curriculumDir as cppCurriculumDir,
   exercisesDir as cppExercisesDir,
   cppSkills,
   cppSpec,
-} from '@code-retrainer/lang-cpp';
+} from '@code-wizard/lang-cpp';
 import {
   createGoRuntime,
   curriculumDir as goCurriculumDir,
   exercisesDir as goExercisesDir,
   goSkills,
   goSpec,
-} from '@code-retrainer/lang-go';
+} from '@code-wizard/lang-go';
 import {
   createRustRuntime,
   curriculumDir as rustCurriculumDir,
   exercisesDir as rustExercisesDir,
   rustSkills,
   rustSpec,
-} from '@code-retrainer/lang-rust';
+} from '@code-wizard/lang-rust';
 import {
   createPhpRuntime,
   curriculumDir as phpCurriculumDir,
   exercisesDir as phpExercisesDir,
   phpSkills,
   phpSpec,
-} from '@code-retrainer/lang-php';
+} from '@code-wizard/lang-php';
 
 /** Repository root, resolved from this file rather than from the cwd. */
 export const repositoryRoot = path.resolve(

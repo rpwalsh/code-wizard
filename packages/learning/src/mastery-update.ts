@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryDimension, MasteryVector, SkillMastery } from '@code-retrainer/core';
-import { clamp01, makeMastery, masteryDimensions, zeroMastery } from '@code-retrainer/core';
+import type { MasteryDimension, MasteryVector, SkillMastery } from '@code-wizard/core';
+import { clamp01, makeMastery, masteryDimensions, zeroMastery } from '@code-wizard/core';
 
 import type { MasteryObservation } from './grading.ts';
 

@@ -5,11 +5,11 @@ import {
   masteryDimensions,
   readiness,
   SkillGraph,
-} from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import { ExerciseCatalog } from '@code-retrainer/exercises';
-import type { ProgressStore } from '@code-retrainer/storage';
-import { MemoryProgressStore } from '@code-retrainer/storage';
+} from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import { ExerciseCatalog } from '@code-wizard/exercises';
+import type { ProgressStore } from '@code-wizard/storage';
+import { MemoryProgressStore } from '@code-wizard/storage';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ExerciseSession } from './exercise-session.ts';

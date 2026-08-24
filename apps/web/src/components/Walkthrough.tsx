@@ -15,7 +15,7 @@
  * exactly as if the Hints panel had revealed it. Guidance is never free
  * and never punished; it is simply counted, the same everywhere.
  */
-import type { Exercise, Hint } from '@code-retrainer/exercises';
+import type { Exercise, Hint } from '@code-wizard/exercises';
 import { useState } from 'react';
 
 import { Inline } from './Inline.tsx';

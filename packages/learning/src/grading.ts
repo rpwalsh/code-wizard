@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryDimension, TrainingMode } from '@code-retrainer/core';
-import { affordancesFor } from '@code-retrainer/core';
+import type { MasteryDimension, TrainingMode } from '@code-wizard/core';
+import { affordancesFor } from '@code-wizard/core';
 
 import type { Attempt } from './attempt.ts';
 import type { FluencyMetrics } from './metrics.ts';

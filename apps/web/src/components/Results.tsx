@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TestCaseResult, TestResult } from '@code-retrainer/core';
+import type { TestCaseResult, TestResult } from '@code-wizard/core';
 import { useEffect, useState } from 'react';
 
 import { Spinner } from './layout/Spinner.tsx';
@@ -220,7 +220,7 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'runtime-unavailable':
       return 'Python is not available.';
     case 'internal-error':
-      return 'Code Retrainer could not read the test results.';
+      return 'Code Wizard could not read the test results.';
     case 'completed':
       return 'Completed.';
   }

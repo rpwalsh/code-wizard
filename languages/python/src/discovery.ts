@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import os from 'node:os';
 
-import { buildSandboxEnvironment, runProcess } from '@code-retrainer/execution';
+import { buildSandboxEnvironment, runProcess } from '@code-wizard/execution';
 
 export interface PythonInterpreter {
   /** Executable to spawn, e.g. `py` or `python3`. */

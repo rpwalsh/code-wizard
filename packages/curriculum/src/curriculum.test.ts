@@ -1,8 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Skill, SkillMastery } from '@code-retrainer/core';
-import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@code-retrainer/core';
-import type { Exercise, ExerciseKind } from '@code-retrainer/exercises';
-import type { MasteryObservation } from '@code-retrainer/learning';
+import type { Skill, SkillMastery } from '@code-wizard/core';
+import { isClaimable, makeMastery, masteryDimensions, SkillGraph } from '@code-wizard/core';
+import type { Exercise, ExerciseKind } from '@code-wizard/exercises';
+import type { MasteryObservation } from '@code-wizard/learning';
 import { describe, expect, it } from 'vitest';
 
 import type { ExerciseHistory, LearnerState } from './recommender.ts';

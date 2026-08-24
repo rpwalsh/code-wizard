@@ -1,12 +1,12 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Demonstration } from '@code-retrainer/curriculum';
-import type { TrainingMode } from '@code-retrainer/core';
-import { affordancesFor, isGreen } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
-import type { FluencyHistory } from '@code-retrainer/learning';
-import { buildHistory } from '@code-retrainer/learning';
-import type { SessionState } from '@code-retrainer/session';
-import { ExerciseSession } from '@code-retrainer/session';
+import type { Demonstration } from '@code-wizard/curriculum';
+import type { TrainingMode } from '@code-wizard/core';
+import { affordancesFor, isGreen } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
+import type { FluencyHistory } from '@code-wizard/learning';
+import { buildHistory } from '@code-wizard/learning';
+import type { SessionState } from '@code-wizard/session';
+import { ExerciseSession } from '@code-wizard/session';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { Complete } from '../components/Complete.tsx';
@@ -20,7 +20,7 @@ import { Results } from '../components/Results.tsx';
 import { TraceScope } from '../components/TraceScope.tsx';
 import { Walkthrough } from '../components/Walkthrough.tsx';
 import { Resizer } from '../components/layout/Resizer.tsx';
-import type { LanguageRuntime } from '@code-retrainer/core';
+import type { LanguageRuntime } from '@code-wizard/core';
 import type { Platform } from '../platform/index.ts';
 
 /**

@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { runProcess } from '@code-retrainer/execution';
+import { runProcess } from '@code-wizard/execution';
 
 /**
  * Finding the compiler, and saying something useful when it is not there.

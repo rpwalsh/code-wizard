@@ -19,9 +19,9 @@ import type {
   TestResult,
   Workspace,
   WorkspaceFile,
-} from '@code-retrainer/core';
-import type { StructuredReport } from '@code-retrainer/core';
-import { parseReport, toTestCases } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import type { StructuredReport } from '@code-wizard/core';
+import { parseReport, toTestCases } from '@code-wizard/core';
 import {
   buildSandboxEnvironment,
   resolveLimits,
@@ -29,7 +29,7 @@ import {
   withSandbox,
   type ProcessOutcome,
   type Sandbox,
-} from '@code-retrainer/execution';
+} from '@code-wizard/execution';
 
 import type { FoundTool, ToolSpec } from './discovery.ts';
 import type { InstallablePackage } from './install.ts';

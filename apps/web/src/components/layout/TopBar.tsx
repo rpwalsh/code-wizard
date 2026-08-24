@@ -7,8 +7,8 @@
  * choice scopes all of them: the plan, the map, the catalog and the
  * practice deck all answer for one language at a time.
  */
-import type { TrainingMode } from '@code-retrainer/core';
-import { isTrainingMode, withdrawalLadder } from '@code-retrainer/core';
+import type { TrainingMode } from '@code-wizard/core';
+import { isTrainingMode, withdrawalLadder } from '@code-wizard/core';
 
 import type { ThemeChoice } from '../ThemeSwitch.tsx';
 import { ThemeSwitch } from '../ThemeSwitch.tsx';
@@ -63,7 +63,7 @@ export function TopBar({
 
   return (
     <header className="topbar">
-      <span className="wordmark">Code Retrainer</span>
+      <span className="wordmark">Code Wizard</span>
 
       <nav className="topbar__nav" aria-label="Sections">
         {SECTIONS.map((entry) => (

@@ -17,7 +17,7 @@ export default defineConfig({
        * load — which is exactly what happened the first time an exercise was
        * written in a language whose extension vitest recognizes.
        *
-       * These are validated instead by `code-retrainer exercise validate`,
+       * These are validated instead by `code-wizard exercise validate`,
        * which runs them the way a learner will: in a sandbox, with the harness
        * installed, against both the reference solution and the starter.
        */

@@ -20,15 +20,15 @@ import type {
   TestVisibility,
   TraceRequest,
   TraceResult,
-} from '@code-retrainer/core';
-import { redactHiddenTests, summarize } from '@code-retrainer/core';
-import type { ProcessOutcome, Sandbox } from '@code-retrainer/execution';
+} from '@code-wizard/core';
+import { redactHiddenTests, summarize } from '@code-wizard/core';
+import type { ProcessOutcome, Sandbox } from '@code-wizard/execution';
 import {
   buildSandboxEnvironment,
   resolveLimits,
   runProcess,
   withSandbox,
-} from '@code-retrainer/execution';
+} from '@code-wizard/execution';
 
 import type { PythonInterpreter } from './discovery.ts';
 import { discoverPython, MINIMUM_PYTHON, PythonNotFoundError } from './discovery.ts';
@@ -36,9 +36,9 @@ import { parseReport, toTestCases } from './report.ts';
 import { parseTrace } from './trace-report.ts';
 import { pythonDocumentationDir, pythonSupportDir } from './paths.ts';
 
-const REPORT_PATH = '.code-retrainer/report.json';
-const DIAGNOSTIC_PATH = '.code-retrainer/diagnostics.json';
-const TRACE_PATH = '.code-retrainer/trace.json';
+const REPORT_PATH = '.code-wizard/report.json';
+const DIAGNOSTIC_PATH = '.code-wizard/diagnostics.json';
+const TRACE_PATH = '.code-wizard/trace.json';
 
 /**
  * Flags applied to every interpreter launch:
@@ -663,7 +663,7 @@ export class PythonRuntime implements LanguageRuntime {
         // Deterministic iteration order for sets and string-keyed dicts, so an
         // exercise cannot pass on one run and fail on the next.
         PYTHONHASHSEED: '0',
-        // Only plugins Code Retrainer asks for; a plugin the learner happens to have
+        // Only plugins Code Wizard asks for; a plugin the learner happens to have
         // installed must not change how their exercise is graded.
         PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1',
       },

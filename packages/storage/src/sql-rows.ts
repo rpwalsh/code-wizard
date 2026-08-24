@@ -40,7 +40,7 @@ export function optionalText(row: SqlRow, column: string): string | null {
 export function integer(row: SqlRow, column: string): number {
   const value = row[column];
   if (typeof value === 'number') return value;
-  // SQLite returns large integers as bigint; every count and interval Code Retrainer
+  // SQLite returns large integers as bigint; every count and interval Code Wizard
   // stores is comfortably inside Number's safe range.
   if (typeof value === 'bigint') return Number(value);
   throw new SqlColumnError(column, 'an integer', value ?? null);

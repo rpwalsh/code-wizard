@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { ExperienceLevel } from '@code-retrainer/curriculum';
+import type { ExperienceLevel } from '@code-wizard/curriculum';
 import { useState } from 'react';
 
 import type { LanguageOption } from '../components/layout/TopBar.tsx';
@@ -56,7 +56,7 @@ export function Onboarding({ languages, onChoose }: OnboardingProps) {
     return (
       <main className="onboarding">
         <div className="onboarding__inner">
-          <p className="boot__mark">Code Retrainer</p>
+          <p className="boot__mark">Code Wizard</p>
           <h1 className="onboarding__question">Which language are you here to get back?</h1>
           <p className="onboarding__note">
             You can switch at any time from the bar at the top — this only decides where today
@@ -89,7 +89,7 @@ export function Onboarding({ languages, onChoose }: OnboardingProps) {
   return (
     <main className="onboarding">
       <div className="onboarding__inner">
-        <p className="boot__mark">Code Retrainer</p>
+        <p className="boot__mark">Code Wizard</p>
         <h1 className="onboarding__question">How much {chosen.title} have you written?</h1>
         <p className="onboarding__note">
           This only sets a starting point so the curriculum knows where to begin. Everything that

@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryDimension, SkillId } from '@code-retrainer/core';
+import type { MasteryDimension, SkillId } from '@code-wizard/core';
 
 /**
  * Practice that does not run code.

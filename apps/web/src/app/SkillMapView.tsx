@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Constraint, SkillMap, SkillNode } from '@code-retrainer/session';
+import type { Constraint, SkillMap, SkillNode } from '@code-wizard/session';
 import { useMemo, useState } from 'react';
 
 import { SkillDag } from '../components/SkillDag.tsx';

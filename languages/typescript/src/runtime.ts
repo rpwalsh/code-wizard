@@ -3,9 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { WorkspaceFile } from '@code-retrainer/core';
-import type { Command, RunContext, TestContext, ToolchainSpec } from '@code-retrainer/toolchain';
-import { ToolchainRuntime } from '@code-retrainer/toolchain';
+import type { WorkspaceFile } from '@code-wizard/core';
+import type { Command, RunContext, TestContext, ToolchainSpec } from '@code-wizard/toolchain';
+import { ToolchainRuntime } from '@code-wizard/toolchain';
 
 /**
  * TypeScript, on the Node the platform is already running under.

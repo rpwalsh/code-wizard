@@ -1,9 +1,9 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { checkActivities, loadActivitiesForLanguage } from '@code-retrainer/activities';
+import { checkActivities, loadActivitiesForLanguage } from '@code-wizard/activities';
 
 import { collectActivitySets } from '../activity-sources.ts';
-import { loadPlanned, loadSyllabus } from '@code-retrainer/exercises';
-import { readSyllabusProgress, validateSyllabus } from '@code-retrainer/curriculum';
+import { loadPlanned, loadSyllabus } from '@code-wizard/exercises';
+import { readSyllabusProgress, validateSyllabus } from '@code-wizard/curriculum';
 
 import { createContext, curriculumRoots, plannedRoot } from '../context.ts';
 import { columns, heading, indent, pluralize, style, symbol } from '../terminal.ts';
@@ -30,7 +30,7 @@ export async function runCurriculumCommand(
     default:
       console.error(style.red(`Unknown curriculum command "${subcommand}".`));
       console.error(
-        'Try: code-retrainer curriculum check | skills | syllabus | planned | activities',
+        'Try: code-wizard curriculum check | skills | syllabus | planned | activities',
       );
       return 2;
   }

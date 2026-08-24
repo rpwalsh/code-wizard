@@ -2,9 +2,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { TestStatus, WorkspaceFile } from '@code-retrainer/core';
-import type { Command, RunContext, TestContext, ToolchainSpec } from '@code-retrainer/toolchain';
-import { goPortable, reportWriter, ToolchainRuntime } from '@code-retrainer/toolchain';
+import type { TestStatus, WorkspaceFile } from '@code-wizard/core';
+import type { Command, RunContext, TestContext, ToolchainSpec } from '@code-wizard/toolchain';
+import { goPortable, reportWriter, ToolchainRuntime } from '@code-wizard/toolchain';
 
 /**
  * Go, on the Go toolchain.

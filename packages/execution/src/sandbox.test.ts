@@ -43,8 +43,8 @@ describe('workspace path safety', () => {
   it('accepts ordinary relative paths', () => {
     expect(assertSafeRelativePath('main.py')).toBe('main.py');
     expect(assertSafeRelativePath('tests/test_main.py')).toBe('tests/test_main.py');
-    expect(assertSafeRelativePath('.code-retrainer/report.json')).toBe(
-      '.code-retrainer/report.json',
+    expect(assertSafeRelativePath('.code-wizard/report.json')).toBe(
+      '.code-wizard/report.json',
     );
   });
 
@@ -53,15 +53,15 @@ describe('workspace path safety', () => {
   });
 
   it('keeps resolved paths inside the root', () => {
-    const root = path.join(os.tmpdir(), 'code-retrainer-root');
+    const root = path.join(os.tmpdir(), 'code-wizard-root');
     expect(resolveInside(root, 'a/b.py')).toBe(path.resolve(root, 'a', 'b.py'));
     expect(() => resolveInside(root, '../sibling/b.py')).toThrow(WorkspacePathError);
   });
 
   it('does not confuse a sibling directory sharing a name prefix', () => {
-    // `code-retrainer-root-evil` starts with `code-retrainer-root`; a naive prefix check passes it.
-    const root = path.join(os.tmpdir(), 'code-retrainer-root');
-    expect(() => resolveInside(root, '../code-retrainer-root-evil/x.py')).toThrow(
+    // `code-wizard-root-evil` starts with `code-wizard-root`; a naive prefix check passes it.
+    const root = path.join(os.tmpdir(), 'code-wizard-root');
+    expect(() => resolveInside(root, '../code-wizard-root-evil/x.py')).toThrow(
       WorkspacePathError,
     );
   });

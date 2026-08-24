@@ -163,7 +163,7 @@ data that can be wrong or hostile.
   segments, NUL bytes and Windows reserved device names, and verifying the resolved path stays
   inside the sandbox root.
 
-`code-retrainer runtime doctor` verifies these behaviors by exercising them, not by asserting that the code
+`code-wizard runtime doctor` verifies these behaviors by exercising them, not by asserting that the code
 exists. It runs a program, trips a timeout, and floods an output buffer.
 
 ### A tradeoff worth naming
@@ -177,7 +177,7 @@ how tests run — is closed by `PYTEST_DISABLE_PLUGIN_AUTOLOAD` instead.
 
 ## 3. Test results are structured, never scraped
 
-Parsing human-readable pytest output is brittle and version-dependent. Code Retrainer ships a pytest plugin
+Parsing human-readable pytest output is brittle and version-dependent. Code Wizard ships a pytest plugin
 that writes a versioned JSON document, and the TypeScript side reads that.
 
 Exercises may use `retrainer.expect` helpers, which raise an exception carrying the expected and
@@ -204,7 +204,7 @@ explanation.
 
 Adding an exercise never requires changing application code.
 
-`code-retrainer exercise validate` executes the content:
+`code-wizard exercise validate` executes the content:
 
 - The reference solution must pass every test.
 - The starter must **fail** at least one — otherwise the exercise asks the learner to do nothing.

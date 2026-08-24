@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Attempt } from '@code-retrainer/learning';
-import { computeMetrics } from '@code-retrainer/learning';
+import type { Attempt } from '@code-wizard/learning';
+import { computeMetrics } from '@code-wizard/learning';
 
 /**
  * Where the learner started, and how far that is from where they are.

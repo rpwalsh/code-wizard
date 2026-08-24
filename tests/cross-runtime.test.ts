@@ -2,16 +2,16 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { LanguageRuntime, TestCaseResult } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
+import type { LanguageRuntime, TestCaseResult } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
 import {
   attemptWorkspace,
   ExerciseCatalog,
   solutionWorkspace,
   testVisibility,
-} from '@code-retrainer/exercises';
-import { discoverPython, PythonRuntime, pythonExercisesDir } from '@code-retrainer/python';
-import { nodeChannel, PyodideRuntime } from '@code-retrainer/runtime-web';
+} from '@code-wizard/exercises';
+import { discoverPython, PythonRuntime, pythonExercisesDir } from '@code-wizard/python';
+import { nodeChannel, PyodideRuntime } from '@code-wizard/runtime-web';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**

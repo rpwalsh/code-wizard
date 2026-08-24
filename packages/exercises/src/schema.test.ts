@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { JsonValue } from '@code-retrainer/core';
+import type { JsonValue } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 import { exerciseManifestSchema } from './schema.ts';

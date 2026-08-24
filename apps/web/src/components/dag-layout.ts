@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillMap } from '@code-retrainer/session';
+import type { SkillMap } from '@code-wizard/session';
 
 export interface LaidOutNode {
   readonly skillId: string;

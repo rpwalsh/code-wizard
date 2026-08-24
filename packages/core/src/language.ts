@@ -36,7 +36,7 @@ export interface RuntimeCheck {
   readonly remedy?: string;
 }
 
-/** Result of `code-retrainer runtime doctor` for one language (spec §41). */
+/** Result of `code-wizard runtime doctor` for one language (spec §41). */
 export interface RuntimeDiagnosis {
   readonly language: LanguageId;
   readonly ready: boolean;

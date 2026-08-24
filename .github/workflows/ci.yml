@@ -97,7 +97,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Test in a browser
-        run: npm run e2e --workspace @code-retrainer/web
+        run: npm run e2e --workspace @code-wizard/web
 
       - uses: actions/upload-artifact@v4
         if: failure()

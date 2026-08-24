@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryDimension, MasteryVector, SkillId } from '@code-retrainer/core';
-import { clamp01, makeMastery } from '@code-retrainer/core';
+import type { MasteryDimension, MasteryVector, SkillId } from '@code-wizard/core';
+import { clamp01, makeMastery } from '@code-wizard/core';
 
 import type { ActivityGrade } from './grading.ts';
 import type { Activity } from './model.ts';

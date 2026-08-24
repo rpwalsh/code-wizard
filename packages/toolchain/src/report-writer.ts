@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { TestStatus } from '@code-retrainer/core';
+import type { TestStatus } from '@code-wizard/core';
 
 /**
  * Build the shared report from cases parsed on this side of the boundary.

@@ -6,19 +6,19 @@ import type {
   TestResult,
   TraceResult,
   TrainingMode,
-} from '@code-retrainer/core';
-import type { Prediction } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import type { Prediction } from '@code-wizard/core';
 import {
   affordancesFor,
   headlineMastery,
   isGreen,
   isPredictionCorrect,
-} from '@code-retrainer/core';
-import type { Demonstration, DemonstrationResult } from '@code-retrainer/curriculum';
-import { creditDemonstration, judgeDemonstration } from '@code-retrainer/curriculum';
-import type { Exercise, Hint } from '@code-retrainer/exercises';
-import { attemptWorkspace, orderedHints, testVisibility } from '@code-retrainer/exercises';
-import type { Attempt, MasteryChange } from '@code-retrainer/learning';
+} from '@code-wizard/core';
+import type { Demonstration, DemonstrationResult } from '@code-wizard/curriculum';
+import { creditDemonstration, judgeDemonstration } from '@code-wizard/curriculum';
+import type { Exercise, Hint } from '@code-wizard/exercises';
+import { attemptWorkspace, orderedHints, testVisibility } from '@code-wizard/exercises';
+import type { Attempt, MasteryChange } from '@code-wizard/learning';
 import {
   abandonAttempt,
   applyObservation,
@@ -30,9 +30,9 @@ import {
   recordEvent,
   reinforceRetention,
   startAttempt,
-} from '@code-retrainer/learning';
-import type { ProgressStore, StoredReview } from '@code-retrainer/storage';
-import { scheduleNext } from '@code-retrainer/curriculum';
+} from '@code-wizard/learning';
+import type { ProgressStore, StoredReview } from '@code-wizard/storage';
+import { scheduleNext } from '@code-wizard/curriculum';
 
 export interface SessionDependencies {
   readonly runtime: LanguageRuntime;

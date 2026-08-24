@@ -7,7 +7,7 @@
  * two differ in exactly one place — how a message is posted — which is
  * resolved once, at startup.
  */
-import { toError } from '@code-retrainer/core';
+import { toError } from '@code-wizard/core';
 
 import type { PyodideGlobal, PyodideLoader, PyodideResult } from './engine.ts';
 import { PyodideEngine } from './engine.ts';
@@ -42,7 +42,7 @@ async function resolveHost(): Promise<Host> {
   }
 
   const { parentPort } = await import('node:worker_threads');
-  if (!parentPort) throw new Error('code-retrainer worker started outside a worker context');
+  if (!parentPort) throw new Error('code-wizard worker started outside a worker context');
   return {
     post: (message) => parentPort.postMessage(message),
     subscribe: (handler) => parentPort.on('message', (message: WorkerRequest) => handler(message)),

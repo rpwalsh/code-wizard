@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { JsonObject, JsonValue, TraceEvent, TraceStep } from '@code-retrainer/core';
-import { isJsonObject, parseJson, readNumber, readString } from '@code-retrainer/core';
+import type { JsonObject, JsonValue, TraceEvent, TraceStep } from '@code-wizard/core';
+import { isJsonObject, parseJson, readNumber, readString } from '@code-wizard/core';
 
 /** The document `retrainer/trace.py` writes. */
 export interface TraceDocument {

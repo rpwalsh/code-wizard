@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillMap, SkillNode } from '@code-retrainer/session';
+import type { SkillMap, SkillNode } from '@code-wizard/session';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { DagLayout, Viewport } from './dag-layout.ts';

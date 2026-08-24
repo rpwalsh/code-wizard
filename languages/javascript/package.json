@@ -1,5 +1,5 @@
 {
-  "name": "@code-retrainer/javascript",
+  "name": "@code-wizard/javascript",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,9 +16,9 @@
     }
   },
   "dependencies": {
-    "@code-retrainer/core": "*",
-    "@code-retrainer/execution": "*",
-    "@code-retrainer/exercises": "*"
+    "@code-wizard/core": "*",
+    "@code-wizard/execution": "*",
+    "@code-wizard/exercises": "*"
   },
   "scripts": {
     "build": "tsc --build"

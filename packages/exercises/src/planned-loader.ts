@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Skill } from '@code-retrainer/core';
+import type { Skill } from '@code-wizard/core';
 import { parse } from 'yaml';
 import { z } from 'zod';
 

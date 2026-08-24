@@ -1,6 +1,6 @@
 <!-- Copyright 2026 Ryan P. Walsh (rpwalsh.github.io) -->
 
-# Code Retrainer
+# Code Wizard
 
 **Get your hands back.**
 
@@ -56,7 +56,7 @@ wrong option was tempting.
 **Exercises** — write the code yourself, against tests, with the starter
 material progressively withdrawn. This is the part that measures fluency. Every
 language has a runtime behind it, and every skill in every language has at
-least one exercise behind it — `code-retrainer curriculum syllabus` reports
+least one exercise behind it — `code-wizard curriculum syllabus` reports
 the coverage per language, and today every row reads 100%.
 
 The two are not interchangeable and the software will not pretend they are.
@@ -239,7 +239,7 @@ Python. The other eight need their own toolchain — a C compiler, the Go
 toolchain, rustc, the .NET SDK, the PHP CLI — and none of them guesses. Run:
 
 ```bash
-npm run code-retrainer runtime doctor
+npm run code-wizard runtime doctor
 ```
 
 and every language reports whether it can build and run a trivial program on
@@ -253,8 +253,8 @@ backend, middleware and architecture are disciplines practiced _in_ the
 fourteen languages rather than beside them. They ship activities today, and
 their exercises need fixtures rather than a compiler.
 
-`code-retrainer curriculum planned` shows how far each one has got, and
-`code-retrainer curriculum activities` checks every answer key in the product.
+`code-wizard curriculum planned` shows how far each one has got, and
+`code-wizard curriculum activities` checks every answer key in the product.
 
 ---
 
@@ -310,7 +310,7 @@ For the desktop app:
 
 ```bash
 npm run web
-npm run build --workspace @code-retrainer/desktop
+npm run build --workspace @code-wizard/desktop
 cd apps/desktop && npx electron .
 ```
 

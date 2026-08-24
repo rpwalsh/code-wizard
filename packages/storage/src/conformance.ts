@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { makeMastery } from '@code-retrainer/core';
-import type { Attempt } from '@code-retrainer/learning';
-import { recordEvent, startAttempt } from '@code-retrainer/learning';
+import { makeMastery } from '@code-wizard/core';
+import type { Attempt } from '@code-wizard/learning';
+import { recordEvent, startAttempt } from '@code-wizard/learning';
 import { describe, expect, it } from 'vitest';
 
 import type { ProgressStore, StoredReview } from './progress-store.ts';
@@ -251,7 +251,7 @@ export function describeProgressStoreContract(
             reviews: [],
             attempts: [],
           }),
-        ).rejects.toThrow(/Not a Code Retrainer progress export/);
+        ).rejects.toThrow(/Not a Code Wizard progress export/);
       });
     });
 

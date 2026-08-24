@@ -1,9 +1,9 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import { buildRegistry, buildSkillGraph, curriculumRoots } from '@code-retrainer/cli/context';
-import { loadActivitiesForLanguage } from '@code-retrainer/activities';
-import { loadSyllabus } from '@code-retrainer/exercises';
-import { validateSyllabus } from '@code-retrainer/curriculum';
-import { SkillGraph } from '@code-retrainer/core';
+import { buildRegistry, buildSkillGraph, curriculumRoots } from '@code-wizard/cli/context';
+import { loadActivitiesForLanguage } from '@code-wizard/activities';
+import { loadSyllabus } from '@code-wizard/exercises';
+import { validateSyllabus } from '@code-wizard/curriculum';
+import { SkillGraph } from '@code-wizard/core';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

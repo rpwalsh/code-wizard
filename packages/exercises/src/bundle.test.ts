@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Skill } from '@code-retrainer/core';
+import type { Skill } from '@code-wizard/core';
 import { describe, expect, it } from 'vitest';
 
 import {

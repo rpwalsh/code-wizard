@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Diagnostic, DiagnosticSeverity, JsonObject, JsonValue } from '@code-retrainer/core';
-import { isJsonObject, readBoolean, readNumber, readString } from '@code-retrainer/core';
+import type { Diagnostic, DiagnosticSeverity, JsonObject, JsonValue } from '@code-wizard/core';
+import { isJsonObject, readBoolean, readNumber, readString } from '@code-wizard/core';
 
 import type { DiagnoseResult, ExecuteResult, TestRunResult } from './protocol.ts';
 

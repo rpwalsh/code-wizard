@@ -41,8 +41,8 @@ import type {
   TestResult,
   TestRunOutcome,
   TestVisibility,
-} from '@code-retrainer/core';
-import { parseReport, summarize, toError, toTestCases } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { parseReport, summarize, toError, toTestCases } from '@code-wizard/core';
 
 import type { PHP, PHPLoaderModule } from '@php-wasm/universal';
 

@@ -9,7 +9,7 @@ import {
   runInstall,
   type InstallablePackage,
   type PortableStep,
-} from '@code-retrainer/toolchain';
+} from '@code-wizard/toolchain';
 
 import { buildRegistry, installableLanguages } from '../context.ts';
 import { formatDiagnosis } from '../format-results.ts';
@@ -42,7 +42,7 @@ export async function runRuntimeCommand(args: readonly string[], flags: Flags): 
       return install(args.slice(1), flags);
     default:
       console.error(style.red(`Unknown runtime command "${subcommand ?? ''}".`));
-      console.error('Try: code-retrainer runtime doctor | list | install');
+      console.error('Try: code-wizard runtime doctor | list | install');
       return 2;
   }
 }
@@ -64,7 +64,7 @@ async function doctor(flags: Flags): Promise<number> {
       return 2;
     }
     const runtime = registry.get(languageId);
-    console.log(heading(`Code Retrainer Runtime Diagnostics — ${runtime.metadata().displayName}`));
+    console.log(heading(`Code Wizard Runtime Diagnostics — ${runtime.metadata().displayName}`));
     const diagnosis = await runtime.doctor();
     console.log(formatDiagnosis(diagnosis));
     allReady &&= diagnosis.ready;
@@ -283,7 +283,7 @@ async function install(requested: readonly string[], flags: Flags): Promise<numb
       ),
     );
   }
-  console.log(indent('Then run: code-retrainer runtime doctor'));
+  console.log(indent('Then run: code-wizard runtime doctor'));
 
   return failed > 0 ? 1 : 0;
 }

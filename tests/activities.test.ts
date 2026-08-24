@@ -2,9 +2,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { checkActivities, loadActivitiesForLanguage } from '@code-retrainer/activities';
-import type { Activity } from '@code-retrainer/activities';
-import { loadPlanned } from '@code-retrainer/exercises';
+import { checkActivities, loadActivitiesForLanguage } from '@code-wizard/activities';
+import type { Activity } from '@code-wizard/activities';
+import { loadPlanned } from '@code-wizard/exercises';
 import { describe, expect, it } from 'vitest';
 import { readdir } from 'node:fs/promises';
 

@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Exercise } from '@code-retrainer/exercises';
-import type { FluencyHistory } from '@code-retrainer/learning';
-import type { CompletionReport } from '@code-retrainer/session';
+import type { Exercise } from '@code-wizard/exercises';
+import type { FluencyHistory } from '@code-wizard/learning';
+import type { CompletionReport } from '@code-wizard/session';
 
 interface CompleteProps {
   readonly report: CompletionReport;

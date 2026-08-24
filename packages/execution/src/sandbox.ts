@@ -4,8 +4,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import type { Workspace, WorkspaceFile } from '@code-retrainer/core';
-import { assertSafeRelativePath, WorkspacePathError } from '@code-retrainer/core';
+import type { Workspace, WorkspaceFile } from '@code-wizard/core';
+import { assertSafeRelativePath, WorkspacePathError } from '@code-wizard/core';
 
 // Re-exported so existing callers keep working; the definitions moved to core
 // because the browser runtime needs them and cannot import node builtins.
@@ -13,7 +13,7 @@ export {
   assertSafeRelativePath,
   WorkspacePathError,
   isSafeRelativePath,
-} from '@code-retrainer/core';
+} from '@code-wizard/core';
 
 /** Resolve a workspace-relative path inside `root`, refusing to escape it. */
 export function resolveInside(root: string, relativePath: string): string {
@@ -43,7 +43,7 @@ export class Sandbox implements AsyncDisposable {
   private constructor(readonly root: string) {}
 
   static async create(options: SandboxOptions = {}): Promise<Sandbox> {
-    const parent = options.rootDir ?? path.join(os.tmpdir(), 'code-retrainer-sandboxes');
+    const parent = options.rootDir ?? path.join(os.tmpdir(), 'code-wizard-sandboxes');
     await fs.mkdir(parent, { recursive: true });
     const root = path.join(parent, `${options.prefix ?? 'attempt'}-${randomUUID()}`);
     await fs.mkdir(root, { recursive: true });

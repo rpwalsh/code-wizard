@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { Prediction } from '@code-retrainer/core';
-import type { PredictionRecord } from '@code-retrainer/session';
+import type { Prediction } from '@code-wizard/core';
+import type { PredictionRecord } from '@code-wizard/session';
 import { useState } from 'react';
 
 /**

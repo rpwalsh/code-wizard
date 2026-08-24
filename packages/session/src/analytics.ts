@@ -1,15 +1,15 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryDimension, SkillGraph, SkillMastery } from '@code-retrainer/core';
-import { headlineMastery, masteryDimensions } from '@code-retrainer/core';
-import type { ExerciseCatalog } from '@code-retrainer/exercises';
-import type { Attempt } from '@code-retrainer/learning';
+import type { MasteryDimension, SkillGraph, SkillMastery } from '@code-wizard/core';
+import { headlineMastery, masteryDimensions } from '@code-wizard/core';
+import type { ExerciseCatalog } from '@code-wizard/exercises';
+import type { Attempt } from '@code-wizard/learning';
 import {
   applyObservation,
   emptyMastery,
   gradeAttempt,
   gradingContext,
   reinforceRetention,
-} from '@code-retrainer/learning';
+} from '@code-wizard/learning';
 
 /**
  * The single number on the home screen.

@@ -3,15 +3,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { WorkspaceFile } from '@code-retrainer/core';
+import type { WorkspaceFile } from '@code-wizard/core';
 import type {
   Command,
   CompileStep,
   RunContext,
   TestContext,
   ToolchainSpec,
-} from '@code-retrainer/toolchain';
-import { ToolchainRuntime } from '@code-retrainer/toolchain';
+} from '@code-wizard/toolchain';
+import { ToolchainRuntime } from '@code-wizard/toolchain';
 
 /**
  * C#, on the .NET SDK.

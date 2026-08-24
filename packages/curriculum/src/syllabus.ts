@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { SkillGraph, SkillId } from '@code-retrainer/core';
-import type { Exercise } from '@code-retrainer/exercises';
+import type { SkillGraph, SkillId } from '@code-wizard/core';
+import type { Exercise } from '@code-wizard/exercises';
 
 /**
  * The planned course, from the first program to the last.

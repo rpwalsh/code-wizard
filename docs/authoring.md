@@ -145,7 +145,7 @@ returns the wrong shape — never a stub that happens to pass a test.
 
 ## Rules the validator enforces
 
-Run `code-retrainer exercise validate <id>` before committing. It executes the content:
+Run `code-wizard exercise validate <id>` before committing. It executes the content:
 
 - **The reference solution must pass every test.**
 - **The starter must fail at least one.** An exercise whose starter is already green asks the
@@ -198,14 +198,14 @@ regression tests pass and the 23 new ones fail, which is exactly the shape a sta
 
 ## Checking the tests would catch a wrong answer
 
-`code-retrainer exercise validate` proves the reference solution passes and the starter fails.
+`code-wizard exercise validate` proves the reference solution passes and the starter fails.
 Neither proves the tests are any good: a suite that accepts a _wrong_ solution is worse than no
 suite at all, because it tells the learner they got it right, and every mastery number derived from
 that attempt inherits the lie.
 
 ```bash
-code-retrainer exercise mutate            # the whole curriculum
-code-retrainer exercise mutate <id>       # one exercise
+code-wizard exercise mutate            # the whole curriculum
+code-wizard exercise mutate <id>       # one exercise
 ```
 
 This introduces small, plausible faults into the reference solution one at a time — a flipped

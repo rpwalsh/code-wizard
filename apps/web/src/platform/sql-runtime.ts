@@ -37,8 +37,8 @@ import type {
   TestRunOutcome,
   TestVisibility,
   WorkspaceFile,
-} from '@code-retrainer/core';
-import { parseReport, summarize, toError, toTestCases } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { parseReport, summarize, toError, toTestCases } from '@code-wizard/core';
 
 import { SQL_HARNESS_PY, SQL_RUN_PY } from './sql-sources.generated.ts';
 

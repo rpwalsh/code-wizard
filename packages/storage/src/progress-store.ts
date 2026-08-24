@@ -1,6 +1,6 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { JsonObject, JsonValue, SkillMastery } from '@code-retrainer/core';
-import type { Attempt } from '@code-retrainer/learning';
+import type { JsonObject, JsonValue, SkillMastery } from '@code-wizard/core';
+import type { Attempt } from '@code-wizard/learning';
 
 /**
  * Spaced-repetition state as stored. Structurally identical to the curriculum
@@ -26,7 +26,7 @@ export interface ProgressSnapshot {
   readonly attempts: readonly Attempt[];
 }
 
-export const SNAPSHOT_FORMAT = 'code-retrainer-progress';
+export const SNAPSHOT_FORMAT = 'code-wizard-progress';
 
 /**
  * Everything the application needs from persistence.
@@ -73,7 +73,7 @@ export class SnapshotFormatError extends Error {
 export function assertImportable(snapshot: ProgressSnapshot, supportedVersion: number): void {
   if (snapshot.format !== SNAPSHOT_FORMAT) {
     throw new SnapshotFormatError(
-      `Not a Code Retrainer progress export (format: ${String(snapshot.format)}).`,
+      `Not a Code Wizard progress export (format: ${String(snapshot.format)}).`,
     );
   }
   if (snapshot.schemaVersion > supportedVersion) {

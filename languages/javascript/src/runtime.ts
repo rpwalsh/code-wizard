@@ -18,8 +18,8 @@ import type {
   TestRequest,
   TestResult,
   Workspace,
-} from '@code-retrainer/core';
-import { parseReport, toTestCases } from '@code-retrainer/core';
+} from '@code-wizard/core';
+import { parseReport, toTestCases } from '@code-wizard/core';
 import {
   buildSandboxEnvironment,
   resolveLimits,
@@ -27,7 +27,7 @@ import {
   withSandbox,
   type ProcessOutcome,
   type Sandbox,
-} from '@code-retrainer/execution';
+} from '@code-wizard/execution';
 
 import { harnessEntry, supportDir, supportFiles } from './paths.ts';
 

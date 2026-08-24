@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
-import type { MasteryObservation } from '@code-retrainer/learning';
+import type { MasteryObservation } from '@code-wizard/learning';
 
 /**
  * Spaced repetition state for one skill (spec §21).
