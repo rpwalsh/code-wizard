@@ -1,0 +1,105 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: react.hooks.custom
+version: 1
+language: react
+title: The answer that arrives after you stopped asking
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 720
+timeoutMs: 20000
+
+skills:
+  - react.hooks.custom
+  - react.effects.dependencies
+  - react.effects.fetching
+
+prerequisites: []
+
+learningObjectives:
+  - Discard a response belonging to a request that has been superseded.
+  - Keep the data on screen while reloading, instead of blanking it.
+  - Compare a dependency array by value, since it is rebuilt every render.
+
+prompt: |
+  A custom hook is mostly a small state machine with some `useEffect`
+  around it. The state machine is the part with the bugs, and it can
+  be written and tested without React at all — which is exactly what
+  makes a custom hook worth extracting.
+
+  In `main.tsx`:
+
+  - `initialState()` — `status: 'idle'`, no data, no error.
+
+  - `fetchReducer(state, action, currentRequestId)`:
+    - `start` — status `'loading'`, error cleared, and **the
+      existing data kept**.
+    - `resolved` — when `action.requestId` matches
+      `currentRequestId`, status `'ready'` with the data and no
+      error. When it does not match, return the state **unchanged
+      and identical**.
+    - `rejected` — the same id rule, then status `'failed'` with
+      the message, keeping whatever data was already there.
+
+  - `shouldRefetch(previous, next)` — whether two dependency arrays
+    differ, compared element by element in order.
+
+  - `selectRetryDelay(attempt, base, ceiling)` — `base` doubled for
+    each attempt after the first, never above `ceiling`. Attempt 1
+    waits `base`; an attempt below 1 waits nothing.
+
+entryPoint: main.tsx
+
+tests:
+  - path: tests/hooks.test.tsx
+    visibility: visible
+    concept: react.hooks.custom
+  - path: tests/edges.test.tsx
+    visibility: edge
+    concept: react.effects.dependencies
+
+hints:
+  - level: conceptual
+    text: "A request id is a version number for 'what am I currently interested in'. Anything answering an older number is a fact about a question nobody is asking."
+  - level: structural
+    text: "Returning the state object itself, rather than a copy of it, is what tells React nothing happened. A fresh object with identical fields still re-renders."
+  - level: language
+    text: "A dependency array is a new array on every render, so identity comparison is always false. React compares its elements, and so must you."
+  - level: syntax
+    text: "base * 2 ** (attempt - 1) is the doubling, and Math.min against the ceiling is the cap."
+  - level: explicit
+    text: "In both resolved and rejected: `if (action.requestId !== currentRequestId) return state;` before anything else."
+
+explanation: |
+  The stale response is the defining bug of data fetching in
+  components, and it is not a race that better networks fix. Two
+  requests are in flight because the input changed; they answer in
+  whatever order they answer in; and the last one to arrive wins.
+  When that is the older one, the screen shows results for a query
+  the user has already left. A request id makes "is this still what
+  we asked" a question the reducer can answer, and everything else
+  follows from it.
+
+  Both halves need the check, and the failure half is the one that
+  gets forgotten. An old request timing out and setting `status:
+  'failed'` puts an error on screen while the current request is
+  still perfectly healthy — an error state nobody can reproduce,
+  because reproducing it requires the slow request to fail after the
+  fast one started.
+
+  Returning `state` itself rather than a copy is the detail that
+  makes the discard free. React re-renders when the reducer returns
+  a different object, so `{ ...state }` with identical contents is a
+  render nobody needed. Returning the same reference is how a
+  reducer says "nothing happened", and it is why the edge test
+  asserts identity rather than equality.
+
+  Keeping the data during `loading` is a product decision more than
+  a technical one, and it is the difference between a list that
+  refreshes and a list that flickers. The pattern generalizes: the
+  previous answer is usually still the best thing to show while a
+  better one is being fetched.
+
+  The cap on the backoff exists because uncapped doubling is
+  indistinguishable from giving up. A hundred milliseconds doubled
+  eight times is around twenty-five seconds; doubled fifteen times
+  it is nearly an hour, and the user closed the tab long before.

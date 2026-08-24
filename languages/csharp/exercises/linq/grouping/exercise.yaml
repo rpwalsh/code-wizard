@@ -1,0 +1,97 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: csharp.linq.grouping
+version: 1
+language: csharp
+title: Max on an empty sequence
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - csharp.linq.queries
+  - csharp.linq.deferred
+  - csharp.values.nullable
+
+prerequisites: []
+
+learningObjectives:
+  - Group and aggregate in one pass rather than looping and accumulating.
+  - Break ties deliberately, so a report does not depend on input order.
+  - Make "there were none" a value rather than an exception.
+
+prompt: |
+  Every reporting bug in this shape comes from one of three places:
+  an aggregate over nothing, a ranking whose ties are decided by
+  accident, and a query enumerated more times than anyone intended.
+
+  In `Reports.cs`, over `Sale(Region, Product, Quantity, UnitPrice)`:
+
+  - `Revenue(sales)` — the total of quantity times unit price.
+
+  - `RevenueByRegion(sales)` — a dictionary from region to its
+    revenue.
+
+  - `TopProducts(sales, count)` — the product names with the
+    highest revenue, largest first, at most `count` of them. **Ties
+    are broken by product name, ascending**, so the same data in a
+    different order gives the same answer.
+
+  - `ProductSpread(sales)` — for each region, how many distinct
+    products it sold, ordered by region name.
+
+  - `BiggestSale(sales)` — the largest single line's revenue, or
+    `null` when there are no sales at all.
+
+entryPoint: Reports.cs
+
+tests:
+  - path: tests/ReportTests.cs
+    visibility: visible
+    concept: csharp.linq.queries
+  - path: tests/EdgeTests.cs
+    visibility: edge
+    concept: csharp.linq.deferred
+
+hints:
+  - level: conceptual
+    text: "GroupBy produces a sequence of groups, and each group is itself a sequence with a Key. Anything you can do to a list you can do to a group."
+  - level: structural
+    text: "OrderByDescending followed by ThenBy is one sort with two keys, not two sorts. The second key only decides rows the first considers equal."
+  - level: language
+    text: "Sum over an empty sequence is zero, but Max throws. The asymmetry is deliberate: a sum has an identity element and a maximum does not."
+  - level: syntax
+    text: "Projecting to a nullable — Max(sale => (decimal?)value) — makes the empty case null instead of an exception."
+  - level: explicit
+    text: "TopProducts: GroupBy product, Select the key and its revenue, OrderByDescending revenue, ThenBy name, Take count, Select the name, ToList."
+
+explanation: |
+  `Sum` over nothing is zero and `Max` over nothing throws, and the
+  asymmetry is not an oversight: a sum has an identity element and a
+  maximum does not. There is no "largest of no numbers", so the
+  library refuses to invent one. Projecting to `decimal?` changes
+  the question to one that does have an answer — the largest of no
+  nullable numbers is `null` — and that is exactly what a report
+  wants to print as a dash rather than crash on.
+
+  Tie-breaking is the quiet one. `OrderByDescending` is stable in
+  LINQ to Objects, which sounds reassuring and means the order of
+  tied rows is the order they arrived in — so the same data read
+  from a differently sorted source produces a differently ordered
+  report. Adding `ThenBy` on a key that cannot tie makes the answer
+  a fact about the data. The edge test feeds the same two sales in
+  both orders, which is the cheapest way to catch this and the one
+  nobody writes.
+
+  Enumeration count matters because a LINQ query is a recipe, not a
+  result. Passing a lazily generated sequence to a method that
+  iterates it three times runs the generator three times — three
+  database round trips, or three reads of a file that has since
+  moved on. The edge test counts enumerations for that reason: one
+  is fine, and zero would mean the work never happened.
+
+  `Distinct` inside a group is worth noticing as the answer to "how
+  many different things", as opposed to `Count`, which answers "how
+  many rows". They agree exactly until a region sells the same
+  product twice, which is the ordinary case rather than the
+  exception.
