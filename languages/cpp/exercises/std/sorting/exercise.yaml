@@ -1,0 +1,112 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.sorting
+version: 1
+language: cpp
+title: Nobody comes before themselves
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.sorting
+  - cpp.std.algorithms
+
+prerequisites: []
+
+learningObjectives:
+  - Write a comparator that is strictly before, never before-or-equal.
+  - Choose stable_sort when the order among equals is meant to survive.
+  - Sort only as much as the answer needs.
+
+prompt: |
+  A comparator answers one question: does the left one come strictly
+  before the right one? Not before-or-equal — strictly before.
+  `std::sort` requires that, and a comparator written with `<=`
+  does not merely produce a wrong order; it is undefined behavior,
+  and what usually happens is the sort reading past the end of the
+  range.
+
+  In `main.cpp`:
+
+  - `by_seniority(people)` — most senior first. People at the same
+    level are ordered by name.
+  - `grouped_by_team(people)` — grouped by team name, and within a
+    team, **the order they were given in**.
+  - `top(people, count)` — the `count` most senior, in the order
+    `by_seniority` would give. Zero or below gives nothing; more
+    than there are gives all of them.
+  - `same_rank(left, right)` — whether the seniority order treats
+    the two as interchangeable. Note that two people can rank
+    together without being the same person.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/sorting_test.cpp
+    visibility: visible
+    concept: cpp.std.sorting
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.sorting
+
+hints:
+  - level: conceptual
+    text: "Compare the most important field first. Only when it ties does the next field get a say — and when everything ties, the answer is false, because neither comes first."
+  - level: structural
+    text: "One comparator, used by three of these functions. Writing the rule twice is writing two rules that will disagree."
+  - level: language
+    text: "std::sort may reorder equivalent elements; std::stable_sort may not. Only one of those keeps arrival order within a team."
+  - level: syntax
+    text: "std::partial_sort(first, first + keep, last, less) orders only the front of the range and leaves the rest unspecified."
+  - level: explicit
+    text: "same_rank is neither before the other: !less(a, b) && !less(b, a). That is what an ordering means by equal."
+
+explanation: |
+  The rule `std::sort` depends on is called a strict weak ordering,
+  and the part people get wrong is the word strict. `comp(a, a)` must
+  be false — nothing comes before itself. Write the comparator with
+  `<=` and it returns true there, the algorithm's assumptions break,
+  and the standard offers no guarantee at all about what happens
+  next. In practice the partition step runs past the end of the
+  range, so the symptom is a crash or corruption somewhere unrelated,
+  and the comparator is the last place anybody looks.
+
+  Comparing field by field is how you build one safely. Check the
+  most significant field; if it differs, the answer is decided. Only
+  on a tie does the next field get a say. When every field ties, the
+  answer is false — and that falling-out-the-bottom `false` is
+  exactly what makes the ordering strict.
+
+  `stable_sort` versus `sort` is a decision about what happens to
+  elements the comparator considers equal. `std::sort` is free to put
+  them in any order, and will put them in different orders for
+  different inputs, so a report built on it disagrees with itself
+  between runs for no reason anybody can see. `stable_sort` keeps
+  them as they arrived. It costs a little memory and, when the order
+  among equals is meaningful, it is the only correct choice.
+
+  `partial_sort` is the same instinct applied to effort. Asking for
+  the top three of ten thousand does not require ordering the other
+  nine thousand nine hundred and ninety-seven, and saying so in the
+  call is both faster and clearer about intent. `nth_element` goes
+  further when even the top few need not be in order among
+  themselves.
+
+  `same_rank` is worth writing out because it names something easy to
+  confuse. Equivalent under an ordering is not the same as equal: two
+  people with the same level and name rank together while sitting on
+  different teams, because the comparator never looks at the team.
+  Every sorted container works on equivalence, not equality — which
+  is why a `std::set` with a comparator that ignores a field will
+  quietly refuse to store two things you consider different.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 48
+    why: >-
+      The guard against a count of zero or below. A count of zero keeps zero
+      people whether it returns here or falls through, because the smaller of
+      the count and zero is zero — so no input distinguishes "at most zero"
+      from "below zero" at this line.

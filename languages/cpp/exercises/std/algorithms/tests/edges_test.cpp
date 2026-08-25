@@ -25,6 +25,7 @@ RETRAINER_TEST(the_floor_itself_is_kept, "cpp.std.algorithms") {
     std::vector<Reading> readings{{"a", 10}, {"b", 9}};
     auto kept = drop_below(readings, 10);
     RETRAINER_ASSERT_INT((int)kept.size(), 1);
+    if (kept.size() < 1) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_STR(kept[0].sensor.c_str(), "a");
 }
 
@@ -40,6 +41,8 @@ RETRAINER_TEST(equal_temperatures_keep_their_arrival_order, "cpp.std.algorithms"
     std::vector<Reading> readings{{"first", 10}, {"second", 10}, {"third", 10}};
     auto ordered = sorted_by_temperature(readings);
 
+    RETRAINER_ASSERT_INT((int)ordered.size(), 3);
+    if (ordered.size() < 3) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_STR(ordered[0].sensor.c_str(), "first");
     RETRAINER_ASSERT_STR(ordered[1].sensor.c_str(), "second");
     RETRAINER_ASSERT_STR(ordered[2].sensor.c_str(), "third");
@@ -50,6 +53,8 @@ RETRAINER_TEST(negative_temperatures_sum_and_sort, "cpp.std.algorithms") {
     RETRAINER_ASSERT_INT(total(readings), -15);
 
     auto ordered = sorted_by_temperature(readings);
+    RETRAINER_ASSERT_INT((int)ordered.size(), 3);
+    if (ordered.size() < 3) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_STR(ordered[0].sensor.c_str(), "c");
     RETRAINER_ASSERT_STR(ordered[2].sensor.c_str(), "b");
 }
@@ -62,5 +67,6 @@ RETRAINER_TEST(the_caller_vector_is_not_disturbed, "cpp.std.algorithms") {
     drop_below(readings, 99);
 
     RETRAINER_ASSERT_INT((int)readings.size(), 2);
+    if (readings.size() < 2) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_STR(readings[0].sensor.c_str(), "a");
 }

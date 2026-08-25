@@ -40,6 +40,7 @@ RETRAINER_TEST(names_come_back_sorted, "cpp.types.classes") {
 
     auto names = inv.names_sorted();
     RETRAINER_ASSERT_INT(static_cast<int>(names.size()), 3);
+    if (names.size() < 3) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_STR(names[0].c_str(), "bolt");
     RETRAINER_ASSERT_STR(names[2].c_str(), "washer");
 }

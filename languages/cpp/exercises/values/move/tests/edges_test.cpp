@@ -82,6 +82,7 @@ RETRAINER_TEST(collecting_reserves_so_growth_copies_nothing, "cpp.std.containers
     std::vector<Buffer> buffers = collect(16, 8);
 
     RETRAINER_ASSERT_INT((int)buffers.size(), 16);
+    if (buffers.empty()) return;  // a stub returns nothing; do not index it
     RETRAINER_ASSERT_INT((int)buffers[0].size(), 8);
     // Without reserve the vector reallocates several times on the way to
     // sixteen, moving everything it already held each time.

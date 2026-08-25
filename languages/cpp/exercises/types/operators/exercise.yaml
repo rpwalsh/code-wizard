@@ -1,0 +1,118 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.operators
+version: 1
+language: cpp
+title: One spaceship, four comparisons
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 780
+timeoutMs: 30000
+
+skills:
+  - cpp.types.operators
+  - cpp.types.classes
+
+prerequisites: []
+
+learningObjectives:
+  - Write arithmetic operators as free functions so both operands convert.
+  - Keep a value in one canonical form so equality needs no arithmetic.
+  - Define operator<=> once and get the four relational operators from it.
+
+prompt: |
+  `Fraction` is an exact number kept in lowest terms with the sign
+  on the numerator. One number has exactly one representation,
+  which is what makes everything below simple.
+
+  In `main.cpp`:
+
+  - `Fraction(numerator, denominator)` — reduce to lowest terms and
+    move the sign onto the numerator. A denominator of zero throws
+    `std::invalid_argument`.
+  - `Fraction(whole)` — a whole number.
+  - `text()` — `"3/4"`, or just `"3"` when the denominator is one.
+  - `+`, `-`, `*`, `/` — as free functions. Dividing by a fraction
+    worth zero throws `std::invalid_argument`.
+  - `operator==` — whether they are the same number.
+  - `operator<=>` — returns `std::strong_ordering`. Write only this
+    one and `<`, `>`, `<=` and `>=` all start working.
+
+  One of the tests puts an `int` on the left of a `+`. Another
+  compares two fractions with denominators near a hundred thousand.
+  Both are there for a reason.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/operators_test.cpp
+    visibility: visible
+    concept: cpp.types.operators
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.types.operators
+
+hints:
+  - level: conceptual
+    text: "If every number has exactly one representation, equality is comparing two pairs of ints. Reducing in the constructor is what buys that."
+  - level: structural
+    text: "A member operator+ requires the left operand to already be a Fraction, so it can never let an int on the left convert. A free function can."
+  - level: language
+    text: "std::gcd from <numeric> reduces the pair. Move the sign first, so a negative denominator does not survive into the result."
+  - level: syntax
+    text: "a/b against c/d is a*d against c*b. Both denominators are positive by then, so the comparison does not flip."
+  - level: explicit
+    text: "Do the cross multiplication in long long. Two fractions with denominators around a hundred thousand overflow an int, and the comparison comes back with the wrong sign rather than an error."
+
+explanation: |
+  Reducing in the constructor is the decision that carries the rest.
+  Once every number has exactly one representation, `operator==` is
+  two integer comparisons — no cross multiplication, no overflow, no
+  question of whether `2/4` and `1/2` are the same object. Moving the
+  sign onto the numerator is the same idea applied to the other
+  degree of freedom: without it, `1/-2` and `-1/2` are the same
+  number stored two ways, and every comparison has to remember that.
+
+  Free functions rather than members is the part people are told and
+  not told why. A member `operator+` is called on its left operand,
+  so the left operand must already be a `Fraction` — `half + 1`
+  works and `1 + half` does not compile. A free function treats both
+  sides the same, and the implicit conversion applies to either. The
+  asymmetry is invisible until somebody writes the natural thing and
+  is told it is a type error.
+
+  That implicit conversion is worth being suspicious of everywhere
+  else. A single-argument constructor that is not `explicit` lets
+  the compiler produce your type without being asked, which for most
+  classes is a source of surprises. Numeric types are the standing
+  exception: `1 + half` reading as arithmetic is the whole point,
+  and refusing it would make the type worse at the one job it has.
+
+  `operator<=>` earns its keep by removing four functions that had
+  to agree with each other. Written by hand, `<`, `>`, `<=` and `>=`
+  are four opportunities to get a boundary or a sign wrong, and they
+  are usually wrong in the same file for years. Written once as a
+  three-way comparison, the other four are generated and cannot
+  disagree.
+
+  Doing the cross multiplication in `long long` is the last piece,
+  and it is the one the tests will find. Two fractions with
+  denominators near a hundred thousand multiply out past two billion,
+  an `int` wraps, and the comparison returns a confident wrong
+  answer with nothing raised and nothing logged. Widening before
+  multiplying costs nothing here and removes the entire failure.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 23
+    why: >-
+      The sign check, guarded by the zero-denominator throw four lines above.
+      A denominator of zero cannot reach this line, so "less than zero" and
+      "at most zero" select exactly the same denominators and no input can
+      tell the two apart.
+  - path: main.cpp
+    operator: off-by-one
+    line: 23
+    why: >-
+      The same comparison, for the same reason. With zero already refused,
+      "less than zero" and "less than one" are the same set of denominators.

@@ -62,3 +62,26 @@ RETRAINER_TEST(no_fees_is_zero, "cpp.types.polymorphism") {
     std::vector<std::unique_ptr<Fee>> none;
     RETRAINER_ASSERT_INT(static_cast<int>(total_fees(none, 999)), 0);
 }
+
+RETRAINER_TEST(the_smallest_withdrawal_there_is_still_works, "cpp.errors.exceptions") {
+    // One cent. A guard that refuses zero and one along with it looks almost
+    // right and is wrong on the smallest real request there is.
+    Account account("solo", 500);
+    RETRAINER_ASSERT_INT(static_cast<int>(account.withdraw(1)), 499);
+}
+
+RETRAINER_TEST(withdrawing_the_whole_balance_is_allowed, "cpp.errors.exceptions") {
+    // Exactly enough is enough. Refusing at the boundary leaves money nobody
+    // can reach, and the error says "insufficient funds" about a balance that
+    // is precisely sufficient.
+    Account account("solo", 500);
+    RETRAINER_ASSERT_INT(static_cast<int>(account.withdraw(500)), 0);
+
+    bool caught = false;
+    try {
+        account.withdraw(1);
+    } catch (const std::runtime_error &) {
+        caught = true;
+    }
+    RETRAINER_ASSERT(caught, "and an empty account has nothing left");
+}

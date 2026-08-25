@@ -1,0 +1,111 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.ranges
+version: 1
+language: cpp
+title: A view is a way of looking, not a copy
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.ranges
+  - cpp.std.algorithms
+
+prerequisites: []
+
+learningObjectives:
+  - Build a pipeline out of views and read it once, without intermediate copies.
+  - Recognize which operations a lazy view cannot do and materialize first.
+  - Keep first-seen order when a sorted container would answer a different question.
+
+prompt: |
+  A view is a way of looking at a range. It copies nothing,
+  allocates nothing, and does no work at all until something reads
+  from it — so `orders | filter | transform` never builds a vector
+  of filtered orders on the way to the answer.
+
+  In `main.cpp`:
+
+  - `paid_totals(orders)` — the totals of the paid orders, in
+    arrival order.
+  - `paid_revenue(orders)` — those totals added up.
+  - `top_paid_totals(orders, limit)` — the paid totals, largest
+    first, at most `limit` of them. A limit of zero or below gives
+    nothing. Equal totals are both kept.
+  - `paying_customers(orders)` — each customer with at least one
+    paid order, once each, in the order they were **first seen**,
+    not sorted.
+  - `first_unpaid_customer(orders)` — the customer of the first
+    unpaid order, or an empty string.
+
+  One of these cannot be done with views alone. Work out which
+  before writing it.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/ranges_test.cpp
+    visibility: visible
+    concept: cpp.std.ranges
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.ranges
+
+hints:
+  - level: conceptual
+    text: "A view produces elements one at a time as they are asked for. Anything needing to see all the elements before producing the first one — sorting, above all — cannot be a view."
+  - level: structural
+    text: "paid_totals is the pipeline the others are built from. Write it once and call it."
+  - level: language
+    text: "std::ranges::sort(values, std::ranges::greater{}) sorts a container descending. std::ranges::find_if takes the range itself, with no begin and end pair."
+  - level: syntax
+    text: "orders | std::views::filter(is_paid) | std::views::transform(total_of), read with a range-for loop that pushes into a vector."
+  - level: explicit
+    text: "paying_customers keeps a std::set of names already emitted and pushes into a vector. The set records what has been seen; the vector holds the answer, in the right order."
+
+explanation: |
+  The value of a view is what it does not do. `orders | filter |
+  transform` builds no container, allocates nothing, and touches
+  each order once when the loop finally asks. The same thing written
+  as two loops with a `std::vector` between them allocates that
+  vector, copies every matching order into it, and reads the data
+  twice — and reads worse, because the shape of the work is buried
+  in the bookkeeping.
+
+  Laziness is also the constraint. A view yields elements as they
+  are requested, so any operation needing the whole range before it
+  can produce a first element cannot be one. Sorting is the obvious
+  case, and `top_paid_totals` is the function that has to notice:
+  filter and transform lazily, then materialize, then sort. That
+  order matters — sorting first would mean sorting orders you were
+  about to discard.
+
+  `paying_customers` is where the obvious container is the wrong
+  one. A `std::set<std::string>` deduplicates in one line and
+  answers sorted, which is a different question from the one asked.
+  Keeping first-seen order needs the set for membership and a vector
+  for the answer — `insert` returning whether it happened is what
+  makes that two lines rather than a lookup and an insert.
+
+  `std::ranges::find_if` taking the range rather than a pair of
+  iterators is a small thing that removes a real class of bug: you
+  cannot pass `a.begin()` with `b.end()` if you never write either.
+  The whole `std::ranges` set of algorithms is worth preferring for
+  that reason alone, before any of the composition.
+
+  One warning that costs people a day. A view does not own what it
+  looks at, exactly like `std::string_view`. Storing a pipeline
+  built over a temporary container leaves a view onto something
+  already destroyed, and it will usually appear to work. Views are
+  for reading now, not for keeping.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 42
+    why: >-
+      The guard against a negative limit. A limit of zero produces an empty
+      result whether it returns here or falls through, because taking the
+      smaller of the count and zero is zero either way — so no input can tell
+      "at most zero" apart from "below zero" at this line.

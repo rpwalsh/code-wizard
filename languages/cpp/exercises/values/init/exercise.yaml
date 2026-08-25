@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.init
+version: 1
+language: cpp
+title: Braces and parentheses are not the same call
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 540
+timeoutMs: 30000
+
+skills:
+  - cpp.values.init
+  - cpp.types.classes
+
+prerequisites: []
+
+learningObjectives:
+  - Know when braces select a different constructor than parentheses.
+  - Put defaults where the members are declared, once.
+  - Name the field you are setting with a designated initializer.
+
+prompt: |
+  `std::vector<int> a(3, 0);` and `std::vector<int> a{3, 0};` are
+  both legal, both compile without a warning, and produce different
+  vectors. The first has three zeros. The second has two numbers, 3
+  and 0.
+
+  In `main.cpp`:
+
+  - `repeated(count, value)` — `count` copies of `value`.
+  - `exactly(first, second)` — a vector holding those two numbers.
+  - `defaults()` — `Settings` with everything as declared.
+  - `with_retries(retries)` — the defaults, except the retry count.
+    The other two keep their declared values, and should still do so
+    if a fourth setting is added later.
+  - `louder(base)` — a copy with verbose on. The caller's settings
+    are not changed.
+  - `describe(settings)` — `"retries=3 timeout=1000 verbose=no"`.
+
+  A retry count of zero is a real setting, not a missing one.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/init_test.cpp
+    visibility: visible
+    concept: cpp.values.init
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.init
+
+hints:
+  - level: conceptual
+    text: "If a type can be built from an initializer list, braces prefer that constructor over every other one. That preference is absolute, not a tiebreak."
+  - level: structural
+    text: "Two of these functions take the same two ints and must produce different vectors. That difference is entirely which brackets you type."
+  - level: language
+    text: "Settings{.retries = value} sets one member by name and leaves the rest at their declared defaults."
+  - level: syntax
+    text: "std::vector<int>(count, value) for the repeated one; std::vector<int>{first, second} for the pair."
+  - level: explicit
+    text: "louder takes a const reference, so copy it into a local, set verbose on the copy, and return that. Modifying the parameter is not possible and would be the wrong thing anyway."
+
+explanation: |
+  Brace initialization was meant to be the uniform one, and mostly
+  is. The exception is the one that bites: if a type has a constructor
+  taking `std::initializer_list`, braces prefer it over every other
+  constructor, absolutely, even when another one matches better.
+  `std::vector<int>{3, 0}` is therefore two elements and not three
+  zeros, and nothing about the line says so.
+
+  Knowing the rule turns it from a trap into a tool. Braces when you
+  are listing the contents, parentheses when you are passing
+  construction arguments — `vector<int>(n)` is `n` elements,
+  `vector<int>{n}` is one element holding `n`. It is worth being able
+  to say which one a line of somebody else's code is doing without
+  running it.
+
+  Braces do bring one guarantee worth having: they refuse narrowing
+  conversions. `int x{2.5}` will not compile, where `int x(2.5)`
+  silently gives you 2. For everything that is not a container, that
+  makes braces the safer default.
+
+  Default member initializers put each default beside the thing it
+  belongs to, once. Written into constructors instead, three
+  constructors carry three copies of the same three defaults, and one
+  of them will eventually disagree — usually the one added last, by
+  somebody who copied the second.
+
+  Designated initializers finish the job. `Settings{.retries = 5}`
+  names the member it means, so the line is readable without counting
+  positions and, more usefully, stays correct when a member is added
+  or reordered. Positional aggregate initialization — `Settings{5,
+  1000, false}` — is compact right up until somebody inserts a field
+  in the middle, at which point every such line silently means
+  something else.

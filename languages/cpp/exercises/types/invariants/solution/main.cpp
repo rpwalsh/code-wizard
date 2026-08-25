@@ -13,7 +13,12 @@ bool Inventory::remove(const std::string &name, int count) {
         return false;
     }
     auto it = items_.find(name);
-    if (it == items_.end() || it->second < count) {
+    if (it == items_.end()) {
+        return false;
+    }
+    // Asked separately, because the second question is only meaningful once
+    // the first has been answered: it->second reads a valid entry or nothing.
+    if (it->second < count) {
         return false;
     }
 

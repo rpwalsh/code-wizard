@@ -90,3 +90,13 @@ explanation: |
   that is fine, because the body's one call site (`keep(value)`)
   produces a short error anyway. Concepts where they pay, plain
   templates where they do not: auto judgment, applied to templates.
+
+mutationExceptions:
+  - path: main.hpp
+    operator: off-by-one
+    line: 16
+    why: >-
+      The literal inside a requires-expression, which is never evaluated. The
+      concept asks only whether `a / <some int>` is a valid expression, and any
+      type that can be divided by 2 can be divided by 3, so no type satisfies
+      one version and not the other.

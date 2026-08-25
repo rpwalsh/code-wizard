@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.variant
+version: 1
+language: cpp
+title: One of four, and the compiler counts
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.variant
+  - cpp.types.polymorphism
+
+prerequisites: []
+
+learningObjectives:
+  - Model a value that is exactly one of a fixed set of shapes.
+  - Handle every case with std::visit, and find out at compile time if you missed one.
+  - Ask about a single alternative with get_if or holds_alternative.
+
+prompt: |
+  A spreadsheet cell is blank, or a number, or text, or a failed
+  formula. Not two of those, not none of them, and never a fifth
+  thing nobody wrote a branch for. `std::variant` is how you say
+  that to the compiler.
+
+  In `main.cpp`:
+
+  - `render(cell)` — `""` for a blank, the digits for a number, the
+    text itself for text, and `#ERR: ` followed by the reason for a
+    failure.
+  - `as_number(cell)` — the number. A blank counts as zero. Text and
+    failures are nothing at all, even when the text looks like a
+    number.
+  - `total(cells)` — every number added up, returned as a cell.
+    Blanks are zero and text is skipped, the way a spreadsheet does
+    it. A failure anywhere makes the whole total that failure — the
+    **first** one.
+  - `tally(cells)` — how many of each kind.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/variant_test.cpp
+    visibility: visible
+    concept: cpp.std.variant
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.variant
+
+hints:
+  - level: conceptual
+    text: "Handling every case and asking about one case are different jobs. Use std::visit for the first and get_if for the second."
+  - level: structural
+    text: "total returns as soon as it meets a failure. Adding up the rest first and reporting the failure afterwards is more code that computes a number nobody can use."
+  - level: language
+    text: "std::get_if<Number>(&cell) returns a pointer, null when the cell holds something else. std::holds_alternative<Number>(cell) answers the same question as a bool."
+  - level: syntax
+    text: "A generic lambda plus if constexpr covers the cases: using Held = std::decay_t<decltype(held)>; then if constexpr (std::is_same_v<Held, Blank>) and so on."
+  - level: explicit
+    text: "Give the visiting lambda an explicit return type of std::string. Every branch has to return the same type, and without saying so the empty-string branch deduces something inconvenient."
+
+explanation: |
+  A variant is a closed set of possibilities, and closed is the
+  valuable part. The alternatives to it are all open in some way that
+  eventually hurts: a struct with four fields and three unused lets
+  two be filled in at once, an integer tag lets somebody add a fifth
+  value without adding a branch, and a base class with four children
+  lets a fifth child appear in a translation unit nobody reviewed.
+  With a variant, the list of shapes is written in one place and the
+  compiler knows all of it.
+
+  Which is why `std::visit` is worth reaching for over a chain of
+  `get_if`. A visit must handle every alternative or it does not
+  compile — so adding a fifth kind of cell turns every incomplete
+  handler into a build error, at every site, before the code runs.
+  That is the property switch statements over an enum promise and
+  never quite deliver, because a `switch` with no `default` warns at
+  most.
+
+  `get_if` and `holds_alternative` are the right tools for the other
+  question: not "what is this" but "is this one particular thing".
+  `get_if` returns a pointer rather than throwing, so asking is cheap
+  and the answer no is an ordinary value rather than an exception.
+  Between the two, prefer `holds_alternative` by name over `index()`
+  by position — the index is the declaration order, and reordering
+  the alternatives is a change nobody expects to break anything.
+
+  Returning the first failure rather than the last is a small
+  decision worth making deliberately. Either is defensible; only one
+  of them is stable. The last failure changes when somebody appends
+  a row, and a total that depends on how far the loop got is a total
+  that will differ between two runs nobody can distinguish.
+
+  The empty-text case is the one worth staring at. `Text{""}` and
+  `Blank{}` both render as nothing, and they are not the same cell:
+  one was filled in with nothing, the other was never filled in. A
+  design that stores both as an empty string cannot tell them apart,
+  and the difference matters the moment anyone asks how many cells
+  are still to do.

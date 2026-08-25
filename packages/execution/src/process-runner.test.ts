@@ -70,7 +70,10 @@ describe('runProcess', () => {
     expect(outcome.timedOut).toBe(true);
   });
 
-  it('caps flooded stdout instead of buffering it all', async () => {
+  // The outer limit has to exceed the inner one. Both were 30s, so the test
+  // failed whenever the process used its full budget — a flake by
+  // construction, and one that only showed up on a loaded machine.
+  it('caps flooded stdout instead of buffering it all', { timeout: 90_000 }, async () => {
     const outcome = await run('for _ in range(500000): print("x" * 500)', {
       maxOutputBytes: 16 * 1024,
       timeoutMs: 30_000,
@@ -81,7 +84,7 @@ describe('runProcess', () => {
     expect(outcome.stdout).toContain('output truncated');
   });
 
-  it('caps flooded stderr independently of stdout', async () => {
+  it('caps flooded stderr independently of stdout', { timeout: 90_000 }, async () => {
     const outcome = await run(
       'import sys\nfor _ in range(500000): sys.stderr.write("y" * 500 + "\\n")',
       { maxOutputBytes: 16 * 1024, timeoutMs: 30_000 },

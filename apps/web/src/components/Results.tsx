@@ -216,9 +216,11 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'timeout':
       return 'Stopped at the time limit. Is there a loop that never ends?';
     case 'collection-error':
-      return 'The tests could not start — your code does not import. Check for a syntax error.';
+      return 'The tests could not start — your code does not build. Check for a syntax error.';
+    case 'crashed':
+      return 'The program stopped partway through. That is a crash, not a failing test — look at where it got to.';
     case 'runtime-unavailable':
-      return 'Python is not available.';
+      return 'That language is not available here.';
     case 'internal-error':
       return 'Code Wizard could not read the test results.';
     case 'completed':

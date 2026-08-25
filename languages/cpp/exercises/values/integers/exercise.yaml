@@ -1,0 +1,112 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.integers
+version: 1
+language: cpp
+title: size() minus one is not minus one
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.values.integers
+  - cpp.errors.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Check for overflow before performing the arithmetic, not after.
+  - Notice where an unsigned size sneaks into signed arithmetic.
+  - Correct a remainder that carries the sign of its left operand.
+
+prompt: |
+  `values.size() - 1` on an empty vector is not `-1`. `size()` is
+  unsigned, so it is the largest number a `size_t` can hold — and a
+  loop that trusts it runs four billion times before anything looks
+  wrong.
+
+  In `main.cpp`:
+
+  - `mean(values)` — the average, rounded toward zero. An empty list
+    averages zero. A thousand values near the top of an `int` must
+    still average correctly.
+  - `would_overflow(left, right)` — whether `left + right` would not
+    fit. Answer this **without** performing the addition.
+  - `checked_add(left, right)` — the sum, or nothing.
+  - `last_index(values)` — the index of the last element, or `-1`
+    when there is none.
+  - `modulo(value, divisor)` — a remainder always in
+    `[0, divisor)`. A divisor of zero or below throws
+    `std::invalid_argument`.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/integers_test.cpp
+    visibility: visible
+    concept: cpp.values.integers
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.integers
+
+hints:
+  - level: conceptual
+    text: "Signed overflow is undefined behavior, not wraparound. Once it has happened there is nothing left to test — the check has to come first."
+  - level: structural
+    text: "Rearrange the inequality so the addition never happens: left + right > max becomes left > max - right, and that subtraction cannot overflow when right is positive."
+  - level: language
+    text: "The negative end is not symmetrical with the positive one. There is one more negative int than positive, so a check written for the top alone misses the bottom by exactly one."
+  - level: syntax
+    text: "std::numeric_limits<int>::max() and ::min() from <limits> are the two ends."
+  - level: explicit
+    text: "modulo: take value % divisor, and if the result is negative add the divisor once. One addition is always enough, because a remainder is never further from zero than the divisor."
+
+explanation: |
+  Signed overflow in C++ is undefined behavior, which is a stronger
+  and stranger claim than "the number wraps". The compiler is
+  entitled to assume it never happens, so a check written *after*
+  the addition — testing whether the sum came out smaller than the
+  operands — can be optimized away entirely on the grounds that it
+  could only be true in a program that had already done something
+  impossible. The check has to come first, and it has to be phrased
+  so that the check itself cannot overflow.
+
+  Rearranging is what makes that possible. `left + right > max`
+  becomes `left > max - right`, and when `right` is positive that
+  subtraction is safe by construction. The negative half needs its
+  own branch against `min`, and it is genuinely a separate case
+  rather than a mirror image: two's complement has one more negative
+  value than positive, so `-min` does not fit in an `int` and any
+  symmetry you assume will be wrong at exactly one input.
+
+  The unsigned trap is quieter and hurts more often. `size()`
+  returns `size_t`, so `size() - 1` on an empty container is not
+  negative — it is about four billion. The comparison
+  `i <= v.size() - 1` therefore looks like a bounds check and is
+  one only when the container is non-empty. Compilers warn about
+  comparing signed and unsigned for exactly this reason, and that
+  warning is worth treating as an error rather than as noise.
+
+  The remainder rule is a smaller thing that keeps coming back. In
+  C++, `%` gives the result the sign of the left operand, so
+  `-1 % 3` is `-1`. That is defensible arithmetic and the wrong
+  answer for the commonest use, which is stepping around a ring: an
+  index of `-1` into anything is not a place. One conditional
+  addition fixes it, and one is always enough, because a remainder
+  is never further from zero than the divisor.
+
+  Summing into a `long long` is the cheap habit underneath all of
+  this. The intermediate value in an average is much larger than the
+  answer, and widening before the loop rather than after the
+  overflow costs nothing anybody can measure.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 26
+    why: >-
+      The branch that splits a positive right operand from the rest. Adding
+      zero cannot overflow, and both branches say so: the positive branch asks
+      whether left exceeds the maximum, and the other asks whether it is below
+      the minimum. Whichever side zero falls on, the answer is false, so no
+      input distinguishes "above zero" from "at least zero" here.

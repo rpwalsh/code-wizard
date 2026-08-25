@@ -19,7 +19,10 @@ RETRAINER_TEST(duplicate_names_keep_the_first_found, "cpp.lifetime.unique") {
     Registry registry;
     registry.add("same", 1);
     registry.add("same", 2);
-    RETRAINER_ASSERT_INT(registry.find("same")->value, 1);
+    const Entry *first = registry.find("same");
+    RETRAINER_ASSERT(first != nullptr, "the name is in the registry");
+    if (first == nullptr) return;  // a stub returns nullptr; do not follow it
+    RETRAINER_ASSERT_INT(first->value, 1);
     RETRAINER_ASSERT_INT(registry.size(), 2);
 }
 
@@ -29,9 +32,15 @@ RETRAINER_TEST(taking_removes_only_one, "cpp.values.move") {
     registry.add("same", 2);
 
     auto owned = registry.take("same");
+    RETRAINER_ASSERT(owned != nullptr, "one of the two came out");
+    if (owned == nullptr) return;
     RETRAINER_ASSERT_INT(owned->value, 1);
     RETRAINER_ASSERT_INT(registry.size(), 1);
-    RETRAINER_ASSERT_INT(registry.find("same")->value, 2);
+
+    const Entry *remaining = registry.find("same");
+    RETRAINER_ASSERT(remaining != nullptr, "the other one is still there");
+    if (remaining == nullptr) return;
+    RETRAINER_ASSERT_INT(remaining->value, 2);
 }
 
 RETRAINER_TEST(entries_survive_being_taken_out_of_scope, "cpp.lifetime.raii") {
@@ -43,5 +52,6 @@ RETRAINER_TEST(entries_survive_being_taken_out_of_scope, "cpp.lifetime.raii") {
     }
     // The registry is gone; the entry is not, because ownership moved.
     RETRAINER_ASSERT(owned != nullptr, "the entry did not survive");
+    if (owned == nullptr) return;
     RETRAINER_ASSERT_INT(owned->value, 42);
 }

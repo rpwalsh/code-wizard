@@ -57,6 +57,15 @@ export type TestRunOutcome =
   /** Learner code failed to import/compile; no tests could run. */
   | 'collection-error'
   | 'timeout'
+  /**
+   * The tests began and the program died before they finished.
+   *
+   * Distinct from every other kind of failure here, because the cause is the
+   * learner's code and the evidence is a process status rather than a report.
+   * Folding it into internal-error made the product apologize for a crash it
+   * did not cause, which reads as the app being broken.
+   */
+  | 'crashed'
   | 'runtime-unavailable'
   | 'internal-error';
 

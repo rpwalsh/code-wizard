@@ -413,6 +413,8 @@ export class ToolchainRuntime implements LanguageRuntime {
         } catch {
           // No report means the harness never got to write one, which is a
           // different failure from tests going red.
+          const crash = crashDetail(this.#spec.metadata.displayName, outcome);
+          if (crash) return emptyTestResult('crashed', outcome, crash);
           return emptyTestResult('internal-error', outcome);
         }
       }
@@ -424,6 +426,11 @@ export class ToolchainRuntime implements LanguageRuntime {
       try {
         document = remap(parseReport(raw), this.#spec.mapReportFile);
       } catch (caught) {
+        // A half-written or empty report almost always means the process died
+        // partway through, so check the process status before blaming the
+        // harness for writing something unreadable.
+        const crash = crashDetail(this.#spec.metadata.displayName, outcome);
+        if (crash) return emptyTestResult('crashed', outcome, crash);
         return emptyTestResult(
           'internal-error',
           outcome,
@@ -877,6 +884,35 @@ function compilerOutput(outcome: ProcessOutcome): string {
     .filter((part) => part !== undefined && part.trim() !== '')
     .join('\n')
     .trim();
+}
+
+/**
+ * A description of the process dying, or null if it exited normally.
+ *
+ * The harness itself returns 0 or 1 and nothing else, so any other status is
+ * the operating system ending the process: a signal on Unix, or a status like
+ * 0xC0000005 (access violation) on Windows. Either way the tests stopped
+ * because the code under test stopped, which is worth saying plainly instead
+ * of reporting an unreadable report.
+ */
+function crashDetail(language: string, outcome: ProcessOutcome): string | null {
+  if (outcome.signal) {
+    return (
+      `${language}: the program was killed by ${outcome.signal} before the tests finished. ` +
+      `Nothing after that point ran, so the test that was in progress is the one to look at.`
+    );
+  }
+
+  const code = outcome.exitCode;
+  if (code === null || code === 0 || code === 1) return null;
+
+  const status = code < 0 || code > 255 ? `0x${(code >>> 0).toString(16)}` : String(code);
+  return (
+    `${language}: the program stopped with status ${status} before the tests finished. ` +
+    `That is a crash rather than a failing test — reading past the end of a container, ` +
+    `following a pointer to something already destroyed, or dividing by zero. Nothing after ` +
+    `that point ran.`
+  );
 }
 
 function joinErrors(outcome: ProcessOutcome): string {

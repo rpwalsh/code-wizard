@@ -92,7 +92,9 @@ export function describeOutcome(outcome: TestResult['outcome']): string {
     case 'timeout':
       return 'the run exceeded its time limit and was terminated';
     case 'collection-error':
-      return 'the tests could not be collected — your code probably fails to import';
+      return 'the tests could not be collected — your code probably fails to build';
+    case 'crashed':
+      return 'the program crashed before the tests finished';
     case 'runtime-unavailable':
       return 'the language runtime is not available';
     case 'internal-error':

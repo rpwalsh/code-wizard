@@ -43,3 +43,22 @@ RETRAINER_TEST(the_rule_of_zero_copy_just_works, "cpp.lifetime.rule") {
     RETRAINER_ASSERT_INT(copy.count("bolt"), 15);
     RETRAINER_ASSERT_INT(original.count("bolt"), 0);
 }
+
+RETRAINER_TEST(removing_nothing_is_refused_and_changes_nothing, "cpp.types.classes") {
+    // Zero is not a quantity anybody means to remove, and reporting success
+    // for it would let a caller believe a removal happened.
+    Inventory inv;
+    inv.add("bolt", 3);
+    RETRAINER_ASSERT(!inv.remove("bolt", 0), "removing none of them is not a removal");
+    RETRAINER_ASSERT(!inv.remove("bolt", -2), "and neither is removing a negative number");
+    RETRAINER_ASSERT_INT(inv.count("bolt"), 3);
+}
+
+RETRAINER_TEST(removing_exactly_one_works, "cpp.types.classes") {
+    // The smallest real removal there is. A guard that rejects one along with
+    // zero looks almost right and is wrong on the commonest case.
+    Inventory inv;
+    inv.add("bolt", 3);
+    RETRAINER_ASSERT(inv.remove("bolt", 1), "one is a quantity");
+    RETRAINER_ASSERT_INT(inv.count("bolt"), 2);
+}
