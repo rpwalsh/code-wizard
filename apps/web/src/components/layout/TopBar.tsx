@@ -40,6 +40,16 @@ interface TopBarProps {
   readonly onHandbook: () => void;
   /** True while an attempt is open: switching would discard it. */
   readonly languageLocked?: boolean;
+  /**
+   * Whether an attempt is open.
+   *
+   * Changing the mode remounts the workspace, because Learn and Fluency grade
+   * differently and carrying revealed hints between them would corrupt the
+   * record. That is right, and it must not be reachable by a stray click on a
+   * dropdown while somebody is halfway through writing a solution — the same
+   * reason the language picker locks.
+   */
+  readonly modeLocked?: boolean;
 }
 
 const SECTIONS: readonly { readonly id: Section; readonly name: string }[] = [
@@ -61,6 +71,7 @@ export function TopBar({
   onPalette,
   onHandbook,
   languageLocked = false,
+  modeLocked = false,
 }: TopBarProps) {
   const practiceOnly = languages.some(
     (option) => option.id === language && !option.runnable,
@@ -143,6 +154,10 @@ export function TopBar({
           <select
             className="mode-select"
             value={mode}
+            disabled={modeLocked}
+            title={
+              modeLocked ? 'Finish or leave this exercise before changing mode' : undefined
+            }
             onChange={(event) => {
               const chosen = event.target.value;
               // Checked rather than asserted: the value comes back from the

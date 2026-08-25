@@ -10,6 +10,8 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
+import { useDialogFocus } from './use-dialog-focus.ts';
+
 interface ModalProps {
   readonly open: boolean;
   readonly label: string;
@@ -30,6 +32,14 @@ export function Modal({ open, label, onClose, children, size = 'narrow' }: Modal
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  // Containment and restoration. The file comment above has claimed these
+  // lived here since it was written; until this hook they did not.
+  //
+  // Before the focus effect below, deliberately: effects run in the order
+  // they are declared, so this has to record who opened the dialog while that
+  // is still the answer. After it, the opener it remembers is the dialog.
+  useDialogFocus(surfaceRef, open);
 
   // Focus moves into the dialog when it opens, or a keyboard user is left
   // tabbing the page underneath it.

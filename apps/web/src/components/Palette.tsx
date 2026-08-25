@@ -1,6 +1,8 @@
 // Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useDialogFocus } from './layout/use-dialog-focus.ts';
+
 export interface Command {
   readonly id: string;
   readonly name: string;
@@ -26,12 +28,17 @@ export function Palette({ open, commands, onClose }: PaletteProps) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const surfaceRef = useRef<HTMLDivElement>(null);
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return commands;
     return commands.filter((command) => command.name.toLowerCase().includes(needle));
   }, [commands, query]);
+
+  // Before the effect that focuses the input, so the opener it remembers is
+  // whatever the learner was on rather than the palette's own search box.
+  useDialogFocus(surfaceRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +50,7 @@ export function Palette({ open, commands, onClose }: PaletteProps) {
   useEffect(() => {
     setActive(0);
   }, [query]);
+
 
   if (!open) return null;
 
@@ -61,7 +69,13 @@ export function Palette({ open, commands, onClose }: PaletteProps) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="palette" role="dialog" aria-modal="true" aria-label="Commands">
+      <div
+        ref={surfaceRef}
+        className="palette"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Commands"
+      >
         <input
           ref={inputRef}
           className="palette__input"

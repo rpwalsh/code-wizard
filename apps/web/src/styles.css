@@ -1357,6 +1357,33 @@ body.is-resizing .resizer__grip {
   padding: 0;
 }
 
+/*
+ * The hidden attribute is inert on anything that sets its own display, and
+ * both of these set grid. Without this rule the panels were squeezed to a
+ * zero-width column and left there: invisible, and still announced by a
+ * screen reader, still in the tab order, still clickable by anything driving
+ * the page. Focus mode removed them from view and from nowhere else.
+ *
+ * The explicit columns are what make `display: none` safe here. A grid item
+ * set to display:none stops being an item, so every item after it slides one
+ * column to the left — hiding the task panel put the editor in the task
+ * panel's zero-width column and the diagnostics panel where the editor
+ * should be, on top of it. Naming each column pins them in place.
+ */
+.workspace__body > .brief {
+  grid-column: 1;
+}
+.workspace__body > .editor-pane {
+  grid-column: 2;
+}
+.workspace__body > .aside {
+  grid-column: 3;
+}
+.brief[hidden],
+.aside[hidden] {
+  display: none;
+}
+
 /* ── tests ────────────────────────────────────────────────────────────── */
 
 .results__summary {

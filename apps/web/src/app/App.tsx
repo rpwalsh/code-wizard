@@ -500,6 +500,7 @@ function AppInner() {
         onPalette={() => setPaletteOpen(true)}
         onHandbook={() => setHandbookOpen(true)}
         languageLocked={screen.kind === 'workspace'}
+        modeLocked={screen.kind === 'workspace'}
       />
 
       {!platform.persistent ? (
