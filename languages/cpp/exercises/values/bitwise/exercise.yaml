@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.bitwise
+version: 1
+language: cpp
+title: All of them is not any of them
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.values.bitwise
+  - cpp.types.enums
+
+prerequisites: []
+
+learningObjectives:
+  - Add and remove flags with OR and AND-NOT.
+  - Tell "has every one of these" apart from "has any of these".
+  - Keep the casts a scoped enum requires in one place.
+
+prompt: |
+  A set of flags is a set of bits. Adding one is OR, removing one is
+  AND with the complement, and testing is AND — but *what you
+  compare the result against* is where this goes wrong.
+
+  `Permission` is a scoped enum, so it will not turn into a number
+  on its own. That is the protection you want and it means the bit
+  work needs an explicit way in.
+
+  In `main.cpp`:
+
+  - `with(set, flag)` — every bit of `flag` added.
+  - `without(set, flag)` — every bit of `flag` removed.
+  - `has(set, flag)` — whether **every** bit of `flag` is present.
+  - `has_any(set, flag)` — whether **any** bit is present.
+  - `describe(set)` — `"rwx"`, with a dash for each missing one, in
+    that order and those three positions.
+  - `count(set)` — how many of the three are set.
+
+  `has` and `has_any` agree on single flags and disagree on
+  combinations. Getting them the same way round is most of the work.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/bitwise_test.cpp
+    visibility: visible
+    concept: cpp.values.bitwise
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.bitwise
+
+hints:
+  - level: conceptual
+    text: "set & flag keeps the bits they share. Whether that means yes depends on what you compare it against — the flag itself, or zero."
+  - level: structural
+    text: "Two tiny helpers, one casting to unsigned and one back, keep every static_cast in one place instead of scattered through the file."
+  - level: language
+    text: "~flag flips every bit, so set & ~flag keeps everything except the ones named."
+  - level: syntax
+    text: "has is (set & flag) == flag. has_any is (set & flag) != 0."
+  - level: explicit
+    text: "describe appends exactly three characters, always. Appending only the letters that are present would slide them left and make -w- read as w-- ."
+
+explanation: |
+  The whole exercise turns on one line. `set & flag` keeps the bits
+  the two have in common, and what that *means* depends entirely on
+  the comparison: against `flag`, it asks whether every named bit is
+  present; against zero, whether any is. The two agree for a single
+  flag and disagree the moment a combination is passed — which is
+  why the bug survives a test suite that only ever asks about one
+  permission at a time, and shows up the day somebody checks for
+  read-and-write together.
+
+  Removing is `set & ~flag` and not `set - flag` or `set ^ flag`.
+  Subtraction is meaningless on a bitset — removing a flag that is
+  not there would borrow. XOR is worse, because it *toggles*: on a
+  set that already lacks the flag it adds it, so "remove write"
+  grants write to exactly the users who did not have it. AND-NOT is
+  the only one that is idempotent, and idempotent is what "remove"
+  should mean.
+
+  Spelling out `: unsigned` on the enum is a small thing worth doing.
+  Without it the compiler chooses, and shifting or complementing a
+  signed type of unknown width is how a mask picks up an unexpected
+  sign extension. Naming the type makes the width the same
+  everywhere.
+
+  Keeping the casts in two helpers matters more than it looks. A
+  scoped enum refuses to convert on its own precisely so that
+  arithmetic on it has to be deliberate — and then bit manipulation
+  needs a way through. Scattering `static_cast<unsigned>` across
+  every function gives up the protection while keeping the
+  inconvenience; two named functions keep it in one place you can
+  read and audit.
+
+  `describe` writing exactly three characters is the other easy
+  mistake. Appending only the letters that are present produces
+  `"w"` for write-only, which reads as read-only to anybody scanning
+  a column of them. Fixed positions are what make the format legible
+  at a glance, which is the only reason it exists.

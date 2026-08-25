@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.references
+version: 1
+language: cpp
+title: There is no null reference
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.lifetime.references
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Return a reference when the caller should reach the object itself.
+  - Return a pointer when the answer might be nothing.
+  - Take a const reference to read and a plain reference to change.
+
+prompt: |
+  A reference always refers to something. That is the reason to
+  prefer one — there is no null to check and no arrow to write — and
+  it is exactly why a reference cannot answer a question whose
+  answer might be "there isn't one".
+
+  In `main.cpp`:
+
+  - `counter_for(counters, name)` — a reference to that counter,
+    created at zero if the name is new. The caller must be able to
+    change the map through what comes back.
+  - `find_counter(counters, name)` — a pointer to that counter, or
+    `nullptr`. Looking must not create anything.
+  - `bump_all(counters)` — one added to every counter, in the
+    caller's map.
+  - `total_hits(counters)` — every counter added together, copying
+    nothing.
+  - `larger(left, right)` — a reference to whichever value is
+    larger. A tie gives the left one, and which one comes back is
+    something the tests check.
+  - `exchange(left, right)` — the two values swapped, in the
+    caller's own variables. Exchanging a variable with itself must
+    leave it alone.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/references_test.cpp
+    visibility: visible
+    concept: cpp.lifetime.references
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "Ask whether the answer could be nothing. If it could, a reference cannot carry it and a pointer has to."
+  - level: structural
+    text: "counter_for is the one place operator[] is the right tool, because inserting the missing name is exactly what was asked for."
+  - level: language
+    text: "find_counter takes a const reference, so operator[] is not available on it at all — the language refuses the mistake rather than warning about it."
+  - level: syntax
+    text: "&found->second is the address of the mapped value inside the map, which stays valid as long as the entry does."
+  - level: explicit
+    text: "exchange: copy the left into a local, assign the right to the left, assign the local to the right. Written that way it survives both references naming the same object."
+
+explanation: |
+  The choice between a reference and a pointer is mostly one
+  question: can the answer be nothing? A reference cannot be null,
+  cannot be reseated, and must be initialized — so where those hold,
+  it is the better tool, and the absence of null checks in the
+  calling code is the payoff. Where the answer might genuinely be
+  absent, a pointer says so in the type, and the caller is obliged to
+  look.
+
+  `counter_for` returning `Counter &` is what lets
+  `counter_for(counters, "alpha").hits = 5` reach into the map.
+  Return by value and that line compiles, assigns to a temporary,
+  and throws the change away — no warning, no error, and a counter
+  that stays at zero for reasons invisible at the call site.
+
+  `find_counter` taking a `const Counters &` is const-correctness
+  doing real work rather than decorating a signature. `operator[]`
+  is not declared on a const map, so the function *cannot* insert by
+  accident even if somebody reaches for the familiar syntax. That is
+  a whole category of bug removed by a keyword.
+
+  `larger` returning a reference is useful and sharp-edged in the
+  same breath. The caller gets their own variable back, which is
+  what makes `larger(a, b) = 0` meaningful for a non-const version —
+  and it means the function must never be called on temporaries,
+  because the reference would outlive what it refers to. Returning a
+  reference is a promise that the referent belongs to somebody who
+  will keep it.
+
+  `exchange` with both references naming the same object is the edge
+  worth writing down. Through a temporary it works: save, overwrite,
+  restore. Written as the clever-looking pair of assignments — left
+  gets right, right gets left — it destroys the value before it is
+  read, and the variable comes back holding a copy of itself. Any
+  function taking two references should be asked what it does when
+  they are the same one.

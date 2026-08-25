@@ -1,0 +1,120 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.hashing
+version: 1
+language: cpp
+title: Equal keys must hash equal
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.hashing
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Give a type the equality and the hash a hash table needs, and keep them agreeing.
+  - Combine two fields into a hash without making it symmetric.
+  - Use insert's own report instead of looking a key up twice.
+
+prompt: |
+  An unordered container needs two things from a key type: a way to
+  compare for equality, and a way to hash. They are not independent.
+  If two keys are equal, they **must** hash the same — otherwise
+  they land in different buckets and the map cheerfully holds both.
+
+  In `main.cpp`:
+
+  - `operator==` for `Point` — the same point when both coordinates
+    match.
+  - `PointHash::operator()` — the hash. `(1, 2)` and `(2, 1)` are
+    different points and must not hash alike, and neither must
+    `(4, 4)` and the origin. Those two requirements rule out the
+    first thing most people write.
+  - `tally(points)` — how many times each point appears.
+  - `count_at(counts, wanted)` — that point's count, or zero.
+    Looking must not insert.
+  - `distinct(points)` — the distinct points, in **first-seen**
+    order.
+  - `unique_set(points)` — the points as a set.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/hashing_test.cpp
+    visibility: visible
+    concept: cpp.std.hashing
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.hashing
+
+hints:
+  - level: conceptual
+    text: "Think about what x ^ y does when you swap x and y, and what it does when they are the same number. Both answers are the reason a plain XOR will not do."
+  - level: structural
+    text: "Hash each field with std::hash<int>, then fold the second into the first in a way that depends on the order."
+  - level: language
+    text: "std::unordered_set::insert returns a pair whose second member says whether the insertion happened. That is a membership test and a record of it in one lookup."
+  - level: syntax
+    text: "seed ^= hash_int(point.y) + 0x9e3779b9U + (seed << 6) + (seed >> 2); is the usual combine, and the shifts are what break the symmetry."
+  - level: explicit
+    text: "count_at takes a const map, so use find and compare against end(). operator[] is not declared for a const unordered_map at all."
+
+explanation: |
+  The contract is small and unforgiving: equal keys must hash equal.
+  A hash table finds a bucket first and compares only within it, so
+  two keys that are equal but hash differently are never compared —
+  the map holds both, `size()` is wrong, and a lookup finds whichever
+  one it happens to hash to. Whenever `operator==` changes to
+  consider a new field, the hash has to change with it, and that is
+  the single most common way this breaks in real code.
+
+  The reverse is allowed. Different keys may hash the same; that is a
+  collision, and the container handles it by comparing within the
+  bucket. Collisions cost performance, not correctness — which is
+  why the requirement runs one way only.
+
+  `x ^ y` fails as a combiner for two specific reasons and both show
+  up immediately in this data. It is symmetric, so `(1, 2)` and
+  `(2, 1)` collide — and a grid contains the mirror image of very
+  nearly every point in it. And `n ^ n` is zero, so the entire
+  diagonal collides with the origin. Neither is wrong in the
+  correctness sense, and together they turn the table into a linked
+  list on exactly the input it was built for.
+
+  The usual combine — shift, add a constant, fold — is not magic and
+  is not cryptographic. It is a cheap way to make the result depend
+  on the order and on both inputs, which is all that was missing.
+  `0x9e3779b9` is the golden ratio scaled to 32 bits, chosen because
+  its bits are irregular; any similar constant would do.
+
+  `insert` returning whether it happened is worth the habit. Written
+  as `if (!seen.count(p)) { seen.insert(p); ... }` the same key is
+  hashed and located twice, and the two lookups can be separated by
+  an edit later. One call answers and records at once.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: arithmetic
+    line: 21
+    why: >-
+      The hash combine. The exact bits a hash produces are not part of its
+      contract — only that equal keys agree and that unequal keys usually do
+      not. Every arithmetic variant of this line satisfies both, so no test
+      can distinguish them without pinning one particular hash function,
+      which would make a correct alternative implementation fail.
+  - path: main.cpp
+    operator: comparison
+    line: 21
+    why: >-
+      The shifts inside the same combine, for the same reason: a different
+      shift is a different valid hash, not a broken one.
+  - path: main.cpp
+    operator: off-by-one
+    line: 21
+    why: >-
+      The shift distances, again inside the combine. Shifting by seven rather
+      than six produces a different hash that meets every requirement the
+      tests can legitimately impose.

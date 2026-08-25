@@ -1,0 +1,96 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.search
+version: 1
+language: cpp
+title: end() is a position, not a value
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.std.search
+  - cpp.std.algorithms
+
+prerequisites: []
+
+learningObjectives:
+  - Use lower_bound and upper_bound rather than writing the halving yourself.
+  - Tell a position apart from a value, and check for end() before reading.
+  - Choose the bound that puts equal values where you meant them to go.
+
+prompt: |
+  Every vector here is already sorted. That is the only reason these
+  can be fast, and a linear scan — which gets every answer right —
+  throws that away.
+
+  In `main.cpp`:
+
+  - `contains(sorted, wanted)` — whether it is there.
+  - `insertion_point(sorted, wanted)` — the **first** index where it
+    could go without breaking the order. Among equals, that is
+    before them, not after.
+  - `count_of(sorted, wanted)` — how many times it appears.
+  - `first_at_least(sorted, wanted)` — the first value at least as
+    large, or nothing. At least includes equal.
+  - `insert_sorted(sorted, value)` — put it in, keeping the order.
+
+  These return positions, not values. A position can be one past the
+  end, and there is nothing there to read.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/search_test.cpp
+    visibility: visible
+    concept: cpp.std.search
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.search
+
+hints:
+  - level: conceptual
+    text: "lower_bound answers where would this go, and everything else here is that answer read differently."
+  - level: structural
+    text: "The distance from begin() to an iterator is its index: at - sorted.begin()."
+  - level: language
+    text: "lower_bound gives the first position not less than the value; upper_bound gives the first strictly greater. Everything equal sits between them."
+  - level: syntax
+    text: "std::equal_range returns both bounds at once, and the distance between them is the count."
+  - level: explicit
+    text: "first_at_least must compare the iterator against sorted.end() before dereferencing it. When everything is smaller, lower_bound returns end(), and reading through it is undefined."
+
+explanation: |
+  Writing a binary search by hand is a famous way to introduce a bug
+  that survives review. The overflow in `(low + high) / 2` sat in
+  the JDK for nine years; the off-by-one in the loop condition is
+  easier still. `std::lower_bound` has none of those, and reads as
+  what it is.
+
+  The distinction worth carrying away is between `lower_bound` and
+  `upper_bound`. The first is the earliest position not less than the
+  value, the second the earliest strictly greater — so among a run of
+  equal values, one lands in front and the other behind. That choice
+  is what makes `insert_sorted` stable: inserting at the lower bound
+  puts a new value before its equals, so equal elements stay in the
+  order they arrived. Insert at the upper bound and it goes last.
+  Both keep the vector sorted; only one of them is predictable.
+
+  `equal_range` is both bounds in one pass. Since everything equal to
+  the value sits between them, the distance is the count — no second
+  search, no loop, and no way for the two bounds to be computed
+  against different states.
+
+  The mistake this exercise is really about is treating a position
+  like a value. These functions always return an iterator, even when
+  nothing matches: `lower_bound` for a value above everything returns
+  `end()`, which points one past the last element. `contains` is
+  built out of exactly that check — `binary_search` is `lower_bound`
+  plus a comparison — and forgetting it in `first_at_least` reads
+  memory that is not in the vector at all. It usually returns a
+  number, which is what makes it hard to notice.
+
+  All of this rests on a precondition nothing enforces. Pass an
+  unsorted vector and these do not report an error; they return a
+  confident wrong answer, because the algorithm's whole method is
+  trusting the order to decide which half to discard.
