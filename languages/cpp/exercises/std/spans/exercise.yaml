@@ -1,0 +1,114 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.spans
+version: 1
+language: cpp
+title: One function, every kind of storage
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.std.spans
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Take a span so one function serves a vector, an array and a C array.
+  - Use const in the span to say whether the window may be written through.
+  - Clamp a subspan rather than running off the end of the storage.
+
+prompt: |
+  A span is a pointer and a length over values it does not own. One
+  function taking a `std::span<const int>` serves a `std::vector`, a
+  `std::array` and a plain C array, without a template and without
+  copying any of them.
+
+  In `main.cpp`:
+
+  - `total(values)` — everything added up.
+  - `largest(values)` — the largest, or nothing at all. A span of
+    all-negative values has a largest, and it is negative.
+  - `double_all(values)` — every value doubled, **in the caller's
+    own storage**. Note which span type this one takes.
+  - `take(values, count)` — the first `count`, or all of them if
+    there are fewer. Zero or below gives nothing.
+  - `drop(values, count)` — everything after the first `count`. More
+    than there is leaves nothing.
+
+  `first(n)` and `subspan(n)` are undefined past the end, not
+  merely short. Both of these have to clamp.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/spans_test.cpp
+    visibility: visible
+    concept: cpp.std.spans
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "span<const int> is a window you may read through. span<int> is one you may write through. Which one a function takes is its whole contract with the caller."
+  - level: structural
+    text: "take and drop return spans over the same storage. Nothing is copied and nothing needs to be."
+  - level: language
+    text: "values.first(n) is the front n; values.subspan(n) is everything after the first n. Both are undefined when n exceeds the size."
+  - level: syntax
+    text: "std::min(values.size(), static_cast<std::size_t>(count)) clamps, once count is known not to be negative."
+  - level: explicit
+    text: "largest must not start from zero. Return nothing for an empty span, and otherwise use max_element, so an all-negative span reports a negative largest."
+
+explanation: |
+  Before `std::span`, a function over contiguous values had three
+  bad options: take a `const std::vector<int> &` and refuse arrays,
+  take a pointer and a length and trust every caller to pair them
+  correctly, or be a template and move into a header. A span is the
+  pointer and the length traveling together, checked once at the
+  call site by the conversion rather than at every call by the
+  programmer.
+
+  The `const` inside the angle brackets is the part worth being
+  precise about. `std::span<const int>` is a window you may read
+  through; `std::span<int>` is one you may write through — and that
+  is a different thing from `const std::span<int>`, which means the
+  window itself cannot be moved. A function's choice of which to
+  take is its contract, visible in the signature, exactly like
+  taking a reference versus a const reference.
+
+  Clamping in `take` and `drop` is not politeness. `first(n)` and
+  `subspan(n)` are undefined behavior when `n` exceeds the size —
+  not truncated, not empty, undefined. The result is a span whose
+  length says it owns memory past the end of the caller's storage,
+  and every read through it is out of bounds while looking
+  completely ordinary.
+
+  `largest` returning an optional rather than a sentinel is the same
+  argument that runs through this whole language. Returning `0` for
+  an empty span is a number that was never in the data, and it is
+  indistinguishable from a span that really did contain zero. The
+  all-negative case is where the lazier version breaks: seeding the
+  search at zero reports zero as the largest of `{-9, -2, -7}`.
+
+  A span owns nothing, so everything true of `std::string_view` is
+  true here. It is valid exactly as long as the storage behind it,
+  and storing one that outlives its container is the same bug in
+  different clothing. Spans are for passing down, not for keeping.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 32
+    why: >-
+      The guard against a negative count in take. A count of zero yields an
+      empty span whether it returns here or falls through to a clamp against
+      zero, so no input distinguishes "at most zero" from "below zero".
+  - path: main.cpp
+    operator: comparison
+    line: 41
+    why: >-
+      The same guard in drop. A count of zero leaves the span whole on both
+      paths, for the same reason.

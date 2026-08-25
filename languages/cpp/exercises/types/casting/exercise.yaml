@@ -1,0 +1,99 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.casting
+version: 1
+language: cpp
+title: A byte of 0xFF is not minus one
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.types.casting
+  - cpp.types.polymorphism
+
+prerequisites: []
+
+learningObjectives:
+  - Ask about a real type at run time and handle the answer no.
+  - Tell "is one of these" apart from "is exactly this".
+  - Route a char through unsigned char before widening it.
+
+prompt: |
+  Each of the named casts asks a different question, and picking the
+  wrong one gives a confident wrong answer rather than an error.
+
+  In `main.cpp`:
+
+  - `as_dog(animal)` — the animal seen as a `Dog`, or `nullptr`. A
+    `Puppy` derives from `Dog`, so a puppy is a dog.
+  - `is_exactly_dog(animal)` — a `Dog` and not something derived
+    from one. A puppy is not.
+  - `dog_count(animals)` — how many are dogs, puppies included.
+  - `truncate(value)` — the fractional part dropped. Toward zero in
+    both directions, so `-2.9` is `-2`.
+  - `byte_value(value)` — the character's numeric value, always
+    between 0 and 255, on a platform where a plain `char` may be
+    signed or unsigned.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/casting_test.cpp
+    visibility: visible
+    concept: cpp.types.casting
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.types.casting
+
+hints:
+  - level: conceptual
+    text: "One of these questions is about inheritance and one is about the exact class. dynamic_cast answers the first and cannot answer the second."
+  - level: structural
+    text: "dynamic_cast on a pointer returns null when the answer is no. On a reference it throws, because there is no null reference to return."
+  - level: language
+    text: "typeid(object) is the exact dynamic type, with no inheritance in the answer. Two typeids compare equal only for the same class."
+  - level: syntax
+    text: "static_cast<int>(value) truncates a double. static_cast<unsigned char>(value) first, then to int, for the byte."
+  - level: explicit
+    text: "byte_value goes through unsigned char before int. Cast a negative char straight to int and the sign is kept, so 0xFF arrives as -1."
+
+explanation: |
+  `dynamic_cast` is the only cast that asks a question at run time,
+  and the only one that can answer no. On a pointer it returns
+  `nullptr`, which makes the no an ordinary value the caller has to
+  look at. On a reference it throws `std::bad_cast`, because a
+  reference has no null to be — which is a good reason to do this
+  work in pointers.
+
+  What it answers is "is this one of those", inheritance included. A
+  `Puppy` is a `Dog` by construction, so `as_dog` succeeds on one,
+  and any other answer would make deriving meaningless. When you
+  genuinely need the exact class — a serializer choosing a format,
+  say — `typeid` is the tool, and reaching for it is worth a
+  moment's suspicion, because most code that cares about the exact
+  class is code that should have called a virtual function.
+
+  `static_cast` is for conversions the compiler can check, and
+  `truncate` shows why the direction matters. Casting a `double` to
+  `int` drops the fraction toward zero, so `-2.9` becomes `-2` and
+  not `-3`. That is not rounding and it is not `floor`; code that
+  wanted either of those and reached for a cast is wrong for
+  negatives only, which is the half of the input nobody tests.
+
+  `byte_value` is the one that bites in real code. Whether a plain
+  `char` is signed is up to the platform — signed on x86 Linux and
+  Windows, unsigned on ARM Linux — so a byte of `0xFF` is `-1` on
+  some machines and `255` on others. Cast it straight to `int` and
+  the sign comes with it. Every `std::isdigit(c)` written without
+  `static_cast<unsigned char>` has this bug: those functions are
+  specified in terms of `unsigned char`, and passing a negative
+  value is undefined, because the implementation is a table lookup
+  and the index lands before the start of the array.
+
+  The two casts not needed here are worth naming. `const_cast`
+  removes a promise, and writing through it to something originally
+  declared `const` is undefined — it exists for interfacing with
+  older APIs, not for winning arguments with the compiler.
+  `reinterpret_cast` reads the same bits as a different type and is
+  almost always a lie about what is in memory.

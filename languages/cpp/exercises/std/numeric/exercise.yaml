@@ -1,0 +1,113 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.numeric
+version: 1
+language: cpp
+title: The accumulator takes its type from the seed
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.std.numeric
+  - cpp.values.integers
+
+prerequisites: []
+
+learningObjectives:
+  - Seed an accumulation with the type you want the arithmetic done in.
+  - Reach for partial_sum, adjacent_difference and iota instead of writing the loops.
+  - Refuse mismatched inputs rather than reading past the end of one.
+
+prompt: |
+  `std::accumulate(begin, end, 0)` adds in `int`, whatever the
+  function returns. The initial value decides the accumulator's
+  type, so a `long long` return type widens the answer *after* it
+  has already overflowed.
+
+  In `main.cpp`:
+
+  - `total(values)` — everything added up. A hundred values of a
+    hundred million must come back as ten billion.
+  - `running_totals(values)` — `{1, 2, 3}` becomes `{1, 3, 6}`.
+  - `differences(values)` — `{1, 3, 6}` becomes `{1, 2, 3}`. The
+    first element comes through as it is, which makes this the exact
+    inverse of the one above.
+  - `sequence(count)` — `0` up to `count - 1`. Zero or below gives
+    nothing.
+  - `dot(left, right)` — the sum of the pairwise products. Different
+    lengths throw `std::invalid_argument`.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/numeric_test.cpp
+    visibility: visible
+    concept: cpp.std.numeric
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.values.integers
+
+hints:
+  - level: conceptual
+    text: "Look at what type the initial value is. That is the type every addition happens in, and the return type has no say in it."
+  - level: structural
+    text: "These algorithms write into a destination rather than growing one, so size the output vector before calling them."
+  - level: language
+    text: "partial_sum, adjacent_difference and iota are all in <numeric>, alongside accumulate and inner_product."
+  - level: syntax
+    text: "0LL rather than 0 as the seed for total and dot."
+  - level: explicit
+    text: "dot compares the two sizes and throws before calling inner_product, which only ever looks at the length of the first range. Widening the seed is not enough for it: each product is int times int and overflows before the addition sees it, so pass the six-argument form with a multiply that casts one side to long long first."
+
+explanation: |
+  `std::accumulate(v.begin(), v.end(), 0)` is one of the quietest
+  bugs in the standard library. The third argument is not just a
+  starting value — it fixes the accumulator's type, so with a plain
+  `0` every addition happens in `int` no matter what the surrounding
+  code says. The function returns a `long long`, the widening is
+  real, and it happens to a number that already wrapped. Two
+  characters fix it and nothing warns about their absence.
+
+  `inner_product` shows that the seed only reaches half the problem.
+  It fixes the accumulator, so the additions are wide — and each
+  product is still `int` times `int`, computed and overflowed before
+  any addition sees it. The six-argument form, with a multiply that
+  casts one side first, is the fix, and the lesson generalizes:
+  widening where the result lands does nothing for arithmetic that
+  already happened somewhere narrower.
+
+  It has one more trap: it takes three iterators, not four. It walks the first range to its end and
+  reads alongside from the second, so a shorter second range is read
+  past its end with no error and no bound. Checking the sizes first
+  is not defensive programming, it is the only thing standing
+  between the call and undefined behavior.
+
+  `partial_sum` and `adjacent_difference` are worth knowing by name
+  because they are exact inverses, and the reason is the detail
+  people get wrong when writing them by hand:
+  `adjacent_difference` copies the first element through rather than
+  differencing it against nothing. That is what makes the round trip
+  work, and a hand-rolled version that starts its loop at index one
+  loses the first value entirely.
+
+  `iota` is named after the APL operator and does the least of any
+  of these, which is the point — filling with consecutive values is
+  a loop everybody writes and somebody eventually writes with the
+  wrong bound.
+
+  All of them share the shape worth noticing: they write into a
+  destination through an iterator and do not grow anything. Size the
+  output first, or pass a `std::back_inserter`. Handing them the
+  `begin()` of an empty vector is the commonest way to write past
+  the end of a container that has no room at all.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: comparison
+    line: 29
+    why: >-
+      The guard against a negative count. A count of zero produces an empty
+      sequence whether it returns here or falls through to a vector sized
+      zero, so no input distinguishes "at most zero" from "below zero" at
+      this line.
