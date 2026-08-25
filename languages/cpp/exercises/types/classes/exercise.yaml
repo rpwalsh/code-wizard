@@ -1,0 +1,102 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.classes
+version: 1
+language: cpp
+title: Ten comes after nine
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.types.classes
+  - cpp.errors.exceptions
+
+prerequisites: []
+
+learningObjectives:
+  - Initialize members in the initializer list rather than assigning in the body.
+  - Delegate from one constructor to another instead of repeating it.
+  - Order a compound value part by part, most significant first.
+
+prompt: |
+  A version number looks like text and is not text. Sorting
+  `"1.10.0"` and `"1.9.0"` as strings puts them in the wrong order,
+  because `'1'` is less than `'9'` and the comparison stops caring
+  after the first difference. Three numbers compared in order is
+  the whole fix.
+
+  In `main.cpp`:
+
+  - `Version(major, minor, patch)` — keeps the three parts. Use the
+    member initializer list.
+  - `Version()` — 0.0.0, by delegating to the constructor above.
+  - `Version(text)` — parses `"1.2.3"`. Exactly three parts,
+    separated by dots, each one digits and nothing else. Anything
+    else throws `std::invalid_argument` with the message
+    `not a version: <text>`.
+  - `text()` — `"1.2.3"`.
+  - `is_before(other)` — whether this version came first. Strictly
+    before: a version does not precede itself.
+  - `operator==` — all three parts match.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/classes_test.cpp
+    visibility: visible
+    concept: cpp.types.classes
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.errors.exceptions
+
+hints:
+  - level: conceptual
+    text: "Compare the most significant part first. Only when two parts are equal does the next one get a say, and the last one decides on its own."
+  - level: structural
+    text: "One constructor can call another: Version() : Version(0, 0, 0) {}. The zero version is then described in one place, and any check the other constructor grows applies here too."
+  - level: language
+    text: "Members are constructed before the constructor body runs. Assigning to them in the body builds each member and then overwrites it, which for anything larger than an int is real work thrown away."
+  - level: syntax
+    text: "Split on dots, check there are exactly three parts, then check each part is digits before converting any of it."
+  - level: explicit
+    text: "is_before: if the majors differ, return whether this one is smaller. Otherwise if the minors differ, the same. Otherwise compare the patches."
+
+explanation: |
+  The initializer list is not a style preference. Members are
+  constructed before the constructor body starts, so assigning to
+  them in the body means every member is built once with its default
+  and then overwritten. For an `int` the compiler erases the
+  difference; for a `std::string` it is an allocation you paid for
+  and discarded, and for a member with no default constructor at all
+  the body version simply does not compile.
+
+  Delegating is the same instinct applied to constructors. `Version()
+  : Version(0, 0, 0) {}` says the default *is* the zero version
+  rather than describing zero a second time — and when the other
+  constructor grows a validity check, this one is already covered.
+  Two constructors that each set the same fields separately are two
+  places to update and one of them will be missed.
+
+  Ordering part by part is the point of the exercise, and it is worth
+  seeing why the obvious alternatives fail. Comparing the text
+  directly puts `1.10.0` before `1.9.0`. Combining the parts into one
+  number — major times a thousand, plus minor times a hundred, plus
+  patch — works until a project ships its hundredth patch and the
+  arithmetic quietly carries into the wrong column. Comparing the
+  parts in order has no limit and no arithmetic to get wrong.
+
+  Strictness matters more than it looks. `is_before` has to be false
+  for two equal versions, because a comparison that says a thing
+  precedes itself breaks the ordering rules every sort in the
+  standard library relies on — and the symptom is not a wrong answer
+  in this function, it is `std::sort` running off the end of a
+  container somewhere else entirely.
+
+  Validating everything before converting anything is the last habit
+  here. Parse, check the shape, check each part, and only then build
+  the object. A constructor that half-builds and then throws leaves
+  nothing behind — the object never existed and its destructor will
+  not run — which is exactly the behavior you want, and exactly why
+  the checks belong before the assignments rather than scattered
+  among them.

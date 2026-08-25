@@ -1,0 +1,108 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.auto
+version: 1
+language: cpp
+title: auto drops the reference unless you ask
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.values.auto
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Loop over elements by reference when you mean to change or keep them.
+  - Loop by const reference when you only mean to read them.
+  - Name the halves of a pair with a structured binding.
+
+prompt: |
+  `auto` deduces the type of the value, not the way you reached it.
+  `auto reading` is a copy every time, however the element was
+  stored — and the compiler says nothing, because a copy is a
+  perfectly legal thing to have asked for.
+
+  `Reading` counts its own copies, which is how the tests can see a
+  decision the language makes silently. It is written for you.
+
+  In `main.cpp`:
+
+  - `raise_all(readings, amount)` — add `amount` to every reading,
+    in the vector the caller passed.
+  - `total(readings)` — every value added up, copying nothing.
+  - `label_all(values)` — one `sensor=value` string per map entry,
+    in the map's order.
+  - `first_above(readings, threshold)` — a pointer to the first
+    reading whose value is **above** the threshold, or `nullptr`.
+    Equal to the threshold is not above it.
+
+  The pointer `first_above` returns must point into the caller's
+  vector. Think about what that requires of the loop.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/auto_test.cpp
+    visibility: visible
+    concept: cpp.values.auto
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "Ask what the loop variable is for. Changing the element, or keeping its address, needs the element itself. Reading it needs the element too, just without permission to change it."
+  - level: structural
+    text: "auto & to modify, const auto & to read. Plain auto is a copy, and is right only when you specifically want one."
+  - level: language
+    text: "A structured binding splits a pair into named parts: for (const auto &[sensor, value] : values)."
+  - level: syntax
+    text: "std::to_string turns the int into text; sensor + \"=\" + std::to_string(value) builds the label."
+  - level: explicit
+    text: "first_above returns &reading from inside the loop. That address is only worth anything if reading is a reference to the element — a copy dies at the closing brace and the caller is left holding a pointer to nothing."
+
+explanation: |
+  `auto` deduces from the value, and the reference is not part of
+  the value. Writing `auto reading : readings` therefore copies each
+  element, which for a type holding a `std::string` is an allocation
+  per iteration — and the loop still reads correctly, so nothing
+  ever draws attention to it. `total` returns the same number either
+  way. Only the copy counter can tell you which one you wrote.
+
+  Where it stops being about cost is `first_above`. Taking the
+  address of a copy gives a pointer to a loop variable that is
+  destroyed at the end of the iteration, so the function returns a
+  pointer to memory that has been released. It will usually appear
+  to work, because the memory is still there and still holds the
+  right bytes for a while, which is what makes this class of bug so
+  expensive to find. `const auto &` makes the same line correct, and
+  the difference between the two versions is one character.
+
+  `const auto &` is the right default for reading. It binds to the
+  element without copying, it works whether the container holds
+  something tiny or something enormous, and it says in the loop
+  header that this iteration is not going to change anything.
+
+  Structured bindings are a smaller win but a constant one. `for
+  (const auto &[sensor, value] : values)` names the two halves at
+  the point they come into existence, and every line below reads as
+  what it is instead of as `entry.first` and `entry.second` — which
+  are correct, unmemorable, and easy to swap by accident.
+
+  A map iterates in key order, not insertion order, which is worth
+  keeping in mind whenever output ordering matters to somebody. It
+  is a sorted container, so the labels come back alphabetically no
+  matter what order the entries arrived in.
+
+mutationExceptions:
+  - path: main.cpp
+    operator: off-by-one
+    line: 7
+    why: >-
+      The starting value of the copy counter, which is part of the provided
+      bookkeeping rather than the exercise. Every test that reads it calls
+      Reading::reset_copies() first, so whatever it began as is overwritten
+      before anything can observe it.

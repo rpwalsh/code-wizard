@@ -1,0 +1,107 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.types.templates
+version: 1
+language: cpp
+title: The size is part of the type
+kind: micro-problem
+difficulty: 4
+estimatedSeconds: 780
+timeoutMs: 30000
+
+skills:
+  - cpp.types.templates
+  - cpp.std.containers
+
+prerequisites: []
+
+learningObjectives:
+  - Write a class template whose storage is decided at compile time.
+  - Use a value, not just a type, as a template parameter.
+  - Specialize a template for the case where the general answer is wrong.
+
+prompt: |
+  A template is not a class. It is instructions for making classes,
+  and the compiler makes one per set of arguments it sees — so
+  `RingBuffer<int, 4>` and `RingBuffer<int, 8>` are two unrelated
+  types that happen to have been written once.
+
+  Everything here goes in `main.hpp`, because a template's
+  definition has to be visible wherever it is used.
+
+  `RingBuffer<T, Capacity>` keeps the newest `Capacity` values and
+  quietly drops the rest:
+
+  - `push(value)` — adds a value. Once full, the oldest goes.
+  - `size()` — how many are held. `full()` — whether it is at
+    capacity.
+  - `oldest()` — a reference to the oldest value held.
+  - `dropped()` — how many have ever been pushed out. A drain does
+    not forgive these.
+  - `drain()` — everything held, oldest first, leaving it empty and
+    ready to be refilled.
+
+  `describe(value)` — the general case is whatever
+  `std::to_string` makes of it. Specialize it for `bool`, which
+  should read `true` or `false`, and for `std::string`, which
+  should come back inside single quotes.
+
+entryPoint: main.hpp
+
+tests:
+  - path: tests/templates_test.cpp
+    visibility: visible
+    concept: cpp.types.templates
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.types.templates
+
+hints:
+  - level: conceptual
+    text: "Because Capacity is known while compiling, the storage can be a plain std::array. Nothing here needs to allocate, and that is the reason to put a number in the angle brackets at all."
+  - level: structural
+    text: "Track where the oldest value sits and how many are held. Where the next one goes is those two added together, wrapped around the capacity."
+  - level: language
+    text: "A full specialization is written template <> and names the type it is for. Mark it inline in a header, or every file that includes it defines the same function."
+  - level: syntax
+    text: "(first_ + count_) % Capacity is the next free slot, and it is the same slot as first_ exactly when the buffer is full."
+  - level: explicit
+    text: "Hold a start and a count, not a start and an end. With two indices, full and empty are the same pair of numbers and no amount of care distinguishes them."
+
+explanation: |
+  Putting the capacity in the type is a real decision with real
+  consequences in both directions. The storage becomes a plain
+  array, sized at compile time, so a `RingBuffer<int, 4>` allocates
+  nothing and fits in a cache line — and the compiler can see the
+  modulus operand, which it will often turn into something cheaper
+  than a division. The cost is that the size is fixed when you write
+  the code, and a buffer whose capacity is only known at run time
+  cannot be this type at all.
+
+  It also means two instantiations are two types. They cannot be
+  assigned to each other, they cannot sit in the same vector, and
+  each one is compiled separately from the same source. That is why
+  a template lives in a header: the compiler needs the definition at
+  the point of use, because it has not made the class yet.
+
+  The two specializations are there for opposite reasons, and the
+  difference is worth noticing. `std::string` needs one because the
+  general template does not compile for it — the failure is loud and
+  immediate. `bool` needs one because the general template *does*
+  compile, converts to `int`, and returns `"1"`. Nothing warns. The
+  general case was simply wrong for that type, and the only way to
+  find out is to have thought about it.
+
+  Holding a start and a count, rather than a start and an end, is the
+  decision that makes the rest easy. The obvious design keeps two
+  indices and marks the buffer full when they meet — except they also
+  meet when it is empty, and the two states become indistinguishable.
+  Every workaround from there is worse than the problem: waste a slot
+  so they never quite meet, or carry a separate flag that some future
+  branch forgets to update. A count says how many are held, and
+  answers both questions without arithmetic.
+
+  It also makes `drain` shorter than it looks like it should be. Once
+  the count is zero, where the window sat no longer means anything —
+  the next push writes at `first_` and the next read starts there, so
+  nothing needs resetting. Code that clears state nobody can observe
+  is not safer, only harder to be sure about.

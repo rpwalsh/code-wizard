@@ -1,0 +1,101 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.containers
+version: 1
+language: cpp
+title: Erasing what you are standing on
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.std.containers
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Erase entries while iterating without stepping on a freed iterator.
+  - Let a set do the deduplicating and sorting instead of writing loops.
+  - Check every reason to refuse before changing anything.
+
+prompt: |
+  Erasing an element invalidates the iterator pointing at it. The
+  loop that erases and then advances is reading a node that has
+  already been freed — and it usually appears to work, which is what
+  makes it worth practicing deliberately.
+
+  In `main.cpp`:
+
+  - `drop_empty(stock)` — remove every sku whose count is zero or
+    below, from the caller's map.
+  - `distinct(words)` — every distinct word. Note the return type
+    before writing a loop.
+  - `in_both(left, right)` — the skus in both sets, in order.
+  - `only_in_left(left, right)` — the skus in the first and not the
+    second, in order.
+  - `transfer(stock, from, to, count)` — move units between skus.
+    Returns whether it happened. A count of zero or below is
+    refused, a transfer to the same sku is refused, an unknown
+    source is refused, and more than there is, is refused. **A
+    refused transfer changes nothing** — including not creating the
+    destination.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/containers_test.cpp
+    visibility: visible
+    concept: cpp.std.containers
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "After erasing, the iterator you held is worthless. You need whatever erase hands back instead."
+  - level: structural
+    text: "A while loop rather than a for loop, because the step forward only happens on the branch that did not erase."
+  - level: language
+    text: "map::erase returns an iterator to the element that followed the one removed. set_intersection and set_difference take two sorted ranges, which is exactly what a set is."
+  - level: syntax
+    text: "std::back_inserter(result) gives those algorithms somewhere to write, growing the vector as they go."
+  - level: explicit
+    text: "transfer: check count, check from != to, find the source, check it has enough — all before touching anything. Then subtract, then add."
+
+explanation: |
+  `stock.erase(entry)` destroys the node `entry` points at, so the
+  iterator is no longer a position in the map; it is an address that
+  used to mean something. Advancing it reads freed memory to find
+  the next node, and the next node it finds is whatever happens to be
+  written there. With one erase in a small map that is often still
+  the right answer, which is precisely the problem — the code passes,
+  ships, and fails later on a container large enough for the freed
+  memory to have been reused.
+
+  `erase` returning the following iterator is the whole fix, and the
+  loop shape follows from it: advance on the branch that kept the
+  element, take what `erase` gives you on the branch that did not.
+  A `for` loop with `++entry` in the header cannot express that,
+  because it advances on both.
+
+  `distinct` is worth noticing for what it does not contain. The
+  return type is a `std::set`, and a set already refuses duplicates
+  and already keeps its contents ordered, so constructing one from
+  the range is the entire function. The loop that checks whether each
+  word is already present is code that exists only to do a container's
+  job for it, slower.
+
+  `set_intersection` and `set_difference` need sorted ranges, which a
+  `std::set` is by definition. That pairing is not a coincidence — the
+  algorithms are named for the container's guarantee. Given sorted
+  input they walk both ranges once, which is why they beat the
+  obvious nested loop and why the precondition is worth respecting
+  rather than working around.
+
+  `transfer` checking everything first is the same idea as the strong
+  exception guarantee, arrived at without exceptions. The tempting
+  version reaches for `stock[to]` early, and `operator[]` inserts —
+  so a transfer that is then refused leaves behind a sku with a count
+  of zero that nobody asked for and nothing removes. Do all the
+  asking, then all the changing, and a refusal cannot leave a trace.

@@ -1,0 +1,103 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.values.lambdas
+version: 1
+language: cpp
+title: A capture list is a decision about time
+kind: micro-problem
+difficulty: 3
+estimatedSeconds: 660
+timeoutMs: 30000
+
+skills:
+  - cpp.values.lambdas
+  - cpp.lifetime.references
+
+prerequisites: []
+
+learningObjectives:
+  - Choose between capturing by value and by reference on purpose.
+  - Give a lambda state of its own with an init-capture and mutable.
+  - Pass behavior to a function the same way you pass data to one.
+
+prompt: |
+  A capture list decides *when* a value is read. By value reads it
+  now, at the moment the lambda is made. By reference reads it every
+  time the lambda runs — which is either exactly what you wanted or a
+  read of something that no longer exists.
+
+  In `main.cpp`:
+
+  - `make_counter(start)` — returns something that gives back
+    `start`, then `start + 1`, then `start + 2`. Each counter keeps
+    its own number; two of them are unrelated.
+  - `above_snapshot(threshold)` — a predicate that copies the
+    threshold once, when it is made.
+  - `above_live(threshold)` — a predicate that reads the caller's
+    threshold every time it is called.
+  - `filter(values, keep)` — the values `keep` agrees with, in
+    order. Ask it about every value.
+  - `apply_all(start, actions)` — each action applied in turn to a
+    running value.
+
+  Above means strictly above. Equal is not above.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/lambdas_test.cpp
+    visibility: visible
+    concept: cpp.values.lambdas
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.lifetime.references
+
+hints:
+  - level: conceptual
+    text: "[threshold] copies it into the lambda. [&threshold] remembers where it lives. The two produce different answers as soon as anything changes, and only one of them can outlive the variable."
+  - level: structural
+    text: "A counter needs somewhere to keep its number that survives between calls, and that somewhere is the lambda itself."
+  - level: language
+    text: "A lambda's call operator is const by default, so it cannot change what it captured. mutable removes that const, and is the reason a counter compiles at all."
+  - level: syntax
+    text: "[value = start]() mutable { ... } creates a variable belonging to the lambda, initialized from the parameter."
+  - level: explicit
+    text: "make_counter: capture value = start, mutable, save the current number, add one to the captured one, return the saved number."
+
+explanation: |
+  A capture list is a decision about time. `[threshold]` reads the
+  variable once, when the lambda is created, and stores a copy inside
+  it. `[&threshold]` stores where the variable lives and reads it on
+  every call. Both are correct; they answer different questions, and
+  writing `[=]` or `[&]` to avoid choosing means the question gets
+  answered by whichever one you typed.
+
+  The one that can hurt you is the reference. A lambda outliving the
+  variable it captured by reference is holding an address into a
+  dead stack frame — and the read usually succeeds, returning
+  whatever now occupies that memory. This is the same failure as
+  returning a pointer to a local, wearing different syntax, and it
+  is easy to write by accident because `[&]` is shorter than
+  thinking. When a lambda is returned, stored, or handed to another
+  thread, capture by value unless you can point at what keeps the
+  referent alive.
+
+  `mutable` exists because a lambda's call operator is `const` by
+  default. That default is a good one — most lambdas are pure
+  functions of their arguments, and a `const` call operator says so
+  — but a counter is exactly the case where the object has state and
+  changing it is the point. Leaving `mutable` off does not produce a
+  counter that fails to count; it produces a program that does not
+  compile, which is the better of the two outcomes.
+
+  An init-capture, `[value = start]`, creates a variable that belongs
+  to the lambda rather than capturing one that already exists. That
+  is what makes each counter independent: the state lives inside the
+  closure object, so copying the counter copies the position, and
+  two counters made separately share nothing at all.
+
+  `filter` and `apply_all` are the ordinary payoff. Behavior passed
+  as an argument is just another parameter, and a function that takes
+  a predicate does not need to know or care what the predicate looks
+  at. That is worth the small cost of `std::function` here — though
+  in real code a template parameter avoids the indirection entirely,
+  which is what the standard algorithms do.
