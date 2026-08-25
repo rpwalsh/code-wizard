@@ -1,0 +1,98 @@
+# Copyright 2026 Ryan P. Walsh (rpwalsh.github.io)
+id: cpp.std.tuple
+version: 1
+language: cpp
+title: Three answers without inventing a struct
+kind: micro-problem
+difficulty: 2
+estimatedSeconds: 600
+timeoutMs: 30000
+
+skills:
+  - cpp.std.tuple
+  - cpp.std.sorting
+
+prerequisites: []
+
+learningObjectives:
+  - Return several values at once without a one-use struct.
+  - Name the parts at the point they arrive with a structured binding.
+  - Sort on two keys that run in opposite directions.
+
+prompt: |
+  A function with more than one answer does not need a struct nobody
+  else will ever use. A `pair` or a `tuple` carries them, and a
+  structured binding names them at the point they arrive.
+
+  In `main.cpp`:
+
+  - `range_of(values)` — the smallest and the largest, in that
+    order. An empty list throws `std::invalid_argument`.
+  - `parse_entry(text)` — `"ada/3/95"` becomes the name, the level
+    and the score. Exactly three parts, a non-empty name, and two
+    fields of digits. A minus sign is not a digit. Anything else
+    throws `std::invalid_argument`.
+  - `summarize(values)` — the total, the count, and the average
+    rounded toward zero. Nothing at all is three zeros.
+  - `by_score(entries)` — highest score first, and equal scores
+    ordered by name **ascending**. Two keys, opposite directions.
+
+entryPoint: main.cpp
+
+tests:
+  - path: tests/tuple_test.cpp
+    visibility: visible
+    concept: cpp.std.tuple
+  - path: tests/edges_test.cpp
+    visibility: edge
+    concept: cpp.std.sorting
+
+hints:
+  - level: conceptual
+    text: "Returning a pair or tuple costs nothing at the call site once the caller writes auto [a, b] = f(). The name of the type never has to be said."
+  - level: structural
+    text: "std::minmax_element walks the range once and returns both ends, which is one pass and no chance of the two disagreeing."
+  - level: language
+    text: "Return a braced list — return {first, second}; — and the pair or tuple is built from it without naming the type."
+  - level: syntax
+    text: "auto [name, level, score] = parse_entry(text); names all three at once."
+  - level: explicit
+    text: "The comparator checks the score first: greater comes before. Only when the scores match does the name decide, and that one runs the other way — smaller first."
+
+explanation: |
+  A `pair` or `tuple` is the right answer when a function genuinely
+  produces several values and the grouping means nothing on its own.
+  The two ends of a range are not a `Range` type anybody wants to
+  maintain; they are two numbers that arrive together. Where the
+  grouping *does* mean something — where you would give the type a
+  name and methods — a struct is better, and a `tuple<string, int,
+  int>` in a signature that outlives this exercise is worth
+  replacing.
+
+  Structured bindings are what make them tolerable. `get<0>` and
+  `get<2>` are positional, unmemorable, and easy to transpose;
+  `auto [name, level, score] = ...` names all three where they land
+  and every line below reads as itself. It works on pairs, tuples,
+  arrays, and any plain struct — which is more of the language than
+  people expect.
+
+  Returning a braced list rather than naming the type is a small
+  saving repeated constantly. `return {parts[0], level, score};`
+  builds the tuple from the declared return type, so the type is
+  written once in the signature and never again.
+
+  `minmax_element` over two separate passes is the same instinct as
+  `equal_range` over two searches: one walk, one state, no way for
+  the two answers to be computed against different data. It also
+  makes a guarantee two calls do not — for equal elements it returns
+  the first minimum and the *last* maximum, which is the convention
+  everything else in the library follows.
+
+  The comparator is where this exercise stops being about tuples.
+  Two keys running in opposite directions cannot be expressed by
+  comparing the pairs themselves, because `pair`'s own `operator<`
+  runs both keys the same way. `std::tie(b.second, a.first) <
+  std::tie(a.second, b.first)` does it in one line by swapping which
+  side each key is read from — a real idiom, and one worth
+  recognizing rather than writing, because reading it back six
+  months later costs more than the four lines it saved.
