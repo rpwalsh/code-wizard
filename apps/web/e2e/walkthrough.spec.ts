@@ -77,3 +77,70 @@ test('every reveal in the walkthrough actually reveals something', async ({ page
 
   expect(problems, `console errors: ${problems.join(' | ')}`).toEqual([]);
 });
+
+test('the walkthrough buttons that only exist in Learn mode work', async ({ page }) => {
+  test.slow();
+  const problems: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') problems.push(message.text());
+  });
+  page.on('pageerror', (error) => problems.push(error.message));
+
+  await start(page);
+
+  // Learn mode is the only one that offers the reference solution, so the
+  // step below does not exist in the mode the other test runs in.
+  await page.locator('.mode-select').selectOption('learn');
+  await page.getByRole('button', { name: /Safe account lookup/ }).first().click();
+
+  const panel = page.getByRole('region', { name: 'Guided walkthrough' });
+  if ((await panel.count()) === 0) {
+    await page.getByRole('button', { name: 'Walk me through it' }).click();
+  }
+  await expect(panel).toBeVisible();
+
+  // Step two: "Open the tests" has to actually change which file is open.
+  await panel.getByRole('button', { name: 'Next →' }).click();
+  await panel.getByRole('button', { name: 'Open the tests' }).click();
+  const open = page.locator('[aria-current="true"]').first();
+  await expect(open).toHaveText(/^tests\//);
+
+  // Page forward until the solution step appears, revealing each rung on the
+  // way so the ladder is spent the way a learner would spend it.
+  let reveal = panel.getByRole('button', { name: 'Show the solution' });
+  for (let step = 0; step < 10; step += 1) {
+    if (await reveal.count()) break;
+    const next = panel.getByRole('button', { name: 'Next →' });
+    if ((await next.count()) === 0) break;
+    await next.click();
+    reveal = panel.getByRole('button', { name: 'Show the solution' });
+  }
+
+  expect(await reveal.count(), 'Learn mode never offered the solution').toBeGreaterThan(0);
+  await reveal.click();
+
+  // The reference solution and the reason it is written that way, both.
+  const code = panel.locator('.walkthrough__code').first();
+  await expect(code).toBeVisible({ timeout: 15_000 });
+  expect((await code.innerText()).length).toBeGreaterThan(40);
+  await expect(panel).toContainText('Why it is written this way');
+  await expect(reveal).toHaveCount(0);
+
+  // Last step: running the tests from here closes the panel and runs them.
+  const finish = panel.getByRole('button', { name: 'Run the tests now' });
+  for (let step = 0; step < 4; step += 1) {
+    if (await finish.count()) break;
+    const next = panel.getByRole('button', { name: 'Next →' });
+    if ((await next.count()) === 0) break;
+    await next.click();
+  }
+  expect(await finish.count(), 'the walkthrough never offered to run the tests').toBeGreaterThan(
+    0,
+  );
+  await finish.click();
+
+  await expect(panel).toHaveCount(0);
+  await expect(page.locator('.results__summary')).toBeVisible({ timeout: 240_000 });
+
+  expect(problems, `console errors: ${problems.join(' | ')}`).toEqual([]);
+});

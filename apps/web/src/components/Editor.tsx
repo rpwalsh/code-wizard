@@ -17,7 +17,14 @@ interface EditorProps {
   /** Fluency and Simulation modes turn completion off entirely (spec §9). */
   readonly autocomplete: boolean;
   readonly fontSize: number;
-  readonly onChange: (value: string) => void;
+  /**
+   * Called with the path the change belongs to, not just the text.
+   *
+   * Monaco fires a change when it swaps models on a path change, and the
+   * caller cannot tell that apart from a keystroke. Sending the path along
+   * means a change can only ever be written to the file it came from.
+   */
+  readonly onChange: (path: string, value: string) => void;
   readonly onRunTests: () => void;
   /** Line the trace scrubber is currently on, if any. */
   readonly highlightLine?: number | null;
@@ -35,6 +42,11 @@ export function Editor({
   highlightLine = null,
 }: EditorProps) {
   useEffect(installMonacoEnvironment, []);
+
+  // Read during the change handler rather than closed over, so a change that
+  // arrives while React is between renders still names the right file.
+  const pathRef = useRef(path);
+  pathRef.current = path;
 
   const editorRef = useRef<
     Parameters<NonNullable<Parameters<typeof Monaco>[0]['onMount']>>[0] | null
@@ -66,13 +78,20 @@ export function Editor({
     if (highlightLine !== null) editor.revealLineInCenterIfOutsideViewport(highlightLine);
   }, [highlightLine]);
 
+  // onMount runs once, so the label set there names whichever file happened
+  // to be open first and then never changes. A screen reader user switching
+  // tabs was told they were still in main.py.
+  useEffect(() => {
+    editorRef.current?.updateOptions({ ariaLabel: `${path} editor` });
+  }, [path]);
+
   return (
     <Monaco
       path={path}
       language={language}
       value={value}
       theme={useEditorTheme()}
-      onChange={(next) => onChange(next ?? '')}
+      onChange={(next) => onChange(pathRef.current, next ?? '')}
       onMount={(editor, instance) => {
         editorRef.current = editor;
         editor.addCommand(instance.KeyMod.CtrlCmd | instance.KeyCode.Enter, () => onRunTests());

@@ -396,7 +396,16 @@ export function Workspace({
                 readOnly={activeFile.readOnly}
                 autocomplete={affordances.editorAutocomplete}
                 fontSize={fontSize}
-                onChange={(next) => session.updateFile(activeFile.path, next)}
+                onChange={(changedPath, next) => {
+                  // Monaco reports a change when it swaps models on a tab
+                  // switch. It is not an edit: nobody typed, and the file may
+                  // not even be editable. Writing it through raised "not
+                  // editable in this exercise" from a click on a tab.
+                  const changed = state.files.find((file) => file.path === changedPath);
+                  if (!changed || changed.readOnly) return;
+                  if (changed.contents === next) return;
+                  session.updateFile(changedPath, next);
+                }}
                 onRunTests={runTests}
                 // Only mark the file the step is actually in.
                 highlightLine={traced?.file === activeFile.path ? traced.line : null}
